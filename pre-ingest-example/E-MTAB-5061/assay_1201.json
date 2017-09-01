@@ -1,0 +1,1 @@
+{"files": {"name": "ftp://ftp.sra.ebi.ac.uk/vol1/fastq/ERR163/000/ERR1630220/ERR1630220.fastq.gz"}, "submitted_file_names": ["HP1502401_E4.fastq.gz"], "ena_run": "ERR1630220", "ena_experiment": "ERX1700553", "seq": {"machine": "Illumina HiSeq 2000"}, "sample_id": "HP1502401_E4", "rna": {"strand": "both"}, "single_cell": {"method": "FACS"}}

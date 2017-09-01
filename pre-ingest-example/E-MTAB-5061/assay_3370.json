@@ -1,0 +1,1 @@
+{"files": {"name": "ftp://ftp.sra.ebi.ac.uk/vol1/fastq/ERR163/009/ERR1630099/ERR1630099.fastq.gz"}, "submitted_file_names": ["AZ_H11.fastq.gz"], "ena_run": "ERR1630099", "ena_experiment": "ERX1700432", "seq": {"machine": "Illumina HiSeq 2000"}, "sample_id": "AZ_H11", "rna": {"strand": "both"}, "single_cell": {"method": "FACS"}}
