@@ -1,1 +1,0 @@
-{"files": {"name": "ftp://ftp.sra.ebi.ac.uk/vol1/fastq/ERR163/009/ERR1632839/ERR1632839.fastq.gz"}, "submitted_file_names": ["HP1525301T2D_D17.fastq.gz"], "ena_run": "ERR1632839", "ena_experiment": "ERX1703172", "seq": {"machine": "Illumina HiSeq 2000"}, "sample_id": "HP1525301T2D_D17", "rna": {"strand": "both"}, "single_cell": {"method": "FACS"}}

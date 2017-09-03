@@ -16,6 +16,13 @@ class IngestApi:
         reply = urllib.urlopen(self.url)
         self.ingest_api = json.load(reply)["_links"]
 
+    def getSubmissions(self):
+        params = {'sort':'submissionDate,desc'}
+        r = requests.get(self.ingest_api["submissionEnvelopes"]["href"].rsplit("{")[0], params=params,
+                          headers=self.headers)
+        if r.status_code == requests.codes.ok:
+            return json.loads(r.text)["_embedded"]["submissionEnvelopes"]
+
     def createSubmission(self):
         r = requests.post(self.ingest_api["submissionEnvelopes"]["href"].rsplit("{")[0], data="{}",
                           headers=self.headers)

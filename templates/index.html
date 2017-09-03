@@ -8,16 +8,51 @@
 <body>
 
 
-{% if submissionId %}
-  <p>Your submission has been uploaded with id  {{ name }}!</p>
-{% else %}
-  <p>Please upload your spreadsheet</p>
+{% with messages = get_flashed_messages() %}
+  {% if messages %}
+    <ul class=flashes>
+    {% for message in messages %}
+      <li>{{ message }}</li>
+    {% endfor %}
+    </ul>
+  {% endif %}
+{% endwith %}
+
+
+  <p>Please upload a spreadsheet</p>
 
     <form action="upload" method="POST" enctype="multipart/form-data">
         <input  name="file" type="file" accept="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" />
         <button>Upload</button>
     </form>
-{% endif %}
+
+<table>
+    <tr>
+        <th>Submission</th>
+        <th>Created</th>
+        <th>Updated</th>
+        <th>Complete</th>
+    </tr>
+
+{% for sub in submissions %}
+    <tr>
+        <td>
+            <a href="{{sub['_links']['self']['href'] }}">{{sub["_links"]["self"]["href"] }}</a>
+        </td>
+        <td>
+            {{ sub["submissionDate"]["date"]}}
+        </td>
+        <td>
+            {{sub["updateDate"]["date"] }}
+        </td>
+        <td>
+            <a href="{{sub['_links']['self']['submit'] }}">Close submission</a>
+        </td>
+
+    </tr>
+{% endfor %}
+
+</table>
 
 
 </body>

@@ -24,6 +24,13 @@ class SpreadsheetSubmission:
         self.ingest_api = IngestApi()
         self.submissionId = None
 
+    def createSubmission(self):
+        print "creating submission..."
+
+        self.ingest_api.createSubmission()
+        print "new submission " + self.ingest_api.currentSubmission
+        return self.ingest_api.currentSubmission
+
     def _keyValueToNestedObject(self, key, value):
         d = value
         if "\"" in unicode(value) or "||" in unicode(value):
@@ -96,10 +103,8 @@ class SpreadsheetSubmission:
             tmpFile.write(object)
             tmpFile.close()
 
-        print "creating submission..."
-
-        self.ingest_api.createSubmission()
-        print "new submission " + self.ingest_api.currentSubmission
+        if not self.ingest_api.currentSubmission:
+            self.createSubmission()
 
         # creating submission
 

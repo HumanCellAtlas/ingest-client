@@ -1,1 +1,0 @@
-{"files": {"name": "ftp://ftp.sra.ebi.ac.uk/vol1/fastq/ERR163/005/ERR1631735/ERR1631735.fastq.gz"}, "submitted_file_names": ["HP1507101_F14.fastq.gz"], "ena_run": "ERR1631735", "ena_experiment": "ERX1702068", "seq": {"machine": "Illumina HiSeq 2000"}, "sample_id": "HP1507101_F14", "rna": {"strand": "both"}, "single_cell": {"method": "FACS"}}
