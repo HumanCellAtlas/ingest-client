@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>HCA demo</title>
+
+</head>
+<body>
+
+
+{% if submissionId %}
+  <p>Your submission has been uploaded with id  {{ name }}!</p>
+{% else %}
+  <p>Please upload your spreadsheet</p>
+
+    <form action="upload" method="POST" enctype="multipart/form-data">
+        <input  name="file" type="file" accept="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" />
+        <button>Upload</button>
+    </form>
+{% endif %}
+
+
+</body>
+</html>

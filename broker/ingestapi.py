@@ -23,6 +23,7 @@ class IngestApi:
         if r.status_code == requests.codes.created:
             self.submission_links = json.loads(r.text)["_links"]
             self.currentSubmission = self.submission_links["self"]["href"]
+            return r.text
         else:
             print "Error getting submission envelope:" + json.loads(r.text)["message"]
             exit(1)
@@ -31,24 +32,25 @@ class IngestApi:
         r = requests.put(self.submission_links["submit"]["href"].rsplit("{")[0], headers=self.headers)
         if r.status_code == requests.codes.update:
             print "Submission complete!"
+            return r.text
 
     def createProject(self, jsonObject):
-        self.createEntity(jsonObject, "projects")
+        return self.createEntity(jsonObject, "projects")
 
     def createSample(self, jsonObject):
-        self.createEntity(jsonObject, "samples")
+        return self.createEntity(jsonObject, "samples")
 
     def createAssay(self, jsonObject):
-        self.createEntity(jsonObject, "assays")
+        return self.createEntity(jsonObject, "assays")
 
     def createDonor(self, jsonObject):
-        self.createSample(jsonObject)
+        return self.createSample(jsonObject)
 
     def createAnalysis(self, jsonObject):
-        self.createEntity(jsonObject, "analyses")
+        return self.createEntity(jsonObject, "analyses")
 
     def createEntity(self, jsonObject, entityType):
-        print "creating " + entityType
+        print ".",
         r = requests.post(self.ingest_api[entityType]["href"].rsplit("{")[0], data=jsonObject,
                           headers=self.headers)
         if r.status_code == requests.codes.created:
@@ -56,5 +58,6 @@ class IngestApi:
             headers = {'Content-type': 'text/uri-list'}
             r = requests.post(self.submission_links[entityType]["href"].rsplit("{")[0],
                              data=json.loads(r.text)["_links"]["self"]["href"].rsplit("{")[0], headers=headers)
+            return r.text
 
 
