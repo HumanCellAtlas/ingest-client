@@ -26,7 +26,7 @@ def upload_file():
         f.save(path)
         submission = SpreadsheetSubmission()
         submissionId = submission.createSubmission()
-        thread = threading.Thread(target=submission.submit, args=(path,))
+        thread = threading.Thread(target=submission.submit, args=(path,submissionId))
         thread.start()
 
         message = Markup("Submission created with id <a href='"+submissionId+"'>"+submissionId+"</a>")
@@ -37,12 +37,9 @@ def upload_file():
 @app.route('/submit', methods=['POST'])
 def submit_envelope():
     subUrl = request.form.get("submissionUrl")
+    ingestApi = IngestApi()
     if subUrl:
-        print subUrl
-        headers = {'Content-type': 'application/json', 'Accept': 'application/json'}
-        r = requests.put(subUrl, headers=headers)
-        if r.status_code == requests.codes.update:
-            flash(r.text)
+        text = ingestApi.finishSubmission(subUrl)
 
     return  redirect(url_for('index'))
 

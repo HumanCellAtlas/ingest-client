@@ -10,7 +10,6 @@ from optparse import OptionParser
 class SpreadsheetSubmission:
     def __init__(self, dry=False):
 
-        self.submissionId = None
         self.dryrun = dry
         if not self.dryrun:
             self.ingest_api = IngestApi()
@@ -18,9 +17,9 @@ class SpreadsheetSubmission:
     def createSubmission(self):
         print "creating submission..."
 
-        self.ingest_api.createSubmission()
-        print "new submission " + self.ingest_api.currentSubmission
-        return self.ingest_api.currentSubmission
+        submissionUrl = self.ingest_api.createSubmission()
+        print "new submission " + submissionUrl
+        return submissionUrl
 
     def _keyValueToNestedObject(self, key, value):
         d = value
@@ -65,14 +64,14 @@ class SpreadsheetSubmission:
     def completeSubmission(self):
         self.ingest_api.finishSubmission()
 
-    def submit(self, pathToSpreadsheet):
+    def submit(self, pathToSpreadsheet, submissionUrl):
         try:
-            self._process(pathToSpreadsheet)
+            self._process(pathToSpreadsheet, submissionUrl)
         except Exception, e:
             print "This is an error message!"+str(e)
 
 
-    def _process(self, pathToSpreadsheet):
+    def _process(self, pathToSpreadsheet, submissionUrl):
         wb = load_workbook(filename=pathToSpreadsheet)
 
         projectSheet = wb.get_sheet_by_name("project")
@@ -104,43 +103,42 @@ class SpreadsheetSubmission:
             tmpFile.write(object)
             tmpFile.close()
 
-        if not self.dryrun:
-            if not self.ingest_api.currentSubmission:
-                self.createSubmission()
 
         # creating submission
+        #
+        if not self.dryrun and not submissionUrl:
+            submissionUrl = self.createSubmission()
 
-        # projectObj = MetadataDocument(content=project)
         dumpJsonToFile(json.dumps(project), dir, "project")
 
         if not self.dryrun:
-            self.ingest_api.createProject(json.dumps(project))
+            self.ingest_api.createProject(submissionUrl, json.dumps(project))
 
         for index, sample in enumerate(samples):
             sample["protocols"] = protocols
             # sampleObj = MetadataDocument(sample)
             dumpJsonToFile(json.dumps(sample), dir, "sample_" + str(index))
             if not self.dryrun:
-                self.ingest_api.createSample(json.dumps(sample))
+                self.ingest_api.createSample(submissionUrl, json.dumps(sample))
 
         for index, donor in enumerate(donors):
             # donorObj = MetadataDocument(donor)
             dumpJsonToFile(json.dumps(donor), dir, "donor_" + str(index))
             if not self.dryrun:
-                self.ingest_api.createDonor(json.dumps(donor))
+                self.ingest_api.createDonor(submissionUrl, json.dumps(donor))
 
         for index, assay in enumerate(assays):
             # assayObj = MetadataDocument(assay)
             dumpJsonToFile(json.dumps(assay), dir, "assay_" + str(index))
             if not self.dryrun:
-                self.ingest_api.createAssay(json.dumps(assay))
+                self.ingest_api.createAssay(submissionUrl, json.dumps(assay))
 
         print "All done!"
         wb.close()
 
         if not self.dryrun:
-            self.ingest_api.finishedForNow()
-            return self.ingest_api.currentSubmission
+            self.ingest_api.finishedForNow(submissionUrl)
+            return submissionUrl
 
 if __name__ == '__main__':
     parser = OptionParser()
