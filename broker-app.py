@@ -3,7 +3,6 @@ from broker.hcaxlsbroker import SpreadsheetSubmission
 from broker.ingestapi import IngestApi
 from werkzeug.utils import secure_filename
 import os
-import sys
 import tempfile
 import threading
 import requests
@@ -50,5 +49,4 @@ def submit_envelope():
     return  redirect(url_for('index'))
 
 if __name__ == '__main__':
-    app.config['ingest_url'] = sys.argv[2]
     app.run(debug=True,host='0.0.0.0')

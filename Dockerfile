@@ -12,4 +12,5 @@ RUN pip install -r /app/requirements.txt
 ENV INGEST_API=http://localhost:8080
 
 EXPOSE 5000
-CMD python broker-app.py $INGEST_API
+ENTRYPOINT ["python"]
+CMD ["broker-app.py"]
