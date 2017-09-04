@@ -16,33 +16,77 @@
 </head>
 <body>
 
+<div class="container" style="padding-top: 50px;">
+ <nav class="navbar navbar-inverse navbar-fixed-top">
+          <a class="navbar-brand" href="#">
+              <img style="background-color: white; height:30px;" src="static/hca_logo.png">
+          </a>
+     <div class="container">
 
-{% with messages = get_flashed_messages() %}
-  {% if messages %}
-    <ul class=flashes>
-    {% for message in messages %}
-      <li>{{ message }}</li>
-    {% endfor %}
-    </ul>
-  {% endif %}
-{% endwith %}
+        <div class="navbar-header">
+          <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+            <span class="sr-only">Toggle navigation</span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+          <a class="navbar-brand" href="#">HCA data submission</a>
+        </div>
+      </div>
+ </nav>
+</div>
+
+    <div class="container">
+
+      <div class="starter-template">
+        <h1>Submit data to the Human Cell Atlas</h1>
+        <p class="lead">Upload a spreadsheet to add your data to the HCA</p>
+
+          {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                  {% for category, message in messages %}
+                   <div class="alert {{category}}">
+                       {{ message }}
+                    </div>
+                 {% endfor %}
+            {% endif %}
+        {% endwith %}
 
 
-  <p>Please upload a spreadsheet</p>
+          <form  action="upload" method="POST" enctype="multipart/form-data">
+            <div class="form-group">
+             <label for="exampleInputFile">Please upload your spreadsheet</label>
+                <input type="file" name="file" class="form-control-file"  id="exampleInputFile" accept="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"   aria-describedby="fileHelp">
+                 <small id="fileHelp" class="form-text text-muted">The spreadsheet must conform to a HCA template</small>
+            </div>
+                <button type="submit" class="btn btn-primary">Submit</button>
+          </form>
 
-    <form action="upload" method="POST" enctype="multipart/form-data">
-        <input  name="file" type="file" accept="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" />
-        <button>Upload</button>
-    </form>
 
-<table>
-    <tr>
-        <th>Submission</th>
-        <th>Status</th>
-        <th>Created</th>
-        <th>Updated</th>
-        <th>Complete</th>
-    </tr>
+          <!--<div class=".form-group">-->
+        <!--<form action="upload" method="POST" enctype="multipart/form-data">-->
+            <!--<input id="fileUpload" name="file" multiple="" accept="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"  type="file" />-->
+             <!--<button>Upload</button>-->
+        <!--</form>-->
+
+        <!--</div>-->
+          <hr/>
+<div class="container">
+
+    <h1>Submissions</h1>
+
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Submission</th>
+                    <th>Status</th>
+                    <th>Created</th>
+                    <th>Updated</th>
+                    <th>Complete</th>
+                </tr>
+            </thead>
+<tbody>
+
 
 {% for sub in submissions %}
     <tr>
@@ -61,15 +105,22 @@
         <td>
             <form action="submit" method="POST">
                 <input type="hidden" name="submissionUrl" value="{{sub['_links']['submit']['href'] }}"/>
-                <button onclick="return confirm('Are all data files uploaded to the staging area?');">Complete submission</button>
+                <button class="btn btn-primary" onclick="return confirm('Are all data files uploaded to the staging area?');">Complete submission</button>
             </form>
         </td>
 
     </tr>
-{% endfor %}
+    {% endfor %}
+</tbody>
 
-</table>
+    </table>
+</div>
+
+      </div>
+
+    </div><!-- /.container -->
 
 
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
 </body>
 </html>

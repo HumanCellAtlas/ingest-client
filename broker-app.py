@@ -12,7 +12,12 @@ app.secret_key = 'cells'
 
 @app.route('/')
 def index():
-    submissions = IngestApi().getSubmissions()
+    submissions = []
+    try:
+        submissions = IngestApi().getSubmissions()
+    except Exception, e:
+        flash("Can't connect to ingest API!!", "alert-danger")
+
     return render_template('index.html', submissions=submissions)
 
 
@@ -30,7 +35,7 @@ def upload_file():
         thread.start()
 
         message = Markup("Submission created with id <a href='"+submissionId+"'>"+submissionId+"</a>")
-        flash(message)
+        flash(message, "alert-success")
         return redirect(url_for('index'))
     return  redirect(url_for('index'))
 
