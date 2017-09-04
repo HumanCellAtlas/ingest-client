@@ -7,22 +7,13 @@ from optparse import OptionParser
 # This script will read a spreadsheet, generate a manifest, submit all items to the ingest API, assign uuid and generate a directory of bundles for the
 # submitted data
 
-# parser = OptionParser()
-# parser.add_option("-p", "--path", dest="path",
-#                   help="path to HCA fromatted spreadsheet", metavar="FILE")
-#
-# parser.add_option("-u", "--url",
-#                   help="base URL to the ingest API")
-#
-# (options, args) = parser.parse_args()
-# if not options.path:
-#     print "You must supply an excel file"
-#     exit(2)
-
 class SpreadsheetSubmission:
-    def __init__(self):
-        self.ingest_api = IngestApi()
+    def __init__(self, dry=False):
+
         self.submissionId = None
+        self.dryrun = dry
+        if not self.dryrun:
+            self.ingest_api = IngestApi()
 
     def createSubmission(self):
         print "creating submission..."
@@ -44,15 +35,18 @@ class SpreadsheetSubmission:
         for row in sheet.iter_rows(row_offset=1, max_row=(sheet.max_row - 1)):
 
             obj = {}
+            hasData = False
             for cell in row:
                 if not cell.value:
                     continue
+                hasData = True
                 cellCol = cell.col_idx
                 propertyValue = sheet.cell(row=1, column=cellCol).value
                 d = self._keyValueToNestedObject(propertyValue, cell.value)
                 obj.update(d)
-            print json.dumps(obj)
-            objs.append(obj)
+            if hasData:
+                print json.dumps(obj)
+                objs.append(obj)
 
         return objs
 
@@ -72,6 +66,13 @@ class SpreadsheetSubmission:
         self.ingest_api.finishSubmission()
 
     def submit(self, pathToSpreadsheet):
+        try:
+            self._process(pathToSpreadsheet)
+        except Exception, e:
+            print "This is an error message!"+str(e)
+
+
+    def _process(self, pathToSpreadsheet):
         wb = load_workbook(filename=pathToSpreadsheet)
 
         projectSheet = wb.get_sheet_by_name("project")
@@ -103,44 +104,53 @@ class SpreadsheetSubmission:
             tmpFile.write(object)
             tmpFile.close()
 
-        if not self.ingest_api.currentSubmission:
-            self.createSubmission()
+        if not self.dryrun:
+            if not self.ingest_api.currentSubmission:
+                self.createSubmission()
 
         # creating submission
 
         # projectObj = MetadataDocument(content=project)
         dumpJsonToFile(json.dumps(project), dir, "project")
-        self.ingest_api.createProject(json.dumps(project))
+
+        if not self.dryrun:
+            self.ingest_api.createProject(json.dumps(project))
 
         for index, sample in enumerate(samples):
             sample["protocols"] = protocols
             # sampleObj = MetadataDocument(sample)
             dumpJsonToFile(json.dumps(sample), dir, "sample_" + str(index))
-            self.ingest_api.createSample(json.dumps(sample))
+            if not self.dryrun:
+                self.ingest_api.createSample(json.dumps(sample))
 
         for index, donor in enumerate(donors):
             # donorObj = MetadataDocument(donor)
             dumpJsonToFile(json.dumps(donor), dir, "donor_" + str(index))
-            self.ingest_api.createDonor(json.dumps(donor))
+            if not self.dryrun:
+                self.ingest_api.createDonor(json.dumps(donor))
 
         for index, assay in enumerate(assays):
             # assayObj = MetadataDocument(assay)
             dumpJsonToFile(json.dumps(assay), dir, "assay_" + str(index))
-            self.ingest_api.createAssay(json.dumps(assay))
+            if not self.dryrun:
+                self.ingest_api.createAssay(json.dumps(assay))
 
         print "All done!"
         wb.close()
-        return self.ingest_api.currentSubmission
+
+        if not self.dryrun:
+            self.ingest_api.finishedForNow()
+            return self.ingest_api.currentSubmission
 
 if __name__ == '__main__':
     parser = OptionParser()
     parser.add_option("-p", "--path", dest="path",
                       help="path to HCA example data bundles", metavar="FILE")
+    parser.add_option("-d", "--dry", help="doa dry run without submitting to ingest", action="store_true", default=False)
 
     (options, args) = parser.parse_args()
     if not options.path:
         print "You must supply path to the HCA bundles directory"
         exit(2)
-    submission = SpreadsheetSubmission()
+    submission = SpreadsheetSubmission(options.dry)
     submission.submit(options.path)
-    submission.completeSubmission()

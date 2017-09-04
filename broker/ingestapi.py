@@ -3,6 +3,9 @@ import glob, json, os, urllib, requests
 class IngestApi:
     def __init__(self, url=None):
 
+        if not url and 'INGEST_API' in os.environ:
+            url = os.environ['INGEST_API']
+            print "using " +url+ " for ingest API"
         self.url = url if url else "http://localhost:8080"
 
         self.ingest_api = None
@@ -40,6 +43,12 @@ class IngestApi:
         if r.status_code == requests.codes.update:
             print "Submission complete!"
             return r.text
+
+    def finishedForNow(self):
+        self._updateStatusToPending()
+
+    def _updateStatusToPending(self):
+        r = requests.patch(self.submission_links["self"]["href"].rsplit("{")[0], data="{\"submissionStatus\" : \"Pending\"}", headers=self.headers)
 
     def createProject(self, jsonObject):
         return self.createEntity(jsonObject, "projects")
