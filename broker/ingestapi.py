@@ -4,7 +4,7 @@ class IngestApi:
     def __init__(self, url=None):
 
         if not url and 'INGEST_API' in os.environ:
-            url = os.environ('INGEST_API')
+            url = os.environ['INGEST_API']
             # expand interpolated env vars
             url = os.path.expandvars(url)
             print "using " +url+ " for ingest API"
