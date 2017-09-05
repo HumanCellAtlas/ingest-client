@@ -2,7 +2,12 @@
 
 Scripts for submitting spreadsheets of experimental metadata to the HCA. 
  
-To run scripts locally you'll need python 2.7 and all the dependencies in [requirements.txt](requirements.txt). 
+To run scripts locally you'll need python 2.7 and all the dependencies in [requirements.txt](requirements.txt).
+
+
+```
+pip install -r requirements.txt
+```
 
 
 # Web application 
@@ -31,10 +36,6 @@ The application will be available at http://localhost:5000
 
 # CLI application 
 
-
-```
-pip install -r requirements.txt
-```
 
 ## Spreadsheet converter 
  
