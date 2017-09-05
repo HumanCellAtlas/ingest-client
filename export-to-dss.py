@@ -1,6 +1,7 @@
 import pika
 import broker.ingestexportservice
 import broker.ingestapi
+from optparse import OptionParser
 
 # this script listens on a ingest submission queue and as submission are completed will
 # call the ingest export service to generate the bundles and submit bundles to datastore
@@ -32,4 +33,10 @@ class IngestReceiver:
 
 
 if __name__ == '__main__':
-    IngestReceiver()
+    parser = OptionParser()
+    parser.add_option("-q", "--queue", help="name of the ingest queus to listen for submission")
+    parser.add_option("-mh", "--mhost", help="the host where the Rabbit MQ messaging server is running")
+    parser.add_option("-mp", "--mport", help="the port where the Rabbit MQ messaging server is running")
+
+    (options, args) = parser.parse_args()
+    IngestReceiver(args)
