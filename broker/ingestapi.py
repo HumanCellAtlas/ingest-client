@@ -5,6 +5,8 @@ class IngestApi:
 
         if not url and 'INGEST_API' in os.environ:
             url = os.environ['INGEST_API']
+            # expand interpolated env vars
+            url = os.path.expandvars(url)
             print "using " +url+ " for ingest API"
         self.url = url if url else "http://localhost:8080"
 

@@ -9,7 +9,7 @@ WORKDIR /app
 
 RUN pip install -r /app/requirements.txt
 
-ENV INGEST_API="http://localhost:8080"
+ENV INGEST_API=http://localhost:8080
 
 EXPOSE 5000
 ENTRYPOINT ["python"]
