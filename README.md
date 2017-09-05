@@ -45,7 +45,7 @@ This script will submit a HCA spreadsheet to the ingest API.
 python broker/hcaxlsbroker.py -p <path to excel file>
 ```
 
-If you want to to a dry run to check the spreadsheet parses without submitting use the -d argument 
+If you want to do a dry run to check the spreadsheet parses without submitting use the -d argument 
 
 ```
 python broker/hcaxlsbroker.py -d -p <path to excel file>
@@ -54,7 +54,7 @@ python broker/hcaxlsbroker.py -d -p <path to excel file>
 ## Bundle to spreadsheet 
 
 This script will convert a set of data bundles in HCA JSON into an Excel file. It expects your bundles are in folders under your path like this
- <supplied path>/bundles/bundle*
+ \<supplied path\>/bundles/bundle*
 
 ```
 python broker/bundle2xls.py -p <path to directory conatining bundles>
