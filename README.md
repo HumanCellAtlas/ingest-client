@@ -1,3 +1,5 @@
+[![Docker Repository on Quay](https://quay.io/repository/humancellatlas/ingest-demo/status "Docker Repository on Quay")](https://quay.io/repository/humancellatlas/ingest-demo)
+
 # HCA broker and ingestion service demo 
 
 Scripts for submitting spreadsheets of experimental metadata to the HCA. 
