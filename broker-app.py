@@ -29,14 +29,24 @@ def upload_file():
         filename = secure_filename(f .filename)
         path = os.path.join(tempfile.gettempdir(), filename)
         f.save(path)
-        submission = SpreadsheetSubmission()
+
+        # do a dry run to minimally validate spreadsheet
+        submission = SpreadsheetSubmission(dry=True)
+        try:
+            submission.submit(path,None)
+        except Exception, e:
+            flash(str(e), 'alert-danger')
+            return redirect(url_for('index'))
+
+        # if we get here can go ahead and submit
+        submission.dryrun = False
         submissionId = submission.createSubmission()
         thread = threading.Thread(target=submission.submit, args=(path,submissionId))
         thread.start()
-
         message = Markup("Submission created with id <a href='"+submissionId+"'>"+submissionId+"</a>")
         flash(message, "alert-success")
         return redirect(url_for('index'))
+    flash("You can only POST to the upload endpoint", "alert-warning")
     return  redirect(url_for('index'))
 
 @app.route('/submit', methods=['POST'])

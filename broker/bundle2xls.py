@@ -17,6 +17,7 @@ class Bundle2Xls:
         self.assays = []
         self.manifest = {}
         self.donors = {}
+        self.files = []
         self.cell = {}
         self.samples = []
         self.types = {}
@@ -52,9 +53,18 @@ class Bundle2Xls:
                 del self.donors[raw["donor"]["uuid"]]["uuid"]
                 obj["donor_id"] = raw["donor"]["id"]
             elif key == "files":
-                for row in value:
-                    for key2, value2 in row.iteritems():
-                        obj[key+"."+key2] = value2
+                tmpFileList = []
+                for file in value:
+                    if "name" in file:
+                        # hack for E-MTAB-5061 as we want just file name for URL
+                        fileName = file["name"].rsplit('/', 1)[-1]
+                        tmpFileList.append(fileName)
+                        file["name"] = fileName
+                    self.files.append(file)
+                obj["files"] = tmpFileList
+                # for row in value:
+                #     for key2, value2 in row.iteritems():
+                #         obj[key+"."+key2] = value2
             elif isinstance(value, unicode) or isinstance(value, float):
                 obj[key] = value
             elif isinstance(value, dict):
@@ -107,6 +117,9 @@ class Bundle2Xls:
             assayRaw = json.load(open (dir+"/assay.json"))
             assayRaw["sample_id"]= sampleRaw["id"]
 
+            if "id" not in assayRaw and "ena_run" in assayRaw:
+                assayRaw["id"] = assayRaw["ena_run"]
+
             tp = self.flatten(projectRaw)
             if not self.project:
                 if not cmp(tp, self.project):
@@ -123,6 +136,7 @@ class Bundle2Xls:
         self.writeMultiEntityWorksheet(workbook, "donor", list(self.donors.values()))
         self.writeMultiEntityWorksheet(workbook, "protocols", self.protocols)
         self.writeMultiEntityWorksheet(workbook, "assay", self.assays)
+        self.writeMultiEntityWorksheet(workbook, "files", self.files)
 
         workbook.close()
 

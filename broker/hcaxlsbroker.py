@@ -8,14 +8,18 @@ from optparse import OptionParser
 # submitted data
 
 class SpreadsheetSubmission:
-    def __init__(self, dry=False):
+    def __init__(self, dry=False, output=None):
 
         self.dryrun = dry
+        self.outputDir = output
+        self.ingest_api = None
         if not self.dryrun:
             self.ingest_api = IngestApi()
 
     def createSubmission(self):
         print "creating submission..."
+        if not self.ingest_api:
+            self.ingest_api = IngestApi()
 
         submissionUrl = self.ingest_api.createSubmission()
         print "new submission " + submissionUrl
@@ -68,70 +72,127 @@ class SpreadsheetSubmission:
         try:
             self._process(pathToSpreadsheet, submissionUrl)
         except Exception, e:
-            print "This is an error message!"+str(e)
+            print "Error:"+str(e)
+            return e
 
+    def dumpJsonToFile(self, object, projectId, name):
+        if self.outputDir:
+            dir = os.path.abspath(self.outputDir)
+            if not os.path.exists(dir):
+                os.makedirs(dir)
+            tmpFile = open(dir + "/" + projectId+"_"+name + ".json", "w")
+            tmpFile.write(object)
+            tmpFile.close()
 
     def _process(self, pathToSpreadsheet, submissionUrl):
-        wb = load_workbook(filename=pathToSpreadsheet)
 
+        # parse the spreadsheet
+        wb = load_workbook(filename=pathToSpreadsheet)
         projectSheet = wb.get_sheet_by_name("project")
         contactSheet = wb.get_sheet_by_name("contact")
         sampleSheet = wb.get_sheet_by_name("sample")
         donorSheet = wb.get_sheet_by_name("donor")
         protocolSheet = wb.get_sheet_by_name("protocols")
         assaySheet = wb.get_sheet_by_name("assay")
+        filesSheet = wb.get_sheet_by_name("files")
 
+        # convert data in sheets back into dict
         project = self._sheetToObject("project", projectSheet)
         contact = self._sheetToObject("contact", contactSheet)
+        # embedd contact into into project for now
         project["contact"] = contact
 
         samples = self._multiRowToObjectFromSheet("sample", sampleSheet)
         protocols = self._multiRowToObjectFromSheet("protocol", protocolSheet)
-
         donors = self._multiRowToObjectFromSheet("donor", donorSheet)
-
         assays = self._multiRowToObjectFromSheet("assay", assaySheet)
+        files = self._multiRowToObjectFromSheet("files", filesSheet)
 
+        # post objects to the Ingest API after some basic validation
+
+        if "id" not in project:
+            raise ValueError('Project must have an id attribute')
         projectId = project["id"]
-
-        dir = "./pre-ingest-example-json/" + projectId
-        if not os.path.exists(dir):
-            os.makedirs(dir)
-
-        def dumpJsonToFile(object, dir, name):
-            tmpFile = open(dir + "/" + name + ".json", "w")
-            tmpFile.write(object)
-            tmpFile.close()
-
 
         # creating submission
         #
         if not self.dryrun and not submissionUrl:
             submissionUrl = self.createSubmission()
 
-        dumpJsonToFile(json.dumps(project), dir, "project")
+        self.dumpJsonToFile(json.dumps(project), projectId, "project")
 
+        projectIngest = None
         if not self.dryrun:
-            self.ingest_api.createProject(submissionUrl, json.dumps(project))
+            projectIngest = self.ingest_api.createProject(submissionUrl, json.dumps(project))
 
+        donorMap = {}
+        for index, donor in enumerate(donors):
+            self.dumpJsonToFile(json.dumps(donor), projectId, "donor_" + str(index))
+            if "id" not in donor:
+                raise ValueError('Donor must have an id attribute')
+            donorMap[donor["id"]] = donor
+            if not self.dryrun:
+                donorIngest = self.ingest_api.createDonor(submissionUrl, json.dumps(donor))
+                self.ingest_api.linkEntity(donorIngest, projectIngest, "projects")
+                donorMap[donor["id"]] = donorIngest
+
+        # sample id to created object
+        sampleMap = {}
         for index, sample in enumerate(samples):
             sample["protocols"] = protocols
             # sampleObj = MetadataDocument(sample)
-            dumpJsonToFile(json.dumps(sample), dir, "sample_" + str(index))
+            self.dumpJsonToFile(json.dumps(sample), projectId, "sample_" + str(index))
+            if "id" not in sample:
+                raise ValueError('Samples must have an id attribute')
+            sampleMap[sample["id"]] = sample
+            if "donor_id" in sample:
+                if sample["donor_id"] not in donorMap:
+                    raise ValueError('Sample '+sample["id"]+' references a donor '+sample["donor_id"]+' that isn\'t in the donor worksheet')
             if not self.dryrun:
-                self.ingest_api.createSample(submissionUrl, json.dumps(sample))
+                sampleIngest = self.ingest_api.createSample(submissionUrl, json.dumps(sample))
+                self.ingest_api.linkEntity(sampleIngest, projectIngest, "projects")
+                sampleMap[sample["id"]] = sampleIngest
+                if "donor_id" in sample:
+                    if sample["donor_id"] in donorMap:
+                        self.ingest_api.linkEntity(sampleIngest, donorMap[sample["donor_id"]], "derivedFromSamples")
 
-        for index, donor in enumerate(donors):
-            # donorObj = MetadataDocument(donor)
-            dumpJsonToFile(json.dumps(donor), dir, "donor_" + str(index))
+        filesMap={}
+        for index, file in enumerate(files):
+            if "name" not in file:
+                raise ValueError('Files must have a name')
+            self.dumpJsonToFile(json.dumps({"fileName" : file["name"], "content" : file}), projectId, "files_" + str(index))
+            filesMap[file["name"]] = file
             if not self.dryrun:
-                self.ingest_api.createDonor(submissionUrl, json.dumps(donor))
+                fileIngest = self.ingest_api.createFile(submissionUrl, file["name"], json.dumps(file))
+                filesMap[file["name"]] = fileIngest
 
         for index, assay in enumerate(assays):
             # assayObj = MetadataDocument(assay)
-            dumpJsonToFile(json.dumps(assay), dir, "assay_" + str(index))
+            self.dumpJsonToFile(json.dumps(assay), projectId, "assay_" + str(index))
+            if "id" not in assay:
+                raise ValueError('Each assays must have an id attribute')
+            if "files" not in assay:
+                raise ValueError('Each assay must list associated files using the files attribute')
+            else:
+                for file in assay["files"]:
+                    if file not in filesMap:
+                        raise ValueError('Assay references file '+file+' that isn\'t defined in the files sheet')
+            if "sample_id" not in assay:
+                raise ValueError("Every assay must reference a sample using the sample_id attribute")
+            elif assay["sample_id"] not in sampleMap:
+                raise ValueError('An assay references a sample '+assay["sample_id"]+' that isn\'t in the samples worksheet')
+
             if not self.dryrun:
-                self.ingest_api.createAssay(submissionUrl, json.dumps(assay))
+                assayIngest = self.ingest_api.createAssay(submissionUrl, json.dumps(assay))
+                self.ingest_api.linkEntity(assayIngest, projectIngest, "projects")
+
+                if assay["sample_id"] in sampleMap:
+                    self.ingest_api.linkEntity(assayIngest, sampleMap[assay["sample_id"]], "samples")
+
+                for file in assay["files"]:
+                    self.ingest_api.linkEntity(assayIngest, filesMap[file], "files")
+
+
 
         print "All done!"
         wb.close()
@@ -145,10 +206,12 @@ if __name__ == '__main__':
     parser.add_option("-p", "--path", dest="path",
                       help="path to HCA example data bundles", metavar="FILE")
     parser.add_option("-d", "--dry", help="doa dry run without submitting to ingest", action="store_true", default=False)
+    parser.add_option("-o", "--output", dest="output",
+                      help="output directory where to dump json files submitted to ingest", metavar="FILE", default=None)
 
     (options, args) = parser.parse_args()
     if not options.path:
         print "You must supply path to the HCA bundles directory"
         exit(2)
-    submission = SpreadsheetSubmission(options.dry)
-    submission.submit(options.path)
+    submission = SpreadsheetSubmission(options.dry, options.output)
+    submission.submit(options.path, None)
