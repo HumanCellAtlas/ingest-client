@@ -92,7 +92,7 @@ class IngestApi:
         raise ValueError('Create entity failed: Entity ' + entityType + " " + json.dumps(jsonObject))
 
 
-    # given a HCA object retrun the URI for the object from ingest
+    # given a HCA object return the URI for the object from ingest
     def getObjectId(self, entity):
         if "_links" in entity:
             entityUrl = entity["_links"]["self"]["href"].rsplit("{")[0]
