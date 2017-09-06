@@ -5,7 +5,6 @@ from werkzeug.utils import secure_filename
 import os
 import tempfile
 import threading
-import requests
 
 app = Flask(__name__)
 app.secret_key = 'cells'
