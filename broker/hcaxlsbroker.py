@@ -1,14 +1,23 @@
+#!/usr/bin/env python
+"""
+This script will read a spreadsheet, generate a manifest, submit all items to the ingest API, 
+assign uuid and generate a directory of bundles for the submitted data
+"""
+__author__ = "jupp"
+__license__ = "Apache 2.0"
+
+
 import glob, json, os, urllib, requests
 from openpyxl import load_workbook
 from ingestapi import IngestApi
 from optparse import OptionParser
-
-
-# This script will read a spreadsheet, generate a manifest, submit all items to the ingest API, assign uuid and generate a directory of bundles for the
-# submitted data
+import logging
 
 class SpreadsheetSubmission:
     def __init__(self, dry=False, output=None):
+
+        formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+        logging.basicConfig(formatter=formatter,level=logging.INFO)
 
         self.dryrun = dry
         self.outputDir = output
@@ -17,18 +26,18 @@ class SpreadsheetSubmission:
             self.ingest_api = IngestApi()
 
     def createSubmission(self):
-        print "creating submission..."
+        logging.info("creating submission...")
         if not self.ingest_api:
             self.ingest_api = IngestApi()
 
         submissionUrl = self.ingest_api.createSubmission()
-        print "new submission " + submissionUrl
+        logging.info("new submission " + submissionUrl)
         return submissionUrl
 
     def _keyValueToNestedObject(self, key, value):
         d = value
         if "\"" in unicode(value) or "||" in unicode(value):
-            d = map(lambda it: it.strip("\""), value.split("||"))
+            d = map(lambda it: it.strip(' "\''), value.split("||"))
         for part in reversed(key.split('.')):
             d = {part: d}
         return d
@@ -48,7 +57,7 @@ class SpreadsheetSubmission:
                 d = self._keyValueToNestedObject(propertyValue, cell.value)
                 obj.update(d)
             if hasData:
-                print json.dumps(obj)
+                logging.info(json.dumps(obj))
                 objs.append(obj)
 
         return objs
@@ -57,12 +66,13 @@ class SpreadsheetSubmission:
     def _sheetToObject(self, type, sheet):
         obj = {}
         for row in sheet.iter_rows():
-            propertyCell = row[0].value
-            valueCell = row[1].value
-            if valueCell:
-                d = self._keyValueToNestedObject(propertyCell, valueCell)
-                obj.update(d)
-        print json.dumps(obj)
+            if len(row) > 1:
+                propertyCell = row[0].value
+                valueCell = row[1].value
+                if valueCell:
+                    d = self._keyValueToNestedObject(propertyCell, valueCell)
+                    obj.update(d)
+        logging.info(json.dumps(obj))
         return obj
 
     def completeSubmission(self):
@@ -72,7 +82,7 @@ class SpreadsheetSubmission:
         try:
             self._process(pathToSpreadsheet, submissionUrl)
         except Exception, e:
-            print "Error:"+str(e)
+            logging.info("Error:"+str(e))
             return e
 
     def dumpJsonToFile(self, object, projectId, name):
@@ -194,7 +204,7 @@ class SpreadsheetSubmission:
 
 
 
-        print "All done!"
+        logging.info("All done!")
         wb.close()
 
         if not self.dryrun:

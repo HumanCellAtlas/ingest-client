@@ -1,3 +1,10 @@
+#!/usr/bin/env python
+"""
+desc goes here 
+"""
+__author__ = "jupp"
+__license__ = "Apache 2.0"
+
 from flask import Flask, Markup, flash, request, render_template, redirect, url_for
 from broker.hcaxlsbroker import SpreadsheetSubmission
 from broker.ingestapi import IngestApi

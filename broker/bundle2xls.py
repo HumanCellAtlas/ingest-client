@@ -1,7 +1,13 @@
+#!/usr/bin/env python
+"""
+Read a bundles directory and turn data into a normalised Excel spreadsheet with multiple worksheets
+"""
+__author__ = "jupp"
+__license__ = "Apache 2.0"
+
+
 import glob, json
 import xlsxwriter
-
-# Read a bundles directory and turn data into a normalised Excel spreadsheet with multiple worksheets
 
 from optparse import OptionParser
 

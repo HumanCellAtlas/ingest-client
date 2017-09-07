@@ -1,3 +1,11 @@
+#!/usr/bin/env python
+"""
+This script listens on a ingest submission queue and as submission are completed will
+call the ingest export service to generate the bundles and submit bundles to datastore
+"""
+__author__ = "jupp"
+__license__ = "Apache 2.0"
+
 import pika
 import broker.ingestexportservice
 import broker.ingestapi
@@ -5,8 +13,6 @@ from optparse import OptionParser
 import os
 import logging
 
-# this script listens on a ingest submission queue and as submission are completed will
-# call the ingest export service to generate the bundles and submit bundles to datastore
 
 DEFAULT_RABBIT_URL=os.environ.get('RABBIT_URL', 'amqp://localhost:5672')
 DEFAULT_INGEST_URL=os.environ.get('INGEST_API', 'http://localhost:8080')

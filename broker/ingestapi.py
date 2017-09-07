@@ -1,13 +1,23 @@
-import glob, json, os, urllib, requests
+#!/usr/bin/env python
+"""
+desc goes here 
+"""
+__author__ = "jupp"
+__license__ = "Apache 2.0"
+
+import glob, json, os, urllib, requests, logging
 
 class IngestApi:
     def __init__(self, url=None):
+
+        formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+        logging.basicConfig(formatter=formatter)
 
         if not url and 'INGEST_API' in os.environ:
             url = os.environ['INGEST_API']
             # expand interpolated env vars
             url = os.path.expandvars(url)
-            print "using " +url+ " for ingest API"
+            logging.info("using " +url+ " for ingest API")
         self.url = url if url else "http://localhost:8080"
 
         self.ingest_api = None
@@ -37,17 +47,48 @@ class IngestApi:
             self.submission_links[submissionUrl] = json.loads(r.text)["_links"]
             return submissionUrl
         else:
-            print "Error getting submission envelope:" + json.loads(r.text)["message"]
+            logging.error("Error getting submission envelope:" + json.loads(r.text)["message"])
             exit(1)
 
     def finishSubmission(self, submissionUrl):
         r = requests.put(submissionUrl, headers=self.headers)
         if r.status_code == requests.codes.update:
-            print "Submission complete!"
+            logging.info("Submission complete!")
             return r.text
 
     def finishedForNow(self, submissionUrl):
         self._updateStatusToPending(submissionUrl)
+
+    def getSubmissionUri(self, submissionId):
+        return self.ingest_api["submissionEnvelopes"]["href"].rsplit("{")[0]+ "/"+submissionId
+
+    def getAssays(self, submissionUrl):
+        return self.getEntities(submissionUrl, "assays")
+
+    def getEntities(self, submissionUrl, entityType):
+        r = requests.get(submissionUrl, headers=self.headers)
+        if r.status_code == requests.codes.ok:
+            if entityType in json.loads(r.text)["_links"]:
+                # r2 = requests.get(, headers=self.headers)
+                for entity in self._getAllObjectsFromSet(json.loads(r.text)["_links"][entityType]["href"], entityType):
+                    yield entity
+            else:
+                yield []
+
+    def _getAllObjectsFromSet(self, url, entityType):
+        r = requests.get(url, headers=self.headers)
+        if r.status_code == requests.codes.ok:
+            for entity in json.loads(r.text)["_embedded"][entityType]:
+                yield entity
+            if "next" in json.loads(r.text)["_links"]:
+                yield self._getAllObjectsFromSet(json.loads(r.text)["_links"]["next"]["href"], entityType)
+
+    def getRelatedEntities(self, relation, entity, entityType):
+        # get the self link from entity
+        entityUri = entity["_links"][relation]["href"]
+        for entity in self._getAllObjectsFromSet(entityUri, entityType):
+            yield entity
+
 
     def _updateStatusToPending(self, submissionUrl):
         r = requests.patch(submissionUrl, data="{\"submissionStatus\" : \"Pending\"}", headers=self.headers)
@@ -69,7 +110,7 @@ class IngestApi:
 
     def createFile(self, submissionUrl, fileName, jsonObject):
         submissionUrl = self.submission_links[submissionUrl]["files"]['href'].rsplit("{")[0]
-        print "posting " + submissionUrl
+        logging.info("posting " + submissionUrl)
         fileToCreateObject = {
             "fileName" : fileName,
             "content" : json.loads(jsonObject)
@@ -81,10 +122,10 @@ class IngestApi:
         raise ValueError('Create file failed: File ' + fileName + " - "+ r.text)
 
     def createEntity(self, submissionUrl, jsonObject, entityType):
-        print ".",
+        logging.debug(".",)
         submissionUrl = self.submission_links[submissionUrl][entityType]['href'].rsplit("{")[0]
 
-        print "posting "+submissionUrl
+        logging.debug("posting "+submissionUrl)
         r = requests.post(submissionUrl, data=jsonObject,
                           headers=self.headers)
         if r.status_code == requests.codes.created or r.status_code == requests.codes.accepted:
@@ -108,5 +149,5 @@ class IngestApi:
                           data=toUri.rsplit("{")[0], headers=headers)
         if r.status_code != requests.codes.no_content:
             raise ValueError("Error creating relationship between entity: "+fromUri+" -> "+toUri)
-        print "Asserted relationship between "+fromUri+" -> "+toUri
+        logging.info("Asserted relationship between "+fromUri+" -> "+toUri)
 
