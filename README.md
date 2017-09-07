@@ -64,7 +64,7 @@ python broker/bundle2xls.py -p <path to directory containing bundles>
 
 ## Export service
 
-This scripts listens for submissions on the ingest API messaging queue. When a submission is valid and complete (i.e. all data files have been uploaded to the staging area) this script will run to generate the 
+This script listens for submissions on the ingest API messaging queue. When a submission is valid and complete (i.e. all data files have been uploaded to the staging area) this script will run to generate the 
 bundles and submit them to the HCA datastore. The export service needs the URL of the messaging queue along with the queue name. You can also override the URLs to the staging API and the DSS API.  To see all the argument use the --help argument. 
 
 ```
