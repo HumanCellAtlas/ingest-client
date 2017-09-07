@@ -59,7 +59,7 @@ This script will convert a set of data bundles in HCA JSON into an Excel file. I
  \<supplied path\>/bundles/bundle*
 
 ```
-python broker/bundle2xls.py -p <path to directory conatining bundles>
+python broker/bundle2xls.py -p <path to directory containing bundles>
 ```
 
 ## Export service
