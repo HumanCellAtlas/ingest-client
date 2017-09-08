@@ -10,7 +10,7 @@ import pika
 import broker.ingestexportservice
 import broker.ingestapi
 from optparse import OptionParser
-import os
+import os, sys
 import logging
 
 
@@ -23,15 +23,16 @@ class IngestReceiver:
 
         formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
         logging.basicConfig(level=options.log, formatter=formatter)
+        self.logger = logging.getLogger(__name__)
 
         self.ingestUrl = options.ingest if options.ingest else DEFAULT_INGEST_URL
-        logging.debug("ingest url is "+self.ingestUrl )
+        self.logger.debug("ingest url is "+self.ingestUrl )
 
         self.rabbit = options.rabbit if options.rabbit else os.path.expandvars(DEFAULT_RABBIT_URL)
-        logging.debug("rabbit url is "+self.rabbit )
+        self.logger.debug("rabbit url is "+self.rabbit )
 
         self.queue = options.queue if options.queue else DEFAULT_QUEUE_NAME
-        logging.debug("rabbit queue is "+self.queue )
+        self.logger.debug("rabbit queue is "+self.queue )
 
         connection = pika.BlockingConnection(pika.URLParameters(self.rabbit))
         channel = connection.channel()
@@ -39,7 +40,7 @@ class IngestReceiver:
         channel.queue_declare(queue=self.queue)
 
         def callback(ch, method, properties, body):
-            logging.info(" [x] Received %r" % body)
+            self.logger.info(" [x] Received %r" % body)
             if "id" in body:
                 ingestExporter = broker.ingestexportservice.IngestExporter()
                 ingestExporter.generateBundles(id)
@@ -48,11 +49,13 @@ class IngestReceiver:
                               queue=self.queue,
                               no_ack=True)
 
-        logging.info(' [*] Waiting for messages from submission envelope')
+        self.logger.info(' [*] Waiting for messages from submission envelope')
         channel.start_consuming()
 
 
 if __name__ == '__main__':
+    logging.basicConfig(stream=sys.stdout, level=logging.INFO)
+
     parser = OptionParser()
     parser.add_option("-q", "--queue", help="name of the ingest queues to listen for submission")
     parser.add_option("-r", "--rabbit", help="the URL to the Rabbit MQ messaging server")

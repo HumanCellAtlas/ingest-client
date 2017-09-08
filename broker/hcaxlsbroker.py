@@ -14,10 +14,11 @@ from optparse import OptionParser
 import logging
 
 class SpreadsheetSubmission:
-    def __init__(self, dry=False, output=None):
 
+    def __init__(self, dry=False, output=None):
         formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-        logging.basicConfig(formatter=formatter,level=logging.INFO)
+        logging.basicConfig(formatter=formatter, level=logging.INFO)
+        self.logger = logging.getLogger(__name__)
 
         self.dryrun = dry
         self.outputDir = output
@@ -26,12 +27,12 @@ class SpreadsheetSubmission:
             self.ingest_api = IngestApi()
 
     def createSubmission(self):
-        logging.info("creating submission...")
+        self.logger.info("creating submission...")
         if not self.ingest_api:
             self.ingest_api = IngestApi()
 
         submissionUrl = self.ingest_api.createSubmission()
-        logging.info("new submission " + submissionUrl)
+        self.logger.info("new submission " + submissionUrl)
         return submissionUrl
 
     def _keyValueToNestedObject(self, key, value):
@@ -57,7 +58,7 @@ class SpreadsheetSubmission:
                 d = self._keyValueToNestedObject(propertyValue, cell.value)
                 obj.update(d)
             if hasData:
-                logging.info(json.dumps(obj))
+                self.logger.debug(json.dumps(obj))
                 objs.append(obj)
 
         return objs
@@ -72,7 +73,7 @@ class SpreadsheetSubmission:
                 if valueCell:
                     d = self._keyValueToNestedObject(propertyCell, valueCell)
                     obj.update(d)
-        logging.info(json.dumps(obj))
+        self.logger.debug(json.dumps(obj))
         return obj
 
     def completeSubmission(self):
@@ -82,7 +83,7 @@ class SpreadsheetSubmission:
         try:
             self._process(pathToSpreadsheet, submissionUrl)
         except Exception, e:
-            logging.info("Error:"+str(e))
+            self.logger.error("Error:"+str(e))
             return e
 
     def dumpJsonToFile(self, object, projectId, name):
@@ -204,7 +205,7 @@ class SpreadsheetSubmission:
 
 
 
-        logging.info("All done!")
+        self.logger.info("All done!")
         wb.close()
 
         if not self.dryrun:

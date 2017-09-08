@@ -13,7 +13,8 @@ import json
 class IngestExporter:
     def __init__(self):
         formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-        logging.basicConfig(formatter=formatter,level=logging.INFO)
+        logging.basicConfig(formatter=formatter)
+        self.logger = logging.getLogger(__name__)
         self.ingest_api = None
 
     def writeBundleToFile(self, name, index, project, sample, assay):
@@ -45,7 +46,7 @@ class IngestExporter:
         return nestedChildren
 
     def generateBundles(self, submissionEnvelopeId):
-        logging.info('submission received '+submissionEnvelopeId)
+        self.logger.info('submission received '+submissionEnvelopeId)
         # given a sub envelope, generate bundles
 
         # read assays from ingest API
@@ -72,7 +73,8 @@ class IngestExporter:
 
             assay["content"]["files"] = files
 
-            self.writeBundleToFile(project["content"]["id"], str(index), project, sample, assay)
+            print "bundles generated!"
+            # self.writeBundleToFile(project["content"]["id"], str(index), project, sample, assay)
 
     def getBundleDocument(self, entity):
         content = entity["content"]
@@ -87,5 +89,5 @@ class IngestExporter:
 
 if __name__ == '__main__':
     ex = IngestExporter()
-    ex.generateBundles("59b28c3db70a98e1fcec6637")
+
 

@@ -9,9 +9,10 @@ from flask import Flask, Markup, flash, request, render_template, redirect, url_
 from broker.hcaxlsbroker import SpreadsheetSubmission
 from broker.ingestapi import IngestApi
 from werkzeug.utils import secure_filename
-import os
+import os, sys
 import tempfile
 import threading
+import logging
 
 app = Flask(__name__, static_folder='static')
 app.secret_key = 'cells'
@@ -65,4 +66,6 @@ def submit_envelope():
     return  redirect(url_for('index'))
 
 if __name__ == '__main__':
-    app.run(debug=True,host='0.0.0.0')
+    logging.basicConfig(stream=sys.stdout, level=logging.INFO)
+
+    app.run(host='0.0.0.0')

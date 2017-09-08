@@ -12,12 +12,13 @@ class IngestApi:
 
         formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
         logging.basicConfig(formatter=formatter)
+        self.logger = logging.getLogger(__name__)
 
         if not url and 'INGEST_API' in os.environ:
             url = os.environ['INGEST_API']
             # expand interpolated env vars
             url = os.path.expandvars(url)
-            logging.info("using " +url+ " for ingest API")
+            self.logger.info("using " +url+ " for ingest API")
         self.url = url if url else "http://localhost:8080"
 
         self.ingest_api = None
@@ -47,13 +48,13 @@ class IngestApi:
             self.submission_links[submissionUrl] = json.loads(r.text)["_links"]
             return submissionUrl
         else:
-            logging.error("Error getting submission envelope:" + json.loads(r.text)["message"])
+            self.logger.error("Error getting submission envelope:" + json.loads(r.text)["message"])
             exit(1)
 
     def finishSubmission(self, submissionUrl):
         r = requests.put(submissionUrl, headers=self.headers)
         if r.status_code == requests.codes.update:
-            logging.info("Submission complete!")
+            self.logger.info("Submission complete!")
             return r.text
 
     def finishedForNow(self, submissionUrl):
@@ -110,7 +111,7 @@ class IngestApi:
 
     def createFile(self, submissionUrl, fileName, jsonObject):
         submissionUrl = self.submission_links[submissionUrl]["files"]['href'].rsplit("{")[0]
-        logging.info("posting " + submissionUrl)
+        self.logger.info("posting " + submissionUrl)
         fileToCreateObject = {
             "fileName" : fileName,
             "content" : json.loads(jsonObject)
@@ -122,10 +123,10 @@ class IngestApi:
         raise ValueError('Create file failed: File ' + fileName + " - "+ r.text)
 
     def createEntity(self, submissionUrl, jsonObject, entityType):
-        logging.debug(".",)
+        self.logger.debug(".",)
         submissionUrl = self.submission_links[submissionUrl][entityType]['href'].rsplit("{")[0]
 
-        logging.debug("posting "+submissionUrl)
+        self.logger.debug("posting "+submissionUrl)
         r = requests.post(submissionUrl, data=jsonObject,
                           headers=self.headers)
         if r.status_code == requests.codes.created or r.status_code == requests.codes.accepted:
@@ -149,5 +150,5 @@ class IngestApi:
                           data=toUri.rsplit("{")[0], headers=headers)
         if r.status_code != requests.codes.no_content:
             raise ValueError("Error creating relationship between entity: "+fromUri+" -> "+toUri)
-        logging.info("Asserted relationship between "+fromUri+" -> "+toUri)
+        self.logger.debug("Asserted relationship between "+fromUri+" -> "+toUri)
 
