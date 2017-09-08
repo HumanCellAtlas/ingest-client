@@ -10,7 +10,7 @@ fileMessage = {
 
 }
 
-connection = pika.BlockingConnection(pika.ConnectionParameters('localhost'))
+connection = pika.BlockingConnection(pika.ConnectionParameters('amqp.ingest.dev.data.humancellatlas.org'))
 channel = connection.channel()
 channel.queue_declare(queue='ingest.file.create.staged')
 channel.basic_publish(exchange='ingest.file.staged.exchange',
