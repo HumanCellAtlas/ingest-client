@@ -12,7 +12,7 @@ import broker.ingestapi
 from optparse import OptionParser
 import os, sys
 import logging
-
+import json
 
 DEFAULT_RABBIT_URL=os.environ.get('RABBIT_URL', 'amqp://localhost:5672')
 DEFAULT_INGEST_URL=os.environ.get('INGEST_API', 'http://localhost:8080')
@@ -41,9 +41,10 @@ class IngestReceiver:
 
         def callback(ch, method, properties, body):
             self.logger.info(" [x] Received %r" % body)
-            if "id" in body:
+            submittedObject = json.loads(body)
+            if "id" in submittedObject:
                 ingestExporter = broker.ingestexportservice.IngestExporter()
-                ingestExporter.generateBundles(id)
+                ingestExporter.generateBundles(submittedObject["id"])
 
         channel.basic_consume(callback,
                               queue=self.queue,

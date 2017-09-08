@@ -1,0 +1,1 @@
+{"files": ["ERR1631012.fastq.gz"], "single_cell": {"method": "FACS"}, "ena_run": "ERR1631012", "ena_experiment": "ERX1701345", "seq": {"machine": "Illumina HiSeq 2000"}, "submitted_file_names": ["HP1504901_H1.fastq.gz"], "rna": {"strand": "both"}, "sample_id": "HP1504901_H1", "id": "ERR1631012"}

@@ -74,7 +74,7 @@ class IngestExporter:
             assay["content"]["files"] = files
 
             print "bundles generated!"
-            # self.writeBundleToFile(project["content"]["id"], str(index), project, sample, assay)
+            self.writeBundleToFile(project["content"]["id"], str(index), project, sample, assay)
 
     def getBundleDocument(self, entity):
         content = entity["content"]

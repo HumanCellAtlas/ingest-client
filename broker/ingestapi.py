@@ -12,6 +12,7 @@ class IngestApi:
 
         formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
         logging.basicConfig(formatter=formatter)
+        logging.getLogger("requests").setLevel(logging.WARNING)
         self.logger = logging.getLogger(__name__)
 
         if not url and 'INGEST_API' in os.environ:
@@ -111,7 +112,7 @@ class IngestApi:
 
     def createFile(self, submissionUrl, fileName, jsonObject):
         submissionUrl = self.submission_links[submissionUrl]["files"]['href'].rsplit("{")[0]
-        self.logger.info("posting " + submissionUrl)
+        self.logger.debug("posting " + submissionUrl)
         fileToCreateObject = {
             "fileName" : fileName,
             "content" : json.loads(jsonObject)
