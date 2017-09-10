@@ -1,1 +1,0 @@
-{"files": ["ERR1630022.fastq.gz"], "single_cell": {"method": "FACS"}, "ena_run": "ERR1630022", "ena_experiment": "ERX1700355", "seq": {"machine": "Illumina HiSeq 2000"}, "submitted_file_names": ["AZ_A7.fastq.gz"], "rna": {"strand": "both"}, "sample_id": "AZ_A7", "id": "ERR1630022"}

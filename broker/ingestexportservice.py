@@ -17,6 +17,19 @@ class IngestExporter:
         self.logger = logging.getLogger(__name__)
         self.ingest_api = None
 
+    def writeManifest(self, name, index, files):
+        dir = os.path.abspath("bundles/" + name)
+        if not os.path.exists(dir):
+            os.makedirs(dir)
+        bundleDir = os.path.abspath(dir + "/bundle" + index)
+        if not os.path.exists(bundleDir):
+            os.makedirs(bundleDir)
+
+        files = {"files" : files}
+        tmpFile = open(bundleDir + "/manifest.json", "w")
+        tmpFile.write(json.dumps(files,  indent=4))
+        tmpFile.close()
+
     def writeBundleToFile(self, name, index, project, sample, assay):
         dir = os.path.abspath("bundles/"+name)
         if not os.path.exists(dir):
@@ -25,15 +38,15 @@ class IngestExporter:
         if not os.path.exists(bundleDir):
             os.makedirs(bundleDir)
         tmpFile = open(bundleDir + "/project.json", "w")
-        tmpFile.write(json.dumps(self.getBundleDocument(project)))
+        tmpFile.write(json.dumps(self.getBundleDocument(project),  indent=4))
         tmpFile.close()
 
         tmpFile = open(bundleDir + "/sample.json", "w")
-        tmpFile.write(json.dumps(self.getBundleDocument(sample)))
+        tmpFile.write(json.dumps(self.getBundleDocument(sample),  indent=4))
         tmpFile.close()
 
         tmpFile = open(bundleDir + "/assay.json", "w")
-        tmpFile.write(json.dumps(self.getBundleDocument(assay)))
+        tmpFile.write(json.dumps(self.getBundleDocument(assay),  indent=4))
         tmpFile.close()
 
     def getNestedObjects(self, relation, entity, entityType):
@@ -66,15 +79,20 @@ class IngestExporter:
                 raise ValueError("Can only be one sample per assay")
 
             sample = samples[0]
-            nested = self.getNestedObjects("derivedFromSamples", sample, "samples")
-            sample["content"]["derivedFromSamples"] = nested
+            nestedSample = self.getNestedObjects("derivedFromSamples", sample, "samples")
+            sample["content"]["donor"] = nestedSample[0]
+            nestedProtocols = self.getNestedObjects("protocols", sample, "protocols")
+            sample["content"]["protocols"] = nestedProtocols
 
             files = map(lambda f : self.getBundleDocument(f),list(self.ingest_api.getRelatedEntities("files", assay, "files")))
 
-            assay["content"]["files"] = files
 
+            # assay["content"]["files"] = files
+            projectId = project["content"]["id"]
+            self.writeBundleToFile(projectId, str(index), project, sample, assay)
+            # write manifest file
+            self.writeManifest(projectId, str(index),files)
             print "bundles generated!"
-            self.writeBundleToFile(project["content"]["id"], str(index), project, sample, assay)
 
     def getBundleDocument(self, entity):
         content = entity["content"]
@@ -82,12 +100,11 @@ class IngestExporter:
         del entity["_links"]
         core = entity
 
-        bundleDocument = \
-            {"core": core,
-             "content": content}
-        return bundleDocument
+        content["core"] =  core
+        return content
 
 if __name__ == '__main__':
     ex = IngestExporter()
+    # ex.generateBundles("59b52e7882f53277fbd0fbc8")
 
 

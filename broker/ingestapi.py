@@ -87,9 +87,11 @@ class IngestApi:
 
     def getRelatedEntities(self, relation, entity, entityType):
         # get the self link from entity
-        entityUri = entity["_links"][relation]["href"]
-        for entity in self._getAllObjectsFromSet(entityUri, entityType):
-            yield entity
+        if relation in entity["_links"]:
+            entityUri = entity["_links"][relation]["href"]
+            for entity in self._getAllObjectsFromSet(entityUri, entityType):
+                yield entity
+
 
 
     def _updateStatusToPending(self, submissionUrl):
@@ -106,6 +108,9 @@ class IngestApi:
 
     def createDonor(self,submissionUrl,  jsonObject):
         return self.createSample(submissionUrl,jsonObject)
+
+    def createProtocol(self,submissionUrl,  jsonObject):
+        return self.createEntity(submissionUrl,jsonObject, "protocols")
 
     def createAnalysis(self, submissionUrl, jsonObject):
         return self.createEntity(submissionUrl,jsonObject, "analyses")
@@ -147,7 +152,7 @@ class IngestApi:
         fromUri = fromEntity["_links"][relationship]["href"]
         toUri = self.getObjectId(toEntity)
         headers = {'Content-type': 'text/uri-list'}
-        r = requests.put(fromUri.rsplit("{")[0],
+        r = requests.post(fromUri.rsplit("{")[0],
                           data=toUri.rsplit("{")[0], headers=headers)
         if r.status_code != requests.codes.no_content:
             raise ValueError("Error creating relationship between entity: "+fromUri+" -> "+toUri)

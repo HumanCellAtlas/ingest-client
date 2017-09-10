@@ -41,6 +41,9 @@ def upload_file():
         submission = SpreadsheetSubmission(dry=True)
         try:
             submission.submit(path,None)
+        except ValueError, e:
+            flash(str(e), 'alert-danger')
+            return redirect(url_for('index'))
         except Exception, e:
             flash(str(e), 'alert-danger')
             return redirect(url_for('index'))

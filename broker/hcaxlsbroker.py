@@ -13,6 +13,9 @@ from ingestapi import IngestApi
 from optparse import OptionParser
 import logging
 
+from itertools import chain
+from collections import defaultdict
+
 class SpreadsheetSubmission:
 
     def __init__(self, dry=False, output=None):
@@ -35,18 +38,30 @@ class SpreadsheetSubmission:
         self.logger.info("new submission " + submissionUrl)
         return submissionUrl
 
-    def _keyValueToNestedObject(self, key, value):
+    # this only works for keys nested to two levels, need something smarter to handle arbitrary
+    # depth keys e.g. we support <level1>.<level2> = <value>, where value is either a single value or list
+    # this doesn't support <level1>.<level2>.<level3>
+    def _keyValueToNestedObject(self, obj, key, value):
         d = value
         if "\"" in unicode(value) or "||" in unicode(value):
             d = map(lambda it: it.strip(' "\''), value.split("||"))
+
+        if len(key.split('.')) > 2:
+            raise ValueError('We don\'t support keys nested greater than 2 levels, found:'+key)
         for part in reversed(key.split('.')):
             d = {part: d}
-        return d
+
+        dict3 = defaultdict(list)
+        for k, v in chain(obj.items(), d.items()):
+            if k in dict3:
+                dict3[k].update(v)
+            else:
+                dict3[k] = v
+        return dict3
 
     def _multiRowToObjectFromSheet(self, type, sheet):
         objs = []
         for row in sheet.iter_rows(row_offset=1, max_row=(sheet.max_row - 1)):
-
             obj = {}
             hasData = False
             for cell in row:
@@ -55,7 +70,7 @@ class SpreadsheetSubmission:
                 hasData = True
                 cellCol = cell.col_idx
                 propertyValue = sheet.cell(row=1, column=cellCol).value
-                d = self._keyValueToNestedObject(propertyValue, cell.value)
+                d = self._keyValueToNestedObject(obj, propertyValue, cell.value)
                 obj.update(d)
             if hasData:
                 self.logger.debug(json.dumps(obj))
@@ -71,8 +86,8 @@ class SpreadsheetSubmission:
                 propertyCell = row[0].value
                 valueCell = row[1].value
                 if valueCell:
-                    d = self._keyValueToNestedObject(propertyCell, valueCell)
-                    obj.update(d)
+                    obj = self._keyValueToNestedObject(obj, propertyCell, valueCell)
+                    # obj.update(d)
         self.logger.debug(json.dumps(obj))
         return obj
 
@@ -82,9 +97,9 @@ class SpreadsheetSubmission:
     def submit(self, pathToSpreadsheet, submissionUrl):
         try:
             self._process(pathToSpreadsheet, submissionUrl)
-        except Exception, e:
+        except ValueError, e:
             self.logger.error("Error:"+str(e))
-            return e
+            raise e
 
     def dumpJsonToFile(self, object, projectId, name):
         if self.outputDir:
@@ -100,23 +115,25 @@ class SpreadsheetSubmission:
         # parse the spreadsheet
         wb = load_workbook(filename=pathToSpreadsheet)
         projectSheet = wb.get_sheet_by_name("project")
-        contactSheet = wb.get_sheet_by_name("contact")
+        submitterSheet = wb.get_sheet_by_name("submitter")
         sampleSheet = wb.get_sheet_by_name("sample")
         donorSheet = wb.get_sheet_by_name("donor")
         protocolSheet = wb.get_sheet_by_name("protocols")
         assaySheet = wb.get_sheet_by_name("assay")
+        lanesSheet = wb.get_sheet_by_name("lanes")
         filesSheet = wb.get_sheet_by_name("files")
 
         # convert data in sheets back into dict
         project = self._sheetToObject("project", projectSheet)
-        contact = self._sheetToObject("contact", contactSheet)
+        submitter = self._sheetToObject("submitter", submitterSheet)
         # embedd contact into into project for now
-        project["contact"] = contact
+        project["submitter"] = submitter
 
         samples = self._multiRowToObjectFromSheet("sample", sampleSheet)
         protocols = self._multiRowToObjectFromSheet("protocol", protocolSheet)
         donors = self._multiRowToObjectFromSheet("donor", donorSheet)
         assays = self._multiRowToObjectFromSheet("assay", assaySheet)
+        lanes = self._multiRowToObjectFromSheet("lanes", lanesSheet)
         files = self._multiRowToObjectFromSheet("files", filesSheet)
 
         # post objects to the Ingest API after some basic validation
@@ -136,6 +153,16 @@ class SpreadsheetSubmission:
         if not self.dryrun:
             projectIngest = self.ingest_api.createProject(submissionUrl, json.dumps(project))
 
+        protocolMap = {}
+        for index, protocol in enumerate(protocols):
+            if "id" not in protocol:
+                raise ValueError('Protocol must have an id attribute')
+            protocolMap[protocol["id"]] = protocol
+            if not self.dryrun:
+                protocolIngest = self.ingest_api.createProtocol(submissionUrl, json.dumps(protocol))
+                # self.ingest_api.linkEntity(protocolIngest, projectIngest, "projects")
+                protocolMap[protocol["id"]] = protocolIngest
+
         donorMap = {}
         for index, donor in enumerate(donors):
             self.dumpJsonToFile(json.dumps(donor), projectId, "donor_" + str(index))
@@ -150,7 +177,6 @@ class SpreadsheetSubmission:
         # sample id to created object
         sampleMap = {}
         for index, sample in enumerate(samples):
-            sample["protocols"] = protocols
             # sampleObj = MetadataDocument(sample)
             self.dumpJsonToFile(json.dumps(sample), projectId, "sample_" + str(index))
             if "id" not in sample:
@@ -159,6 +185,10 @@ class SpreadsheetSubmission:
             if "donor_id" in sample:
                 if sample["donor_id"] not in donorMap:
                     raise ValueError('Sample '+sample["id"]+' references a donor '+sample["donor_id"]+' that isn\'t in the donor worksheet')
+            if "protocol_ids" in sample:
+                for sampleProtocolId in sample["protocol_ids"]:
+                    if sampleProtocolId not in protocolMap:
+                        raise ValueError('Sample ' + sample["id"] + ' references a protocol ' + sampleProtocolId + ' that isn\'t in the protocol worksheet')
             if not self.dryrun:
                 sampleIngest = self.ingest_api.createSample(submissionUrl, json.dumps(sample))
                 self.ingest_api.linkEntity(sampleIngest, projectIngest, "projects")
@@ -166,6 +196,9 @@ class SpreadsheetSubmission:
                 if "donor_id" in sample:
                     if sample["donor_id"] in donorMap:
                         self.ingest_api.linkEntity(sampleIngest, donorMap[sample["donor_id"]], "derivedFromSamples")
+                if "protocol_ids" in sample:
+                    for sampleProtocolId in sample["protocol_ids"]:
+                        self.ingest_api.linkEntity(sampleIngest, protocolMap[sampleProtocolId], "protocols")
 
         filesMap={}
         for index, file in enumerate(files):
@@ -176,6 +209,15 @@ class SpreadsheetSubmission:
             if not self.dryrun:
                 fileIngest = self.ingest_api.createFile(submissionUrl, file["name"], json.dumps(file))
                 filesMap[file["name"]] = fileIngest
+
+        lanesMap= {}
+        for lane in lanes:
+            if "id" not in lane:
+                raise ValueError('Lanes must have an id that is linked from the assays.seq.lane attribute')
+            laneId = lane["id"]
+            del lane["id"]
+            lanesMap[str(laneId)] = lane
+
 
         for index, assay in enumerate(assays):
             # assayObj = MetadataDocument(assay)
@@ -188,10 +230,23 @@ class SpreadsheetSubmission:
                 for file in assay["files"]:
                     if file not in filesMap:
                         raise ValueError('Assay references file '+file+' that isn\'t defined in the files sheet')
+            files = assay["files"]
+            del assay["files"]
+
             if "sample_id" not in assay:
                 raise ValueError("Every assay must reference a sample using the sample_id attribute")
             elif assay["sample_id"] not in sampleMap:
                 raise ValueError('An assay references a sample '+assay["sample_id"]+' that isn\'t in the samples worksheet')
+
+            if "seq" in assay:
+                lanes = []
+                if "lanes" in assay["seq"]:
+                    for laneId in assay["seq"]["lanes"]:
+                        if laneId not in lanesMap:
+                            raise ValueError('Assays references a lane id that isn\'t referenced in the lanes sheet:' +laneId)
+                        lanes.append(lanesMap[laneId])
+                    del assay["seq"]["lanes"]
+                    assay["seq"]["lanes"] =lanes
 
             if not self.dryrun:
                 assayIngest = self.ingest_api.createAssay(submissionUrl, json.dumps(assay))
@@ -200,7 +255,7 @@ class SpreadsheetSubmission:
                 if assay["sample_id"] in sampleMap:
                     self.ingest_api.linkEntity(assayIngest, sampleMap[assay["sample_id"]], "samples")
 
-                for file in assay["files"]:
+                for file in files:
                     self.ingest_api.linkEntity(assayIngest, filesMap[file], "files")
 
 
