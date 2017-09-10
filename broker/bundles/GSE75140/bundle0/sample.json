@@ -1,0 +1,127 @@
+{
+    "core": {
+        "uuid": {
+            "uuid": "f3b537f7-44a8-4333-a801-1782d56c5873"
+        }, 
+        "accession": null, 
+        "submissionDate": {
+            "date": "2017-09-10T12:25:47.237+0000"
+        }, 
+        "updateDate": {
+            "date": "2017-09-10T12:25:47.237+0000"
+        }, 
+        "validationStatus": "Pending"
+    }, 
+    "protocol_ids": [
+        "p1", 
+        "p2", 
+        "p3"
+    ], 
+    "ncbi_biosample": "SAMN04303778", 
+    "organ": {
+        "ontology": "UBERON_0000955", 
+        "name": "brain"
+    }, 
+    "title": "12 week post conception fetal neocortex", 
+    "body_part": {
+        "ontology": "UBERON_0001950", 
+        "name": "neocortex"
+    }, 
+    "well": {
+        "name": "fetal1_A10_fetal_12wpc_c1"
+    }, 
+    "supplementary_files": [
+        "ftp://ftp-trace.ncbi.nlm.nih.gov/sra/sra-instant/reads/ByExp/sra/SRX/SRX145/SRX1457054"
+    ], 
+    "donor_id": "d1", 
+    "geo_sample": "GSM1957573", 
+    "donor": {
+        "is_living": "no", 
+        "core": {
+            "uuid": {
+                "uuid": "6367f985-c3b5-489e-9203-f3e7aa10f6b4"
+            }, 
+            "accession": null, 
+            "submissionDate": {
+                "date": "2017-09-10T12:25:47.217+0000"
+            }, 
+            "updateDate": {
+                "date": "2017-09-10T12:25:47.217+0000"
+            }, 
+            "validationStatus": "Pending"
+        }, 
+        "age": 12, 
+        "life_stage": "embryo", 
+        "age_unit": "week", 
+        "id": "d1", 
+        "species": {
+            "ontology": 9606, 
+            "name": "Homo sapiens"
+        }
+    }, 
+    "project_id": "GSE75140", 
+    "id": "SAMN04303778", 
+    "protocols": [
+        {
+            "core": {
+                "uuid": {
+                    "uuid": "e2adbacc-8d9e-4c53-b093-886681976940"
+                }, 
+                "accession": null, 
+                "submissionDate": {
+                    "date": "2017-09-10T12:25:47.186+0000"
+                }, 
+                "updateDate": {
+                    "date": "2017-09-10T12:25:47.186+0000"
+                }, 
+                "validationStatus": "Pending"
+            }, 
+            "type": {
+                "text": "growth protocol"
+            }, 
+            "id": "p1", 
+            "description": "Cerebral organoids were generated using the same protocol as described Lancaster et al. Nature Protocols 2014, with the exception that mTESR1 (Stem Cell Technologies) was used during embryoid body formation."
+        }, 
+        {
+            "core": {
+                "uuid": {
+                    "uuid": "aea2e934-d3af-4dda-8c65-ef9c7697a671"
+                }, 
+                "accession": null, 
+                "submissionDate": {
+                    "date": "2017-09-10T12:25:47.193+0000"
+                }, 
+                "updateDate": {
+                    "date": "2017-09-10T12:25:47.193+0000"
+                }, 
+                "validationStatus": "Pending"
+            }, 
+            "type": {
+                "text": "treatment protocol"
+            }, 
+            "id": "p2", 
+            "description": "Whole cerebral organoids and microdisseccted ventricles were dissociated in 2 ml of Accutase (StemPro) containing 0.2 U/\\u00b5l Dnase I (Roche) for approximately 45 minutes. Dissociated cells were filtered through 40, 30, and 20 \\u03bcm diameter strainers to create a single cell suspension."
+        }, 
+        {
+            "core": {
+                "uuid": {
+                    "uuid": "c2a0a062-ac3f-4943-b676-2e146b2dd337"
+                }, 
+                "accession": null, 
+                "submissionDate": {
+                    "date": "2017-09-10T12:25:47.200+0000"
+                }, 
+                "updateDate": {
+                    "date": "2017-09-10T12:25:47.200+0000"
+                }, 
+                "validationStatus": "Pending"
+            }, 
+            "type": {
+                "text": "nucleic acid library construction protocol"
+            }, 
+            "id": "p3", 
+            "description": "Cells were loaded into the Fluidigm C1 microfluidic platform, where single cells were captured. Lysis of single cells, reverse-transcription of mRNA into cDNA as well as preamplification of cDNA occured within the microfluidic device using reagents provided by Fluidigm as well as the SMARTer Ultra Low RNA kit for Illumina (Clontech). External RNA spike-in transcripts (ERCC spike-in Mix, Ambion) were added to all single cell lysis reactions at a dilution of 1:40,000."
+        }
+    ], 
+    "name": "12w fetal neocortex"
+}

@@ -1,0 +1,45 @@
+{
+    "core": {
+        "uuid": {
+            "uuid": "7469d33e-9219-472f-82ba-0bd11d263221"
+        }, 
+        "accession": null, 
+        "submissionDate": {
+            "date": "2017-09-10T13:10:13.373+0000"
+        }, 
+        "updateDate": {
+            "date": "2017-09-10T13:10:13.373+0000"
+        }, 
+        "validationStatus": "Pending"
+    }, 
+    "seq": {
+        "paired_ends": "no", 
+        "lanes": [
+            {
+                "reads": "ERR1630112.fastq.gz", 
+                "number": 1
+            }
+        ], 
+        "ena_experiment": "ERX1700445", 
+        "instrument_platform": "Illumina", 
+        "molecule": "RNA", 
+        "instrument_model": "Illumina HiSeq 2000", 
+        "ena_run": "ERR1630112"
+    }, 
+    "rna": {
+        "spike_in_dilution": 40000, 
+        "spike_in": "ERCC", 
+        "end_bias": "full_transcript", 
+        "primer": "random", 
+        "strand": "both", 
+        "library_construction": "smart-seq2"
+    }, 
+    "single_cell": {
+        "cell_handling": "FACS"
+    }, 
+    "submitted_file_names": [
+        "HP1502401_A12.fastq.gz"
+    ], 
+    "sample_id": "HP1502401_A12", 
+    "id": "ERR1630112"
+}

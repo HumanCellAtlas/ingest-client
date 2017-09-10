@@ -1,0 +1,50 @@
+{
+    "core": {
+        "uuid": {
+            "uuid": "ade24757-284b-487f-af5e-aefc41c8b47d"
+        }, 
+        "accession": null, 
+        "submissionDate": {
+            "date": "2017-09-10T12:40:52.222+0000"
+        }, 
+        "updateDate": {
+            "date": "2017-09-10T12:40:52.222+0000"
+        }, 
+        "validationStatus": "Pending"
+    }, 
+    "name": "PBMCs", 
+    "organ": {
+        "text": "blood", 
+        "ontology": "UBERON_0000178"
+    }, 
+    "title": "peripheral blood mononuclear cells (PBMCs)", 
+    "body_part": {
+        "text": "peripheral blood mononuclear cells (PBMCs)"
+    }, 
+    "donor_id": "d1", 
+    "donor": {
+        "is_living": "yes", 
+        "ncbi_taxon": 9606, 
+        "core": {
+            "uuid": {
+                "uuid": "bf6990c4-b5e0-4ac8-ad6c-98be3e9629b4"
+            }, 
+            "accession": null, 
+            "submissionDate": {
+                "date": "2017-09-10T12:40:52.200+0000"
+            }, 
+            "updateDate": {
+                "date": "2017-09-10T12:40:52.200+0000"
+            }, 
+            "validationStatus": "Pending"
+        }, 
+        "life_stage": "adult", 
+        "id": "d1", 
+        "species": {
+            "text": "Homo sapiens", 
+            "ontology": 9606
+        }
+    }, 
+    "id": "s1", 
+    "protocols": []
+}

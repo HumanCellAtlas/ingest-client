@@ -1,0 +1,43 @@
+{
+    "core": {
+        "uuid": {
+            "uuid": "f83a3e04-7253-40fb-964d-24add3b5ee79"
+        }, 
+        "accession": null, 
+        "submissionDate": {
+            "date": "2017-09-10T12:25:47.344+0000"
+        }, 
+        "updateDate": {
+            "date": "2017-09-10T12:25:47.344+0000"
+        }, 
+        "validationStatus": "Pending"
+    }, 
+    "seq": {
+        "sra_run": [
+            "SRR2967608"
+        ], 
+        "paired_ends": "yes", 
+        "lanes": [
+            {
+                "read1": "SRR2967608_1.fastq.gz", 
+                "read2": "SRR2967608_2.fastq.gz", 
+                "number": 1
+            }
+        ], 
+        "instrument_platform": "Illumina", 
+        "molecule": "total RNA", 
+        "instrument_model": "Illumina HiSeq 2500", 
+        "sra_experiment": "SRX1457054"
+    }, 
+    "rna": {
+        "end_bias": "full_transcript", 
+        "spoke_in": "ERCC", 
+        "primary": "primer", 
+        "library_construction": "SMARTer Ultra Low RNA Kit"
+    }, 
+    "single_cell": {
+        "cell_handling": "Fluidigm C1"
+    }, 
+    "sample_id": "SAMN04303778", 
+    "id": "a1"
+}

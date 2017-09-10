@@ -1,0 +1,145 @@
+{
+    "well": {
+        "quality": "low quality cell", 
+        "name": "AZ_A7"
+    }, 
+    "protocol_ids": [
+        "p1", 
+        "p2", 
+        "p3", 
+        "p4"
+    ], 
+    "name": "pancreas islet normal", 
+    "organ": {
+        "text": "pancreas", 
+        "ontology": "UBERON_0001264"
+    }, 
+    "title": "Pancreatic islets from male donor, age 43, BMI 30.8, no diabetes", 
+    "body_part": {
+        "text": "islet of Langerhans", 
+        "ontology": "UBERON_0000006"
+    }, 
+    "biosd_sample": "SAMEA4437030", 
+    "supplementary_files": [
+        "ftp://ftp.ebi.ac.uk/pub/databases/microarray/data/experiment/MTAB/E-MTAB-5061/E-MTAB-5061.processed.1.zip"
+    ], 
+    "donor_id": "AZ", 
+    "donor": {
+        "is_living": "no", 
+        "core": {
+            "uuid": {
+                "uuid": "1256cddd-f7ef-4b52-93b8-c2110790bfd4"
+            }, 
+            "accession": null, 
+            "submissionDate": {
+                "date": "2017-09-10T13:10:12.827+0000"
+            }, 
+            "updateDate": {
+                "date": "2017-09-10T13:10:12.827+0000"
+            }, 
+            "validationStatus": "Pending"
+        }, 
+        "age": 43, 
+        "life_stage": "adult", 
+        "disease": [
+            "normal"
+        ], 
+        "age_unit": "year", 
+        "sex": "male", 
+        "body_mass_index": 30.8, 
+        "id": "AZ", 
+        "species": {
+            "text": "Homo sapiens", 
+            "ontology": 9606
+        }
+    }, 
+    "core": {
+        "uuid": {
+            "uuid": "7a4cddbf-5356-45f4-b9ed-d27e6092c6cb"
+        }, 
+        "accession": null, 
+        "submissionDate": {
+            "date": "2017-09-10T13:10:12.950+0000"
+        }, 
+        "updateDate": {
+            "date": "2017-09-10T13:10:12.950+0000"
+        }, 
+        "validationStatus": "Pending"
+    }, 
+    "project_id": "E-MTAB-5061", 
+    "id": "AZ_A7", 
+    "protocols": [
+        {
+            "core": {
+                "uuid": {
+                    "uuid": "df088b22-deed-4149-b636-c8be1109b80d"
+                }, 
+                "accession": null, 
+                "submissionDate": {
+                    "date": "2017-09-10T13:10:12.730+0000"
+                }, 
+                "updateDate": {
+                    "date": "2017-09-10T13:10:12.730+0000"
+                }, 
+                "validationStatus": "Pending"
+            }, 
+            "type": "sample collection protocol", 
+            "id": "p1", 
+            "description": "Human primary islets (85-95% pure) were purchased from Prodo Laboratories Inc (Irvine, CA, USA) and cultured for 4 days in Prodo Islet Media Standard PIM(S) to recover after arrival. Islets were dissociated into single-cell suspension and viable individual cells were distributed by FACS into 384-well plates containing lysis buffer. Spike-in RNA from the External RNA Controls Consortium (ERCC) (Ambion, Life Technologies) was added to each well in 1:40 000 dilution. "
+        }, 
+        {
+            "core": {
+                "uuid": {
+                    "uuid": "f2075b0b-bb72-476c-b0e5-33af55583491"
+                }, 
+                "accession": null, 
+                "submissionDate": {
+                    "date": "2017-09-10T13:10:12.751+0000"
+                }, 
+                "updateDate": {
+                    "date": "2017-09-10T13:10:12.751+0000"
+                }, 
+                "validationStatus": "Pending"
+            }, 
+            "type": "nucleic acid library construction protocol", 
+            "id": "p2", 
+            "description": "Single-cell RNA-seq libraries were generated as described in Picelli et al., 2014, Full-length RNA-seq from single cells using Smart-seq2, Nature Protocols. "
+        }, 
+        {
+            "core": {
+                "uuid": {
+                    "uuid": "b7e7b999-3a76-4be7-98b2-f5c076d58dd4"
+                }, 
+                "accession": null, 
+                "submissionDate": {
+                    "date": "2017-09-10T13:10:12.760+0000"
+                }, 
+                "updateDate": {
+                    "date": "2017-09-10T13:10:12.760+0000"
+                }, 
+                "validationStatus": "Pending"
+            }, 
+            "type": "nucleic acid sequencing protocol", 
+            "id": "p3", 
+            "description": "Libraries were sequenced on an Illumina HiSeq 2000, generating 43 bp single-end reads."
+        }, 
+        {
+            "core": {
+                "uuid": {
+                    "uuid": "53740b7f-3f58-4964-ae49-f1190ff64845"
+                }, 
+                "accession": null, 
+                "submissionDate": {
+                    "date": "2017-09-10T13:10:12.768+0000"
+                }, 
+                "updateDate": {
+                    "date": "2017-09-10T13:10:12.768+0000"
+                }, 
+                "validationStatus": "Pending"
+            }, 
+            "type": "normalization data transformation protocol", 
+            "id": "p4", 
+            "description": "Expression values for RefSeq genes and values for ERCC transcripts were quantified as RPKMs using rpkmforgenes (Ramsk\u00f6ld et al., 2009). Format of the datafile \u2018pancreas_refseq_rpkms_counts_3514sc.txt\u2019: The file contains both the normalized rpkm values and the raw read counts for each sample. Columns correspond to samples and rows to genes. The first line of the file (starting with: #samples) contains the sample IDs to be used as column labels for both the rpkm and counts. The columns of the rpkm and the counts have the same order with the sample IDs. Columns 1:3514 correspond to rpkm values, Columns 3515:7028 correspond to read counts. Rows 1:26179 correspond to data for RefSeq genes, Rows 26180:26271 correspond to data for the 92 external RNA spike-in controls (ERCCs), Row 26272 (last) contains data for \u2018eGFP\u2019."
+        }
+    ]
+}

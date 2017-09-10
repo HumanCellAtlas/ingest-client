@@ -1,0 +1,76 @@
+{
+    "files": [
+        {
+            "core": {
+                "uuid": {
+                    "uuid": "be4cc756-5473-4761-a69d-96d722363e32"
+                }, 
+                "submissionDate": {
+                    "date": "2017-09-10T12:40:52.260+0000"
+                }, 
+                "fileName": "pbmc8k_S1_L007_R1_001.fastq.gz", 
+                "updateDate": {
+                    "date": "2017-09-10T12:40:52.260+0000"
+                }, 
+                "checksums": null, 
+                "cloudUrl": ""
+            }, 
+            "name": "pbmc8k_S1_L007_R1_001.fastq.gz", 
+            "format": ".fastq.gz"
+        }, 
+        {
+            "core": {
+                "uuid": {
+                    "uuid": "cf128104-1fcd-4503-a70a-1d47a40b73a7"
+                }, 
+                "submissionDate": {
+                    "date": "2017-09-10T12:40:52.271+0000"
+                }, 
+                "fileName": "pbmc8k_S1_L007_R2_001.fastq.gz", 
+                "updateDate": {
+                    "date": "2017-09-10T12:40:52.271+0000"
+                }, 
+                "checksums": null, 
+                "cloudUrl": ""
+            }, 
+            "name": "pbmc8k_S1_L007_R2_001.fastq.gz", 
+            "format": ".fastq.gz"
+        }, 
+        {
+            "core": {
+                "uuid": {
+                    "uuid": "8eb4f303-8c17-4eac-92c4-737012006734"
+                }, 
+                "submissionDate": {
+                    "date": "2017-09-10T12:40:52.283+0000"
+                }, 
+                "fileName": "pbmc8k_S1_L008_R1_001.fastq.gz", 
+                "updateDate": {
+                    "date": "2017-09-10T12:40:52.283+0000"
+                }, 
+                "checksums": null, 
+                "cloudUrl": ""
+            }, 
+            "name": "pbmc8k_S1_L008_R1_001.fastq.gz", 
+            "format": ".fastq.gz"
+        }, 
+        {
+            "core": {
+                "uuid": {
+                    "uuid": "e37742ef-5e64-4dea-b2c2-611c6a76a2ca"
+                }, 
+                "submissionDate": {
+                    "date": "2017-09-10T12:40:52.291+0000"
+                }, 
+                "fileName": "pbmc8k_S1_L008_R2_001.fastq.gz", 
+                "updateDate": {
+                    "date": "2017-09-10T12:40:52.291+0000"
+                }, 
+                "checksums": null, 
+                "cloudUrl": ""
+            }, 
+            "name": "pbmc8k_S1_L008_R2_001.fastq.gz", 
+            "format": ".fastq.gz"
+        }
+    ]
+}

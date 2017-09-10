@@ -1,0 +1,22 @@
+{
+    "files": [
+        {
+            "core": {
+                "uuid": {
+                    "uuid": "e9713839-2b49-4448-9c14-74b8676e5bda"
+                }, 
+                "submissionDate": {
+                    "date": "2017-09-10T13:10:13.247+0000"
+                }, 
+                "fileName": "ERR1630013.fastq.gz", 
+                "updateDate": {
+                    "date": "2017-09-10T13:10:13.247+0000"
+                }, 
+                "checksums": null, 
+                "cloudUrl": ""
+            }, 
+            "name": "ERR1630013.fastq.gz", 
+            "format": ".fastq.gz"
+        }
+    ]
+}

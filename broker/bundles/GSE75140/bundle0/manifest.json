@@ -1,0 +1,39 @@
+{
+    "files": [
+        {
+            "core": {
+                "uuid": {
+                    "uuid": "c601c9db-09b4-4bfe-a935-f209081ab778"
+                }, 
+                "submissionDate": {
+                    "date": "2017-09-10T12:25:47.330+0000"
+                }, 
+                "fileName": "SRR2967608_1.fastq.gz", 
+                "updateDate": {
+                    "date": "2017-09-10T12:25:47.330+0000"
+                }, 
+                "checksums": null, 
+                "cloudUrl": ""
+            }, 
+            "name": "SRR2967608_1.fastq.gz", 
+            "format": ".fastq.gz"
+        }, 
+        {
+            "core": {
+                "uuid": {
+                    "uuid": "0b120c12-4ccc-4ca4-b25b-a6704e1db19f"
+                }, 
+                "submissionDate": {
+                    "date": "2017-09-10T12:25:47.338+0000"
+                }, 
+                "fileName": "SRR2967608_2.fastq.gz", 
+                "updateDate": {
+                    "date": "2017-09-10T12:25:47.338+0000"
+                }, 
+                "checksums": null, 
+                "cloudUrl": ""
+            }, 
+            "name": "SRR2967608_2.fastq.gz"
+        }
+    ]
+}

@@ -1,0 +1,22 @@
+{
+    "files": [
+        {
+            "core": {
+                "uuid": {
+                    "uuid": "998b414b-ff0d-44ed-8595-9fd352490eef"
+                }, 
+                "submissionDate": {
+                    "date": "2017-09-10T13:10:13.260+0000"
+                }, 
+                "fileName": "ERR1630112.fastq.gz", 
+                "updateDate": {
+                    "date": "2017-09-10T13:10:13.260+0000"
+                }, 
+                "checksums": null, 
+                "cloudUrl": ""
+            }, 
+            "name": "ERR1630112.fastq.gz", 
+            "format": ".fastq.gz"
+        }
+    ]
+}
