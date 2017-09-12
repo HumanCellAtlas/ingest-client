@@ -15,7 +15,6 @@ import logging
 import json
 
 DEFAULT_RABBIT_URL=os.environ.get('RABBIT_URL', 'amqp://localhost:5672')
-DEFAULT_INGEST_URL=os.environ.get('INGEST_API', 'http://localhost:8080')
 DEFAULT_QUEUE_NAME=os.environ.get('SUBMISSION_QUEUE_NAME', 'ingest.envelope.submitted.queue')
 
 class IngestReceiver:
@@ -24,9 +23,6 @@ class IngestReceiver:
         formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
         logging.basicConfig(level=options.log, formatter=formatter)
         self.logger = logging.getLogger(__name__)
-
-        self.ingestUrl = options.ingest if options.ingest else DEFAULT_INGEST_URL
-        self.logger.debug("ingest url is "+self.ingestUrl )
 
         self.rabbit = options.rabbit if options.rabbit else os.path.expandvars(DEFAULT_RABBIT_URL)
         self.logger.debug("rabbit url is "+self.rabbit )
@@ -60,9 +56,6 @@ if __name__ == '__main__':
     parser = OptionParser()
     parser.add_option("-q", "--queue", help="name of the ingest queues to listen for submission")
     parser.add_option("-r", "--rabbit", help="the URL to the Rabbit MQ messaging server")
-    parser.add_option("-i", "--ingest", help="the URL to the ingest API")
-    parser.add_option("-s", "--staging", help="the URL to the staging API")
-    parser.add_option("-d", "--dss", help="the URL to the datastore service")
     parser.add_option("-l", "--log", help="the logging level", default='INFO')
 
     (options, args) = parser.parse_args()

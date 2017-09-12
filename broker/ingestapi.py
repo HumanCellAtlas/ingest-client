@@ -5,7 +5,7 @@ desc goes here
 __author__ = "jupp"
 __license__ = "Apache 2.0"
 
-import glob, json, os, urllib, requests, logging
+import glob, json, os, urllib, requests, logging, uuid
 
 class IngestApi:
     def __init__(self, url=None):
@@ -66,6 +66,9 @@ class IngestApi:
 
     def getAssays(self, submissionUrl):
         return self.getEntities(submissionUrl, "assays")
+
+    def getAnalyses(self, submissionUrl):
+        return self.getEntities(submissionUrl, "analyses")
 
     def getEntities(self, submissionUrl, entityType):
         r = requests.get(submissionUrl, headers=self.headers)
@@ -157,4 +160,18 @@ class IngestApi:
         if r.status_code != requests.codes.no_content:
             raise ValueError("Error creating relationship between entity: "+fromUri+" -> "+toUri)
         self.logger.debug("Asserted relationship between "+fromUri+" -> "+toUri)
+
+    def createBundleManifest(self, bundleManifest):
+        r = requests.post(self.ingest_api["bundleManifests"]["href"].rsplit("{")[0], data=json.dumps(bundleManifest),
+                          headers=self.headers)
+
+
+class BundleManifest:
+    def __init__(self):
+        self.bundleUuid = {"uuid" : unicode(uuid.uuid4())}
+        self.files = []
+        self.fileSampleMap = {}
+        self.fileAssayMap = {}
+        self.fileProjectMap = {}
+        self.fileProtocolMap = {}
 
