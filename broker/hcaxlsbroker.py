@@ -269,10 +269,7 @@ class SpreadsheetSubmission:
 
         self.logger.info("All done!")
         wb.close()
-
-        if not self.dryrun:
-            self.ingest_api.finishedForNow(submissionUrl)
-            return submissionUrl
+        return submissionUrl
 
 if __name__ == '__main__':
     parser = OptionParser()

@@ -58,9 +58,6 @@ class IngestApi:
             self.logger.info("Submission complete!")
             return r.text
 
-    def finishedForNow(self, submissionUrl):
-        self._updateStatusToPending(submissionUrl)
-
     def getSubmissionUri(self, submissionId):
         return self.ingest_api["submissionEnvelopes"]["href"].rsplit("{")[0]+ "/"+submissionId
 
