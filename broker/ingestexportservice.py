@@ -105,6 +105,6 @@ class IngestExporter:
 
 if __name__ == '__main__':
     ex = IngestExporter()
-    # ex.generateBundles("59b52e7882f53277fbd0fbc8")
+    ex.generateBundles("59b910f782f5320a2291d2f7")
 
 

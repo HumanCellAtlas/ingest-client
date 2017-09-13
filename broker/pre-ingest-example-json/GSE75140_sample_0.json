@@ -1,1 +1,28 @@
-{"ncbi_biosample": "SAMN04303778", "donor_id": "d1", "id": "SAMN04303778", "project_id": "GSE75140", "name": "12w fetal neocortex", "organ": {"ontology": "UBERON_0000955", "name": "brain"}, "title": "12 week post conception fetal neocortex", "body_part": {"ontology": "UBERON_0001950", "name": "neocortex"}, "well": {"name": "fetal1_A10_fetal_12wpc_c1"}, "supplementary_files": ["ftp://ftp-trace.ncbi.nlm.nih.gov/sra/sra-instant/reads/ByExp/sra/SRX/SRX145/SRX1457054"], "geo_sample": "GSM1957573", "protocol_ids": ["p1", "p2", "p3"]}
+{
+    "ncbi_biosample": "SAMN04303778", 
+    "donor_id": "d1", 
+    "id": "SAMN04303778", 
+    "project_id": "GSE75140", 
+    "name": "12w fetal neocortex", 
+    "organ": {
+        "ontology": "UBERON_0000955", 
+        "name": "brain"
+    }, 
+    "title": "12 week post conception fetal neocortex", 
+    "body_part": {
+        "ontology": "UBERON_0001950", 
+        "name": "neocortex"
+    }, 
+    "well": {
+        "name": "fetal1_A10_fetal_12wpc_c1"
+    }, 
+    "supplementary_files": [
+        "ftp://ftp-trace.ncbi.nlm.nih.gov/sra/sra-instant/reads/ByExp/sra/SRX/SRX145/SRX1457054"
+    ], 
+    "geo_sample": "GSM1957573", 
+    "protocol_ids": [
+        "p1", 
+        "p2", 
+        "p3"
+    ]
+}

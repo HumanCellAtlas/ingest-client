@@ -1,14 +1,14 @@
 {
     "core": {
         "uuid": {
-            "uuid": "04bb3aa9-7cdc-4747-a75a-8be05719de16"
+            "uuid": "2f624f80-2e0c-49b4-9d1c-5dc54ad701b0"
         }, 
         "accession": null, 
         "submissionDate": {
-            "date": "2017-09-10T12:25:47.178+0000"
+            "date": "2017-09-13T11:01:32.041+0000"
         }, 
         "updateDate": {
-            "date": "2017-09-10T12:25:47.178+0000"
+            "date": "2017-09-13T11:01:32.041+0000"
         }, 
         "validationStatus": "Pending"
     }, 

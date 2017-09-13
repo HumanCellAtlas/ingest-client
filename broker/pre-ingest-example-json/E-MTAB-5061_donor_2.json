@@ -1,1 +1,16 @@
-{"is_living": "no", "age": 43, "life_stage": "adult", "disease": ["normal"], "age_unit": "year", "sex": "male", "body_mass_index": 30.8, "species": {"text": "Homo sapiens", "ontology": 9606}, "id": "AZ"}
+{
+    "is_living": "no", 
+    "age": 43, 
+    "life_stage": "adult", 
+    "disease": [
+        "normal"
+    ], 
+    "age_unit": "year", 
+    "sex": "male", 
+    "body_mass_index": 30.8, 
+    "species": {
+        "text": "Homo sapiens", 
+        "ontology": 9606
+    }, 
+    "id": "AZ"
+}

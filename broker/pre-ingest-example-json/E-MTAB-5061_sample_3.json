@@ -1,1 +1,29 @@
-{"biosd_sample": "SAMEA4438020", "donor_id": "HP1504901", "id": "HP1504901_H1", "project_id": "E-MTAB-5061", "name": "pancreas islet normal", "organ": {"text": "pancreas", "ontology": "UBERON_0001264"}, "title": "Pancreatic islets from male donor, age 23, BMI 21.5, no diabetes", "body_part": {"text": "islet of Langerhans", "ontology": "UBERON_0000006"}, "well": {"quality": "low quality cell", "name": "HP1504901_H1"}, "supplementary_files": ["ftp://ftp.ebi.ac.uk/pub/databases/microarray/data/experiment/MTAB/E-MTAB-5061/E-MTAB-5061.processed.1.zip"], "protocol_ids": ["p1", "p2", "p3", "p4"]}
+{
+    "biosd_sample": "SAMEA4438020", 
+    "donor_id": "HP1504901", 
+    "id": "HP1504901_H1", 
+    "project_id": "E-MTAB-5061", 
+    "name": "pancreas islet normal", 
+    "organ": {
+        "text": "pancreas", 
+        "ontology": "UBERON_0001264"
+    }, 
+    "title": "Pancreatic islets from male donor, age 23, BMI 21.5, no diabetes", 
+    "body_part": {
+        "text": "islet of Langerhans", 
+        "ontology": "UBERON_0000006"
+    }, 
+    "well": {
+        "quality": "low quality cell", 
+        "name": "HP1504901_H1"
+    }, 
+    "supplementary_files": [
+        "ftp://ftp.ebi.ac.uk/pub/databases/microarray/data/experiment/MTAB/E-MTAB-5061/E-MTAB-5061.processed.1.zip"
+    ], 
+    "protocol_ids": [
+        "p1", 
+        "p2", 
+        "p3", 
+        "p4"
+    ]
+}

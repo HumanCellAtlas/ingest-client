@@ -3,14 +3,14 @@
         {
             "core": {
                 "uuid": {
-                    "uuid": "61535b3e-4cfd-4ef9-998c-a2bbed36da77"
+                    "uuid": "ac366a95-0d55-43e4-87cf-cfe14b1cb42d"
                 }, 
                 "submissionDate": {
-                    "date": "2017-09-10T13:10:13.267+0000"
+                    "date": "2017-09-13T11:05:28.538+0000"
                 }, 
                 "fileName": "ERR1631012.fastq.gz", 
                 "updateDate": {
-                    "date": "2017-09-10T13:10:13.267+0000"
+                    "date": "2017-09-13T11:05:28.538+0000"
                 }, 
                 "checksums": null, 
                 "cloudUrl": ""

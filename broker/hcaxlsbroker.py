@@ -46,15 +46,21 @@ class SpreadsheetSubmission:
         if "\"" in unicode(value) or "||" in unicode(value):
             d = map(lambda it: it.strip(' "\''), value.split("||"))
 
-        if len(key.split('.')) > 2:
-            raise ValueError('We don\'t support keys nested greater than 2 levels, found:'+key)
+        if len(key.split('.')) > 3:
+            raise ValueError('We don\'t support keys nested greater than 3 levels, found:'+key)
         for part in reversed(key.split('.')):
             d = {part: d}
 
+        return self._mergeDict(obj, d)
+
+    def _mergeDict(self, dict1, dict2):
         dict3 = defaultdict(list)
-        for k, v in chain(obj.items(), d.items()):
+        for k, v in chain(dict1.items(), dict2.items()):
             if k in dict3:
-                dict3[k].update(v)
+                if isinstance(v, dict):
+                    dict3[k].update(self._mergeDict(dict3[k], v))
+                else:
+                    dict3[k].update(v)
             else:
                 dict3[k] = v
         return dict3
@@ -65,11 +71,12 @@ class SpreadsheetSubmission:
             obj = {}
             hasData = False
             for cell in row:
-                if not cell.value:
+                if not cell.value and not isinstance(cell.value, (int, float, long)):
                     continue
                 hasData = True
                 cellCol = cell.col_idx
                 propertyValue = sheet.cell(row=1, column=cellCol).value
+
                 d = self._keyValueToNestedObject(obj, propertyValue, cell.value)
                 obj.update(d)
             if hasData:
@@ -107,7 +114,7 @@ class SpreadsheetSubmission:
             if not os.path.exists(dir):
                 os.makedirs(dir)
             tmpFile = open(dir + "/" + projectId+"_"+name + ".json", "w")
-            tmpFile.write(object)
+            tmpFile.write(json.dumps(object, indent=4))
             tmpFile.close()
 
     def _process(self, pathToSpreadsheet, submissionUrl):
@@ -147,7 +154,7 @@ class SpreadsheetSubmission:
         if not self.dryrun and not submissionUrl:
             submissionUrl = self.createSubmission()
 
-        self.dumpJsonToFile(json.dumps(project), projectId, "project")
+        self.dumpJsonToFile(project, projectId, "project")
 
         projectIngest = None
         if not self.dryrun:
@@ -165,7 +172,7 @@ class SpreadsheetSubmission:
 
         donorMap = {}
         for index, donor in enumerate(donors):
-            self.dumpJsonToFile(json.dumps(donor), projectId, "donor_" + str(index))
+            self.dumpJsonToFile(donor, projectId, "donor_" + str(index))
             if "id" not in donor:
                 raise ValueError('Donor must have an id attribute')
             donorMap[donor["id"]] = donor
@@ -178,7 +185,7 @@ class SpreadsheetSubmission:
         sampleMap = {}
         for index, sample in enumerate(samples):
             # sampleObj = MetadataDocument(sample)
-            self.dumpJsonToFile(json.dumps(sample), projectId, "sample_" + str(index))
+            self.dumpJsonToFile(sample, projectId, "sample_" + str(index))
             if "id" not in sample:
                 raise ValueError('Samples must have an id attribute')
             sampleMap[sample["id"]] = sample
@@ -204,7 +211,7 @@ class SpreadsheetSubmission:
         for index, file in enumerate(files):
             if "name" not in file:
                 raise ValueError('Files must have a name')
-            self.dumpJsonToFile(json.dumps({"fileName" : file["name"], "content" : file}), projectId, "files_" + str(index))
+            self.dumpJsonToFile({"fileName" : file["name"], "content" : file}, projectId, "files_" + str(index))
             filesMap[file["name"]] = file
             if not self.dryrun:
                 fileIngest = self.ingest_api.createFile(submissionUrl, file["name"], json.dumps(file))
@@ -221,7 +228,7 @@ class SpreadsheetSubmission:
 
         for index, assay in enumerate(assays):
             # assayObj = MetadataDocument(assay)
-            self.dumpJsonToFile(json.dumps(assay), projectId, "assay_" + str(index))
+            self.dumpJsonToFile(assay, projectId, "assay_" + str(index))
             if "id" not in assay:
                 raise ValueError('Each assays must have an id attribute')
             if "files" not in assay:
