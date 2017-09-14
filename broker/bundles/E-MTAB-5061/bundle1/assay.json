@@ -1,14 +1,14 @@
 {
     "core": {
         "uuid": {
-            "uuid": "2cc7799e-ff55-4aa0-a7bf-1e8865f89b85"
+            "uuid": "651bd4c9-1e8c-4766-87a6-d17604c9a6a0"
         }, 
         "accession": null, 
         "submissionDate": {
-            "date": "2017-09-10T13:10:13.325+0000"
+            "date": "2017-09-13T11:05:28.606+0000"
         }, 
         "updateDate": {
-            "date": "2017-09-10T13:10:13.325+0000"
+            "date": "2017-09-13T11:05:28.606+0000"
         }, 
         "validationStatus": "Pending"
     }, 
@@ -16,7 +16,7 @@
         "paired_ends": "no", 
         "lanes": [
             {
-                "reads": "ERR1630022.fastq.gz", 
+                "r1": "ERR1630022.fastq.gz", 
                 "number": 1
             }
         ], 

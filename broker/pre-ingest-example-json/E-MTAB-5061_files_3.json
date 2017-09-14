@@ -1,1 +1,7 @@
-{"content": {"name": "ERR1631012.fastq.gz", "format": ".fastq.gz"}, "fileName": "ERR1631012.fastq.gz"}
+{
+    "content": {
+        "name": "ERR1631012.fastq.gz", 
+        "format": ".fastq.gz"
+    }, 
+    "fileName": "ERR1631012.fastq.gz"
+}

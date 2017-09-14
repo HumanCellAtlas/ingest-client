@@ -58,9 +58,6 @@ class IngestApi:
             self.logger.info("Submission complete!")
             return r.text
 
-    def finishedForNow(self, submissionUrl):
-        self._updateStatusToPending(submissionUrl)
-
     def getSubmissionUri(self, submissionId):
         return self.ingest_api["submissionEnvelopes"]["href"].rsplit("{")[0]+ "/"+submissionId
 
@@ -149,6 +146,12 @@ class IngestApi:
             entityUrl = entity["_links"]["self"]["href"].rsplit("{")[0]
             return entityUrl
         raise ValueError('Can\'t get id for '+json.dumps(entity) +' is it a HCA entity?')
+
+    def getObjectUuid(self, entityUri):
+        r = requests.get(entityUri,
+                          headers=self.headers)
+        if r.status_code == requests.codes.ok:
+            return json.loads(r.text)["uuid"]["uuid"]
 
     def linkEntity(self,fromEntity, toEntity, relationship):
 

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>HCA demo</title>
-<meta http-equiv="refresh" content="20" />
+<!--<meta http-equiv="refresh" content="20" />-->
     <!-- Latest compiled and minified CSS -->
 <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
 
@@ -94,7 +94,7 @@
             <a href="{{sub['_links']['self']['href'] }}">{{sub["_links"]["self"]["href"] }}</a>
         </td>
         <td>
-            {{ sub["submissionStatus"]}}
+            {{ sub["submissionState"]}}
         </td>
         <td>
             {{ sub["submissionDate"]["date"]}}
@@ -103,10 +103,24 @@
             {{sub["updateDate"]["date"] }}
         </td>
         <td>
+            <form action="staging/create" method="POST">
+                <input type="hidden" name="submissionUrl" value="{{sub['_links']['self']['href'] }}"/>
+                <button class="btn btn-warning" onclick="return confirm('Are you sure you want to create a new staging area?');">Create Staging Area</button>
+            </form>
+
+            <form action="staging/delete" method="POST">
+                <input type="hidden" name="submissionUrl" value="{{sub['_links']['self']['href'] }}"/>
+                <button class="btn btn-danger" onclick="return confirm('Are you sure you want to delete the staging area?');">Delete Staging Area</button>
+            </form>
+
+            {%  if sub['_links']['submit'] is defined %}
             <form action="submit" method="POST">
                 <input type="hidden" name="submissionUrl" value="{{sub['_links']['submit']['href'] }}"/>
-                <button class="btn btn-primary" onclick="return confirm('Are all data files uploaded to the staging area?');">Complete submission</button>
+                <button class="btn btn-success" onclick="return confirm('Are all data files uploaded to the staging area?');">Complete submission</button>
             </form>
+            {% else %}
+                <button class="btn btn-success disabled">Complete submission</button>
+            {% endif %}
         </td>
 
     </tr>

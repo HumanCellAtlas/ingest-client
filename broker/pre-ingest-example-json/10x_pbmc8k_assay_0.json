@@ -1,1 +1,37 @@
-{"files": ["pbmc8k_S1_L007_R1_001.fastq.gz", "pbmc8k_S1_L007_R2_001.fastq.gz", "pbmc8k_S1_L008_R1_001.fastq.gz", "pbmc8k_S1_L008_R2_001.fastq.gz"], "seq": {"machine": "Illumina HiSeq 4000", "umi_barcode_offset": 16, "paired_ends": "index1_reads2", "lanes": ["7", "8"], "umi_barcode_size": 10, "molecule": "RNA", "umi_barcode_read": "index"}, "rna": {"end_bias": "three_prime_end", "primer": "poly-dt", "library_construction": "10xV2"}, "single_cell": {"cell_barcode_read": "index", "method": "10x_v2", "cell_barcode_size": 16}, "sample_id": "s1", "id": "a1"}
+{
+    "files": [
+        "pbmc8k_S1_L007_R1_001.fastq.gz", 
+        "pbmc8k_S1_L007_R2_001.fastq.gz", 
+        "pbmc8k_S1_L008_R1_001.fastq.gz", 
+        "pbmc8k_S1_L008_R2_001.fastq.gz"
+    ], 
+    "seq": {
+        "machine": "Illumina HiSeq 4000", 
+        "umi_barcode": {
+            "read": "index", 
+            "size": 10, 
+            "offset": 16
+        }, 
+        "paired_ends": "index1_reads2", 
+        "lanes": [
+            "7", 
+            "8"
+        ], 
+        "molecule": "RNA"
+    }, 
+    "rna": {
+        "end_bias": "three_prime_end", 
+        "primer": "poly-dt", 
+        "library_construction": "10x_v2"
+    }, 
+    "single_cell": {
+        "barcode": {
+            "read": "index", 
+            "size": 16, 
+            "offset": 0
+        }, 
+        "cell_handling": "10x_v2"
+    }, 
+    "sample_id": "s1", 
+    "id": "a1"
+}

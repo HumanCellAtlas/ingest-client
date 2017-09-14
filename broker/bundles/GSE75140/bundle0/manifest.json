@@ -3,14 +3,14 @@
         {
             "core": {
                 "uuid": {
-                    "uuid": "c601c9db-09b4-4bfe-a935-f209081ab778"
+                    "uuid": "72061c42-d3e1-49b5-9a40-d602a29ad0ca"
                 }, 
                 "submissionDate": {
-                    "date": "2017-09-10T12:25:47.330+0000"
+                    "date": "2017-09-13T11:01:32.275+0000"
                 }, 
                 "fileName": "SRR2967608_1.fastq.gz", 
                 "updateDate": {
-                    "date": "2017-09-10T12:25:47.330+0000"
+                    "date": "2017-09-13T11:01:32.275+0000"
                 }, 
                 "checksums": null, 
                 "cloudUrl": ""
@@ -21,14 +21,14 @@
         {
             "core": {
                 "uuid": {
-                    "uuid": "0b120c12-4ccc-4ca4-b25b-a6704e1db19f"
+                    "uuid": "d0707a3e-190d-436c-bae9-c3c88e9b4a5b"
                 }, 
                 "submissionDate": {
-                    "date": "2017-09-10T12:25:47.338+0000"
+                    "date": "2017-09-13T11:01:32.286+0000"
                 }, 
                 "fileName": "SRR2967608_2.fastq.gz", 
                 "updateDate": {
-                    "date": "2017-09-10T12:25:47.338+0000"
+                    "date": "2017-09-13T11:01:32.286+0000"
                 }, 
                 "checksums": null, 
                 "cloudUrl": ""

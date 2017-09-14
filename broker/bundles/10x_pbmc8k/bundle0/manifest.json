@@ -3,14 +3,14 @@
         {
             "core": {
                 "uuid": {
-                    "uuid": "be4cc756-5473-4761-a69d-96d722363e32"
+                    "uuid": "5f473afc-d635-4384-bf8d-20794f94c6aa"
                 }, 
                 "submissionDate": {
-                    "date": "2017-09-10T12:40:52.260+0000"
+                    "date": "2017-09-13T11:00:23.049+0000"
                 }, 
                 "fileName": "pbmc8k_S1_L007_R1_001.fastq.gz", 
                 "updateDate": {
-                    "date": "2017-09-10T12:40:52.260+0000"
+                    "date": "2017-09-13T11:00:23.049+0000"
                 }, 
                 "checksums": null, 
                 "cloudUrl": ""
@@ -21,14 +21,14 @@
         {
             "core": {
                 "uuid": {
-                    "uuid": "cf128104-1fcd-4503-a70a-1d47a40b73a7"
+                    "uuid": "fd3c8d7a-1e89-494c-aae3-f0acd2ba1d76"
                 }, 
                 "submissionDate": {
-                    "date": "2017-09-10T12:40:52.271+0000"
+                    "date": "2017-09-13T11:00:23.066+0000"
                 }, 
                 "fileName": "pbmc8k_S1_L007_R2_001.fastq.gz", 
                 "updateDate": {
-                    "date": "2017-09-10T12:40:52.271+0000"
+                    "date": "2017-09-13T11:00:23.066+0000"
                 }, 
                 "checksums": null, 
                 "cloudUrl": ""
@@ -39,14 +39,14 @@
         {
             "core": {
                 "uuid": {
-                    "uuid": "8eb4f303-8c17-4eac-92c4-737012006734"
+                    "uuid": "a4d08499-16e4-4bda-9c8c-26e323c88c9c"
                 }, 
                 "submissionDate": {
-                    "date": "2017-09-10T12:40:52.283+0000"
+                    "date": "2017-09-13T11:00:23.081+0000"
                 }, 
                 "fileName": "pbmc8k_S1_L008_R1_001.fastq.gz", 
                 "updateDate": {
-                    "date": "2017-09-10T12:40:52.283+0000"
+                    "date": "2017-09-13T11:00:23.081+0000"
                 }, 
                 "checksums": null, 
                 "cloudUrl": ""
@@ -57,14 +57,14 @@
         {
             "core": {
                 "uuid": {
-                    "uuid": "e37742ef-5e64-4dea-b2c2-611c6a76a2ca"
+                    "uuid": "4148c255-7848-4b7a-aab0-8ac162bc7986"
                 }, 
                 "submissionDate": {
-                    "date": "2017-09-10T12:40:52.291+0000"
+                    "date": "2017-09-13T11:00:23.092+0000"
                 }, 
                 "fileName": "pbmc8k_S1_L008_R2_001.fastq.gz", 
                 "updateDate": {
-                    "date": "2017-09-10T12:40:52.291+0000"
+                    "date": "2017-09-13T11:00:23.092+0000"
                 }, 
                 "checksums": null, 
                 "cloudUrl": ""

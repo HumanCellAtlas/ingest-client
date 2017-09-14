@@ -3,14 +3,14 @@
         {
             "core": {
                 "uuid": {
-                    "uuid": "998b414b-ff0d-44ed-8595-9fd352490eef"
+                    "uuid": "66bc0848-1dfe-46c6-9526-fb611354386a"
                 }, 
                 "submissionDate": {
-                    "date": "2017-09-10T13:10:13.260+0000"
+                    "date": "2017-09-13T11:05:28.531+0000"
                 }, 
                 "fileName": "ERR1630112.fastq.gz", 
                 "updateDate": {
-                    "date": "2017-09-10T13:10:13.260+0000"
+                    "date": "2017-09-13T11:05:28.531+0000"
                 }, 
                 "checksums": null, 
                 "cloudUrl": ""

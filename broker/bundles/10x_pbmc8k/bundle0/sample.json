@@ -1,14 +1,14 @@
 {
     "core": {
         "uuid": {
-            "uuid": "ade24757-284b-487f-af5e-aefc41c8b47d"
+            "uuid": "36c61ba4-2afa-4b86-9eb5-7719ee8a5cf5"
         }, 
         "accession": null, 
         "submissionDate": {
-            "date": "2017-09-10T12:40:52.222+0000"
+            "date": "2017-09-13T11:00:22.959+0000"
         }, 
         "updateDate": {
-            "date": "2017-09-10T12:40:52.222+0000"
+            "date": "2017-09-13T11:00:22.959+0000"
         }, 
         "validationStatus": "Pending"
     }, 
@@ -27,14 +27,14 @@
         "ncbi_taxon": 9606, 
         "core": {
             "uuid": {
-                "uuid": "bf6990c4-b5e0-4ac8-ad6c-98be3e9629b4"
+                "uuid": "eb044355-48f0-44fe-9692-959749860616"
             }, 
             "accession": null, 
             "submissionDate": {
-                "date": "2017-09-10T12:40:52.200+0000"
+                "date": "2017-09-13T11:00:22.892+0000"
             }, 
             "updateDate": {
-                "date": "2017-09-10T12:40:52.200+0000"
+                "date": "2017-09-13T11:00:22.892+0000"
             }, 
             "validationStatus": "Pending"
         }, 

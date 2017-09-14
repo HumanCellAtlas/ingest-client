@@ -8,6 +8,7 @@ __license__ = "Apache 2.0"
 from flask import Flask, Markup, flash, request, render_template, redirect, url_for
 from broker.hcaxlsbroker import SpreadsheetSubmission
 from broker.ingestapi import IngestApi
+from broker.stagingapi import StagingApi
 from werkzeug.utils import secure_filename
 import os, sys
 import tempfile
@@ -68,7 +69,34 @@ def submit_envelope():
 
     return  redirect(url_for('index'))
 
+@app.route('/staging/create', methods=['POST'])
+def create_staging():
+    subUrl = request.form.get("submissionUrl")
+    submissionId = subUrl.rsplit('/', 1)[-1]
+    if submissionId:
+        ingestApi = IngestApi()
+        uuid = ingestApi.getObjectUuid(subUrl)
+        stagingApi = StagingApi()
+        text = stagingApi.createStagingArea(uuid)
+        message = Markup("Staging area created at <a href='" + text + "'>" + text + "</a>")
+        flash(message, "alert-success")
+    return  redirect(url_for('index'))
+
+@app.route('/staging/delete', methods=['POST'])
+def delete_staging():
+    subUrl = request.form.get("submissionUrl")
+    submissionId = subUrl.rsplit('/', 1)[-1]
+    if submissionId:
+        ingestApi = IngestApi()
+        uuid = ingestApi.getObjectUuid(subUrl)
+        stagingApi = StagingApi()
+        text = stagingApi.deleteStagingArea(uuid)
+        message = Markup("Staging area deleted for <a href='" + text + "'>" + text + "</a>")
+        flash(message, "alert-success")
+    return  redirect(url_for('index'))
+
 if __name__ == '__main__':
     logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 
-    app.run(host='0.0.0.0')
+    app.run(host='0.0.0.0', port=5001)
+

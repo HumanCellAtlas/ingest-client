@@ -1,1 +1,32 @@
-{"files": ["ERR1630112.fastq.gz"], "seq": {"ena_run": "ERR1630112", "lanes": ["l3"], "ena_experiment": "ERX1700445", "instrument_platform": "Illumina", "molecule": "RNA", "paired_ends": "no", "instrument_model": "Illumina HiSeq 2000"}, "rna": {"spike_in_dilution": 40000, "spike_in": "ERCC", "end_bias": "full_transcript", "primer": "random", "strand": "both", "library_construction": "smart-seq2"}, "single_cell": {"cell_handling": "FACS"}, "submitted_file_names": ["HP1502401_A12.fastq.gz"], "sample_id": "HP1502401_A12", "id": "ERR1630112"}
+{
+    "files": [
+        "ERR1630112.fastq.gz"
+    ], 
+    "seq": {
+        "paired_ends": "no", 
+        "lanes": [
+            "l3"
+        ], 
+        "ena_experiment": "ERX1700445", 
+        "instrument_platform": "Illumina", 
+        "molecule": "RNA", 
+        "instrument_model": "Illumina HiSeq 2000", 
+        "ena_run": "ERR1630112"
+    }, 
+    "rna": {
+        "spike_in_dilution": 40000, 
+        "spike_in": "ERCC", 
+        "end_bias": "full_transcript", 
+        "primer": "random", 
+        "strand": "both", 
+        "library_construction": "smart-seq2"
+    }, 
+    "single_cell": {
+        "cell_handling": "FACS"
+    }, 
+    "submitted_file_names": [
+        "HP1502401_A12.fastq.gz"
+    ], 
+    "sample_id": "HP1502401_A12", 
+    "id": "ERR1630112"
+}
