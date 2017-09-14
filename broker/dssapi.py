@@ -62,4 +62,4 @@ class DssApi:
         bundleUrl = self.url +"/v1/bundles/"+bundleUuid
         r = requests.put(bundleUrl, data=json.dumps(bundleFile), params={"replica":"aws"}, headers=self.headers)
         if r.status_code == requests.codes.ok or r.status_code == requests.codes.created or r.status_code == requests.codes.accepted:
-            print "bundle stored to dss!"
+            print "bundle stored to dss! "+ bundleUuid

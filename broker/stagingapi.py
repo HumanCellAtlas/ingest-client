@@ -37,7 +37,7 @@ class StagingApi:
         self.apikey = apikey if apikey else "zero-pupil-until-funny"
 
 
-        self.header = {'Api-Key': self.apikey}
+        self.header = {'Api-Key': self.apikey, 'Content-type': 'application/json'}
 
     def createStagingArea(self,submissionId):
         base = urlparse.urljoin( self.url, self.apiversion+'/area/'+submissionId)

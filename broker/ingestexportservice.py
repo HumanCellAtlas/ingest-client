@@ -78,8 +78,8 @@ class IngestExporter:
             analyses = self.ingest_api.getAnalyses(submissionUrl)
             self.logger.info("Exporting analysis submission to DSS...")
             self.secondarySubmission(submissionUuid,analyses )
-
-        self.logger.error("Can\'t do export as no staging area has been created")
+        else:
+            self.logger.error("Can\'t do export as no staging area has been created")
 
     def secondarySubmission(self, submissionUrl, analyses):
         pass
@@ -158,8 +158,8 @@ class IngestExporter:
                 fileName = file["fileName"]
                 cloudUrl = file["cloudUrl"]
                 fileToBundleData[fileUuid] = {"name":fileName, "submittedName":fileName, "url":cloudUrl, "dss_uuid": fileUuid}
-                # submittedFiles.append(fileToBundleData[fileUuid])
-                # bundleManifest.files.append(fileUuid)
+                submittedFiles.append(fileToBundleData[fileUuid])
+                bundleManifest.files.append(fileUuid)
 
             assayUuid = assay["uuid"]["uuid"]
             assaysBundle = self.getBundleDocument(assay)
@@ -232,6 +232,6 @@ if __name__ == '__main__':
     (options, args) = parser.parse_args()
 
     ex = IngestExporter(options)
-    # ex.generateBundles("59ba8c4f82f532c51be64c26")
+    ex.generateBundles("59ba8c4f82f532c51be64c26")
 
 
