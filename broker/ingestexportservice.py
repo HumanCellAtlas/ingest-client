@@ -66,25 +66,25 @@ class IngestExporter:
         self.ingest_api = ingestapi.IngestApi(self.ingestUrl)
 
         submissionUrl = self.ingest_api.getSubmissionUri(submissionId=submissionEnvelopeId)
+        submissionUuid = self.ingest_api.getObjectUuid(submissionUrl)
 
         # check staging area is available
-        if self.staging_api.hasStagingArea(submissionEnvelopeId):
+        if self.staging_api.hasStagingArea(submissionUuid):
             assays = self.ingest_api.getAssays(submissionUrl)
-            if len(assays) > 0:
-                self.logger.info("Exporting primary submission to DSS...")
-                self.primarySubmission(submissionEnvelopeId,assays )
+
+            self.logger.info("Exporting primary submission to DSS...")
+            self.primarySubmission(submissionUuid,assays )
 
             analyses = self.ingest_api.getAnalyses(submissionUrl)
-            if len(analyses) > 0:
-                self.logger.info("Exporting analysis submission to DSS...")
-                self.secondarySubmission(submissionEnvelopeId,analyses )
+            self.logger.info("Exporting analysis submission to DSS...")
+            self.secondarySubmission(submissionUuid,analyses )
 
         self.logger.error("Can\'t do export as no staging area has been created")
 
     def secondarySubmission(self, submissionUrl, analyses):
         pass
 
-    def primarySubmission(self, submissionEnvelopeId, assays):
+    def primarySubmission(self, submissionEnvelopeUuid, assays):
 
         # we only want to upload one version of each file so must track through each bundle files that are the same e.g. project and possibly protocols or samples
 
@@ -106,7 +106,7 @@ class IngestExporter:
             bundleManifest = ingestapi.BundleManifest()
 
             projectEntities = list(self.ingest_api.getRelatedEntities("projects", assay, "projects"))
-            if len(projectEntities) > 1:
+            if len(projectEntities) != 1:
                 raise ValueError("Can only be one project in bundle")
 
             project = projectEntities[0]
@@ -119,8 +119,8 @@ class IngestExporter:
             if projectUuid not in projectUuidToBundleData:
                 projectDssUuid = unicode(uuid.uuid4())
                 projectFileName = "project_"+str(index)+".json"
-                fileDescription = self.writeMetadataToStaging(submissionEnvelopeId, projectFileName, projectBundle, "hca-project")
-                projectUuidToBundleData[projectUuid] = {"name":projectFileName,"submittedName":"project.json", "url":fileDescription["url"], "dss_uuid": projectDssUuid}
+                fileDescription = self.writeMetadataToStaging(submissionEnvelopeUuid, projectFileName, projectBundle, "hca-project")
+                projectUuidToBundleData[projectUuid] = {"name":projectFileName,"submittedName":"project.json", "url":fileDescription.url, "dss_uuid": projectDssUuid}
 
                 bundleManifest.fileProjectMap = {projectDssUuid: [projectUuid]}
             else:
@@ -144,8 +144,8 @@ class IngestExporter:
             if sampleUuid not in sampleUuidToBundleData:
                 sampleDssUuid = unicode(uuid.uuid4())
                 sampleFileName = "sample_"+str(index)+".json"
-                fileDescription = self.writeMetadataToStaging(submissionEnvelopeId, sampleFileName, sampleBundle, "hca-sample")
-                sampleUuidToBundleData[sampleUuid] = {"name":sampleFileName, "submittedName":"sample.json", "url":fileDescription["url"], "dss_uuid": sampleDssUuid}
+                fileDescription = self.writeMetadataToStaging(submissionEnvelopeUuid, sampleFileName, sampleBundle, "hca-sample")
+                sampleUuidToBundleData[sampleUuid] = {"name":sampleFileName, "submittedName":"sample.json", "url":fileDescription.url, "dss_uuid": sampleDssUuid}
                 bundleManifest.fileSampleMap = {sampleDssUuid: sampleRelatedUuids}
             else:
                 bundleManifest.fileSampleMap = {sampleUuidToBundleData[sampleUuid]["dss_uuid"]: sampleRelatedUuids}
@@ -158,17 +158,17 @@ class IngestExporter:
                 fileName = file["fileName"]
                 cloudUrl = file["cloudUrl"]
                 fileToBundleData[fileUuid] = {"name":fileName, "submittedName":fileName, "url":cloudUrl, "dss_uuid": fileUuid}
-                submittedFiles.append(fileToBundleData[fileUuid])
-                bundleManifest.files.append(fileUuid)
+                # submittedFiles.append(fileToBundleData[fileUuid])
+                # bundleManifest.files.append(fileUuid)
 
             assayUuid = assay["uuid"]["uuid"]
             assaysBundle = self.getBundleDocument(assay)
             assayDssUuid = unicode(uuid.uuid4())
             assayFileName = "assay_" + str(index) + ".json"
 
-            fileDescription = self.writeMetadataToStaging(submissionEnvelopeId, assayFileName, assaysBundle, "hca-assay")
+            fileDescription = self.writeMetadataToStaging(submissionEnvelopeUuid, assayFileName, assaysBundle, "hca-assay")
             bundleManifest.fileAssayMap = {assayDssUuid: [assayUuid]}
-            submittedFiles.append({"name":assayFileName, "submittedName":"assay.json", "url":fileDescription["url"], "dss_uuid": assayDssUuid})
+            submittedFiles.append({"name":assayFileName, "submittedName":"assay.json", "url":fileDescription.url, "dss_uuid": assayDssUuid})
 
             self.logger.info("All files staged...")
 
@@ -179,20 +179,18 @@ class IngestExporter:
 
             # write to DSS
 
-            self.dss_api.createBundle(bundleManifest["uuid"],submittedFiles)
+            self.dss_api.createBundle(bundleManifest.uuid["uuid"], submittedFiles)
 
             # write bundle manifest to ingest API
 
-            self.ingest_api.createBundleManifest(bundleManifest)
+            # self.ingest_api.createBundleManifest(bundleManifest)
             print "bundles generated!"
 
     def writeMetadataToStaging(self, submissionId, fileName, content, contentType):
         print "writing to staging area..."
-        return ""
-
-        # fileDescription = self.staging_api.stageFile(submissionId, fileName, content, contentType)
-        # print "File staged at " + fileDescription["url"]
-        # return fileDescription
+        fileDescription = self.staging_api.stageFile(submissionId, fileName, content, contentType)
+        print "File staged at " + fileDescription.url
+        return fileDescription
 
 
 
@@ -234,6 +232,6 @@ if __name__ == '__main__':
     (options, args) = parser.parse_args()
 
     ex = IngestExporter(options)
-    ex.generateBundles("59b702bd82f532b6a22fd1cf")
+    # ex.generateBundles("59ba8c4f82f532c51be64c26")
 
 

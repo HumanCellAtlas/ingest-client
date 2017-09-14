@@ -166,12 +166,12 @@ class IngestApi:
 
     def createBundleManifest(self, bundleManifest):
         r = requests.post(self.ingest_api["bundleManifests"]["href"].rsplit("{")[0], data=json.dumps(bundleManifest),
-                          headers=self.headers)
+                           headers=self.headers)
 
 
 class BundleManifest:
     def __init__(self):
-        self.bundleUuid = {"uuid" : unicode(uuid.uuid4())}
+        self.uuid = {"uuid" : unicode(uuid.uuid4())}
         self.files = []
         self.fileSampleMap = {}
         self.fileAssayMap = {}

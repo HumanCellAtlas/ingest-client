@@ -65,7 +65,7 @@ class StagingApi:
 
     def stageFile(self,submissionId, filename, body, type):
 
-        fileUrl= self.url+"/area/"+submissionId+"/"+filename
+        fileUrl = urlparse.urljoin( self.url, self.apiversion+'/area/'+submissionId+"/"+filename)
 
         r = requests.put(fileUrl,  data=json.dumps(body), headers=self.header)
         if r.status_code == requests.codes.ok or requests.codes.created:
@@ -74,8 +74,9 @@ class StagingApi:
         raise ValueError('Can\'t create staging area for sub id:' +submissionId)
 
     def hasStagingArea(self, submissionId):
-        fileUrl = self.url + "/area/" + submissionId
-        r = requests.get(fileUrl, headers=self.header)
+        base = urlparse.urljoin( self.url, self.apiversion+'/area/'+submissionId)
+
+        r = requests.get(base, headers=self.header)
         return r.status_code == requests.codes.ok
 
 

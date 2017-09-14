@@ -28,28 +28,30 @@ class DssApi:
             self.url = os.path.expandvars(url)
             self.logger.info("using " +url+ " for dss API")
 
+        self.headers = {'Content-type': 'application/json'}
+
     def createBundle(self,bundleUuid, submittedFiles):
 
-        bundleFile = {"files" : []}
+        bundleFile = {"creator_uid": 8008, "files" : []}
         for file in submittedFiles:
             submittedName = file["submittedName"]
             url = file["url"]
             uuid = file["dss_uuid"]
 
             requestBody = {
-                          "bundle_uuid": uuid,
+                          "bundle_uuid": bundleUuid,
                           "creator_uid": 8008,
                           "source_url": url
                         }
-            fileUrl = self.url +"/files/"+uuid
-            r = requests.put(fileUrl, data=json.dumps(requestBody))
-            if r.status_code == requests.codes.ok or requests.codes.created or requests.codes.accepted :
+            fileUrl = self.url +"/v1/files/"+uuid
+            r = requests.put(fileUrl, data=json.dumps(requestBody), headers=self.headers)
+            if r.status_code == requests.codes.ok or r.status_code ==  requests.codes.created or r.status_code ==  requests.codes.accepted :
                 self.logger.debug("Bundle file submited "+url)
                 version = json.loads(r.text)["version"]
                 fileObject = {
-                    "indexed": "true",
+                    "indexed": True,
                     "name": submittedName,
-                    "uuid": bundleUuid,
+                    "uuid": uuid,
                     "version": version
                 }
                 bundleFile["files"].append(fileObject)
@@ -57,5 +59,7 @@ class DssApi:
                 raise ValueError('Can\'t create bundle file :' +url)
 
         # finally create the bundle
-        bundleUrl = self.url +"/bundles/"+bundleUuid
-        r = requests.put(bundleUrl, data=json.dumps(bundleFile))
+        bundleUrl = self.url +"/v1/bundles/"+bundleUuid
+        r = requests.put(bundleUrl, data=json.dumps(bundleFile), params={"replica":"aws"}, headers=self.headers)
+        if r.status_code == requests.codes.ok or r.status_code == requests.codes.created or r.status_code == requests.codes.accepted:
+            print "bundle stored to dss!"
