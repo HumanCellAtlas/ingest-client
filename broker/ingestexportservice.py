@@ -179,11 +179,11 @@ class IngestExporter:
 
             # write to DSS
 
-            self.dss_api.createBundle(bundleManifest.uuid["uuid"], submittedFiles)
+            self.dss_api.createBundle(bundleManifest.bundleUuid, submittedFiles)
 
             # write bundle manifest to ingest API
 
-            # self.ingest_api.createBundleManifest(bundleManifest)
+            self.ingest_api.createBundleManifest(bundleManifest)
             print "bundles generated!"
 
     def writeMetadataToStaging(self, submissionId, fileName, content, contentType):

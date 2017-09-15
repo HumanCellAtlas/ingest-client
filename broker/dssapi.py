@@ -38,6 +38,9 @@ class DssApi:
             url = file["url"]
             uuid = file["dss_uuid"]
 
+            if not url:
+                self.logger.warn("can't create bundle for "+submittedName+" as no cloud URL is provided")
+                continue
             requestBody = {
                           "bundle_uuid": bundleUuid,
                           "creator_uid": 8008,

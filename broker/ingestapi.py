@@ -165,13 +165,13 @@ class IngestApi:
         self.logger.debug("Asserted relationship between "+fromUri+" -> "+toUri)
 
     def createBundleManifest(self, bundleManifest):
-        r = requests.post(self.ingest_api["bundleManifests"]["href"].rsplit("{")[0], data=json.dumps(bundleManifest),
+        r = requests.post(self.ingest_api["bundleManifests"]["href"].rsplit("{")[0], data=json.dumps(bundleManifest.__dict__),
                            headers=self.headers)
 
 
 class BundleManifest:
     def __init__(self):
-        self.uuid = {"uuid" : unicode(uuid.uuid4())}
+        self.bundleUuid = unicode(uuid.uuid4())
         self.files = []
         self.fileSampleMap = {}
         self.fileAssayMap = {}
