@@ -168,8 +168,21 @@ class IngestApi:
         r = requests.post(self.ingest_api["bundleManifests"]["href"].rsplit("{")[0], data=json.dumps(bundleManifest.__dict__),
                            headers=self.headers)
 
-    def updateSubmissionWithStagingCredentials(self, subUrl, submissionCredentials):
-        pass
+    def updateSubmissionWithStagingCredentials(self, subUrl, uuid, submissionCredentials):
+        stagingDetails = \
+                {
+                     "stagingDetails": {
+                        "stagingAreaUuid": {
+                            "uuid" : uuid
+                        },
+                        "stagingAreaLocation": {
+                            "value": submissionCredentials
+                        }
+                    }
+                }
+
+        r = requests.patch(subUrl, data=json.dumps(stagingDetails))
+        self.logger.debug("envelope updated with staging details "+ json.dumps(stagingDetails) )
 
 
 class BundleManifest:
