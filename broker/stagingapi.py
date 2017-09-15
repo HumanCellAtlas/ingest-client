@@ -46,7 +46,7 @@ class StagingApi:
             print "Waiting 10 seconds for IAM policy to take effect...",
             sleep(10)
             print "staging area created!:" + base
-            return base
+            return json.loads(r.text)
 
         raise ValueError('Can\'t create staging area for sub id:' +submissionId + ', Error:' +r.text)
 
