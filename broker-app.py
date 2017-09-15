@@ -69,19 +69,6 @@ def submit_envelope():
 
     return  redirect(url_for('index'))
 
-@app.route('/staging/create', methods=['POST'])
-def create_staging():
-    subUrl = request.form.get("submissionUrl")
-    submissionId = subUrl.rsplit('/', 1)[-1]
-    if submissionId:
-        ingestApi = IngestApi()
-        uuid = ingestApi.getObjectUuid(subUrl)
-        stagingApi = StagingApi()
-        text = stagingApi.createStagingArea(uuid)
-        message = Markup("Staging area created at <a href='" + text + "'>" + text + "</a>")
-        flash(message, "alert-success")
-    return  redirect(url_for('index'))
-
 @app.route('/staging/delete', methods=['POST'])
 def delete_staging():
     subUrl = request.form.get("submissionUrl")

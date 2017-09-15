@@ -82,6 +82,7 @@
                     <th>Status</th>
                     <th>Created</th>
                     <th>Updated</th>
+                    <th>Staging URN</th>
                     <th>Complete</th>
                 </tr>
             </thead>
@@ -103,15 +104,12 @@
             {{sub["updateDate"]["date"] }}
         </td>
         <td>
-            <form action="staging/create" method="POST">
-                <input type="hidden" name="submissionUrl" value="{{sub['_links']['self']['href'] }}"/>
-                <button class="btn btn-warning" onclick="return confirm('Are you sure you want to create a new staging area?');">Create Staging Area</button>
-            </form>
+            {% if sub['stagingDetails'] is defined %}
+            <button onclick="return confirm(this.value);" value="{{sub['stagingDetails']['stagingAreaLocation']['value'] }}" class="btn btn-primary">Get staging credentials</button>
+            {% endif %}
+        </td>
+        <td>
 
-            <form action="staging/delete" method="POST">
-                <input type="hidden" name="submissionUrl" value="{{sub['_links']['self']['href'] }}"/>
-                <button class="btn btn-danger" onclick="return confirm('Are you sure you want to delete the staging area?');">Delete Staging Area</button>
-            </form>
 
             {%  if sub['_links']['submit'] is defined %}
             <form action="submit" method="POST">
@@ -121,6 +119,10 @@
             {% else %}
                 <button class="btn btn-success disabled">Complete submission</button>
             {% endif %}
+            <form action="staging/delete" method="POST">
+                <input type="hidden" name="submissionUrl" value="{{sub['_links']['self']['href'] }}"/>
+                <button class="btn btn-danger" onclick="return confirm('Are you sure you want to delete the staging area?');">Delete Staging Area</button>
+            </form>
         </td>
 
     </tr>
