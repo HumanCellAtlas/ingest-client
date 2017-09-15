@@ -184,12 +184,12 @@ class IngestExporter:
             # write bundle manifest to ingest API
 
             self.ingest_api.createBundleManifest(bundleManifest)
-            print "bundles generated!"
+            self.logger.info("bundles generated! "+bundleManifest.bundleUuid)
 
     def writeMetadataToStaging(self, submissionId, fileName, content, contentType):
-        print "writing to staging area..."
+        self.logger.info("writing to staging area..." + fileName)
         fileDescription = self.staging_api.stageFile(submissionId, fileName, content, contentType)
-        print "File staged at " + fileDescription.url
+        self.logger.info("File staged at " + fileDescription.url)
         return fileDescription
 
 
@@ -232,6 +232,3 @@ if __name__ == '__main__':
     (options, args) = parser.parse_args()
 
     ex = IngestExporter(options)
-    ex.generateBundles("59ba8c4f82f532c51be64c26")
-
-
