@@ -104,7 +104,7 @@
             {{sub["updateDate"]["date"] }}
         </td>
         <td>
-            {% if sub['stagingDetails'] is defined %}
+            {% if sub['stagingDetails']['stagingAreaLocation'] is defined %}
             <button onclick="return confirm(this.value);" value="{{sub['stagingDetails']['stagingAreaLocation']['value'] }}" class="btn btn-primary">Get staging credentials</button>
             {% endif %}
         </td>
