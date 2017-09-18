@@ -82,6 +82,14 @@ class IngestExporter:
             self.logger.error("Can\'t do export as no staging area has been created")
 
     def secondarySubmission(self, submissionUrl, analyses):
+
+        # generate the analysis.json
+        # stage that file
+        # get the bundle manififest
+        # generate new bundle
+
+
+
         pass
 
     def primarySubmission(self, submissionEnvelopeUuid, assays):
