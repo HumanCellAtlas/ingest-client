@@ -18,15 +18,24 @@ from optparse import OptionParser
 import os, sys
 from stagingapi import StagingApi
 
-DEFAULT_INGEST_URL=os.environ.get('INGEST_API', 'http://localhost:8080')
+DEFAULT_INGEST_URL=os.environ.get('INGEST_API', 'http://ingest.dev.data.humancellatlas.org')
 DEFAULT_STAGING_URL=os.environ.get('STAGING_API', 'http://staging.dev.data.humancellatlas.org')
 DEFAULT_DSS_URL=os.environ.get('DSS_API', 'http://dss.dev.data.humancellatlas.org')
 
 class IngestExporter:
-    def __init__(self,  options={}):
+    def __init__(self):
         formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
         logging.basicConfig(formatter=formatter)
         self.logger = logging.getLogger(__name__)
+
+        parser = OptionParser()
+        parser.add_option("-i", "--ingest", help="the URL to the ingest API")
+        parser.add_option("-s", "--staging", help="the URL to the staging API")
+        parser.add_option("-d", "--dss", help="the URL to the datastore service")
+        parser.add_option("-l", "--log", help="the logging level", default='INFO')
+
+        (options, args) = parser.parse_args()
+
         self.ingest_api = None
 
         self.ingestUrl = options.ingest if options.ingest else DEFAULT_INGEST_URL
@@ -231,12 +240,5 @@ class File:
 if __name__ == '__main__':
     logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 
-    parser = OptionParser()
-    parser.add_option("-i", "--ingest", help="the URL to the ingest API")
-    parser.add_option("-s", "--staging", help="the URL to the staging API")
-    parser.add_option("-d", "--dss", help="the URL to the datastore service")
-    parser.add_option("-l", "--log", help="the logging level", default='INFO')
-
-    (options, args) = parser.parse_args()
-
-    ex = IngestExporter(options)
+    ex = IngestExporter()
+    ex.generateBundles('59bfa887637e5b00065e5788')
