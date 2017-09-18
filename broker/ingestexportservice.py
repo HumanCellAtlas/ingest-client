@@ -18,7 +18,7 @@ from optparse import OptionParser
 import os, sys
 from stagingapi import StagingApi
 
-DEFAULT_INGEST_URL=os.environ.get('INGEST_API', 'http://ingest.dev.data.humancellatlas.org')
+DEFAULT_INGEST_URL=os.environ.get('INGEST_API', 'http://api.ingest.dev.data.humancellatlas.org')
 DEFAULT_STAGING_URL=os.environ.get('STAGING_API', 'http://staging.dev.data.humancellatlas.org')
 DEFAULT_DSS_URL=os.environ.get('DSS_API', 'http://dss.dev.data.humancellatlas.org')
 
@@ -241,4 +241,3 @@ if __name__ == '__main__':
     logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 
     ex = IngestExporter()
-    ex.generateBundles('59bfa887637e5b00065e5788')
