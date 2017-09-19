@@ -66,3 +66,58 @@ class DssApi:
         r = requests.put(bundleUrl, data=json.dumps(bundleFile), params={"replica":"aws"}, headers=self.headers)
         if r.status_code == requests.codes.ok or r.status_code == requests.codes.created or r.status_code == requests.codes.accepted:
             print "bundle stored to dss! "+ bundleUuid
+
+
+    # analysis bundle === provenanceBundle.files (union) filesToTransfer
+    #
+    # provenanceBundleManifest : type dict
+    # analysisBundleManifest : type IngestApi.BundleManifest
+    # submittedFiles : type List of FileDescriptor
+    def createAnalysisBundle(self, provenanceBundleManifest, analysisBundleManifest, filesToTransfer):
+        provenanceBundleUuid = provenanceBundleManifest["bundleUuid"] # type: dict
+        analysisBundleUuid = analysisBundleManifest.bundleUuid # type BundleManifest
+
+        bundleCreatePayload = {"creator_uid": 8008, "files" : []}
+        for fileToTransfer in filesToTransfer:
+            submittedName = file["submittedName"]
+            url = file["url"]
+            uuid = file["dss_uuid"]
+
+            requestBody = {
+                          "bundle_uuid": analysisBundleUuid, # TODO: referring to bundle before it's created might be dodgy?
+                          "creator_uid": 8008,
+                          "source_url": url
+                        }
+ 
+            fileUrl = self.url +"/v1/files/"+uuid
+
+            r = requests.put(fileUrl, data=json.dumps(requestBody), headers=self.headers)
+            if r.status_code == requests.codes.ok or r.status_code ==  requests.codes.created or r.status_code ==  requests.codes.accepted :
+                self.logger.debug("Bundle file submited "+url)
+                version = json.loads(r.text)["version"]
+                fileObject = {
+                    "indexed": True,
+                    "name": submittedName,
+                    "uuid": uuid,
+                    "version": version
+                }
+                bundleCreatePayload["files"].append(fileObject)
+            else:
+                raise ValueError('Can\'t create bundle file :' +url)
+
+        # merge the bundleCreatePayload.files with provenanceBundle.files
+        provenanceBundleFiles = retrieveBundle(provenanceBundleUuid)["files"]
+        bundleCreatePayload["files"] += provenanceBundleFiles
+
+        # finally create the bundle
+        bundleUrl = self.url +"/v1/bundles/"+analysisBundleUuid
+        r = requests.put(bundleUrl, data=json.dumps(bundleCreatePayload), params={"replica":"aws"}, headers=self.headers)
+        if r.status_code == requests.codes.ok or r.status_code == requests.codes.created or r.status_code == requests.codes.accepted:
+            print "bundle stored to dss! "+ analysisBundleUuid
+
+    def retrieveBundle(self, bundleUuid):
+        provenanceBundleUrl = self.url +"/v1/bundles/" + bundleUuid
+        r = requests.get(provenanceBundleUrl, headers=self.headers)
+        if r.status_code == requests.codes.ok or r.status_code ==  requests.codes.created or r.status_code ==  requests.codes.accepted :
+            return json.loads(r.text)
+
