@@ -72,16 +72,18 @@ class DssApi:
     #
     # provenanceBundleManifest : type dict
     # analysisBundleManifest : type IngestApi.BundleManifest
-    # submittedFiles : type List of FileDescriptor
+    # filesToTransfer : type List of dict() with keys "submittedName", "url" and "dss_uuid"
+
     def createAnalysisBundle(self, provenanceBundleManifest, analysisBundleManifest, filesToTransfer):
-        provenanceBundleUuid = provenanceBundleManifest["bundleUuid"] # type: dict
-        analysisBundleUuid = analysisBundleManifest.bundleUuid # type BundleManifest
+        provenanceBundleUuid = provenanceBundleManifest["bundleUuid"]
+        analysisBundleUuid = analysisBundleManifest.bundleUuid 
 
         bundleCreatePayload = {"creator_uid": 8008, "files" : []}
+        # transfer any new files/metadata in the secondary submission
         for fileToTransfer in filesToTransfer:
-            submittedName = file["submittedName"]
-            url = file["url"]
-            uuid = file["dss_uuid"]
+            submittedName = fileToTransfer["submittedName"]
+            url = fileToTransfer["url"]
+            uuid = fileToTransfer["dss_uuid"]
 
             requestBody = {
                           "bundle_uuid": analysisBundleUuid, # TODO: referring to bundle before it's created might be dodgy?
@@ -106,8 +108,13 @@ class DssApi:
                 raise ValueError('Can\'t create bundle file :' +url)
 
         # merge the bundleCreatePayload.files with provenanceBundle.files
-        provenanceBundleFiles = retrieveBundle(provenanceBundleUuid)["files"]
-        bundleCreatePayload["files"] += provenanceBundleFiles
+        provenanceBundleFiles = self.retrieveBundle(provenanceBundleUuid)["bundle"]["files"]
+        # need to add the "indexed" key and filter out other info, else we get a 500
+        bundleCreatePayload["files"] += list(map(lambda provenanceFile: {"indexed":True,
+                                                                         "name":provenanceFile["name"],
+                                                                         "uuid":provenanceFile["uuid"],
+                                                                         "version":provenanceFile["version"]
+                                                                         },provenanceBundleFiles))
 
         # finally create the bundle
         bundleUrl = self.url +"/v1/bundles/"+analysisBundleUuid
@@ -120,4 +127,6 @@ class DssApi:
         r = requests.get(provenanceBundleUrl, headers=self.headers)
         if r.status_code == requests.codes.ok or r.status_code ==  requests.codes.created or r.status_code ==  requests.codes.accepted :
             return json.loads(r.text)
+        else:
+            raise ValueError("Couldn't find bundle in the DSS with uuid: " + bundleUuid)
 

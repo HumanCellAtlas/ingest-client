@@ -79,21 +79,15 @@ class IngestExporter:
 
         # check staging area is available
         if self.staging_api.hasStagingArea(submissionUuid):
-            try:
-                assays = self.ingest_api.getAssays(submissionUrl)
-            except:
-                self.logger.info("issue getting assays for the submission, probably doesn't have any assays") # TODO
 
-            try:
-                analyses = self.ingest_api.getAnalyses(submissionUrl)
-            except:
-                self.logger.info("issue getting analyses for the submission, probably doesn't have any analyses") # TODO
+            assays = self.ingest_api.getAssays(submissionUrl)
+            analyses = self.ingest_api.getAnalyses(submissionUrl)
 
             self.logger.info("Attempting to export primary submissions to DSS...")
-            self.primarySubmission(submissionUuid,assays )
+            self.primarySubmission(submissionUuid,assays)
 
             self.logger.info("Attempting to export secondary submissions to DSS...")
-            self.secondarySubmission(submissionUuid,analyses )
+            self.secondarySubmission(submissionUuid,analyses)
         else:
             self.logger.error("Can\'t do export as no staging area has been created")
 
@@ -109,7 +103,7 @@ class IngestExporter:
             inputBundle = list(self.ingest_api.getRelatedEntities("inputBundleManifests", analysis, "bundleManifests"))[0]
 
             # the new bundle manifest === the old manifest (union) staged analysis file (union) new data files
-            bundleManifest = makeCopyBundle(inputBundle)
+            bundleManifest = self.makeCopyBundle(inputBundle)
 
             # add the referenced files to the bundle manifest and to the files to transfer
             files = list(self.ingest_api.getRelatedEntities("files", analysis, "files"))
@@ -121,17 +115,18 @@ class IngestExporter:
                                                            }, files))
 
             # stage the analysis.json, add to filesToTransfer and to the bundle manifest
+            analysisUuid = analysis["uuid"]["uuid"]
             analysisDssUuid = unicode(uuid.uuid4())
-            analysisBundleContent = getBundleContent(analysis)
+            analysisBundleContent = self.getBundleDocument(analysis)
             analysisFileName = "analysis_0.json" # TODO: shouldn't be hardcoded
             fileDescription = self.writeMetadataToStaging(submissionEnvelopeUuid, analysisFileName, analysisBundleContent, "hca-analysis")
             
-            bundleManifest.fileAnalysisMap[analysisDssUuid] = [analysis["uuid"]["uuid"]]
+            bundleManifest.fileAnalysisMap = { analysisDssUuid : [analysisUuid] }
             filesToTransfer.append({"name":analysisFileName, "submittedName":"analysis.json", "url":fileDescription.url, "dss_uuid": analysisDssUuid})
 
             # generate new bundle
             # write to DSS
-            self.dss_api.createAnalysisBundle(inputBundleUuid, bundleManifest, filesToTransfer)
+            self.dss_api.createAnalysisBundle(inputBundle, bundleManifest, filesToTransfer)
 
             # write bundle manifest to ingest API
             self.ingest_api.createBundleManifest(bundleManifest)
@@ -260,7 +255,7 @@ class IngestExporter:
 
     # returns a copy of a bundle manifest JSON, but with a new bundleUuid
     def makeCopyBundle(self, bundleToCopy):
-        newBundle = ingestapi.BundleManifest
+        newBundle = ingestapi.BundleManifest()
 
         newBundle.files = bundleToCopy["files"]
         newBundle.fileSampleMap = bundleToCopy["fileSampleMap"] 
