@@ -79,8 +79,8 @@ class IngestExporter:
 
         # check staging area is available
         if self.staging_api.hasStagingArea(submissionUuid):
-            assays = self.ingest_api.getAssays(submissionUrl)
-            analyses = self.ingest_api.getAnalyses(submissionUrl)
+            assays = list(self.ingest_api.getAssays(submissionUrl))
+            analyses = list(self.ingest_api.getAnalyses(submissionUrl))
 
             if len(assays) > 0: # this is a suitable primary submission
                 self.logger.info("Exporting primary submission to DSS...")
