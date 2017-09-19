@@ -79,16 +79,21 @@ class IngestExporter:
 
         # check staging area is available
         if self.staging_api.hasStagingArea(submissionUuid):
-            assays = list(self.ingest_api.getAssays(submissionUrl))
-            analyses = list(self.ingest_api.getAnalyses(submissionUrl))
+            try:
+                assays = self.ingest_api.getAssays(submissionUrl)
+            except:
+                self.logger.info("issue getting assays for the submission, probably doesn't have any assays") # TODO
 
-            if len(assays) > 0: # this is a suitable primary submission
-                self.logger.info("Exporting primary submission to DSS...")
-                self.primarySubmission(submissionUuid,assays )
+            try:
+                analyses = self.ingest_api.getAnalyses(submissionUrl)
+            except:
+                self.logger.info("issue getting analyses for the submission, probably doesn't have any analyses") # TODO
 
-            if len(analyses) > 0: # this is a suitable secondary analysis submission
-                self.logger.info("Exporting analysis submission to DSS...")
-                self.secondarySubmission(submissionUuid,analyses )
+            self.logger.info("Attempting to export primary submissions to DSS...")
+            self.primarySubmission(submissionUuid,assays )
+
+            self.logger.info("Attempting to export secondary submissions to DSS...")
+            self.secondarySubmission(submissionUuid,analyses )
         else:
             self.logger.error("Can\'t do export as no staging area has been created")
 
@@ -98,40 +103,38 @@ class IngestExporter:
 
         # generate the analysis.json
         # assume there's only 1 analysis metadata, TODO:  expand later...
-        analysis = analyses[0]
+        for index, analysis in enumerate(analyses):
 
-        # get the referenced bundle manififest (assume there's only 1)
-        inputBundle = list(self.ingest_api.getRelatedEntities("inputBundleManifests", analysis, "bundleManifests"))[0]
+            # get the referenced bundle manififest (assume there's only 1)
+            inputBundle = list(self.ingest_api.getRelatedEntities("inputBundleManifests", analysis, "bundleManifests"))[0]
 
-        # the new bundle manifest === the old manifest (union) staged analysis file (union) new data files
-        bundleManifest = makeCopyBundle(inputBundle)
+            # the new bundle manifest === the old manifest (union) staged analysis file (union) new data files
+            bundleManifest = makeCopyBundle(inputBundle)
 
-        # add the referenced files to the bundle manifest and to the files to transfer
-        files = list(self.ingest_api.getRelatedEntities("files", analysis, "files"))
-        bundleManifest.files += list(map(lambda file_json : file_json["uuid"]["uuid"], files))
-        filesToTransfer += list(map(lambda file_json: {"name": file_json["fileName"],
-                                                       "submittedName": file_json["fileName"], 
-                                                       "url": file_json["cloudUrl"], 
-                                                       "dss_uuid": file_json["uuid"]["uuid"]
-                                                       }, files))
+            # add the referenced files to the bundle manifest and to the files to transfer
+            files = list(self.ingest_api.getRelatedEntities("files", analysis, "files"))
+            bundleManifest.files += list(map(lambda file_json : file_json["uuid"]["uuid"], files))
+            filesToTransfer += list(map(lambda file_json: {"name": file_json["fileName"],
+                                                           "submittedName": file_json["fileName"], 
+                                                           "url": file_json["cloudUrl"], 
+                                                           "dss_uuid": file_json["uuid"]["uuid"]
+                                                           }, files))
 
-        # stage the analysis.json, add to filesToTransfer and to the bundle manifest
-        analysisDssUuid = unicode(uuid.uuid4())
-        analysisBundleContent = getBundleContent(analysis)
-        analysisFileName = "analysis_0.json" # TODO: shouldn't be hardcoded
-        fileDescription = self.writeMetadataToStaging(submissionEnvelopeUuid, analysisFileName, analysisBundleContent, "hca-analysis")
-        
-        bundleManifest.fileAnalysisMap[analysisDssUuid] = [analysis["uuid"]["uuid"]]
-        filesToTransfer.append({"name":analysisFileName, "submittedName":"analysis.json", "url":fileDescription.url, "dss_uuid": analysisDssUuid})
+            # stage the analysis.json, add to filesToTransfer and to the bundle manifest
+            analysisDssUuid = unicode(uuid.uuid4())
+            analysisBundleContent = getBundleContent(analysis)
+            analysisFileName = "analysis_0.json" # TODO: shouldn't be hardcoded
+            fileDescription = self.writeMetadataToStaging(submissionEnvelopeUuid, analysisFileName, analysisBundleContent, "hca-analysis")
+            
+            bundleManifest.fileAnalysisMap[analysisDssUuid] = [analysis["uuid"]["uuid"]]
+            filesToTransfer.append({"name":analysisFileName, "submittedName":"analysis.json", "url":fileDescription.url, "dss_uuid": analysisDssUuid})
 
-        # generate new bundle
-        # write to DSS
-        self.dss_api.createAnalysisBundle(inputBundleUuid, bundleManifest, filesToTransfer)
+            # generate new bundle
+            # write to DSS
+            self.dss_api.createAnalysisBundle(inputBundleUuid, bundleManifest, filesToTransfer)
 
-        # write bundle manifest to ingest API
-        self.ingest_api.createBundleManifest(bundleManifest)
-
-        pass
+            # write bundle manifest to ingest API
+            self.ingest_api.createBundleManifest(bundleManifest)
 
     def primarySubmission(self, submissionEnvelopeUuid, assays):
 

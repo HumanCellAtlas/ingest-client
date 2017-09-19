@@ -80,7 +80,7 @@ class IngestApi:
     def _getAllObjectsFromSet(self, url, entityType):
         r = requests.get(url, headers=self.headers)
         if r.status_code == requests.codes.ok:
-            if "_embedded" in json.loads(r.text)
+            if "_embedded" in json.loads(r.text):
                 for entity in json.loads(r.text)["_embedded"][entityType]:
                     yield entity
                 if "next" in json.loads(r.text)["_links"]:
