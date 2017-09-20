@@ -84,6 +84,7 @@ class DssApi:
             submittedName = fileToTransfer["submittedName"]
             url = fileToTransfer["url"]
             uuid = fileToTransfer["dss_uuid"]
+            indexed = fileToTransfer["indexed"]
 
             requestBody = {
                           "bundle_uuid": analysisBundleUuid, # TODO: referring to bundle before it's created might be dodgy?
@@ -98,7 +99,7 @@ class DssApi:
                 self.logger.debug("Bundle file submited "+url)
                 version = json.loads(r.text)["version"]
                 fileObject = {
-                    "indexed": True,
+                    "indexed": indexed,
                     "name": submittedName,
                     "uuid": uuid,
                     "version": version
@@ -110,7 +111,7 @@ class DssApi:
         # merge the bundleCreatePayload.files with provenanceBundle.files
         provenanceBundleFiles = self.retrieveBundle(provenanceBundleUuid)["bundle"]["files"]
         # need to add the "indexed" key and filter out other info, else we get a 500
-        bundleCreatePayload["files"] += list(map(lambda provenanceFile: {"indexed":True,
+        bundleCreatePayload["files"] += list(map(lambda provenanceFile: {"indexed":provenanceFile["indexed"],
                                                                          "name":provenanceFile["name"],
                                                                          "uuid":provenanceFile["uuid"],
                                                                          "version":provenanceFile["version"]

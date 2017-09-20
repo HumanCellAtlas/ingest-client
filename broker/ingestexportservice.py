@@ -100,7 +100,7 @@ class IngestExporter:
         for index, analysis in enumerate(analyses):
 
             # get the referenced bundle manififest (assume there's only 1)
-            inputBundle = list(self.ingest_api.getRelatedEntities("inputBundleManifests", analysis, "bundleManifests"))[0]
+            inputBundle = list(self.ingest_api.getRelatedEntities("inputBundleManifests", analysis, "bundleManifests"))[0] # TODO: analysis only valid iff bundleManifests.length > 0 ?
 
             # the new bundle manifest === the old manifest (union) staged analysis file (union) new data files
             bundleManifest = self.makeCopyBundle(inputBundle)
@@ -111,7 +111,8 @@ class IngestExporter:
             filesToTransfer += list(map(lambda file_json: {"name": file_json["fileName"],
                                                            "submittedName": file_json["fileName"], 
                                                            "url": file_json["cloudUrl"], 
-                                                           "dss_uuid": file_json["uuid"]["uuid"]
+                                                           "dss_uuid": file_json["uuid"]["uuid"],
+                                                           "indexed" : False
                                                            }, files))
 
             # stage the analysis.json, add to filesToTransfer and to the bundle manifest
@@ -122,7 +123,11 @@ class IngestExporter:
             fileDescription = self.writeMetadataToStaging(submissionEnvelopeUuid, analysisFileName, analysisBundleContent, "hca-analysis")
             
             bundleManifest.fileAnalysisMap = { analysisDssUuid : [analysisUuid] }
-            filesToTransfer.append({"name":analysisFileName, "submittedName":"analysis.json", "url":fileDescription.url, "dss_uuid": analysisDssUuid})
+            filesToTransfer.append({"name":analysisFileName,
+                                    "submittedName":"analysis.json", 
+                                    "url":fileDescription.url, 
+                                    "dss_uuid": analysisDssUuid,
+                                    "indexed" : True})
 
             # generate new bundle
             # write to DSS
