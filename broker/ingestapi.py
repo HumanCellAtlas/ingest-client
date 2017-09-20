@@ -40,6 +40,22 @@ class IngestApi:
         if r.status_code == requests.codes.ok:
             return json.loads(r.text)["_embedded"]["submissionEnvelopes"]
 
+    def getSubmissionIfModifiedSince(self, submissionId, datetimeUTC):
+        submissionUrl = self.getSubmissionUri(submissionId)
+        headers = self.headers
+
+        if datetimeUTC:
+            headers = {'If-Modified-Since': datetimeUTC}
+
+        self.logger.info('headers:' + str(headers))
+        r = requests.get(submissionUrl, headers=headers)
+
+        if r.status_code == requests.codes.ok:
+            submission = json.loads(r.text)
+            return submission
+        else:
+            self.logger.error(str(r))
+
     def createSubmission(self):
         r = requests.post(self.ingest_api["submissionEnvelopes"]["href"].rsplit("{")[0], data="{}",
                           headers=self.headers)

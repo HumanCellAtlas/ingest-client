@@ -1,0 +1,31 @@
+<td>
+    <a href="{{sub['_links']['self']['href'] }}">{{sub["_links"]["self"]["href"] }}</a>
+</td>
+<td>
+    {{ sub["submissionState"]}}
+</td>
+<td>
+    {{ sub["submissionDate"]["date"]}}
+</td>
+<td>
+    {{sub["updateDate"]["date"] }}
+</td>
+<td>
+    {% if sub['stagingDetails']['stagingAreaLocation'] is defined %}
+    <button onclick="return confirm(this.value);" value="{{sub['stagingDetails']['stagingAreaLocation']['value'] }}" class="btn btn-primary">Get staging credentials</button>
+    <form action="staging/delete" method="POST">
+        <input type="hidden" name="submissionUrl" value="{{sub['_links']['self']['href'] }}"/>
+        <button class="btn btn-danger" onclick="return confirm('Are you sure you want to delete the staging area?');">Delete Staging Area</button>
+    </form>
+    {% endif %}
+</td>
+<td>
+    {%  if sub['_links']['submit'] is defined %}
+    <form action="submit" method="POST">
+        <input type="hidden" name="submissionUrl" value="{{sub['_links']['submit']['href'] }}"/>
+        <button class="btn btn-success" onclick="return confirm('Are all data files uploaded to the staging area?');">Complete submission</button>
+    </form>
+    {% else %}
+    <button class="btn btn-success disabled">Complete submission</button>
+    {% endif %}
+</td>

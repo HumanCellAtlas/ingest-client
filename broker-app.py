@@ -15,6 +15,8 @@ import tempfile
 import threading
 import logging
 
+from random import randint
+
 app = Flask(__name__, static_folder='static')
 app.secret_key = 'cells'
 
@@ -28,6 +30,14 @@ def index():
 
     return render_template('index.html', submissions=submissions)
 
+
+@app.route('/submission/<id>/<date>')
+def get_submission(id, date):
+    submission = IngestApi().getSubmissionIfModifiedSince(id, date)
+
+    if(submission):
+        return render_template('submission-row.html', sub=submission)
+    return ''
 
 @app.route('/upload', methods=['POST'])
 def upload_file():
