@@ -137,7 +137,6 @@ class IngestApi:
                           headers=self.headers)
         if r.status_code == requests.codes.created or r.status_code == requests.codes.accepted:
             return json.loads(r.text)
-        raise ValueError('Create entity failed: Entity ' + entityType + " " + json.dumps(jsonObject))
 
 
     # given a HCA object return the URI for the object from ingest
