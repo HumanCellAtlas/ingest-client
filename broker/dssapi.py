@@ -37,7 +37,7 @@ class DssApi:
             submittedName = file["submittedName"]
             url = file["url"]
             uuid = file["dss_uuid"]
-
+            indexed = file["indexed"]
             if not url:
                 self.logger.warn("can't create bundle for "+submittedName+" as no cloud URL is provided")
                 continue
@@ -52,7 +52,7 @@ class DssApi:
                 self.logger.debug("Bundle file submited "+url)
                 version = json.loads(r.text)["version"]
                 fileObject = {
-                    "indexed": True,
+                    "indexed": indexed,
                     "name": submittedName,
                     "uuid": uuid,
                     "version": version
