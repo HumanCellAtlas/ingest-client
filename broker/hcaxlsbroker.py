@@ -248,12 +248,10 @@ class SpreadsheetSubmission:
             if "seq" in assay:
                 lanes = []
                 if "lanes" in assay["seq"]:
-                    laneId = assay["seq"]["lanes"]
-
-                    if laneId not in lanesMap:
-                        raise ValueError('Assays references a lane id that isn\'t referenced in the lanes sheet:' +laneId)
-
-                    lanes.append(lanesMap[laneId])
+                    for laneId in assay["seq"]["lanes"]:
+                        if laneId not in lanesMap:
+                            raise ValueError('Assays references a lane id that isn\'t referenced in the lanes sheet:' +laneId)
+                        lanes.append(lanesMap[laneId])
                     del assay["seq"]["lanes"]
                     assay["seq"]["lanes"] =lanes
 
