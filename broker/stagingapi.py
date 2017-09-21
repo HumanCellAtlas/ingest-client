@@ -21,19 +21,19 @@ class StagingApi:
         logging.getLogger("requests").setLevel(logging.WARNING)
         self.logger = logging.getLogger(__name__)
 
-        if not apiversion and 'DEFAULT_STAGING_VERSION' in os.environ:
-            self.apiversion = os.environ['DEFAULT_STAGING_VERSION']
+        if not apiversion and DEFAULT_STAGING_VERSION:
+            self.apiversion = DEFAULT_STAGING_VERSION
         self.apiversion = apiversion if apiversion else "v1"
 
-        if not url and 'STAGING_API' in os.environ:
-            url = os.environ['STAGING_API']
+        if not url and DEFAULT_STAGING_URL:
+            url = DEFAULT_STAGING_URL
             # expand interpolated env vars
             self.url = os.path.expandvars(url)
             self.logger.info("using " +url+ " for staging API")
         self.url = url if url else "https://staging.dev.data.humancellatlas.org"
 
-        if not apikey and 'INGEST_API_KEY' in os.environ:
-            self.apikey = os.environ['INGEST_API_KEY']
+        if not apikey and INGEST_API_KEY:
+            self.apikey = INGEST_API_KEY
         self.apikey = apikey if apikey else "zero-pupil-until-funny"
 
 
