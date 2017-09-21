@@ -33,7 +33,7 @@ class StagingApi:
         self.url = url if url else "https://staging.dev.data.humancellatlas.org"
 
         if not apikey and INGEST_API_KEY:
-            self.apikey = INGEST_API_KEY
+            apikey = INGEST_API_KEY
         self.apikey = apikey if apikey else "zero-pupil-until-funny"
 
 
