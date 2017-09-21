@@ -74,16 +74,15 @@ class IngestApi:
                 # r2 = requests.get(, headers=self.headers)
                 for entity in self._getAllObjectsFromSet(json.loads(r.text)["_links"][entityType]["href"], entityType):
                     yield entity
-            else:
-                yield []
 
     def _getAllObjectsFromSet(self, url, entityType):
         r = requests.get(url, headers=self.headers)
         if r.status_code == requests.codes.ok:
-            for entity in json.loads(r.text)["_embedded"][entityType]:
-                yield entity
-            if "next" in json.loads(r.text)["_links"]:
-                yield self._getAllObjectsFromSet(json.loads(r.text)["_links"]["next"]["href"], entityType)
+            if "_embedded" in json.loads(r.text):
+                for entity in json.loads(r.text)["_embedded"][entityType]:
+                    yield entity
+                if "next" in json.loads(r.text)["_links"]:
+                    yield self._getAllObjectsFromSet(json.loads(r.text)["_links"]["next"]["href"], entityType)
 
     def getRelatedEntities(self, relation, entity, entityType):
         # get the self link from entity
