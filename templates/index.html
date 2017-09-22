@@ -1,145 +1,59 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>HCA demo</title>
-<!--<meta http-equiv="refresh" content="20" />-->
-    <!-- Latest compiled and minified CSS -->
-<link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+{% extends "base.html" %}
+{% block head %}
+{{ super() }}
+<link rel="stylesheet" href="{{url_for('static', filename = 'css/index.css')}}">
+<script src="{{url_for('static', filename = 'index.js')}}"></script>
+{% endblock %}
 
-<!-- Optional theme -->
-<link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap-theme.min.css" integrity="sha384-rHyoN1iRsVXV4nD0JutlnGaslCJuC7uwjduW9SVrLvRYooPp2bWYgmgJQIXwl/Sp" crossorigin="anonymous">
-
-<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
-<!-- Latest compiled and minified JavaScript -->
-<script src="//maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
-<script src="{{url_for('static', filename = 'polling.js')}}"></script>
-
-</head>
-<body>
-
-<div class="container" style="padding-top: 50px;">
- <nav class="navbar navbar-inverse navbar-fixed-top">
-          <a class="navbar-brand" href="#">
-              <img style="background-color: white; height:30px;" src="{{url_for('static', filename = 'hca_logo.png')}}">
-          </a>
-     <div class="container">
-
-        <div class="navbar-header">
-          <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
-            <span class="sr-only">Toggle navigation</span>
-            <span class="icon-bar"></span>
-            <span class="icon-bar"></span>
-            <span class="icon-bar"></span>
-          </button>
-          <a class="navbar-brand" href="#">HCA data submission</a>
-        </div>
-      </div>
- </nav>
-</div>
-
-    <div class="container">
-
-      <div class="starter-template">
+{% block content %}
+<div class="container">
+    <div class="starter-template">
         <h1>Submit data to the Human Cell Atlas</h1>
         <p class="lead">Upload a spreadsheet to add your data to the HCA</p>
 
-          {% with messages = get_flashed_messages(with_categories=true) %}
+        {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
-                  {% for category, message in messages %}
-                   <div class="alert {{category}}">
+                {% for category, message in messages %}
+                    <div class="alert {{category}}">
                        {{ message }}
                     </div>
-                 {% endfor %}
+                {% endfor %}
             {% endif %}
         {% endwith %}
 
-
-          <form  action="upload" method="POST" enctype="multipart/form-data">
+        <form  action="upload" method="POST" enctype="multipart/form-data">
             <div class="form-group">
-             <label for="exampleInputFile">Please upload your spreadsheet</label>
+                <label for="exampleInputFile">Please upload your spreadsheet</label>
                 <input type="file" name="file" class="form-control-file"  id="exampleInputFile" accept="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"   aria-describedby="fileHelp">
-                 <small id="fileHelp" class="form-text text-muted">The spreadsheet must conform to a HCA template</small>
+                <small id="fileHelp" class="form-text text-muted">The spreadsheet must conform to a </small>
+                <button type="button" class="btn btn-xs" aria-label="Left Align">
+                    HCA template <span class="glyphicon glyphicon-download-alt" aria-hidden="true"> </span>
+                </button>
             </div>
-                <button type="submit" class="btn btn-primary">Submit</button>
-          </form>
-
-
-          <!--<div class=".form-group">-->
-        <!--<form action="upload" method="POST" enctype="multipart/form-data">-->
-            <!--<input id="fileUpload" name="file" multiple="" accept="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"  type="file" />-->
-             <!--<button>Upload</button>-->
-        <!--</form>-->
-
-        <!--</div>-->
-          <hr/>
-<div class="container">
-
-    <h1>Submissions</h1>
-
-        <table id="submissions" class="table table-striped">
-            <thead>
-                <tr>
-                    <th>Submission</th>
-                    <th>Status</th>
-                    <th>Created</th>
-                    <th>Updated</th>
-                    <th>Staging URN</th>
-                    <th>Complete</th>
-                </tr>
-            </thead>
-<tbody>
-
-
-{% for sub in submissions %}
-    <tr data-url="{{sub['_links']['self']['href'] }}" data-date="{{sub['date']}}">
-        <td>
-            <a href="{{sub['_links']['self']['href'] }}">{{sub["_links"]["self"]["href"] }}</a>
-        </td>
-        <td>
-            {{ sub["submissionState"]}}
-        </td>
-        <td>
-            {{ sub["submissionDate"]["date"]}}
-        </td>
-        <td>
-            {{sub["updateDate"]["date"] }}
-        </td>
-        <td>
-            {% if sub['stagingDetails']['stagingAreaLocation'] is defined %}
-            <button onclick="return confirm(this.value);" value="{{sub['stagingDetails']['stagingAreaLocation']['value'] }}" class="btn btn-primary">Get staging credentials</button>
-            <form action="staging/delete" method="POST">
-                <input type="hidden" name="submissionUrl" value="{{sub['_links']['self']['href'] }}"/>
-                <button class="btn btn-danger" onclick="return confirm('Are you sure you want to delete the staging area?');">Delete Staging Area</button>
-            </form>
-            {% endif %}
-        </td>
-        <td>
-
-
-            {%  if sub['_links']['submit'] is defined %}
-            <form action="submit" method="POST">
-                <input type="hidden" name="submissionUrl" value="{{sub['_links']['submit']['href'] }}"/>
-                <button class="btn btn-success" onclick="return confirm('Are all data files uploaded to the staging area?');">Complete submission</button>
-            </form>
-            {% else %}
-                <button class="btn btn-success disabled">Complete submission</button>
-            {% endif %}
-
-        </td>
-
-    </tr>
-    {% endfor %}
-</tbody>
-
-    </table>
+            <button type="submit" class="btn btn-primary">Submit</button>
+        </form>
+        <hr/>
+        <div class="container">
+            <h1>Submissions</h1>
+            <table id="submissions" class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Submission</th>
+                        <th>Status</th>
+                        <th>Created</th>
+                        <th>Updated</th>
+                        <th>Complete</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for sub in submissions %}
+                    <tr data-url="{{sub['_links']['self']['href'] }}" data-date="{{sub['date']}}" >
+                    {% include 'submission-row.html' %}
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
 </div>
-
-      </div>
-
-    </div><!-- /.container -->
-
-
-
-</body>
-</html>
+{% endblock %}

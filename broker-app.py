@@ -17,6 +17,20 @@ import logging
 
 from random import randint
 
+STATUS_LABEL = {
+    'Valid': 'label-success',
+    'Validating': 'label-info',
+    'Invalid': 'label-danger',
+    'Submitted': 'label-secondary'
+}
+
+DEFAULT_STATUS_LABEL = 'label-warning'
+
+HTML_HELPER = {
+    'status_label': STATUS_LABEL,
+    'default_status_label': DEFAULT_STATUS_LABEL
+}
+
 app = Flask(__name__, static_folder='static')
 app.secret_key = 'cells'
 
@@ -28,16 +42,29 @@ def index():
     except Exception, e:
         flash("Can't connect to ingest API!!", "alert-danger")
 
-    return render_template('index.html', submissions=submissions)
+    return render_template('index.html', submissions=submissions, helper=HTML_HELPER)
 
+@app.route('/submissions/<id>')
+def get_submission_view(id):
+    ingest_api = IngestApi()
+    submission = ingest_api.getSubmissionIfModifiedSince(id, None)
+    projects = ingest_api.getProjects(id)['_embedded']['projects']
+    project = projects[0] if projects else None # there should always 1 project
+    files = ingest_api.getFiles(id)['_embedded']['files']
 
-@app.route('/submission/<id>/<date>')
+    if(submission):
+        return render_template('submission.html', sub=submission, helper=HTML_HELPER, project=project, files=files)
+    return ''
+
+@app.route('/submissions/<id>/<date>')
 def get_submission(id, date):
     submission = IngestApi().getSubmissionIfModifiedSince(id, date)
 
     if(submission):
-        return render_template('submission-row.html', sub=submission)
+        return render_template('submission-row.html', sub=submission, helper=HTML_HELPER)
     return ''
+
+
 
 @app.route('/upload', methods=['POST'])
 def upload_file():

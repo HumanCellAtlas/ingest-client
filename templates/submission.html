@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+{% block head %}
+{{ super() }}
+<link rel="stylesheet" href="{{url_for('static', filename = 'css/submission.css')}}">
+{% endblock %}
+
+{% block content %}
+<div class="container">
+            <div class="row">
+                <div>
+                    <div class="col-lg-8"><h3>Submission</h3></div>
+                    <div class="col-lg-2">
+                        <h3>
+                            <div class="right">
+                                <span class="label {{ helper['status_label'][sub['submissionState']] or helper['default_status_label']}}">{{ sub['submissionState']}}</span>
+                            </div>
+                        </h3>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-lg-10">
+                    <dl class="dl-horizontal">
+                        <dt>UUID</dt>
+                        <dd>{{sub['uuid']['uuid']}}</dd>
+                        <dt>Created</dt>
+                        <dd>{{ sub["submissionDate"]["date"]}}</dd>
+                        <dt>Updated</dt>
+                        <dd>{{ sub["updateDate"]["date"]}}</dd>
+                        <dt>Ingest API Link</dt>
+                        <dd><a href="{{sub['_links']['self']['href'] }}">{{sub["_links"]["self"]["href"] }}</a></dd>
+                    </dl>
+                </div>
+            </div>
+
+    {% if project: %}
+            <div class="row">
+                <div class="col-lg-10">
+                    <dl class="dl-horizontal">
+                        <dt>Project Title</dt>
+                        <dd>{{project['content']['title']}}</dd>
+                        <dt>Project UUID</dt>
+                        <dd>{{project['uuid']['uuid']}}</dd>
+                        <dt>Description</dt>
+                        <dd>{{project['content']['description']}}</dd>
+                    </dl>
+                </div>
+            </div>
+    {% endif %}
+
+    {% if files: %}
+            <div class="row">
+                <div class="col-lg-10">
+                    <dl class="dl-horizontal">
+                        <dt>Files</dt>
+                        <dd>
+                            {% for file in files %}
+                                {{file['fileName']}}<br/>
+                            {% endfor %}
+                        </dd>
+
+                    </dl>
+                </div>
+            </div>
+    {% endif %}
+
+    {% if sub['stagingDetails']['stagingAreaLocation'] is defined %}
+            <div class="row">
+                <div class="col-lg-10">
+                        <dl class="dl-horizontal">
+                            <dt>Staging Credentials</dt>
+                            <dd>
+                                <pre>
+<code>{{sub['stagingDetails']['stagingAreaLocation']['value'] }}</code>
+                                </pre>
+                                <form action="staging/delete" method="POST">
+                                    <input type="hidden" name="submissionUrl" value="{{sub['_links']['self']['href'] }}"/>
+                                    <button class="btn btn-danger" onclick="return confirm('Are you sure you want to delete the staging area?');">Delete Staging Area</button>
+                                </form>
+                            </dd>
+                        </dl>
+
+                </div>
+            </div>
+        {% endif %}
+    </div>
+{% endblock %}

@@ -56,10 +56,26 @@ class IngestApi:
         else:
             self.logger.error(str(r))
 
+    def getProjects(self, id):
+        submissionUrl =  self.url + '/submissionEnvelopes/' + id + '/projects'
+        r = requests.get(submissionUrl, headers=self.headers)
+        projects = []
+        if r.status_code == requests.codes.ok:
+            projects = json.loads(r.text)
+        return projects
+
+    def getFiles(self, id):
+        submissionUrl =  self.url + '/submissionEnvelopes/' + id + '/files'
+        r = requests.get(submissionUrl, headers=self.headers)
+        files = []
+        if r.status_code == requests.codes.ok:
+            files = json.loads(r.text)
+        return files
+
+
     def createSubmission(self):
         r = requests.post(self.ingest_api["submissionEnvelopes"]["href"].rsplit("{")[0], data="{}",
                           headers=self.headers)
-
         if r.status_code == requests.codes.created:
             submissionUrl = json.loads(r.text)["_links"]["self"]["href"].rsplit("{")[0]
             self.submission_links[submissionUrl] = json.loads(r.text)["_links"]

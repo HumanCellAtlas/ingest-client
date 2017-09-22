@@ -1,23 +1,21 @@
 <td>
-    <a href="{{sub['_links']['self']['href'] }}">{{sub["_links"]["self"]["href"] }}</a>
+    {%  if sub['uuid']['uuid'] is defined %}
+    <a href="/submissions/{{sub['_links']['self']['href'].rsplit('/',1)[1] }}" class="badge badge-secondary">{{sub['uuid']['uuid']}}</a>
+    {% else %}
+    <span class="glyphicon glyphicon-refresh glyphicon-refresh-animate"></span> <a href="{{sub['_links']['self']['href'] }}">Waiting...</a> Waiting...
+    {% endif %}
+
 </td>
 <td>
-    {{ sub["submissionState"]}}
+    <div class="right">
+        <span class="label {{ helper['status_label'][sub['submissionState']] or helper['default_status_label']}} label-lg">{{ sub['submissionState']}}</span>
+    </div>
 </td>
 <td>
     {{ sub["submissionDate"]["date"]}}
 </td>
 <td>
-    {{sub["updateDate"]["date"] }}
-</td>
-<td>
-    {% if sub['stagingDetails']['stagingAreaLocation'] is defined %}
-    <button onclick="return confirm(this.value);" value="{{sub['stagingDetails']['stagingAreaLocation']['value'] }}" class="btn btn-primary">Get staging credentials</button>
-    <form action="staging/delete" method="POST">
-        <input type="hidden" name="submissionUrl" value="{{sub['_links']['self']['href'] }}"/>
-        <button class="btn btn-danger" onclick="return confirm('Are you sure you want to delete the staging area?');">Delete Staging Area</button>
-    </form>
-    {% endif %}
+    {{ sub["updateDate"]["date"] }}
 </td>
 <td>
     {%  if sub['_links']['submit'] is defined %}
