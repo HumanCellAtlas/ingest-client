@@ -1,6 +1,7 @@
 $(function() {
     triggerPolling();
-})
+    renderDates();
+});
 
 function triggerPolling(){
     $('#submissions > tbody > tr').each(function(){
@@ -27,6 +28,7 @@ function pollRow(row){
         success: function(response){
             if(response){
                 row.html(response);
+                renderDates();
                 var now = new Date();
                 now.setMinutes(now.getMinutes() - LAST_UPDATE_INTERVAL);
                 row.data('date', now.toUTCString());
@@ -37,5 +39,12 @@ function pollRow(row){
                 pollRow(row);
             }, POLL_INTERVAL)
         },
+    });
+}
+
+function renderDates() {
+    $(".date-column").each(function () {
+        var date = new Date($(this).data("date"));
+        $(this).text(date.toLocaleTimeString() + " " + date.toLocaleDateString());
     });
 }
