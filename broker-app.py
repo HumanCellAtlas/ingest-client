@@ -15,13 +15,12 @@ import tempfile
 import threading
 import logging
 
-from random import randint
-
 STATUS_LABEL = {
     'Valid': 'label-success',
     'Validating': 'label-info',
     'Invalid': 'label-danger',
-    'Submitted': 'label-secondary'
+    'Submitted': 'label-default',
+    'Completed': 'label-default'
 }
 
 DEFAULT_STATUS_LABEL = 'label-warning'
@@ -39,9 +38,9 @@ def index():
     submissions = []
     try:
         submissions = IngestApi().getSubmissions()
+        # submissions[0]['uuid'] = None
     except Exception, e:
         flash("Can't connect to ingest API!!", "alert-danger")
-
     return render_template('index.html', submissions=submissions, helper=HTML_HELPER)
 
 @app.route('/submissions/<id>')
@@ -88,10 +87,12 @@ def upload_file():
 
         # if we get here can go ahead and submit
         submission.dryrun = False
-        submissionId = submission.createSubmission()
-        thread = threading.Thread(target=submission.submit, args=(path,submissionId))
+        submissionUrl = submission.createSubmission()
+        thread = threading.Thread(target=submission.submit, args=(path,submissionUrl))
         thread.start()
-        message = Markup("Submission created with id <a href='"+submissionId+"'>"+submissionId+"</a>")
+        submissionId = submissionUrl.rsplit('/', 1)[-1]
+
+        message = Markup("Submission created with id : <a class='submission-id' href='"+submissionUrl+"'>"+submissionId+"</a>")
         flash(message, "alert-success")
         return redirect(url_for('index'))
     flash("You can only POST to the upload endpoint", "alert-warning")
