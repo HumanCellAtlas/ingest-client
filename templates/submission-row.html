@@ -13,10 +13,12 @@
     </div>
 </td>
 <td>
-    {{ sub["submissionDate"]["date"]}}
+    <span class="date-column" data-date="{{ sub["submissionDate"]["date"]}}">
+    </span>
 </td>
 <td>
-    {{ sub["updateDate"]["date"] }}
+    <span class="date-column" data-date="{{ sub["updateDate"]["date"] }}">
+    </span>
 </td>
 <td>
     {%  if sub['_links']['submit'] is defined %}
