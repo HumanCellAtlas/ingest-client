@@ -1,0 +1,30 @@
+<td>
+    {%  if sub['uuid']['uuid'] is defined %}
+    <a href="/submissions/{{sub['_links']['self']['href'].rsplit('/',1)[1] }}">{{sub['uuid']['uuid']}}</a>
+
+    {% else %}
+    <span class="glyphicon glyphicon-refresh glyphicon-refresh-animate"></span> <a href="{{sub['_links']['self']['href'] }}">Waiting...</a>
+    {% endif %}
+
+</td>
+<td>
+    <div class="right">
+        <span class="label {{ helper['status_label'][sub['submissionState']] or helper['default_status_label']}} label-lg">{{ sub['submissionState']}}</span>
+    </div>
+</td>
+<td>
+    {{ sub["submissionDate"]["date"]}}
+</td>
+<td>
+    {{ sub["updateDate"]["date"] }}
+</td>
+<td>
+    {%  if sub['_links']['submit'] is defined %}
+    <form action="submit" method="POST">
+        <input type="hidden" name="submissionUrl" value="{{sub['_links']['submit']['href'] }}"/>
+        <button class="btn btn-success" onclick="return confirm('Are all data files uploaded to the staging area?');">Complete submission</button>
+    </form>
+    {% else %}
+    <button class="btn btn-success disabled">Complete submission</button>
+    {% endif %}
+</td>

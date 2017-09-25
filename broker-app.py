@@ -15,6 +15,21 @@ import tempfile
 import threading
 import logging
 
+STATUS_LABEL = {
+    'Valid': 'label-success',
+    'Validating': 'label-info',
+    'Invalid': 'label-danger',
+    'Submitted': 'label-default',
+    'Completed': 'label-default'
+}
+
+DEFAULT_STATUS_LABEL = 'label-warning'
+
+HTML_HELPER = {
+    'status_label': STATUS_LABEL,
+    'default_status_label': DEFAULT_STATUS_LABEL
+}
+
 app = Flask(__name__, static_folder='static')
 app.secret_key = 'cells'
 
@@ -25,8 +40,39 @@ def index():
         submissions = IngestApi().getSubmissions()
     except Exception, e:
         flash("Can't connect to ingest API!!", "alert-danger")
+    return render_template('index.html', submissions=submissions, helper=HTML_HELPER)
 
-    return render_template('index.html', submissions=submissions)
+@app.route('/submissions/<id>')
+def get_submission_view(id):
+    ingest_api = IngestApi()
+    submission = ingest_api.getSubmissionIfModifiedSince(id, None)
+    response = ingest_api.getProjects(id)
+
+    projects = []
+
+    if('_embedded' in response and 'projects' in response['_embedded']):
+        projects = response['_embedded']['projects']
+
+    project = projects[0] if projects else None # there should always 1 project
+
+    files = []
+
+    response = ingest_api.getFiles(id)
+    if('_embedded' in response and 'files' in response['_embedded']):
+        files = response['_embedded']['files']
+
+    if(submission):
+        return render_template('submission.html', sub=submission, helper=HTML_HELPER, project=project, files=files)
+    return ''
+
+@app.route('/submissions/<id>/<date>')
+def get_submission(id, date):
+    submission = IngestApi().getSubmissionIfModifiedSince(id, date)
+
+    if(submission):
+        return render_template('submission-row.html', sub=submission, helper=HTML_HELPER)
+    return ''
+
 
 
 @app.route('/upload', methods=['POST'])
@@ -51,10 +97,12 @@ def upload_file():
 
         # if we get here can go ahead and submit
         submission.dryrun = False
-        submissionId = submission.createSubmission()
-        thread = threading.Thread(target=submission.submit, args=(path,submissionId))
+        submissionUrl = submission.createSubmission()
+        thread = threading.Thread(target=submission.submit, args=(path,submissionUrl))
         thread.start()
-        message = Markup("Submission created with id <a href='"+submissionId+"'>"+submissionId+"</a>")
+        submissionId = submissionUrl.rsplit('/', 1)[-1]
+
+        message = Markup("Submission created with id : <a class='submission-id' href='"+submissionUrl+"'>"+submissionId+"</a>")
         flash(message, "alert-success")
         return redirect(url_for('index'))
     flash("You can only POST to the upload endpoint", "alert-warning")
