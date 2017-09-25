@@ -12,12 +12,12 @@ function triggerPolling(){
 
 function pollRow(row){
     var POLL_INTERVAL = 3000; //in milliseconds
-    var LAST_UPDATE_INTERVAL = 0; //in minutes, added to capture any updates that happened in the last time interval
+    var LAST_UPDATE_INTERVAL_S = 2; //in seconds, added to capture any updates that happened in the last time interval
 
     var rowData = row.data();
     var url = rowData.url;
     var date = new Date(rowData.date);
-    date.setMinutes(date.getMinutes() - LAST_UPDATE_INTERVAL);
+    date.setSeconds(date.getSeconds() - LAST_UPDATE_INTERVAL_S);
 
     var submissionId = url.split("/").pop();
 
@@ -30,7 +30,7 @@ function pollRow(row){
                 row.html(response);
                 renderDates();
                 var now = new Date();
-                now.setMinutes(now.getMinutes() - LAST_UPDATE_INTERVAL);
+                date.setSeconds(date.getSeconds() - LAST_UPDATE_INTERVAL_S);
                 row.data('date', now.toUTCString());
             }
         },

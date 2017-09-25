@@ -2,6 +2,7 @@
 {% block head %}
 {{ super() }}
 <link rel="stylesheet" href="{{url_for('static', filename = 'css/submission.css')}}">
+<script src="{{url_for('static', filename = 'js/index.js')}}"></script>
 {% endblock %}
 
 {% block content %}
@@ -25,9 +26,11 @@
                     <dt>UUID</dt>
                     <dd>{{sub['uuid']['uuid']}}</dd>
                     <dt>Created</dt>
-                    <dd>{{ sub["submissionDate"]["date"]}}</dd>
+                    <dd><span class="date-column" data-date="{{ sub["submissionDate"]["date"] }}">
+                        </span></dd>
                     <dt>Updated</dt>
-                    <dd>{{ sub["updateDate"]["date"]}}</dd>
+                    <dd><span class="date-column" data-date="{{ sub["updateDate"]["date"] }}">
+                        </span></dd>
                     <dt>Ingest API Link</dt>
                     <dd><a href="{{sub['_links']['self']['href'] }}">{{sub["_links"]["self"]["href"] }}</a></dd>
                 </dl>
