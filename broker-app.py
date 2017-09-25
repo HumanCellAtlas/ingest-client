@@ -57,7 +57,7 @@ def get_submission_view(id):
 
     files = []
 
-    response = ingest_api.getFiles(id)['_embedded']['files']
+    response = ingest_api.getFiles(id)
     if('_embedded' in response and 'files' in response['_embedded']):
         files = response['_embedded']['files']
 
