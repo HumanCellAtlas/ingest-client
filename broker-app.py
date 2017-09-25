@@ -38,7 +38,6 @@ def index():
     submissions = []
     try:
         submissions = IngestApi().getSubmissions()
-        # submissions[0]['uuid'] = None
     except Exception, e:
         flash("Can't connect to ingest API!!", "alert-danger")
     return render_template('index.html', submissions=submissions, helper=HTML_HELPER)
@@ -47,9 +46,20 @@ def index():
 def get_submission_view(id):
     ingest_api = IngestApi()
     submission = ingest_api.getSubmissionIfModifiedSince(id, None)
-    projects = ingest_api.getProjects(id)['_embedded']['projects']
+    response = ingest_api.getProjects(id)
+
+    projects = []
+
+    if('_embedded' in response and 'projects' in response['_embedded']):
+        projects = response['_embedded']['projects']
+
     project = projects[0] if projects else None # there should always 1 project
-    files = ingest_api.getFiles(id)['_embedded']['files']
+
+    files = []
+
+    response = ingest_api.getFiles(id)['_embedded']['files']
+    if('_embedded' in response and 'files' in response['_embedded']):
+        files = response['_embedded']['files']
 
     if(submission):
         return render_template('submission.html', sub=submission, helper=HTML_HELPER, project=project, files=files)
