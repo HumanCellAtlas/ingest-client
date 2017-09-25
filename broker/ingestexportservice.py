@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """
-desc goes here 
+desc goes here
 """
 from dssapi import DssApi
 from stagingapi import StagingApi
@@ -109,8 +109,8 @@ class IngestExporter:
             files = list(self.ingest_api.getRelatedEntities("files", analysis, "files"))
             bundleManifest.files += list(map(lambda file_json : file_json["uuid"]["uuid"], files))
             filesToTransfer += list(map(lambda file_json: {"name": file_json["fileName"],
-                                                           "submittedName": file_json["fileName"], 
-                                                           "url": file_json["cloudUrl"], 
+                                                           "submittedName": file_json["fileName"],
+                                                           "url": file_json["cloudUrl"],
                                                            "dss_uuid": file_json["uuid"]["uuid"],
                                                            "indexed" : False
                                                            }, files))
@@ -121,11 +121,11 @@ class IngestExporter:
             analysisBundleContent = self.getBundleDocument(analysis)
             analysisFileName = "analysis_0.json" # TODO: shouldn't be hardcoded
             fileDescription = self.writeMetadataToStaging(submissionEnvelopeUuid, analysisFileName, analysisBundleContent, "hca-analysis")
-            
+
             bundleManifest.fileAnalysisMap = { analysisDssUuid : [analysisUuid] }
             filesToTransfer.append({"name":analysisFileName,
-                                    "submittedName":"analysis.json", 
-                                    "url":fileDescription.url, 
+                                    "submittedName":"analysis.json",
+                                    "url":fileDescription.url,
                                     "dss_uuid": analysisDssUuid,
                                     "indexed" : True})
 
@@ -156,6 +156,7 @@ class IngestExporter:
             # create the bundle manifest to track file uuid to object uuid maps for this bundle
 
             bundleManifest = ingestapi.BundleManifest()
+            bundleManifest.envelopeUuid = submissionEnvelopeUuid
 
             projectEntities = list(self.ingest_api.getRelatedEntities("projects", assay, "projects"))
             if len(projectEntities) != 1:
@@ -263,7 +264,7 @@ class IngestExporter:
         newBundle = ingestapi.BundleManifest()
 
         newBundle.files = bundleToCopy["files"]
-        newBundle.fileSampleMap = bundleToCopy["fileSampleMap"] 
+        newBundle.fileSampleMap = bundleToCopy["fileSampleMap"]
         newBundle.fileAssayMap = bundleToCopy["fileAssayMap"]
         newBundle.fileProjectMap = bundleToCopy["fileProjectMap"]
         newBundle.fileProtocolMap = bundleToCopy["fileProtocolMap"]

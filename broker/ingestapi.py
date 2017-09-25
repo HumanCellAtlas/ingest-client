@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """
-desc goes here 
+desc goes here
 """
 __author__ = "jupp"
 __license__ = "Apache 2.0"
@@ -218,9 +218,9 @@ class IngestApi:
 class BundleManifest:
     def __init__(self):
         self.bundleUuid = unicode(uuid.uuid4())
+        self.envelopeUuid = {}
         self.files = []
         self.fileSampleMap = {}
         self.fileAssayMap = {}
         self.fileProjectMap = {}
         self.fileProtocolMap = {}
-
