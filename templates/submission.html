@@ -2,7 +2,7 @@
 {% block head %}
 {{ super() }}
 <link rel="stylesheet" href="{{url_for('static', filename = 'css/submission.css')}}">
-<script src="{{url_for('static', filename = 'js/index.js')}}"></script>
+<script src="{{url_for('static', filename = 'js/submission.js')}}"></script>
 {% endblock %}
 
 {% block content %}
@@ -74,10 +74,14 @@
                     <dl class="dl-horizontal">
                         <dt>Staging Credentials</dt>
                         <dd>
-                            <pre><code>{{sub['stagingDetails']['stagingAreaLocation']['value'] }}</code></pre>
+                            <pre><code id="staging-credentials">{{sub['stagingDetails']['stagingAreaLocation']['value'] }}</code></pre>
                             <form action="staging/delete" method="POST">
+                                <button type="button" class="btn btn-default btn-copy js-tooltip js-copy" data-toggle="tooltip" data-placement="bottom" title="Copy to clipboard"> Copy Credentials</button>
+
                                 <input type="hidden" name="submissionUrl" value="{{sub['_links']['self']['href'] }}"/>
                                 <button class="btn btn-danger" onclick="return confirm('Are you sure you want to delete the staging area?');">Delete Staging Area</button>
+
+
                             </form>
 
                         </dd>
@@ -96,6 +100,7 @@
                             <input type="hidden" name="submissionUrl" value="{{sub['_links']['submit']['href'] }}"/>
                             <button class="btn btn-success" onclick="return confirm('Are all data files uploaded to the staging area?');">Complete submission</button>
                         </form>
+
                     </dd>
                 </dl>
             </div>
