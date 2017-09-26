@@ -1,6 +1,10 @@
 function renderDates() {
     $(".date-column").each(function () {
-        var date = new Date($(this).data("date"));
-        $(this).text(date.toLocaleTimeString() + " " + date.toLocaleDateString());
+
+        var value = $(this).data("date");
+        date = moment(value).toDate(); // use moment to correctly parse date even in safari
+
+        var formattedDate = date.toLocaleTimeString() + " " + date.toLocaleDateString()
+        $(this).text(formattedDate);
     });
 }

@@ -16,7 +16,7 @@ function pollRow(row){
 
     var rowData = row.data();
     var url = rowData.url;
-    var date = new Date(rowData.date);
+    var date = moment(rowData.date).toDate();
     date.setSeconds(date.getSeconds() - LAST_UPDATE_INTERVAL_S);
 
     var submissionId = url.split("/").pop();
@@ -39,12 +39,5 @@ function pollRow(row){
                 pollRow(row);
             }, POLL_INTERVAL)
         },
-    });
-}
-
-function renderDates() {
-    $(".date-column").each(function () {
-        var date = new Date($(this).data("date"));
-        $(this).text(date.toLocaleTimeString() + " " + date.toLocaleDateString());
     });
 }
