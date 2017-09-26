@@ -16,6 +16,10 @@ import logging
 from itertools import chain
 from collections import defaultdict
 
+# these are spreadsheet fields that can be a list
+# todo - these should be read out of the json schema at the start
+hca_v3_lists = ['seq.lanes']
+
 class SpreadsheetSubmission:
 
     def __init__(self, dry=False, output=None):
@@ -43,8 +47,9 @@ class SpreadsheetSubmission:
     # this doesn't support <level1>.<level2>.<level3>
     def _keyValueToNestedObject(self, obj, key, value):
         d = value
-        if "\"" in unicode(value) or "||" in unicode(value):
-            d = map(lambda it: it.strip(' "\''), value.split("||"))
+        if "\"" in unicode(value) or "||" in unicode(value) or key in hca_v3_lists:
+
+            d = map(lambda it: it.strip(' "\''), str(value).split("||"))
 
         if len(key.split('.')) > 3:
             raise ValueError('We don\'t support keys nested greater than 3 levels, found:'+key)
