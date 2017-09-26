@@ -104,6 +104,7 @@ class IngestExporter:
 
             # the new bundle manifest === the old manifest (union) staged analysis file (union) new data files
             bundleManifest = self.makeCopyBundle(inputBundle)
+            bundleManifest.envelopeUuid = submissionEnvelopeUuid
 
             # add the referenced files to the bundle manifest and to the files to transfer
             files = list(self.ingest_api.getRelatedEntities("files", analysis, "files"))
