@@ -1,6 +1,6 @@
 <td>
     {%  if sub['uuid']['uuid'] is defined %}
-    <a href="/submissions/{{sub['_links']['self']['href'].rsplit('/',1)[1] }}">{{sub['uuid']['uuid']}}</a>
+    <a class="submission-uuid" href="/submissions/{{sub['_links']['self']['href'].rsplit('/',1)[1] }}">{{sub['uuid']['uuid']}}</a>
 
     {% else %}
     <span class="glyphicon glyphicon-refresh glyphicon-refresh-animate"></span> <a href="{{sub['_links']['self']['href'] }}">Waiting...</a>
@@ -9,15 +9,15 @@
 </td>
 <td>
     <div class="right">
-        <span class="label {{ helper['status_label'][sub['submissionState']] or helper['default_status_label']}} label-lg">{{ sub['submissionState']}}</span>
+        <span class="submission-state label {{ helper['status_label'][sub['submissionState']] or helper['default_status_label']}} label-lg">{{ sub['submissionState']}}</span>
     </div>
 </td>
 <td>
-    <span class="date-column" data-date="{{ sub["submissionDate"]["date"]}}">
+    <span class="submission-date date-column" data-date="{{ sub["submissionDate"] }}">
     </span>
 </td>
 <td>
-    <span class="date-column" data-date="{{ sub["updateDate"]["date"] }}">
+    <span class="update-date date-column" data-date="{{ sub["updateDate"] }}">
     </span>
 
 </td>
