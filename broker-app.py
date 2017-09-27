@@ -128,7 +128,7 @@ def delete_staging():
         text = stagingApi.deleteStagingArea(uuid)
         message = Markup("Staging area deleted for <a href='" + text + "'>" + text + "</a>")
         flash(message, "alert-success")
-    return  redirect(url_for('index'))
+    return      redirect(url_for('index'))
 
 if __name__ == '__main__':
     logging.basicConfig(stream=sys.stdout, level=logging.INFO)

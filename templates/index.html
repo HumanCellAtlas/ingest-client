@@ -26,9 +26,9 @@
                 <label for="exampleInputFile">Please upload your spreadsheet</label>
                 <input type="file" name="file" class="form-control-file"  id="exampleInputFile" accept="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"   aria-describedby="fileHelp">
                 <small id="fileHelp" class="form-text text-muted">The spreadsheet must conform to a </small>
-                <button type="button" class="btn btn-xs" aria-label="Left Align">
+                <a class="btn btn-xs btn-default" aria-label="Left Align" href="{{url_for('static', filename = 'empty-spreadsheet-v3.xlsx')}}">
                     HCA template <span class="glyphicon glyphicon-download-alt" aria-hidden="true"> </span>
-                </button>
+                </a>
             </div>
             <button type="submit" class="btn btn-primary">Submit</button>
         </form>
