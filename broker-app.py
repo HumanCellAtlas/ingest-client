@@ -65,16 +65,6 @@ def get_submission_view(id):
         return render_template('submission.html', sub=submission, helper=HTML_HELPER, project=project, files=files)
     return ''
 
-@app.route('/submissions/<id>/<date>')
-def get_submission(id, date):
-    submission = IngestApi().getSubmissionIfModifiedSince(id, date)
-
-    if(submission):
-        return render_template('submission-row.html', sub=submission, helper=HTML_HELPER)
-    return ''
-
-
-
 @app.route('/upload', methods=['POST'])
 def upload_file():
     if request.method == 'POST':
