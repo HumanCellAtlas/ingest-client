@@ -1,6 +1,6 @@
 $(document).ready(function() {
     renderDates();
-
+    // $('#files').DataTable({searching: false, paging: false});
     // Requires Bootstrap 3 for functionality
     $('.js-tooltip').tooltip();
 

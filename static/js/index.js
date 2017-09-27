@@ -1,6 +1,7 @@
 $(function() {
     triggerPolling();
     renderDates();
+    // $('#submissions').DataTable({searching: false, paging: false});
 });
 
 function triggerPolling(){
