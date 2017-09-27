@@ -47,7 +47,7 @@
                 </thead>
                 <tbody>
                 {% for sub in submissions %}
-                    <tr data-url="{{sub['_links']['self']['href'] }}" data-date="{{sub['date']}}" >
+                    <tr data-url="{{sub['_links']['self']['href'] }}" data-date="{{sub['updateDate']}}" >
                     {% include 'submission-row.html' %}
                     </tr>
                 {% endfor %}
