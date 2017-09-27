@@ -30,10 +30,10 @@
                     </a>
                 </dd>
                 <dt>Created</dt>
-                <dd><span class="date-column" data-date="{{ sub["submissionDate"]["date"] }}">
+                <dd><span class="date-column" data-date="{{ sub["submissionDate"]}}">
                     </span></dd>
                 <dt>Updated</dt>
-                <dd><span class="date-column" data-date="{{ sub["updateDate"]["date"] }}">
+                <dd><span class="date-column" data-date="{{ sub["updateDate"] }}">
                     </span></dd>
                 <!--<dt>Ingest API Link</dt>-->
                 <!--<dd><a href="{{sub['_links']['self']['href'] }}">{{sub["_links"]["self"]["href"] }}</a></dd>-->
@@ -94,11 +94,11 @@
                                 {% endif %}
                             </td>
                             <td>
-                                <span class="date-column" data-date="{{ file["submissionDate"]["date"]}}">
+                                <span class="date-column" data-date="{{ file["submissionDate"]}}">
                                 </span>
                             </td>
                             <td>
-                                <span class="date-column" data-date="{{ file["updateDate"]["date"] }}">
+                                <span class="date-column" data-date="{{ file["updateDate"]}}">
                                 </span>
 
                             </td>
