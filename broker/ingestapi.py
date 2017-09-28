@@ -72,6 +72,13 @@ class IngestApi:
             files = json.loads(r.text)
         return files
 
+    def getBundleManifests(self, id):
+        submissionUrl =  self.url + '/submissionEnvelopes/' + id + '/bundleManifests'
+        r = requests.get(submissionUrl, headers=self.headers)
+        bundleManifests = []
+        if r.status_code == requests.codes.ok:
+            files = json.loads(r.text)
+        return bundleManifests
 
     def createSubmission(self):
         r = requests.post(self.ingest_api["submissionEnvelopes"]["href"].rsplit("{")[0], data="{}",

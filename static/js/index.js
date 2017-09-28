@@ -42,12 +42,53 @@ function pollRow(row){
 }
 
 function renderResponse(url, data) {
+    var STATUS_LABEL = {
+        'Valid': 'label-success',
+        'Validating': 'label-info',
+        'Invalid': 'label-danger',
+        'Submitted': 'label-default',
+        'Completed': 'label-default'
+    }
+
+    var DEFAULT_STATUS_LABEL = 'label-warning';
+
     var row = $('#submissions').find('> tbody > tr[data-url="' + url + '"]');
-    row.find('.submission-state').text(data.submissionState);
+
+    var statusCol = row.find('.submission-state')
+    statusCol.text(data.submissionState);
+    statusCol.attr('class', 'submission-state label ' + (STATUS_LABEL[data.submissionState] || DEFAULT_STATUS_LABEL) + ' label-lg');
 
     var date = moment(data.updateDate.date).toDate(); // use moment to correctly parse date even in safari
     var formattedDate = date.toLocaleTimeString() + " " + date.toLocaleDateString();
 
     row.find('.update-date').text(formattedDate);
+
+    var form = row.find('.submission-form');
+    if (data['_links']['submit']){
+        form.html(createSubmissionForm(data['_links']['submit']['href']));
+    } else {
+        form.html(createSubmissionForm());
+    }
+
     console.log("Rendered updated info");
 }
+
+function createSubmissionForm(submissionUrl){
+    if(submissionUrl){
+        var htmlForm = `
+        <form class="submission-form complete-form" action="submit" method="POST">
+            <input class="submission-url-input" type="hidden" name="submissionUrl" value="` + submissionUrl + `"/>
+            <button class="btn btn-success" onclick="return confirm(\'Are all data files uploaded to the staging area?\');">Complete submission</button>
+        </form>`;
+    }
+    else{
+        var htmlForm = `
+        <form class="submission-form complete-form" action="submit" method="POST">
+            <button class="btn btn-success disabled" onclick="return false;">Complete submission</button>
+        </form>`;
+
+    }
+
+    return htmlForm;
+}
+

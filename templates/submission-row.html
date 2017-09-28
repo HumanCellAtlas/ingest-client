@@ -9,7 +9,7 @@
 </td>
 <td>
     <div class="right">
-        <span class="submission-state label {{ helper['status_label'][sub['submissionState']] or helper['default_status_label']}} label-lg">{{ sub['submissionState']}}</span>
+        <h4><span style="display:inline-block; width:100px" class="submission-state label {{ helper['status_label'][sub['submissionState']] or helper['default_status_label']}} label-lg">{{ sub['submissionState']}}</span></h4>
     </div>
 </td>
 <td>
@@ -19,15 +19,15 @@
 <td>
     <span class="update-date date-column" data-date="{{ sub["updateDate"] }}">
     </span>
-
 </td>
 <td>
-    {%  if sub['_links']['submit'] is defined %}
-    <form action="submit" method="POST">
-        <input type="hidden" name="submissionUrl" value="{{sub['_links']['submit']['href'] }}"/>
-        <button class="btn btn-success" onclick="return confirm('Are all data files uploaded to the staging area?');">Complete submission</button>
+    <form class="submission-form complete-form" action="submit" method="POST">
+        {%  if sub['_links']['submit'] is defined %}
+            <input class="submission-url-input" type="hidden" name="submissionUrl" value="{{sub['_links']['submit']['href'] }}"/>
+            <button class="btn btn-success" onclick="return confirm('Are all data files uploaded to the staging area?');">Complete submission</button>
+        {% else %}
+            <input class="submisssion-url-input" type="hidden" name="submissionUrl" value=""/>
+            <button class="btn btn-success disabled" onclick="return false;">Complete submission</button>
+        {% endif %}
     </form>
-    {% else %}
-    <button class="btn btn-success disabled">Complete submission</button>
-    {% endif %}
 </td>

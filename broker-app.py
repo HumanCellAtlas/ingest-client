@@ -46,24 +46,53 @@ def index():
 def get_submission_view(id):
     ingest_api = IngestApi()
     submission = ingest_api.getSubmissionIfModifiedSince(id, None)
-    response = ingest_api.getProjects(id)
-
-    projects = []
-
-    if('_embedded' in response and 'projects' in response['_embedded']):
-        projects = response['_embedded']['projects']
-
-    project = projects[0] if projects else None # there should always 1 project
-
-    files = []
-
-    response = ingest_api.getFiles(id)
-    if('_embedded' in response and 'files' in response['_embedded']):
-        files = response['_embedded']['files']
 
     if(submission):
-        return render_template('submission.html', sub=submission, helper=HTML_HELPER, project=project, files=files)
-    return ''
+        response = ingest_api.getProjects(id)
+
+        projects = []
+
+        if('_embedded' in response and 'projects' in response['_embedded']):
+            projects = response['_embedded']['projects']
+
+        project = projects[0] if projects else None # there should always 1 project
+
+        files = []
+
+        response = ingest_api.getFiles(id)
+        if('_embedded' in response and 'files' in response['_embedded']):
+            files = response['_embedded']['files']
+
+        filePage = None
+        if('page' in response):
+            filePage = response['page']
+            filePage['len'] = len(files)
+
+        bundleManifests = []
+        bundleManifestObj = {}
+
+        response = ingest_api.getBundleManifests(id)
+        if('_embedded' in response and 'bundleManifests' in response['_embedded']):
+            bundleManifests = response['_embedded']['bundleManifests']
+
+        bundleManifestObj['list'] = bundleManifests
+        bundleManifestObj['page'] = None
+
+        if('page' in response):
+            bundleManifestObj['page'] = response['page']
+            bundleManifestObj['page']['len'] = len(bundleManifests)
+
+        return render_template('submission.html',
+            sub=submission,
+            helper=HTML_HELPER,
+            project=project,
+            files=files,
+            filePage=filePage,
+            bundleManifestObj=bundleManifestObj)
+    else:
+        flash("Submission doesn't exist!", "alert-danger")
+        return  redirect(url_for('index'))
+
 
 @app.route('/upload', methods=['POST'])
 def upload_file():
@@ -90,9 +119,13 @@ def upload_file():
         submissionUrl = submission.createSubmission()
         thread = threading.Thread(target=submission.submit, args=(path,submissionUrl))
         thread.start()
-        submissionId = submissionUrl.rsplit('/', 1)[-1]
 
-        message = Markup("Submission created with id : <a class='submission-id' href='"+submissionUrl+"'>"+submissionId+"</a>")
+        ingestApi = IngestApi()
+        submissionUUID = ingestApi.getObjectUuid(submissionUrl)
+        displayId= submissionUUID or '<UUID not generated yet>'
+
+        message = Markup("Submission created with UUID : <a class='submission-id' href='"+submissionUrl+"'>"+ displayId +"</a>")
+
         flash(message, "alert-success")
         return redirect(url_for('index'))
     flash("You can only POST to the upload endpoint", "alert-warning")

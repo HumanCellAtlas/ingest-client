@@ -111,8 +111,9 @@
                         {% endfor %}
                         </tbody>
                     </table>
-                    *Showing max result of 20 ...
-                    <!--TODO: show the total no. of files-->
+                    {% if(filePage['len'] != filePage['totalElements']): %}
+                        *Showing {{filePage['len']}} of {{filePage['totalElements']}}...
+                    {% endif %}
                 </dd>
             </dl>
         </div>
@@ -141,6 +142,28 @@
         </div>
     </div>
     {% endif %}
+
+
+    {% if bundleManifestObj['list']: %}
+    <div class="row">
+        <div class="col-lg-10">
+            <dl class="dl-horizontal">
+                <dt>Bundle Manifests</dt>
+                <dd>
+                    {% for bundleManifest in bundleManifestObj['list'] %}
+                        {{ bundle_manifest['bundleUuid'] }} <a title="Ingest API Link" href="{{bundleManifest['_links']['self']['href']}}">
+                        <span class="glyphicon glyphicon glyphicon glyphicon glyphicon-share" aria-hidden="true"></span></a>
+                    {% endfor %}
+
+                    {% if(bundleManifestObj['page']['len'] != bundleManifestObj['page']['totalElements']): %}
+                        *Showing {{bundleManifestObj['page']['len']}} of {{bundleManifestObj['page']['totalElements']}}...
+                    {% endif %}
+                </dd>
+            </dl>
+        </div>
+    </div>
+    {% endif %}
+
     {%  if sub['_links']['submit'] is defined %}
     <div class="row">
         <div class="col-lg-10">
