@@ -2,6 +2,8 @@
 """
 desc goes here
 """
+from requests import HTTPError
+
 __author__ = "jupp"
 __license__ = "Apache 2.0"
 
@@ -218,8 +220,29 @@ class IngestApi:
                     }
                 }
 
-        r = requests.patch(subUrl, data=json.dumps(stagingDetails))
-        self.logger.debug("envelope updated with staging details "+ json.dumps(stagingDetails) )
+        if self.retrySubmissionUpdateWithStagingDetails(subUrl, stagingDetails, 0):
+            self.logger.debug("envelope updated with staging details " + json.dumps(stagingDetails))
+        else:
+            self.logger.error("Failed to update envelope with staging details: " + json.dumps(stagingDetails))
+
+    def retrySubmissionUpdateWithStagingDetails(self, subUrl, stagingDetails, tries):
+        if tries < 5:
+            # do a GET request to get latest submission envelope
+            entity_response = requests.get(subUrl)
+            etag = entity_response.headers['ETag']
+            if etag:
+                # set the etag header so we get 412 if someone beats us to set validating
+                self.headers['If-Match'] = etag
+                r = requests.patch(subUrl, data=json.dumps(stagingDetails))
+                try:
+                    r.raise_for_status()
+                    return True
+                except HTTPError:
+                    self.logger.error("PATCHing submission envelope with creds failed, retrying")
+                    tries += 1
+                    self.retrySubmissionUpdateWithStagingDetails(subUrl, stagingDetails, tries)
+        else:
+            return False
 
 
 class BundleManifest:
