@@ -29,12 +29,24 @@
                         <span class="glyphicon glyphicon glyphicon glyphicon glyphicon-share" aria-hidden="true"></span>
                     </a>
                 </dd>
-                <dt>Created</dt>
-                <dd><span class="date-column" data-date="{{ sub["submissionDate"]}}"></span></dd>
-                <dt>Updated</dt>
-                <dd><span id="submission-update-date" class="date-column" data-date="{{ sub["updateDate"] }}"></span></dd>
                 <!--<dt>Ingest API</dt>-->
                 <!--<dd><a href="{{sub['_links']['self']['href'] }}">{{sub["_links"]["self"]["href"] }}</a></dd>-->
+            </dl>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-lg-10">
+            <dl class="dl-horizontal">
+                <dt>Created</dt>
+                <dd><span class="date-column" data-date="{{ sub["submissionDate"]}}"></span></dd>
+            </dl>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-lg-10">
+            <dl class="dl-horizontal">
+                <dt>Updated</dt>
+                <dd><span id="submission-update-date" class="date-column" data-date="{{ sub["updateDate"] }}"></span></dd>
             </dl>
         </div>
     </div>
@@ -43,10 +55,26 @@
     <div class="row">
         <div class="col-lg-10">
             <dl class="dl-horizontal">
-                <dt>Project Title</dt>
-                <dd>{{project['content']['title']}}</dd>
                 <dt>Project UUID</dt>
                 <dd>{{project['uuid']['uuid']}}</dd>
+            </dl>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-10">
+            <dl class="dl-horizontal">
+                <dt>Project Title</dt>
+                <dd>{{project['content']['title']}}</dd>
+                <!--<dt>Description</dt>-->
+                <!--<dd class="text-justify">{{project['content']['description']}}</dd>-->
+            </dl>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-10">
+            <dl class="dl-horizontal">
                 <dt>Description</dt>
                 <dd class="text-justify">{{project['content']['description']}}</dd>
             </dl>
@@ -95,7 +123,7 @@
                                 <span class="glyphicon glyphicon glyphicon glyphicon glyphicon-share" aria-hidden="true"></span></a>
                             </td>
                             <td class="text-right">
-                                <a title="DSS Link" href="{{bundleManifest['_links']['self']['href']}}">
+                                <a class="dss-url" data-uuid="{{bundleManifest['bundleUuid']}}" title="DSS Link" href="">
                                     <span class="glyphicon glyphicon glyphicon glyphicon glyphicon-share" aria-hidden="true"></span></a>
 
                             </td>
@@ -142,7 +170,7 @@
             <dl class="dl-horizontal">
                 <dt></dt>
                 <dd>
-                    <form action="{{url_for('submit_envelope')}}" method="POST">
+                    <form action="/submit" method="POST">
                         <input type="hidden" name="submissionUrl" value="{{ sub['_links']['submit']['href'] }}"/>
                         <button class="btn btn-success" onclick="return confirm('Are all data files uploaded to the staging area?');">Complete submission</button>
                     </form>
