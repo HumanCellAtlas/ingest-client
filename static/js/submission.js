@@ -3,6 +3,9 @@ $(document).ready(function() {
 
     var url = $('#submission-url').attr('href');
 
+    var env = /staging/.test(url) ? 'staging' : 'dev';
+    console.log('Currently in ' + env);
+
     setInterval(function(){
         pollSubmission(url);
         pollFiles(url);
@@ -19,9 +22,8 @@ $(document).ready(function() {
         copyToClipboard(text, el);
     });
 
-
     renderDates();
-
+    renderDSSLinks(env);
 });
 
 function copyToClipboard(text, el) {
@@ -89,14 +91,15 @@ function renderSubmissionChanges(url, data) {
     $('#submission-update-date').text(formattedDate);
 
     var formDiv = $('#submission-form');
-    if (data['_links']['submit']){
-        formDiv.html(createSubmissionForm(data['_links']['submit']['href']));
-    }
+    var submitUrl = data['_links']['submit'] ? data['_links']['submit']['href'] : null;
+    var completeForm = createSubmissionForm();
+    formDiv.html(completeForm);
+    console.log(submitUrl);
     console.log("Rendered updated info");
 }
 
 function createSubmissionForm(submissionUrl){
-    var htmlForm;
+    var htmlForm = '';
     if(submissionUrl){
         htmlForm = `
         <div class="col-lg-10">
@@ -134,4 +137,22 @@ function pollFiles(url){
 
         },
     });
+}
+
+function renderDSSLinks(env){
+    var DSS_API = {
+        'dev': 'https://dss.dev.data.humancellatlas.org/v1/bundles/{UUID}?replica=aws',
+        'staging': 'https://dss.staging.data.humancellatlas.org/v1/{UUID}?replica=aws'
+    };
+
+    $('a.dss-url').each(function () {
+        var uuid = $(this).data('uuid');
+        var url = DSS_API[env];
+        url = url.replace('{UUID}', uuid);
+        $(this).attr('href', url);
+    });
+
+
+
+
 }

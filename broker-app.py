@@ -25,10 +25,12 @@ STATUS_LABEL = {
 
 DEFAULT_STATUS_LABEL = 'label-warning'
 
+
 HTML_HELPER = {
     'status_label': STATUS_LABEL,
     'default_status_label': DEFAULT_STATUS_LABEL
 }
+
 
 app = Flask(__name__, static_folder='static')
 app.secret_key = 'cells'
