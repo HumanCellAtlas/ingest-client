@@ -142,7 +142,7 @@ function pollFiles(url){
 function renderDSSLinks(env){
     var DSS_API = {
         'dev': 'https://dss.dev.data.humancellatlas.org/v1/bundles/{UUID}?replica=aws',
-        'staging': 'https://dss.staging.data.humancellatlas.org/v1/{UUID}?replica=aws'
+        'staging': 'https://dss.staging.data.humancellatlas.org/v1/bundles/{UUID}?replica=aws'
     };
 
     $('a.dss-url').each(function () {
