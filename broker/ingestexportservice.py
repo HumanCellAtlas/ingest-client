@@ -263,8 +263,8 @@ class IngestExporter:
         uuid =  content["core"]["uuid"]["uuid"]
         del content["core"]["uuid"]
         content["core"]["uuid"] = uuid
-        content["submissionDate"]["date"] = submissionDate
-        content["updateDate"]["date"] = updateDate
+        content["core"]["submissionDate"] = {"date" : submissionDate}
+        content["core"]["updateDate"] = {"date" : updateDate}
         return content
 
     # returns a copy of a bundle manifest JSON, but with a new bundleUuid
