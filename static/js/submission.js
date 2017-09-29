@@ -92,7 +92,7 @@ function renderSubmissionChanges(url, data) {
 
     var formDiv = $('#submission-form');
     var submitUrl = data['_links']['submit'] ? data['_links']['submit']['href'] : null;
-    var completeForm = createSubmissionForm();
+    var completeForm = createSubmissionForm(submitUrl);
     formDiv.html(completeForm);
     console.log(submitUrl);
     console.log("Rendered updated info");
