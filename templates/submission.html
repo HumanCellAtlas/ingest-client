@@ -10,10 +10,10 @@
     <div class="row">
         <div>
             <div class="col-lg-8"><h3>Submission</h3></div>
-            <div class="col-lg-2">
+            <div class="col-lg-2 text-right">
                 <h3>
-                    <div class="right">
-                        <span class="label {{ helper['status_label'][sub['submissionState']] or helper['default_status_label']}}">{{ sub['submissionState']}}</span>
+                    <div >
+                        <span id="submission-status" data-status="{{ sub['submissionState']}}" class="label {{ helper['status_label'][sub['submissionState']] or helper['default_status_label']}}">{{ sub['submissionState']}}</span>
                     </div>
                 </h3>
             </div>
@@ -25,17 +25,15 @@
             <dl class="dl-horizontal">
                 <dt>UUID</dt>
                 <dd>{{sub['uuid']['uuid']}}
-                    <a title="Ingest API Link" href="{{sub['_links']['self']['href']}}">
+                    <a title="Ingest API" id="submission-url" href="{{sub['_links']['self']['href']}}">
                         <span class="glyphicon glyphicon glyphicon glyphicon glyphicon-share" aria-hidden="true"></span>
                     </a>
                 </dd>
                 <dt>Created</dt>
-                <dd><span class="date-column" data-date="{{ sub["submissionDate"]}}">
-                    </span></dd>
+                <dd><span class="date-column" data-date="{{ sub["submissionDate"]}}"></span></dd>
                 <dt>Updated</dt>
-                <dd><span class="date-column" data-date="{{ sub["updateDate"] }}">
-                    </span></dd>
-                <!--<dt>Ingest API Link</dt>-->
+                <dd><span id="submission-update-date" class="date-column" data-date="{{ sub["updateDate"] }}"></span></dd>
+                <!--<dt>Ingest API</dt>-->
                 <!--<dd><a href="{{sub['_links']['self']['href'] }}">{{sub["_links"]["self"]["href"] }}</a></dd>-->
             </dl>
         </div>
@@ -62,58 +60,54 @@
             <dl class="dl-horizontal">
                 <dt>Files</dt>
                 <dd>
-                    <table id="files" class="table table-condensed">
+                    <div id="submission-files">
+                        {% include 'submission-files-table.html' %}
+                    </div>
+                    <hr/>
+                </dd>
+            </dl>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if bundleManifestObj['list']: %}
+    <div class="row">
+        <div class="col-lg-10">
+            <dl class="dl-horizontal">
+                <dt>Bundle Manifests</dt>
+                <dd>
+                    <table class="table table-condensed">
                         <thead>
                         <tr>
                             <th>UUID</th>
-                            <th>File</th>
-                            <th>Url</th>
-                            <th>Created</th>
-                            <th>Updated</th>
-                            <th>Status</th>
+                            <th class="text-right">Ingest API</th>
+                            <th class="text-right">DSS</th>
                         </tr>
                         </thead>
                         <tbody>
-                        {% for file in files %}
+                        {% for bundleManifest in bundleManifestObj['list'] %}
                         <tr>
                             <td>
-                                {%  if file['uuid']['uuid'] is defined %}
-                                    {{file['uuid']['uuid']}}
-                                {% endif %}<a title="Ingest API Link" href="{{file['_links']['self']['href']}}">
-                                <span class="glyphicon glyphicon glyphicon glyphicon glyphicon-share" aria-hidden="true"></span>
-                            </a>
+                                {{bundleManifest['bundleUuid']}}
                             </td>
-                            <td>
-                                {%  if file['fileName'] is defined %}
-                                    {{file['fileName']}}
-                                {% endif %}
+                            <td class="text-right">
+                                <a title="Ingest API" href="{{bundleManifest['_links']['self']['href']}}">
+                                <span class="glyphicon glyphicon glyphicon glyphicon glyphicon-share" aria-hidden="true"></span></a>
                             </td>
-                            <td>
-                                {%  if file['cloudUrl'] is defined %}
-                                    {{file['cloudUrl']}}
-                                {% endif %}
-                            </td>
-                            <td>
-                                <span class="date-column" data-date="{{ file["submissionDate"]}}">
-                                </span>
-                            </td>
-                            <td>
-                                <span class="date-column" data-date="{{ file["updateDate"]}}">
-                                </span>
+                            <td class="text-right">
+                                <a title="DSS Link" href="{{bundleManifest['_links']['self']['href']}}">
+                                    <span class="glyphicon glyphicon glyphicon glyphicon glyphicon-share" aria-hidden="true"></span></a>
 
-                            </td>
-                            <td>
-                                <div class="right">
-                                    <span class="label {{ helper['status_label'][file['validationState']] or helper['default_status_label']}} label-lg">{{ file['validationState']}}</span>
-                                </div>
                             </td>
                         </tr>
                         {% endfor %}
                         </tbody>
                     </table>
-                    {% if(filePage['len'] != filePage['totalElements']): %}
-                        *Showing {{filePage['len']}} of {{filePage['totalElements']}}...
+
+                    {% if(bundleManifestObj['page']['len'] != bundleManifestObj['page']['totalElements']): %}
+                    *Showing {{bundleManifestObj['page']['len']}} of {{bundleManifestObj['page']['totalElements']}}
                     {% endif %}
+                    <hr/>
                 </dd>
             </dl>
         </div>
@@ -127,12 +121,11 @@
                 <dt>Staging Credentials</dt>
                 <dd>
                     <pre><code id="staging-credentials">{{sub['stagingDetails']['stagingAreaLocation']['value'] }}</code></pre>
-                    <form action="staging/delete" method="POST">
+                    <form action="/staging/delete" method="POST">
                         <button type="button" class="btn btn-default btn-copy js-tooltip js-copy" data-toggle="tooltip" data-placement="bottom" title="Copy to clipboard"> Copy Credentials</button>
 
                         <input type="hidden" name="submissionUrl" value="{{sub['_links']['self']['href'] }}"/>
                         <button class="btn btn-danger" onclick="return confirm('Are you sure you want to delete the staging area?');">Delete Staging Area</button>
-
 
                     </form>
 
@@ -143,42 +136,22 @@
     </div>
     {% endif %}
 
-
-    {% if bundleManifestObj['list']: %}
-    <div class="row">
-        <div class="col-lg-10">
-            <dl class="dl-horizontal">
-                <dt>Bundle Manifests</dt>
-                <dd>
-                    {% for bundleManifest in bundleManifestObj['list'] %}
-                        {{ bundle_manifest['bundleUuid'] }} <a title="Ingest API Link" href="{{bundleManifest['_links']['self']['href']}}">
-                        <span class="glyphicon glyphicon glyphicon glyphicon glyphicon-share" aria-hidden="true"></span></a>
-                    {% endfor %}
-
-                    {% if(bundleManifestObj['page']['len'] != bundleManifestObj['page']['totalElements']): %}
-                        *Showing {{bundleManifestObj['page']['len']}} of {{bundleManifestObj['page']['totalElements']}}...
-                    {% endif %}
-                </dd>
-            </dl>
-        </div>
-    </div>
-    {% endif %}
-
+    <div id="submission-form" class="row">
     {%  if sub['_links']['submit'] is defined %}
-    <div class="row">
         <div class="col-lg-10">
             <dl class="dl-horizontal">
                 <dt></dt>
                 <dd>
-                    <form action="submit" method="POST">
-                        <input type="hidden" name="submissionUrl" value="{{sub['_links']['submit']['href'] }}"/>
+                    <form action="{{url_for('submit_envelope')}}" method="POST">
+                        <input type="hidden" name="submissionUrl" value="{{ sub['_links']['submit']['href'] }}"/>
                         <button class="btn btn-success" onclick="return confirm('Are all data files uploaded to the staging area?');">Complete submission</button>
                     </form>
 
                 </dd>
             </dl>
         </div>
-    </div>
     {% endif %}
+    </div>
+
 </div>
 {% endblock %}

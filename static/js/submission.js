@@ -1,5 +1,13 @@
 $(document).ready(function() {
-    renderDates();
+    var POLL_INTERVAL = 5000; //in milliseconds
+
+    var url = $('#submission-url').attr('href');
+
+    setInterval(function(){
+        pollSubmission(url);
+        pollFiles(url);
+    }, POLL_INTERVAL)
+
     // $('#files').DataTable({searching: false, paging: false});
     // Requires Bootstrap 3 for functionality
     $('.js-tooltip').tooltip();
@@ -10,6 +18,10 @@ $(document).ready(function() {
         var el = $(this);
         copyToClipboard(text, el);
     });
+
+
+    renderDates();
+
 });
 
 function copyToClipboard(text, el) {
@@ -36,3 +48,90 @@ function copyToClipboard(text, el) {
     }
 }
 
+function pollSubmission(url){
+    var date = $('#submission-update-date').data('date');
+
+    var submissionId = url.split("/").pop(); // for logging only
+    $.ajax({
+        url: url,
+        headers: {"If-Modified-Since":date},
+        type: 'GET',
+        dataType: 'json',
+        success: function(data, textStatus, jqXHR){
+            if(data){
+                var lastModifiedDate = jqXHR.getResponseHeader('Last-Modified');
+                console.log("Got response, submissionId '" + submissionId + " was last modified at " + lastModifiedDate);
+                renderSubmissionChanges(url, data);
+                $('#submission-update-date').data('date', lastModifiedDate);
+            }
+        },
+    });
+}
+
+function renderSubmissionChanges(url, data) {
+    var STATUS_LABEL = {
+        'Valid': 'label-success',
+        'Validating': 'label-info',
+        'Invalid': 'label-danger',
+        'Submitted': 'label-default',
+        'Completed': 'label-default'
+    }
+
+    var DEFAULT_STATUS_LABEL = 'label-warning';
+
+    var status = $('#submission-status');
+    status.text(data.submissionState);
+    status.attr('class', 'submission-state label ' + (STATUS_LABEL[data.submissionState] || DEFAULT_STATUS_LABEL) + ' label-lg');
+
+    var date = moment(data.updateDate).toDate(); // use moment to correctly parse date even in safari
+    var formattedDate = date.toLocaleTimeString() + " " + date.toLocaleDateString();
+
+    $('#submission-update-date').text(formattedDate);
+
+    var formDiv = $('#submission-form');
+    if (data['_links']['submit']){
+        formDiv.html(createSubmissionForm(data['_links']['submit']['href']));
+    }
+    console.log("Rendered updated info");
+}
+
+function createSubmissionForm(submissionUrl){
+    var htmlForm;
+    if(submissionUrl){
+        htmlForm = `
+        <div class="col-lg-10">
+            <dl class="dl-horizontal">
+                <dt></dt>
+                <dd>
+                    <form class="submission-form complete-form" action="/submit" method="POST">
+                        <input class="submission-url-input" type="hidden" name="submissionUrl" value="` + submissionUrl + `"/>
+                        <button class="btn btn-success" onclick="return confirm(\'Are all data files uploaded to the staging area?\');">
+                            Complete submission
+                        </button>
+                    </form>
+                </dd>
+            </dl>
+        </div>`;
+    }
+
+    return htmlForm;
+}
+
+// TODO: improve submission files polling
+function pollFiles(url){
+    var submissionId = url.split("/").pop();
+
+    $.ajax({
+        url: '/submissions/'+ submissionId + '/files',
+        type: 'GET',
+        dataType: 'html',
+        success: function(data, textStatus, jqXHR){
+            if(data){
+                $('#submission-files').html(data);
+                renderDates();
+                console.log('Rendered submission files.');
+            }
+
+        },
+    });
+}

@@ -13,7 +13,6 @@ function triggerPolling(){
 
 function pollRow(row){
     var POLL_INTERVAL = 3000; //in milliseconds
-    var LAST_UPDATE_INTERVAL_S = 2; //in seconds, added to capture any updates that happened in the last time interval
 
     var rowData = row.data();
     var url = rowData.url;
@@ -58,7 +57,7 @@ function renderResponse(url, data) {
     statusCol.text(data.submissionState);
     statusCol.attr('class', 'submission-state label ' + (STATUS_LABEL[data.submissionState] || DEFAULT_STATUS_LABEL) + ' label-lg');
 
-    var date = moment(data.updateDate.date).toDate(); // use moment to correctly parse date even in safari
+    var date = moment(data.updateDate).toDate(); // use moment to correctly parse date even in safari
     var formattedDate = date.toLocaleTimeString() + " " + date.toLocaleDateString();
 
     row.find('.update-date').text(formattedDate);
@@ -74,21 +73,25 @@ function renderResponse(url, data) {
 }
 
 function createSubmissionForm(submissionUrl){
+    var htmlForm;
     if(submissionUrl){
-        var htmlForm = `
+        htmlForm = `
         <form class="submission-form complete-form" action="submit" method="POST">
             <input class="submission-url-input" type="hidden" name="submissionUrl" value="` + submissionUrl + `"/>
-            <button class="btn btn-success" onclick="return confirm(\'Are all data files uploaded to the staging area?\');">Complete submission</button>
+            <button class="btn btn-success" onclick="return confirm(\'Are all data files uploaded to the staging area?\');">
+                Complete submission
+            </button>
         </form>`;
     }
     else{
-        var htmlForm = `
+        htmlForm = `
         <form class="submission-form complete-form" action="submit" method="POST">
-            <button class="btn btn-success disabled" onclick="return false;">Complete submission</button>
+            <button class="btn btn-default disabled" onclick="return false;">
+                Complete submission
+            </button>
         </form>`;
 
     }
 
     return htmlForm;
 }
-

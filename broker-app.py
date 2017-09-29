@@ -93,6 +93,25 @@ def get_submission_view(id):
         flash("Submission doesn't exist!", "alert-danger")
         return  redirect(url_for('index'))
 
+@app.route('/submissions/<id>/files')
+def get_submission_files(id):
+    ingest_api = IngestApi()
+    response = ingest_api.getFiles(id)
+
+    files = []
+    if('_embedded' in response and 'files' in response['_embedded']):
+        files = response['_embedded']['files']
+
+    filePage = None
+    if('page' in response):
+        filePage = response['page']
+        filePage['len'] = len(files)
+
+
+    return render_template('submission-files-table.html',
+                               files=files,
+                               filePage=filePage,
+                               helper=HTML_HELPER)
 
 @app.route('/upload', methods=['POST'])
 def upload_file():
@@ -154,6 +173,7 @@ def delete_staging():
     return      redirect(url_for('index'))
 
 if __name__ == '__main__':
+
     logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 
     app.run(host='0.0.0.0', port=5000)
