@@ -250,6 +250,11 @@ class IngestExporter:
 
     def getBundleDocument(self, entity):
         content = entity["content"]
+        submissionDate = entity["submissionDate"]
+        updateDate = entity["updateDate"]
+
+        del entity["submissionDate"]
+        del entity["updateDate"]
         del entity["content"]
         del entity["_links"]
         core = entity
@@ -258,6 +263,8 @@ class IngestExporter:
         uuid =  content["core"]["uuid"]["uuid"]
         del content["core"]["uuid"]
         content["core"]["uuid"] = uuid
+        content["submissionDate"]["date"] = submissionDate
+        content["updateDate"]["date"] = updateDate
         return content
 
     # returns a copy of a bundle manifest JSON, but with a new bundleUuid
