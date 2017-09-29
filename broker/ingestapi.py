@@ -123,7 +123,8 @@ class IngestApi:
                 for entity in json.loads(r.text)["_embedded"][entityType]:
                     yield entity
                 if "next" in json.loads(r.text)["_links"]:
-                    yield self._getAllObjectsFromSet(json.loads(r.text)["_links"]["next"]["href"], entityType)
+                    for entity2 in self._getAllObjectsFromSet(json.loads(r.text)["_links"]["next"]["href"], entityType):
+                        yield entity2
 
     def getRelatedEntities(self, relation, entity, entityType):
         # get the self link from entity
