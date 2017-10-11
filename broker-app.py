@@ -144,11 +144,12 @@ def upload_file():
         ingestApi = IngestApi()
         submissionUUID = ingestApi.getObjectUuid(submissionUrl)
         displayId= submissionUUID or '<UUID not generated yet>'
+        submissionId = submissionUrl.rsplit('/', 1)[-1]
 
         message = Markup("Submission created with UUID : <a class='submission-id' href='"+submissionUrl+"'>"+ displayId +"</a>")
 
         flash(message, "alert-success")
-        return redirect(url_for('index'))
+        return redirect(url_for('index') + '#' + submissionId) # temporarily adding submission id in url for integration testing
     flash("You can only POST to the upload endpoint", "alert-warning")
     return  redirect(url_for('index'))
 
