@@ -128,7 +128,8 @@ class IngestExporter:
                                     "submittedName":"analysis.json",
                                     "url":fileDescription.url,
                                     "dss_uuid": analysisDssUuid,
-                                    "indexed" : True})
+                                    "indexed" : True,
+                                    "content-type" : "hca-assay"})
 
             # generate new bundle
             # write to DSS
@@ -174,7 +175,7 @@ class IngestExporter:
                 projectDssUuid = unicode(uuid.uuid4())
                 projectFileName = "project_"+str(index)+".json"
                 fileDescription = self.writeMetadataToStaging(submissionEnvelopeUuid, projectFileName, projectBundle, "hca-project")
-                projectUuidToBundleData[projectUuid] = {"name":projectFileName,"submittedName":"project.json", "url":fileDescription.url, "dss_uuid": projectDssUuid, "indexed": True}
+                projectUuidToBundleData[projectUuid] = {"name":projectFileName,"submittedName":"project.json", "url":fileDescription.url, "dss_uuid": projectDssUuid, "indexed": True, "content-type" : "hca-project"}
 
                 bundleManifest.fileProjectMap = {projectDssUuid: [projectUuid]}
             else:
@@ -199,7 +200,7 @@ class IngestExporter:
                 sampleDssUuid = unicode(uuid.uuid4())
                 sampleFileName = "sample_"+str(index)+".json"
                 fileDescription = self.writeMetadataToStaging(submissionEnvelopeUuid, sampleFileName, sampleBundle, "hca-sample")
-                sampleUuidToBundleData[sampleUuid] = {"name":sampleFileName, "submittedName":"sample.json", "url":fileDescription.url, "dss_uuid": sampleDssUuid, "indexed": True}
+                sampleUuidToBundleData[sampleUuid] = {"name":sampleFileName, "submittedName":"sample.json", "url":fileDescription.url, "dss_uuid": sampleDssUuid, "indexed": True, "content-type" : "hca-sample"}
                 bundleManifest.fileSampleMap = {sampleDssUuid: sampleRelatedUuids}
             else:
                 bundleManifest.fileSampleMap = {sampleUuidToBundleData[sampleUuid]["dss_uuid"]: sampleRelatedUuids}
@@ -222,7 +223,7 @@ class IngestExporter:
 
             fileDescription = self.writeMetadataToStaging(submissionEnvelopeUuid, assayFileName, assaysBundle, "hca-assay")
             bundleManifest.fileAssayMap = {assayDssUuid: [assayUuid]}
-            submittedFiles.append({"name":assayFileName, "submittedName":"assay.json", "url":fileDescription.url, "dss_uuid": assayDssUuid, "indexed": True})
+            submittedFiles.append({"name":assayFileName, "submittedName":"assay.json", "url":fileDescription.url, "dss_uuid": assayDssUuid, "indexed": True, "content-type" : "hca-assay"})
 
             self.logger.info("All files staged...")
 
