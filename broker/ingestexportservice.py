@@ -113,7 +113,8 @@ class IngestExporter:
                                                            "submittedName": file_json["fileName"],
                                                            "url": file_json["cloudUrl"],
                                                            "dss_uuid": file_json["uuid"]["uuid"],
-                                                           "indexed" : False
+                                                           "indexed" : False,
+                                                           "content-type" : "hca-data-file"
                                                            }, files))
 
             # stage the analysis.json, add to filesToTransfer and to the bundle manifest
@@ -129,7 +130,7 @@ class IngestExporter:
                                     "url":fileDescription.url,
                                     "dss_uuid": analysisDssUuid,
                                     "indexed" : True,
-                                    "content-type" : "hca-assay"})
+                                    "content-type" : "hca-analysis"})
 
             # generate new bundle
             # write to DSS
@@ -212,7 +213,7 @@ class IngestExporter:
                 fileUuid = file["uuid"]["uuid"]
                 fileName = file["fileName"]
                 cloudUrl = file["cloudUrl"]
-                fileToBundleData[fileUuid] = {"name":fileName, "submittedName":fileName, "url":cloudUrl, "dss_uuid": fileUuid, "indexed": False}
+                fileToBundleData[fileUuid] = {"name":fileName, "submittedName":fileName, "url":cloudUrl, "dss_uuid": fileUuid, "indexed": False, "content-type" : "hca-data-file"}
                 submittedFiles.append(fileToBundleData[fileUuid])
                 bundleManifest.files.append(fileUuid)
 
