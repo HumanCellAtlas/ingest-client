@@ -68,7 +68,7 @@ class StagingApi:
         fileUrl = urlparse.urljoin( self.url, self.apiversion+'/area/'+submissionId+"/"+filename)
 
         header = dict(self.header)
-        header["Content-type"] = type
+        header["HCA-Content-type"] = type
         r = requests.put(fileUrl,  data=json.dumps(body), headers=header)
         if r.status_code == requests.codes.ok or requests.codes.created:
             responseObject = json.loads(r.text)
