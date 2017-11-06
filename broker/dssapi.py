@@ -65,7 +65,7 @@ class DssApi:
         bundleUrl = self.url +"/v1/bundles/"+bundleUuid
         r = requests.put(bundleUrl, data=json.dumps(bundleFile), params={"replica":"aws"}, headers=self.headers)
         if r.status_code == requests.codes.ok or r.status_code == requests.codes.created or r.status_code == requests.codes.accepted:
-            print "bundle stored to dss! "+ bundleUuid
+            print ("bundle stored to dss! "+ bundleUuid)
 
 
     # analysis bundle === provenanceBundle.files (union) filesToTransfer
@@ -121,7 +121,7 @@ class DssApi:
         bundleUrl = self.url +"/v1/bundles/"+analysisBundleUuid
         r = requests.put(bundleUrl, data=json.dumps(bundleCreatePayload), params={"replica":"aws"}, headers=self.headers)
         if r.status_code == requests.codes.ok or r.status_code == requests.codes.created or r.status_code == requests.codes.accepted:
-            print "bundle stored to dss! "+ analysisBundleUuid
+            print ("bundle stored to dss! "+ analysisBundleUuid)
 
     def retrieveBundle(self, bundleUuid):
         provenanceBundleUrl = self.url +"/v1/bundles/" + bundleUuid

@@ -31,5 +31,5 @@ def isAtomicType(thing):
 
 def run(objectToFlatten):
     flattenedObject = collections.OrderedDict(); # maintains insertion order, which looks neater
-    flatten(unflattenedJsonObject, "", flattenedObject) # initialize the flatten() with an empty string key prefix
+    flatten(objectToFlatten, "", flattenedObject) # initialize the flatten() with an empty string key prefix
     return flattenedObject
