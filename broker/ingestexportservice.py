@@ -122,7 +122,7 @@ class IngestExporter:
             analysisDssUuid = unicode(uuid.uuid4())
             analysisBundleContent = self.getBundleDocument(analysis)
             analysisFileName = "analysis_0.json" # TODO: shouldn't be hardcoded
-            fileDescription = self.writeMetadataToStaging(submissionEnvelopeUuid, analysisFileName, analysisBundleContent,'"metadata/analysis"')
+            fileDescription = self.writeMetadataToStaging(submissionEnvelopeUuid, analysisFileName, analysisBundleContent, "\"metadata/analysis\"")
 
             bundleManifest.fileAnalysisMap = { analysisDssUuid : [analysisUuid] }
             filesToTransfer.append({"name":analysisFileName,
