@@ -138,9 +138,18 @@ class SpreadsheetSubmission:
         cellSuspensionSheet = wb.get_sheet_by_name("sample.cell_suspension")
         cellSuspensionEnrichmentSheet = wb.get_sheet_by_name("sample.cell_suspension.enrichment")
         cellSuspensionWellSheet = wb.get_sheet_by_name("sample.cell_suspension.well")
-        # organoidSheet = wb.get_sheet_by_name("sample.organoid")
-        # immortalizedCLSheet = wb.get_sheet_by_name("sample.immortalized_cell_line")
-        # primaryCLSheet = wb.get_sheet_by_name("sample.primary_cell_line")
+
+        organoidSheet = wb.create_sheet()
+        if "sample.organoid" in wb.sheetnames:
+            organoidSheet = wb.get_sheet_by_name("sample.organoid")
+
+        immortalizedCLSheet = wb.create_sheet()
+        if "sample.immortalized_cell_line" in wb.sheetnames:
+            immortalizedCLSheet = wb.get_sheet_by_name("sample.immortalized_cell_line")
+
+        primaryCLSheet = wb.create_sheet()
+        if "sample.primary_cell_line" in wb.sheetnames:
+            primaryCLSheet = wb.get_sheet_by_name("sample.primary_cell_line")
         # protocolSheet = wb.get_sheet_by_name("protocols")
         # assaySheet = wb.get_sheet_by_name("assay")
         singleCellSheet = wb.get_sheet_by_name("single_cell")
@@ -148,7 +157,6 @@ class SpreadsheetSubmission:
         rnaSheet = wb.get_sheet_by_name("rna")
         seqSheet = wb.get_sheet_by_name("seq")
         seqBarcodeSheet = wb.get_sheet_by_name("seq.barcode")
-        # lanesSheet = wb.get_sheet_by_name("lanes")
         filesSheet = wb.get_sheet_by_name("file")
 
 
@@ -174,9 +182,9 @@ class SpreadsheetSubmission:
         specimens = self._multiRowToObjectFromSheet("specimen_from_organism", specimenSheet)
         specimen_state = self._multiRowToObjectFromSheet("state_of_specimen", specimenStateSheet)
         cell_suspension = self._multiRowToObjectFromSheet("cell_suspension", cellSuspensionSheet)
-        # organoid = self._multiRowToObjectFromSheet("organoid", organoidSheet)
-        # immortalized_cell_line = self._multiRowToObjectFromSheet("immortalized_cell_line", immortalizedCLSheet)
-        # primary_cell_line = self._multiRowToObjectFromSheet("primary_cell_line", primaryCLSheet)
+        organoid = self._multiRowToObjectFromSheet("organoid", organoidSheet)
+        immortalized_cell_line = self._multiRowToObjectFromSheet("immortalized_cell_line", immortalizedCLSheet)
+        primary_cell_line = self._multiRowToObjectFromSheet("primary_cell_line", primaryCLSheet)
         files = self._multiRowToObjectFromSheet("file", filesSheet)
 
 
@@ -185,9 +193,9 @@ class SpreadsheetSubmission:
         samples.extend(donors)
         samples.extend(specimens)
         samples.extend(cell_suspension)
-        # samples.extend(organoid)
-        # samples.extend(immortalized_cell_line)
-        # samples.extend(primary_cell_line)
+        samples.extend(organoid)
+        samples.extend(immortalized_cell_line)
+        samples.extend(primary_cell_line)
 
 
         # post objects to the Ingest API after some basic validation
@@ -195,7 +203,7 @@ class SpreadsheetSubmission:
             raise ValueError('Project must have an id attribute')
         projectId = project["project_id"]
 
-        # embedd contact into into project for now
+        # embedd contact & publication into into project for now
         pubs = []
         for index, publication in enumerate(publications):
             pubs.append(publication)
@@ -241,7 +249,7 @@ class SpreadsheetSubmission:
                 raise ValueError('Sample must have an id attribute')
             sampleMap[sample["sample_id"]] = sample
 
-
+        # add dependent information to various sample types
         for state in specimen_state:
             if "sample_id" in state:
                 sampleMap[state["sample_id"]]["specimen_from_organism"]["state_of_specimen"] = state["state_of_specimen"]
@@ -257,7 +265,7 @@ class SpreadsheetSubmission:
             if "sample_id" in w:
                 sampleMap[state["sample_id"]]["cell_suspension"]["well"] = w["well"]
 
-
+        # create derived_from links between samples
         for index, sample_id in enumerate(sampleMap.keys()):
             if "derived_from" in sampleMap[sample_id]:
                 if sampleMap[sample_id]["derived_from"] not in sampleMap.keys():
@@ -296,48 +304,50 @@ class SpreadsheetSubmission:
         #             for sampleProtocolId in sample["protocol_ids"]:
         #                 self.ingest_api.linkEntity(sampleIngest, protocolMap[sampleProtocolId], "protocols")
         #
+
+        #build the assay map from the different types of assay infromation
         assayMap={}
 
         for index, s in enumerate(seq):
             if "assay_id" in s:
                 id = s["assay_id"]
                 del s["assay_id"]
-                assayMap[id] = s
+                assayMap[id]["seq"] = s["seq"]
             else:
-                seqObj = s
+                seqObj = s["seq"]
 
         for sb in seq_barcode:
             if "assay_id" in sb:
                 id = sb["assay_id"]
                 del sb["assay_id"]
-                assayMap[id]["seq"]["umi_barcode"] = s
+                assayMap[id]["seq"]["umi_barcode"] = sb["umi_barcode"]
             else:
-                seqObj["umi_barcode"] = s
+                seqObj["umi_barcode"] = sb["umi_barcode"]
 
 
         for index, sc in enumerate(single_cell):
             if "assay_id" in sc:
                 id = sc["assay_id"]
                 del sc["assay_id"]
-                assayMap[id] = sc
+                assayMap[id]["single_cell"] = sc["single_cell"]
             else:
-                scObj = sc
+                scObj = sc["single_cell"]
 
         for scb in single_cell_barcode:
             if "assay_id" in scb:
                 id = scb["assay_id"]
                 del scb["assay_id"]
-                assayMap[id]["single_cel"]["barcode"] = scb
+                assayMap[id]["single_cell"]["barcode"] = scb["barcode"]
             else:
-                scObj["barcode"] = scb
+                scObj["barcode"] = scb["barcode"]
 
         for index, r in enumerate(rna):
             if "assay_id" in r:
                 id = r["assay_id"]
                 del r["assay_id"]
-                assayMap[id] = r
+                assayMap[id]["rna"] = r["rna"]
             else:
-                rnaObj = r
+                rnaObj = r["rna"]
 
 
         filesMap={}
@@ -347,18 +357,61 @@ class SpreadsheetSubmission:
             if "assay_id" not in file:
                 raise ValueError('Files must be linked to an assay')
             assay = file["assay_id"]
-            seq = file["seq"]
+            seqFile = file["seq"]
             del file["assay_id"]
             del file["seq"]
-            self.dumpJsonToFile({"fileName" : file["filename"], "content" : file}, projectId, "files_" + str(index))
+            # self.dumpJsonToFile({"fileName" : file["filename"], "content" : file}, projectId, "files_" + str(index))
+            self.dumpJsonToFile(file, projectId, "files_" + str(index))
             filesMap[file["filename"]] = file
 
-            if assayMap[assay] and assayMap[assay]["seq"]:
-                assay[assay]["seq"] = "foo"
-            else:
+
+            if assay not in assayMap:
+                assayMap[assay] = {}
+                assayMap[assay]["files"] = []
                 assayMap[assay]["rna"] = rnaObj
                 assayMap[assay]["single_cell"] = scObj
                 assayMap[assay]["seq"] = seqObj
+                assayMap[assay]["seq"]["lanes"] = []
+                assayMap[assay]["sample_id"] = file["sample_id"]
+            elif "rna" not in assayMap[assay]:
+                assayMap[assay]["rna"] = rnaObj
+            elif "single_cell" not in assayMap[assay].keys():
+                assayMap[assay]["single_cell"] = scObj
+            elif "seq" not in assayMap[assay]:
+                assayMap[assay]["seq"] = seqObj
+                assayMap[assay]["seq"]["lanes"] = []
+            elif "sample_id" not in assayMap[assay]:
+                assayMap[assay]["sample_id"] = file["sample_id"]
+            elif "files" not in assayMap[assay]:
+                assayMap[assay]["files"] = []
+
+            assayMap[assay]["files"].append(file["filename"])
+
+            if "lanes" in seqFile:
+                if "number" in seqFile["lanes"]:
+                    added = False
+                    if len(assayMap[assay]["seq"]["lanes"]) > 0:
+                        for lane in assayMap[assay]["seq"]["lanes"]:
+                            if lane["number"] == seqFile["lanes"]["number"]:
+                                if "run" in seqFile["lanes"]:
+                                    lane[seqFile["lanes"]["run"]] = file["filename"]
+                                    added = True
+                    if added == False:
+                        if "run" in seqFile["lanes"]:
+                            assayMap[assay]["seq"]["lanes"].append({"number": seqFile["lanes"]["number"],
+                                                                    seqFile["lanes"]["run"] : file["filename"]})
+                else:
+                    if "run" in seqFile["lanes"]:
+                        assayMap[assay]["seq"]["lanes"].append({seqFile["lanes"]["run"]: file["filename"]})
+
+
+
+            if "insdc_experiment" in seqFile:
+                assayMap[assay]["seq"]["insdc_experiment"] = seqFile["insdc_experiment"]
+
+            if "insdc_run" in seqFile:
+                assayMap[assay]["seq"]["insdc_run"] = seqFile["insdc_run"]
+
 
 
             if not self.dryrun:
@@ -403,15 +456,18 @@ class SpreadsheetSubmission:
         #             del assay["seq"]["lanes"]
         #             assay["seq"]["lanes"] =lanes
         #
-        #     if not self.dryrun:
-        #         assayIngest = self.ingest_api.createAssay(submissionUrl, json.dumps(assay))
-        #         self.ingest_api.linkEntity(assayIngest, projectIngest, "projects")
-        #
-        #         if assay["sample_id"] in sampleMap:
-        #             self.ingest_api.linkEntity(assayIngest, sampleMap[assay["sample_id"]], "samples")
-        #
-        #         for file in files:
-        #             self.ingest_api.linkEntity(assayIngest, filesMap[file], "files")
+
+        for index, assay in enumerate(assayMap.values()):
+            self.dumpJsonToFile(assay, projectId, "assay_" + str(index))
+            if not self.dryrun:
+                assayIngest = self.ingest_api.createAssay(submissionUrl, json.dumps(assay))
+                self.ingest_api.linkEntity(assayIngest, projectIngest, "projects")
+
+                if assay["sample_id"] in sampleMap:
+                    self.ingest_api.linkEntity(assayIngest, sampleMap[assay["sample_id"]], "samples")
+
+                for file in assay["files"]:
+                    self.ingest_api.linkEntity(assayIngest, filesMap[file], "files")
 
 
 
