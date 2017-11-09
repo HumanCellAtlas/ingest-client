@@ -150,7 +150,7 @@ class SpreadsheetSubmission:
         primaryCLSheet = wb.create_sheet()
         if "sample.primary_cell_line" in wb.sheetnames:
             primaryCLSheet = wb.get_sheet_by_name("sample.primary_cell_line")
-        # protocolSheet = wb.get_sheet_by_name("protocols")
+        protocolSheet = wb.get_sheet_by_name("protocols")
         # assaySheet = wb.get_sheet_by_name("assay")
         singleCellSheet = wb.get_sheet_by_name("single_cell")
         singleCellBarcodeSheet = wb.get_sheet_by_name("single_cell.barcode")
@@ -171,10 +171,10 @@ class SpreadsheetSubmission:
         seq_barcode = self._multiRowToObjectFromSheet("barcode", seqBarcodeSheet)
 
         # samples = self._multiRowToObjectFromSheet("sample", sampleSheet)
-        # protocols = self._multiRowToObjectFromSheet("protocol", protocolSheet)
         # assays = self._multiRowToObjectFromSheet("assay", assaySheet)
         # lanes = self._multiRowToObjectFromSheet("lanes", lanesSheet)
 
+        protocols = self._multiRowToObjectFromSheet("protocol", protocolSheet)
         donors = self._multiRowToObjectFromSheet("donor", donorSheet)
         publications = self._multiRowToObjectFromSheet("publication", projectPubsSheet)
         submitters = self._multiRowToObjectFromSheet("submitter", submitterSheet)
@@ -232,19 +232,18 @@ class SpreadsheetSubmission:
         if not self.dryrun:
             projectIngest = self.ingest_api.createProject(submissionUrl, json.dumps(project))
 
-        # protocolMap = {}
-        # for index, protocol in enumerate(protocols):
-        #     if "id" not in protocol:
-        #         raise ValueError('Protocol must have an id attribute')
-        #     protocolMap[protocol["id"]] = protocol
-        #     if not self.dryrun:
-        #         protocolIngest = self.ingest_api.createProtocol(submissionUrl, json.dumps(protocol))
-        #         # self.ingest_api.linkEntity(protocolIngest, projectIngest, "projects")
-        #         protocolMap[protocol["id"]] = protocolIngest
+        protocolMap = {}
+        for index, protocol in enumerate(protocols):
+            if "protocol_id" not in protocol:
+                raise ValueError('Protocol must have an id attribute')
+            protocolMap[protocol["protocol_id"]] = protocol
+            if not self.dryrun:
+                protocolIngest = self.ingest_api.createProtocol(submissionUrl, json.dumps(protocol))
+                self.ingest_api.linkEntity(protocolIngest, projectIngest, "projects")
+                protocolMap[protocol["protocol_id"]] = protocolIngest
 
         sampleMap = {}
         for index, sample in enumerate(samples):
-            self.dumpJsonToFile(sample, projectId, "sample_" + str(index))
             if "sample_id" not in sample:
                 raise ValueError('Sample must have an id attribute')
             sampleMap[sample["sample_id"]] = sample
@@ -267,9 +266,18 @@ class SpreadsheetSubmission:
 
         # create derived_from links between samples
         for index, sample_id in enumerate(sampleMap.keys()):
-            if "derived_from" in sampleMap[sample_id]:
-                if sampleMap[sample_id]["derived_from"] not in sampleMap.keys():
-                    raise ValueError('Sample '+ sample_id +' references another sample '+ sampleMap[sample_id]["derived_from"] +' that isn\'t in the donor worksheet')
+            sample = sampleMap[sample_id]
+            if "derived_from" in sample:
+                if sample["derived_from"] not in sampleMap.keys():
+                    raise ValueError('Sample '+ sample_id +' references another sample '+ sample["derived_from"] +' that isn\'t in the donor worksheet')
+            if "protocol_ids" in sample:
+                for sampleProtocolId in sample["protocol_ids"]:
+                    if sampleProtocolId not in protocolMap:
+                        raise ValueError('Sample ' + sample["sample_id"] + ' references a protocol ' + sampleProtocolId + ' that isn\'t in the protocol worksheet')
+                protocols = sample["protocol_ids"]
+                del sample["protocol_ids"]
+
+            self.dumpJsonToFile(sample, projectId, "sample_" + str(index))
             if not self.dryrun:
                 sampleIngest = self.ingest_api.createSample(submissionUrl, json.dumps(sample))
                 self.ingest_api.linkEntity(sampleIngest, projectIngest, "projects")
@@ -278,32 +286,10 @@ class SpreadsheetSubmission:
                 if sampleMap[sample_id]["derived_from"] in sampleMap[sample_id]:
                     self.ingest_api.linkEntity(sampleMap[sample_id], sampleMap[sampleMap[sample_id]["derived_from"]], "derivedFromSamples")
 
-        # sample id to created object
-        # sampleMap = {}
-        # for index, sample in enumerate(samples):
-        #     # sampleObj = MetadataDocument(sample)
-        #     self.dumpJsonToFile(sample, projectId, "sample_" + str(index))
-        #     if "id" not in sample:
-        #         raise ValueError('Samples must have an id attribute')
-        #     sampleMap[sample["id"]] = sample
-        #     if "donor_id" in sample:
-        #         if sample["donor_id"] not in donorMap:
-        #             raise ValueError('Sample '+sample["id"]+' references a donor '+sample["donor_id"]+' that isn\'t in the donor worksheet')
-        #     if "protocol_ids" in sample:
-        #         for sampleProtocolId in sample["protocol_ids"]:
-        #             if sampleProtocolId not in protocolMap:
-        #                 raise ValueError('Sample ' + sample["id"] + ' references a protocol ' + sampleProtocolId + ' that isn\'t in the protocol worksheet')
-        #     if not self.dryrun:
-        #         sampleIngest = self.ingest_api.createSample(submissionUrl, json.dumps(sample))
-        #         self.ingest_api.linkEntity(sampleIngest, projectIngest, "projects")
-        #         sampleMap[sample["id"]] = sampleIngest
-        #         if "donor_id" in sample:
-        #             if sample["donor_id"] in donorMap:
-        #                 self.ingest_api.linkEntity(sampleIngest, donorMap[sample["donor_id"]], "derivedFromSamples")
-        #         if "protocol_ids" in sample:
-        #             for sampleProtocolId in sample["protocol_ids"]:
-        #                 self.ingest_api.linkEntity(sampleIngest, protocolMap[sampleProtocolId], "protocols")
-        #
+                if protocols:
+                    for sampleProtocolId in protocols:
+                        self.ingest_api.linkEntity(sampleIngest, protocolMap[sampleProtocolId], "protocols")
+
 
         #build the assay map from the different types of assay infromation
         assayMap={}
@@ -358,32 +344,37 @@ class SpreadsheetSubmission:
                 raise ValueError('Files must be linked to an assay')
             assay = file["assay_id"]
             seqFile = file["seq"]
+            sample = file["sample_id"]
             del file["assay_id"]
             del file["seq"]
+            del file["sample_id"]
             # self.dumpJsonToFile({"fileName" : file["filename"], "content" : file}, projectId, "files_" + str(index))
-            self.dumpJsonToFile(file, projectId, "files_" + str(index))
             filesMap[file["filename"]] = file
 
 
             if assay not in assayMap:
                 assayMap[assay] = {}
                 assayMap[assay]["files"] = []
-                assayMap[assay]["rna"] = rnaObj
-                assayMap[assay]["single_cell"] = scObj
-                assayMap[assay]["seq"] = seqObj
+                assayMap[assay]["rna"] = rnaObj.copy()
+                assayMap[assay]["single_cell"] = scObj.copy()
+                assayMap[assay]["seq"] = seqObj.copy()
                 assayMap[assay]["seq"]["lanes"] = []
-                assayMap[assay]["sample_id"] = file["sample_id"]
+                assayMap[assay]["sample_id"] = sample
+                assayMap[assay]["assay_id"] = assay
             elif "rna" not in assayMap[assay]:
-                assayMap[assay]["rna"] = rnaObj
+                assayMap[assay]["rna"] = rnaObj.copy()
             elif "single_cell" not in assayMap[assay].keys():
-                assayMap[assay]["single_cell"] = scObj
+                assayMap[assay]["single_cell"] = scObj.copy()
             elif "seq" not in assayMap[assay]:
-                assayMap[assay]["seq"] = seqObj
+                assayMap[assay]["seq"] = seqObj.copy()
                 assayMap[assay]["seq"]["lanes"] = []
             elif "sample_id" not in assayMap[assay]:
-                assayMap[assay]["sample_id"] = file["sample_id"]
+                assayMap[assay]["sample_id"] = sample
             elif "files" not in assayMap[assay]:
                 assayMap[assay]["files"] = []
+            elif "assay_id" not in assayMap[assay]:
+                assayMap[assay]["assay_id"] = assay
+
 
             assayMap[assay]["files"].append(file["filename"])
 
@@ -413,63 +404,44 @@ class SpreadsheetSubmission:
                 assayMap[assay]["seq"]["insdc_run"] = seqFile["insdc_run"]
 
 
-
+            self.dumpJsonToFile(file, projectId, "files_" + str(index))
             if not self.dryrun:
                 fileIngest = self.ingest_api.createFile(submissionUrl, file["filename"], json.dumps(file))
                 filesMap[file["filename"]] = fileIngest
-        #
-        # lanesMap= {}
-        # for lane in lanes:
-        #     if "id" not in lane:
-        #         raise ValueError('Lanes must have an id that is linked from the assays.seq.lane attribute')
-        #     laneId = lane["id"]
-        #     del lane["id"]
-        #     lanesMap[str(laneId)] = lane
-        #
-        #
-        # for index, assay in enumerate(assays):
-        #     # assayObj = MetadataDocument(assay)
-        #     self.dumpJsonToFile(assay, projectId, "assay_" + str(index))
-        #     if "id" not in assay:
-        #         raise ValueError('Each assays must have an id attribute')
-        #     if "files" not in assay:
-        #         raise ValueError('Each assay must list associated files using the files attribute')
-        #     else:
-        #         for file in assay["files"]:
-        #             if file not in filesMap:
-        #                 raise ValueError('Assay references file '+file+' that isn\'t defined in the files sheet')
-        #     files = assay["files"]
-        #     del assay["files"]
-        #
-        #     if "sample_id" not in assay:
-        #         raise ValueError("Every assay must reference a sample using the sample_id attribute")
-        #     elif assay["sample_id"] not in sampleMap:
-        #         raise ValueError('An assay references a sample '+assay["sample_id"]+' that isn\'t in the samples worksheet')
-        #
-        #     if "seq" in assay:
-        #         lanes = []
-        #         if "lanes" in assay["seq"]:
-        #             for laneId in assay["seq"]["lanes"]:
-        #                 if laneId not in lanesMap:
-        #                     raise ValueError('Assays references a lane id that isn\'t referenced in the lanes sheet:' +laneId)
-        #                 lanes.append(lanesMap[laneId])
-        #             del assay["seq"]["lanes"]
-        #             assay["seq"]["lanes"] =lanes
-        #
+
+                if sample in sampleMap:
+                    self.ingest_api.linkEntity(fileIngest, sampleMap[sample], "samples")
 
         for index, assay in enumerate(assayMap.values()):
+            if "assay_id" not in assay:
+                raise ValueError('Each assay must have an id attribute' + str(assay))
+            if "files" not in assay:
+                raise ValueError('Each assay must list associated files using the files attribute')
+            else:
+                for file in assay["files"]:
+                    if file not in filesMap:
+                        raise ValueError('Assay references file '+file+' that isn\'t defined in the files sheet')
+            files = assay["files"]
+            del assay["files"]
+
+            if "sample_id" not in assay:
+                raise ValueError("Every assay must reference a sample using the sample_id attribute")
+            elif assay["sample_id"] not in sampleMap:
+                raise ValueError('An assay references a sample '+assay["sample_id"]+' that isn\'t in the samples worksheet')
+            samples = assay["sample_id"]
+            del assay["sample_id"]
+
             self.dumpJsonToFile(assay, projectId, "assay_" + str(index))
+
             if not self.dryrun:
                 assayIngest = self.ingest_api.createAssay(submissionUrl, json.dumps(assay))
                 self.ingest_api.linkEntity(assayIngest, projectIngest, "projects")
 
-                if assay["sample_id"] in sampleMap:
-                    self.ingest_api.linkEntity(assayIngest, sampleMap[assay["sample_id"]], "samples")
+                if samples in sampleMap:
+                    self.ingest_api.linkEntity(assayIngest, sampleMap[samples], "samples")
 
-                for file in assay["files"]:
+                for file in files:
                     self.ingest_api.linkEntity(assayIngest, filesMap[file], "files")
-
-
 
 
         self.logger.info("All done!")
