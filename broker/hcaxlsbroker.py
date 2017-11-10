@@ -226,6 +226,7 @@ class SpreadsheetSubmission:
         if not self.dryrun and not submissionUrl:
             submissionUrl = self.createSubmission()
 
+        project["core"] = {"type": "project"}
 
         self.dumpJsonToFile(project, projectId, "project")
 
@@ -280,6 +281,8 @@ class SpreadsheetSubmission:
                         raise ValueError('Sample ' + sample["sample_id"] + ' references a protocol ' + sampleProtocolId + ' that isn\'t in the protocol worksheet')
                 sampleProtocols = sample["protocol_ids"]
                 del sample["protocol_ids"]
+
+            sample["core"] = {"type" : "sample"}
 
             self.dumpJsonToFile(sample, projectId, "sample_" + str(index))
             if not self.dryrun:
@@ -414,6 +417,7 @@ class SpreadsheetSubmission:
             if "insdc_run" in seqFile:
                 assayMap[assay]["seq"]["insdc_run"] = seqFile["insdc_run"]
 
+            file["core"] = {"type" : "file"}
 
             self.dumpJsonToFile(file, projectId, "files_" + str(index))
             if not self.dryrun:
@@ -445,6 +449,7 @@ class SpreadsheetSubmission:
             samples = assay["sample_id"]
             del assay["sample_id"]
 
+            assay["core"] = {"type" : "assay"}
             self.dumpJsonToFile(assay, projectId, "assay_" + str(index))
 
             if not self.dryrun:
