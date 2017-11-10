@@ -220,6 +220,7 @@ class SpreadsheetSubmission:
         project["contributors"] = cont
 
 
+        linksList = []
         # creating submission
         #
         if not self.dryrun and not submissionUrl:
@@ -241,6 +242,8 @@ class SpreadsheetSubmission:
                 protocolIngest = self.ingest_api.createProtocol(submissionUrl, json.dumps(protocol))
                 self.ingest_api.linkEntity(protocolIngest, projectIngest, "projects")
                 protocolMap[protocol["protocol_id"]] = protocolIngest
+            else:
+                linksList.append("protocol_"+protocol["protocol_id"]+"-project_"+projectId)
 
         sampleMap = {}
         for index, sample in enumerate(samples):
@@ -270,11 +273,12 @@ class SpreadsheetSubmission:
             if "derived_from" in sample:
                 if sample["derived_from"] not in sampleMap.keys():
                     raise ValueError('Sample '+ sample_id +' references another sample '+ sample["derived_from"] +' that isn\'t in the donor worksheet')
+            sampleProtocols = []
             if "protocol_ids" in sample:
                 for sampleProtocolId in sample["protocol_ids"]:
                     if sampleProtocolId not in protocolMap:
                         raise ValueError('Sample ' + sample["sample_id"] + ' references a protocol ' + sampleProtocolId + ' that isn\'t in the protocol worksheet')
-                protocols = sample["protocol_ids"]
+                sampleProtocols = sample["protocol_ids"]
                 del sample["protocol_ids"]
 
             self.dumpJsonToFile(sample, projectId, "sample_" + str(index))
@@ -283,12 +287,19 @@ class SpreadsheetSubmission:
                 self.ingest_api.linkEntity(sampleIngest, projectIngest, "projects")
                 sampleMap[sample["sample_id"]] = sampleIngest
 
-                if sampleMap[sample_id]["derived_from"] in sampleMap[sample_id]:
+                if "derived_from" in sampleMap[sample_id]:
                     self.ingest_api.linkEntity(sampleMap[sample_id], sampleMap[sampleMap[sample_id]["derived_from"]], "derivedFromSamples")
 
-                if protocols:
-                    for sampleProtocolId in protocols:
+                if sampleProtocols:
+                    for sampleProtocolId in sampleProtocols:
                         self.ingest_api.linkEntity(sampleIngest, protocolMap[sampleProtocolId], "protocols")
+            else:
+                if "derived_from" in sampleMap[sample_id]:
+                    linksList.append("sample_" + sample_id + "-derivedFromSamples_" + sampleMap[sample_id]["derived_from"])
+
+                if sampleProtocols:
+                    for sampleProtocolId in sampleProtocols:
+                        linksList.append("sample_" + sample_id + "-protocol_" + sampleProtocolId)
 
 
         #build the assay map from the different types of assay infromation
@@ -411,6 +422,9 @@ class SpreadsheetSubmission:
 
                 if sample in sampleMap:
                     self.ingest_api.linkEntity(fileIngest, sampleMap[sample], "samples")
+            else:
+                if sample in sampleMap:
+                    linksList.append("file_" + file["filename"] + "-sample_" + sample)
 
         for index, assay in enumerate(assayMap.values()):
             if "assay_id" not in assay:
@@ -442,8 +456,14 @@ class SpreadsheetSubmission:
 
                 for file in files:
                     self.ingest_api.linkEntity(assayIngest, filesMap[file], "files")
+            else:
+                if samples in sampleMap:
+                    linksList.append("assay_" + assay["assay_id"] + "-sample_" + samples)
 
+                for file in files:
+                    linksList.append("assay_" + assay["assay_id"] + "-file_" + file)
 
+        self.dumpJsonToFile(linksList, projectId, "dry_run_links")
         self.logger.info("All done!")
         wb.close()
         return submissionUrl
