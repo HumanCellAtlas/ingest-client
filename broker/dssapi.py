@@ -87,7 +87,7 @@ class DssApi:
             url = fileToTransfer["url"]
             uuid = fileToTransfer["dss_uuid"]
             indexed = fileToTransfer["indexed"]
-            contentType = filesToTransfer["content-type"]
+            contentType = fileToTransfer["content-type"]
 
             requestBody = {
                           "bundle_uuid": analysisBundleUuid, # TODO: referring to bundle before it's created might be dodgy?
@@ -130,7 +130,7 @@ class DssApi:
 
     def retrieveBundle(self, bundleUuid):
         provenanceBundleUrl = self.url +"/v1/bundles/" + bundleUuid
-        r = requests.get(provenanceBundleUrl, headers=self.headers)
+        r = requests.get(provenanceBundleUrl, headers=self.headers, params={"replica":"aws"})
         if r.status_code == requests.codes.ok or r.status_code ==  requests.codes.created or r.status_code ==  requests.codes.accepted :
             return json.loads(r.text)
         else:
