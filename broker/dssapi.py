@@ -38,6 +38,7 @@ class DssApi:
             url = file["url"]
             uuid = file["dss_uuid"]
             indexed = file["indexed"]
+            contentType = file["content-type"]
             if not url:
                 self.logger.warn("can't create bundle for "+submittedName+" as no cloud URL is provided")
                 continue
@@ -55,7 +56,8 @@ class DssApi:
                     "indexed": indexed,
                     "name": submittedName,
                     "uuid": uuid,
-                    "version": version
+                    "version": version,
+                    "content-type": contentType 
                 }
                 bundleFile["files"].append(fileObject)
             else:
@@ -85,6 +87,7 @@ class DssApi:
             url = fileToTransfer["url"]
             uuid = fileToTransfer["dss_uuid"]
             indexed = fileToTransfer["indexed"]
+            contentType = fileToTransfer["content-type"]
 
             requestBody = {
                           "bundle_uuid": analysisBundleUuid, # TODO: referring to bundle before it's created might be dodgy?
@@ -102,7 +105,8 @@ class DssApi:
                     "indexed": indexed,
                     "name": submittedName,
                     "uuid": uuid,
-                    "version": version
+                    "version": version,
+                    "content-type" : contentType
                 }
                 bundleCreatePayload["files"].append(fileObject)
             else:
@@ -114,7 +118,8 @@ class DssApi:
         bundleCreatePayload["files"] += list(map(lambda provenanceFile: {"indexed":provenanceFile["indexed"],
                                                                          "name":provenanceFile["name"],
                                                                          "uuid":provenanceFile["uuid"],
-                                                                         "version":provenanceFile["version"]
+                                                                         "version":provenanceFile["version"],
+                                                                         "content-type":provenanceFile["content-type"]
                                                                          },provenanceBundleFiles))
 
         # finally create the bundle
@@ -125,7 +130,7 @@ class DssApi:
 
     def retrieveBundle(self, bundleUuid):
         provenanceBundleUrl = self.url +"/v1/bundles/" + bundleUuid
-        r = requests.get(provenanceBundleUrl, headers=self.headers)
+        r = requests.get(provenanceBundleUrl, headers=self.headers, params={"replica":"aws"})
         if r.status_code == requests.codes.ok or r.status_code ==  requests.codes.created or r.status_code ==  requests.codes.accepted :
             return json.loads(r.text)
         else:
