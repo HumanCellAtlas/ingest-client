@@ -326,8 +326,8 @@ class SpreadsheetSubmission:
                     self.ingest_api.linkEntity(sampleIngest, projectIngest, "projects")
                     sampleMap[sample["sample_id"]] = sampleIngest
 
-                    if "derived_from" in sampleMap[sample_id]:
-                        self.ingest_api.linkEntity(sampleMap[sample_id], sampleMap[sampleMap[sample_id]["derived_from"]], "derivedFromSamples")
+                    if "derived_from" in sampleMap[sample_id]['content']:
+                        self.ingest_api.linkEntity(sampleMap[sample_id], sampleMap[sampleMap[sample_id]['content']["derived_from"]], "derivedFromSamples")
 
                     if sampleProtocols:
                         for sampleProtocolId in sampleProtocols:
