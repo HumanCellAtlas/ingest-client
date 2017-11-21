@@ -190,7 +190,7 @@ class SpreadsheetSubmission:
 
 
         samples = []
-        samples.extend(donors)
+        # samples.extend(donors)
         samples.extend(specimens)
         samples.extend(cell_suspension)
         samples.extend(organoid)
@@ -247,6 +247,41 @@ class SpreadsheetSubmission:
                 linksList.append("protocol_"+protocol["protocol_id"]+"-project_"+projectId)
 
         sampleMap = {}
+        donorIds = []
+
+        for index, donor in enumerate(donors):
+            if "sample_id" not in donor:
+                raise ValueError('Sample of type donor must have an id attribute')
+            sample_id = donor["sample_id"]
+            sampleMap[sample_id] = donor
+            donorIds.append(sample_id)
+
+            sampleProtocols = []
+            if "protocol_ids" in donor:
+                for sampleProtocolId in donor["protocol_ids"]:
+                    if sampleProtocolId not in protocolMap:
+                        raise ValueError('Sample ' + sample_id
+                                         + ' references a protocol ' + sampleProtocolId + ' that isn\'t in the protocol worksheet')
+                sampleProtocols = donor["protocol_ids"]
+                del donor["protocol_ids"]
+
+            donor["core"] = {"type" : "sample"}
+
+            self.dumpJsonToFile(donor, projectId, "sample_" + str(index))
+            if not self.dryrun:
+                sampleIngest = self.ingest_api.createSample(submissionUrl, json.dumps(donor))
+                self.ingest_api.linkEntity(sampleIngest, projectIngest, "projects")
+                sampleMap[sample_id] = sampleIngest
+
+                if sampleProtocols:
+                    for sampleProtocolId in sampleProtocols:
+                        self.ingest_api.linkEntity(sampleIngest, protocolMap[sampleProtocolId], "protocols")
+            else:
+                 if sampleProtocols:
+                    for sampleProtocolId in sampleProtocols:
+                        linksList.append("sample_" + sample_id + "-protocol_" + sampleProtocolId)
+
+
         for index, sample in enumerate(samples):
             if "sample_id" not in sample:
                 raise ValueError('Sample must have an id attribute')
@@ -270,39 +305,40 @@ class SpreadsheetSubmission:
 
         # create derived_from links between samples
         for index, sample_id in enumerate(sampleMap.keys()):
-            sample = sampleMap[sample_id]
-            if "derived_from" in sample:
-                if sample["derived_from"] not in sampleMap.keys():
-                    raise ValueError('Sample '+ sample_id +' references another sample '+ sample["derived_from"] +' that isn\'t in the donor worksheet')
-            sampleProtocols = []
-            if "protocol_ids" in sample:
-                for sampleProtocolId in sample["protocol_ids"]:
-                    if sampleProtocolId not in protocolMap:
-                        raise ValueError('Sample ' + sample["sample_id"] + ' references a protocol ' + sampleProtocolId + ' that isn\'t in the protocol worksheet')
-                sampleProtocols = sample["protocol_ids"]
-                del sample["protocol_ids"]
+            if sample_id not in donorIds:
+                sample = sampleMap[sample_id]
+                if "derived_from" in sample:
+                    if sample["derived_from"] not in sampleMap.keys():
+                        raise ValueError('Sample '+ sample_id +' references another sample '+ sample["derived_from"] +' that isn\'t in the donor worksheet')
+                sampleProtocols = []
+                if "protocol_ids" in sample:
+                    for sampleProtocolId in sample["protocol_ids"]:
+                        if sampleProtocolId not in protocolMap:
+                            raise ValueError('Sample ' + sample["sample_id"] + ' references a protocol ' + sampleProtocolId + ' that isn\'t in the protocol worksheet')
+                    sampleProtocols = sample["protocol_ids"]
+                    del sample["protocol_ids"]
 
-            sample["core"] = {"type" : "sample"}
+                sample["core"] = {"type" : "sample"}
 
-            self.dumpJsonToFile(sample, projectId, "sample_" + str(index))
-            if not self.dryrun:
-                sampleIngest = self.ingest_api.createSample(submissionUrl, json.dumps(sample))
-                self.ingest_api.linkEntity(sampleIngest, projectIngest, "projects")
-                sampleMap[sample["sample_id"]] = sampleIngest
+                self.dumpJsonToFile(sample, projectId, "sample_" + str(index))
+                if not self.dryrun:
+                    sampleIngest = self.ingest_api.createSample(submissionUrl, json.dumps(sample))
+                    self.ingest_api.linkEntity(sampleIngest, projectIngest, "projects")
+                    sampleMap[sample["sample_id"]] = sampleIngest
 
-                if "derived_from" in sampleMap[sample_id]:
-                    self.ingest_api.linkEntity(sampleMap[sample_id], sampleMap[sampleMap[sample_id]["derived_from"]], "derivedFromSamples")
+                    if "derived_from" in sampleMap[sample_id]:
+                        self.ingest_api.linkEntity(sampleMap[sample_id], sampleMap[sampleMap[sample_id]["derived_from"]], "derivedFromSamples")
 
-                if sampleProtocols:
-                    for sampleProtocolId in sampleProtocols:
-                        self.ingest_api.linkEntity(sampleIngest, protocolMap[sampleProtocolId], "protocols")
-            else:
-                if "derived_from" in sampleMap[sample_id]:
-                    linksList.append("sample_" + sample_id + "-derivedFromSamples_" + sampleMap[sample_id]["derived_from"])
+                    if sampleProtocols:
+                        for sampleProtocolId in sampleProtocols:
+                            self.ingest_api.linkEntity(sampleIngest, protocolMap[sampleProtocolId], "protocols")
+                else:
+                    if "derived_from" in sampleMap[sample_id]:
+                        linksList.append("sample_" + sample_id + "-derivedFromSamples_" + sampleMap[sample_id]["derived_from"])
 
-                if sampleProtocols:
-                    for sampleProtocolId in sampleProtocols:
-                        linksList.append("sample_" + sample_id + "-protocol_" + sampleProtocolId)
+                    if sampleProtocols:
+                        for sampleProtocolId in sampleProtocols:
+                            linksList.append("sample_" + sample_id + "-protocol_" + sampleProtocolId)
 
 
         #build the assay map from the different types of assay infromation
