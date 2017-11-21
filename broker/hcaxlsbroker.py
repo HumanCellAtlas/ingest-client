@@ -241,10 +241,10 @@ class SpreadsheetSubmission:
             protocolMap[protocol["protocol_id"]] = protocol
             if not self.dryrun:
                 protocolIngest = self.ingest_api.createProtocol(submissionUrl, json.dumps(protocol))
-                self.ingest_api.linkEntity(protocolIngest, projectIngest, "projects")
+                # self.ingest_api.linkEntity(protocolIngest, projectIngest, "projects")
                 protocolMap[protocol["protocol_id"]] = protocolIngest
-            else:
-                linksList.append("protocol_"+protocol["protocol_id"]+"-project_"+projectId)
+            # else:
+            #     linksList.append("protocol_"+protocol["protocol_id"]+"-project_"+projectId)
 
         sampleMap = {}
         donorIds = []
