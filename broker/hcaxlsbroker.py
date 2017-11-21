@@ -424,11 +424,11 @@ class SpreadsheetSubmission:
                 fileIngest = self.ingest_api.createFile(submissionUrl, file["filename"], json.dumps(file))
                 filesMap[file["filename"]] = fileIngest
 
-                if sample in sampleMap:
-                    self.ingest_api.linkEntity(fileIngest, sampleMap[sample], "samples")
-            else:
-                if sample in sampleMap:
-                    linksList.append("file_" + file["filename"] + "-sample_" + sample)
+            #     if sample in sampleMap:
+            #         self.ingest_api.linkEntity(fileIngest, sampleMap[sample], "samples")
+            # else:
+            #     if sample in sampleMap:
+            #         linksList.append("file_" + file["filename"] + "-sample_" + sample)
 
         for index, assay in enumerate(assayMap.values()):
             if "assay_id" not in assay:
