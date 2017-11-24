@@ -20,24 +20,26 @@ from collections import defaultdict
 # todo - these should be read out of the json schema at the start
 hca_v3_lists = ['seq.lanes']
 
-v4_ontologyFields = {"donor" : ["ancestry", "development_stage", "disease", "medication", "strain"],
-                  "cell_suspension" : ["target_cell_type"],
-                  "death" : ["cause_of_death"],
-                  "immortalized_cell_line" : ["cell_type", "disease", "cell_cycle"],
-                  "protocol" : ["type"],
-                  "primary_cell_line" : ["cell_type", "disease", "cell_cycle"],
-                  "sample" : ["genus_species"],
-                  "specimen_from_organism" : ["body_part", "organ"],
-                     "project" : ["experimental_design"],
-                     "organoid" : ["model_for_organ"]
-                     }
+v4_ontologyFields = {"donor" : ["ancestry", "development_stage", "disease", "medication", "strain", "genus_species"],
+                    "cell_suspension" : ["target_cell_type", "genus_species"],
+                    "death" : ["cause_of_death"],
+                    "immortalized_cell_line" : ["cell_type", "disease", "cell_cycle", "genus_species"],
+                    "protocol" : ["type"],
+                    "primary_cell_line" : ["cell_type", "disease", "cell_cycle", "genus_species"],
+                    "specimen_from_organism" : ["body_part", "organ", "genus_species"],
+                    "project" : ["experimental_design"],
+                    "organoid" : ["model_for_organ", "genus_species"]
+                    }
 
 
 v4_arrayFields = {"seq" : ["insdc_run"],
                 "state_of_specimen" : ["gross_image", "microscopic_image"],
-                "donor" : ["ancestry", "disease", "medication", "strain"],
-                "sample" : ["supplementary_files"],
-                "cell_suspension" : ["target_cell_type", "enrichment"],
+                "donor" : ["ancestry", "disease", "medication", "strain", "supplementary_files"],
+                "immortalized_cell_line" : ["supplementary_files"],
+                "primary_cell_line" : ["supplementary_files"],
+                "organoid": ["supplementary_files"],
+                "specimen_from_organism": ["supplementary_files"],
+                "cell_suspension" : ["target_cell_type", "enrichment", "supplementary_files"],
                 "publication" : ["authors"],
                 "project" : ["supplementary_files", "experimental_design", "experimental_factor_name"]
                   }
@@ -291,13 +293,13 @@ class SpreadsheetSubmission:
                 raise ValueError('Sample of type donor must have an id attribute')
             sample_id = donor["sample_id"]
 
-            if "is_living" in donor:
-                if str.lower(donor["is_living"]) == "true" or str.lower(donor["is_living"]) == "yes":
-                    donor["is_living"] = True
-                elif str.lower(donor["is_living"]) == "false" or str.lower(donor["is_living"]) == "no":
-                    donor["is_living"] = False
-                else:
-                    raise ValueError('Field is_living in sample ' + sample_id + ' must either contain one of yes, true, no or false')
+            if "is_living" in donor["donor"]:
+                if donor["donor"]["is_living"].lower()in ["true", "yes"]:
+                    donor["donor"]["is_living"] = True
+                elif donor["donor"]["is_living"].lower() in ["false", "no"]:
+                    donor["donor"]["is_living"] = False
+            else:
+                raise ValueError('Field is_living in sample ' + sample_id + ' must either contain one of yes, true, no or false')
 
             sampleMap[sample_id] = donor
             donorIds.append(sample_id)
@@ -313,7 +315,7 @@ class SpreadsheetSubmission:
 
             donor["core"] = {"type" : "sample"}
 
-            self.dumpJsonToFile(donor, projectId, "sample_" + str(index))
+            self.dumpJsonToFile(donor, projectId, "donor_" + str(index))
             if not self.dryrun:
                 sampleIngest = self.ingest_api.createSample(submissionUrl, json.dumps(donor))
                 self.ingest_api.linkEntity(sampleIngest, projectIngest, "projects")
@@ -507,7 +509,8 @@ class SpreadsheetSubmission:
                 assayMap[assay]["seq"]["insdc_experiment"] = seqFile["insdc_experiment"]
 
             if "insdc_run" in seqFile:
-                assayMap[assay]["seq"]["insdc_run"] = seqFile["insdc_run"]
+                assayMap[assay]["seq"]["insdc_run"] = []
+                assayMap[assay]["seq"]["insdc_run"].append(seqFile["insdc_run"])
 
             file["core"] = {"type" : "file"}
 
