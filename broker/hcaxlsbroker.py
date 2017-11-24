@@ -20,6 +20,29 @@ from collections import defaultdict
 # todo - these should be read out of the json schema at the start
 hca_v3_lists = ['seq.lanes']
 
+v4_ontologyFields = {"donor" : ["ancestry", "development_stage", "disease", "medication", "strain"],
+                  "cell_suspension" : ["target_cell_type"],
+                  "death" : ["cause_of_death"],
+                  "immortalized_cell_line" : ["cell_type", "disease", "cell_cycle"],
+                  "protocol" : ["type"],
+                  "primary_cell_line" : ["cell_type", "disease", "cell_cycle"],
+                  "sample" : ["genus_species"],
+                  "specimen_from_organism" : ["body_part", "organ"],
+                     "project" : ["experimental_design"],
+                     "organoid" : ["model_for_organ"]
+                     }
+
+
+v4_arrayFields = {"seq" : ["insdc_run"],
+                "state_of_specimen" : ["gross_image", "microscopic_image"],
+                "donor" : ["ancestry", "disease", "medication", "strain"],
+                "sample" : ["supplementary_files"],
+                "cell_suspension" : ["target_cell_type", "enrichment"],
+                "publication" : ["authors"],
+                "project" : ["supplementary_files", "experimental_design", "experimental_factor_name"]
+                  }
+
+
 class SpreadsheetSubmission:
 
     def __init__(self, dry=False, output=None):
@@ -45,15 +68,27 @@ class SpreadsheetSubmission:
     # this only works for keys nested to two levels, need something smarter to handle arbitrary
     # depth keys e.g. we support <level1>.<level2> = <value>, where value is either a single value or list
     # this doesn't support <level1>.<level2>.<level3>
-    def _keyValueToNestedObject(self, obj, key, value):
+    def _keyValueToNestedObject(self, obj, key, value, type):
         d = value
-        if "\"" in str(value) or "||" in str(value) or key in hca_v3_lists:
-
+        if "\"" in str(value) or "||" in str(value) or key in hca_v3_lists or (type in v4_arrayFields.keys() and key.split('.')[-1] in v4_arrayFields[type]):
+            if "||" in str(value):
             # d = map(lambda it: it.strip(' "\''), str(value).split("||"))
-            d = str(value).split("||")
+                d = str(value).split("||")
+            else:
+                d = [value]
 
         if len(key.split('.')) > 3:
             raise ValueError('We don\'t support keys nested greater than 3 levels, found:'+key)
+
+        if type in v4_ontologyFields.keys() and key.split('.')[-1] in v4_ontologyFields[type]:
+            if isinstance(d, list):
+                t = []
+                for index, v in enumerate(d):
+                    t.append({"text" : d[index]})
+                d = t
+            else:
+                d = {"text" : d}
+
         for part in reversed(key.split('.')):
             d = {part: d}
 
@@ -84,7 +119,7 @@ class SpreadsheetSubmission:
                 cellCol = cell.col_idx
                 propertyValue = sheet.cell(row=1, column=cellCol).value
 
-                d = self._keyValueToNestedObject(obj, propertyValue, cell.value)
+                d = self._keyValueToNestedObject(obj, propertyValue, cell.value, type)
                 obj.update(d)
             if hasData:
                 self.logger.debug(json.dumps(obj))
@@ -100,7 +135,7 @@ class SpreadsheetSubmission:
                 propertyCell = row[0].value
                 valueCell = row[1].value
                 if valueCell:
-                    obj = self._keyValueToNestedObject(obj, propertyCell, valueCell)
+                    obj = self._keyValueToNestedObject(obj, propertyCell, valueCell, type)
                     # obj.update(d)
         self.logger.debug(json.dumps(obj))
         return obj
@@ -133,7 +168,7 @@ class SpreadsheetSubmission:
         submitterSheet = wb.get_sheet_by_name("contact.submitter")
         contributorSheet = wb.get_sheet_by_name("contact.contributors")
         specimenSheet = wb.get_sheet_by_name("sample.specimen_from_organism")
-        specimenStateSheet = wb.get_sheet_by_name("sample.specimen_from_organism.state_of_specimen")
+        specimenStateSheet = wb.get_sheet_by_name("state_of_specimen")
         donorSheet = wb.get_sheet_by_name("sample.donor")
         cellSuspensionSheet = wb.get_sheet_by_name("sample.cell_suspension")
         cellSuspensionEnrichmentSheet = wb.get_sheet_by_name("sample.cell_suspension.enrichment")
@@ -188,7 +223,6 @@ class SpreadsheetSubmission:
         files = self._multiRowToObjectFromSheet("file", filesSheet)
 
 
-
         samples = []
         # samples.extend(donors)
         samples.extend(specimens)
@@ -238,6 +272,9 @@ class SpreadsheetSubmission:
         for index, protocol in enumerate(protocols):
             if "protocol_id" not in protocol:
                 raise ValueError('Protocol must have an id attribute')
+
+            protocol["core"] = {"type": "protocol"}
+            self.dumpJsonToFile(protocol, projectId, "protocol_" + str(index))
             protocolMap[protocol["protocol_id"]] = protocol
             if not self.dryrun:
                 protocolIngest = self.ingest_api.createProtocol(submissionUrl, json.dumps(protocol))
@@ -253,6 +290,15 @@ class SpreadsheetSubmission:
             if "sample_id" not in donor:
                 raise ValueError('Sample of type donor must have an id attribute')
             sample_id = donor["sample_id"]
+
+            if "is_living" in donor:
+                if str.lower(donor["is_living"]) == "true" or str.lower(donor["is_living"]) == "yes":
+                    donor["is_living"] = True
+                elif str.lower(donor["is_living"]) == "false" or str.lower(donor["is_living"]) == "no":
+                    donor["is_living"] = False
+                else:
+                    raise ValueError('Field is_living in sample ' + sample_id + ' must either contain one of yes, true, no or false')
+
             sampleMap[sample_id] = donor
             donorIds.append(sample_id)
 
@@ -345,6 +391,16 @@ class SpreadsheetSubmission:
         assayMap={}
 
         for index, s in enumerate(seq):
+            if "paired_ends" in s["seq"]:
+                val = s["seq"]["paired_ends"]
+                if val.lower() in ["true", "yes"]:
+                    s["seq"]["paired_ends"] = True
+                elif val.lower() in ["false", "no"]:
+                    s["seq"]["paired_ends"] = False
+                else:
+                    raise ValueError(
+                        'Field paired_ends in tab seq must either contain one of yes, true, no or false')
+
             if "assay_id" in s:
                 id = s["assay_id"]
                 del s["assay_id"]

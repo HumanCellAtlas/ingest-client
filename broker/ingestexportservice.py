@@ -21,19 +21,25 @@ DEFAULT_INGEST_URL=os.environ.get('INGEST_API', 'http://api.ingest.dev.data.huma
 DEFAULT_STAGING_URL=os.environ.get('STAGING_API', 'http://staging.dev.data.humancellatlas.org')
 DEFAULT_DSS_URL=os.environ.get('DSS_API', 'http://dss.dev.data.humancellatlas.org')
 
+
+
 class IngestExporter:
-    def __init__(self):
+    def __init__(self, dry=False, output=None):
         formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
         logging.basicConfig(formatter=formatter)
         self.logger = logging.getLogger(__name__)
 
-        parser = OptionParser()
-        parser.add_option("-i", "--ingest", help="the URL to the ingest API")
-        parser.add_option("-s", "--staging", help="the URL to the staging API")
-        parser.add_option("-d", "--dss", help="the URL to the datastore service")
-        parser.add_option("-l", "--log", help="the logging level", default='INFO')
+        self.dryrun = dry
+        self.outputDir = output
 
-        (options, args) = parser.parse_args()
+        # if not self.dryrun:
+        #     parser = OptionParser()
+        #     parser.add_option("-i", "--ingest", help="the URL to the ingest API")
+        #     parser.add_option("-s", "--staging", help="the URL to the staging API")
+        #     parser.add_option("-d", "--dss", help="the URL to the datastore service")
+        #     parser.add_option("-l", "--log", help="the logging level", default='INFO')
+        #
+        #     (options, args) = parser.parse_args()
 
         self.ingest_api = None
 
@@ -120,21 +126,23 @@ class IngestExporter:
             analysisDssUuid = unicode(uuid.uuid4())
             analysisBundleContent = self.getBundleDocument(analysis)
             analysisFileName = "analysis_0.json" # TODO: shouldn't be hardcoded
-            fileDescription = self.writeMetadataToStaging(submissionEnvelopeUuid, analysisFileName, analysisBundleContent, "hca-analysis")
 
             bundleManifest.fileAnalysisMap = { analysisDssUuid : [analysisUuid] }
-            filesToTransfer.append({"name":analysisFileName,
+
+            if not self.dryrun:
+                fileDescription = self.writeMetadataToStaging(submissionEnvelopeUuid, analysisFileName, analysisBundleContent, "hca-analysis")
+                filesToTransfer.append({"name":analysisFileName,
                                     "submittedName":"analysis.json",
                                     "url":fileDescription.url,
                                     "dss_uuid": analysisDssUuid,
                                     "indexed" : True})
 
-            # generate new bundle
-            # write to DSS
-            self.dss_api.createAnalysisBundle(inputBundle, bundleManifest, filesToTransfer)
+                # generate new bundle
+                # write to DSS
+                self.dss_api.createAnalysisBundle(inputBundle, bundleManifest, filesToTransfer)
 
-            # write bundle manifest to ingest API
-            self.ingest_api.createBundleManifest(bundleManifest)
+                # write bundle manifest to ingest API
+                self.ingest_api.createBundleManifest(bundleManifest)
 
     def primarySubmission(self, submissionEnvelopeUuid, assays):
 
@@ -147,6 +155,7 @@ class IngestExporter:
         #     # self.staging_api.createStagingArea(submissionEnvelopeId)
         # except ValueError, e:
         #     self.logger.error("Can't create staging area " + str(e))
+
 
         for index, assay in enumerate(assays):
 
@@ -172,14 +181,20 @@ class IngestExporter:
             if projectUuid not in projectUuidToBundleData:
                 projectDssUuid = unicode(uuid.uuid4())
                 projectFileName = "project_bundle_"+str(index)+".json"
-                fileDescription = self.writeMetadataToStaging(submissionEnvelopeUuid, projectFileName, projectBundle, "hca-project")
-                projectUuidToBundleData[projectUuid] = {"name":projectFileName,"submittedName":"project.json", "url":fileDescription.url, "dss_uuid": projectDssUuid, "indexed": True}
+
+                if not self.dryrun:
+                    fileDescription = self.writeMetadataToStaging(submissionEnvelopeUuid, projectFileName, projectBundle, "hca-project")
+                    projectUuidToBundleData[projectUuid] = {"name":projectFileName,"submittedName":"project.json", "url":fileDescription.url, "dss_uuid": projectDssUuid, "indexed": True}
+                else:
+                    projectUuidToBundleData[projectUuid] = {"name":projectFileName,"submittedName":"project.json", "url":"", "dss_uuid": projectDssUuid, "indexed": True}
+                    self.dumpJsonToFile(projectBundle, projectBundle["content"]["project_id"],
+                                        "project_bundle_" + str(index))
 
                 bundleManifest.fileProjectMap = {projectDssUuid: [projectUuid]}
+
             else:
                 bundleManifest.fileProjectMap = {projectUuidToBundleData[projectUuid]["dss_uuid"]: [projectUuid]}
 
-            self.dumpJsonToFile(self, "~/bundle_tests/", projectBundle, project["content"]["id"], "project_bundle")
 
             submittedFiles.append(projectUuidToBundleData[projectUuid])
 
@@ -190,27 +205,37 @@ class IngestExporter:
 
             sample = samples[0]
             nestedSample = self.getNestedObjects("derivedFromSamples", sample, "samples")
-
-            sampleBundle = self.getBundleDocument(sample)
-
-            # sample["content"]["donor"] = nestedSample[0]
-            sampleBundle.append(nestedSample[0])
             nestedProtocols = self.getNestedObjects("protocols", sample, "protocols")
-            sampleBundle[0]["derivation_protocols"] = nestedProtocols
-            sampleUuid = sample["uuid"]["uuid"]
+
+            sampleBundle = []
+            primarySample = self.getBundleDocument(sample)
+
+            for index, protocol in enumerate(nestedProtocols):
+                primarySample["derivation_protocols"][index] = nestedProtocols[index]["content"]
+            primarySample["derived_from"] = nestedSample[0]["hca_ingest"]["document_id"]
+
+            sampleBundle.append(primarySample)
+            sampleBundle.append(nestedSample[0])
+            sampleUuid = sample["document_id"]
             sampleRelatedUuids = [sampleUuid, sampleBundle[1]["hca_ingest"]["document_id"]]
 
 
             if sampleUuid not in sampleUuidToBundleData:
                 sampleDssUuid = unicode(uuid.uuid4())
                 sampleFileName = "sample_bundle_"+str(index)+".json"
-                fileDescription = self.writeMetadataToStaging(submissionEnvelopeUuid, sampleFileName, sampleBundle, "hca-sample")
-                sampleUuidToBundleData[sampleUuid] = {"name":sampleFileName, "submittedName":"sample.json", "url":fileDescription.url, "dss_uuid": sampleDssUuid, "indexed": True}
+
+                if not self.dryrun:
+                    fileDescription = self.writeMetadataToStaging(submissionEnvelopeUuid, sampleFileName, sampleBundle, "hca-sample")
+                    sampleUuidToBundleData[sampleUuid] = {"name":sampleFileName, "submittedName":"sample.json", "url":fileDescription.url, "dss_uuid": sampleDssUuid, "indexed": True}
+
+                else:
+                    sampleUuidToBundleData[sampleUuid] = {"name":sampleFileName, "submittedName":"sample.json", "url":"", "dss_uuid": sampleDssUuid, "indexed": True}
+                    self.dumpJsonToFile(sampleBundle, projectBundle["content"]["project_id"], "sample_bundle_" + str(index))
+
                 bundleManifest.fileSampleMap = {sampleDssUuid: sampleRelatedUuids}
             else:
                 bundleManifest.fileSampleMap = {sampleUuidToBundleData[sampleUuid]["dss_uuid"]: sampleRelatedUuids}
 
-            self.dumpJsonToFile(self, "~/bundle_tests/", sampleBundle, project["content"]["id"], "sample_bundle")
             submittedFiles.append(sampleUuidToBundleData[sampleUuid])
 
             fileToBundleData = {}
@@ -227,12 +252,15 @@ class IngestExporter:
             assayDssUuid = unicode(uuid.uuid4())
             assayFileName = "assay_bundle_" + str(index) + ".json"
 
-            self.dumpJsonToFile(self, "~/bundle_tests/", assaysBundle, project["content"]["id"], "assay_bundle")
 
+            if not self.dryrun:
+                fileDescription = self.writeMetadataToStaging(submissionEnvelopeUuid, assayFileName, assaysBundle, "hca-assay")
+                submittedFiles.append({"name":assayFileName, "submittedName":"assay.json", "url":fileDescription.url, "dss_uuid": assayDssUuid, "indexed": True})
+            else:
+                submittedFiles.append({"name":assayFileName, "submittedName":"assay.json", "url":"", "dss_uuid": assayDssUuid, "indexed": True})
+                self.dumpJsonToFile(assaysBundle, projectBundle["content"]["project_id"], "assay_bundle_" + str(index))
 
-            fileDescription = self.writeMetadataToStaging(submissionEnvelopeUuid, assayFileName, assaysBundle, "hca-assay")
             bundleManifest.fileAssayMap = {assayDssUuid: [assayUuid]}
-            submittedFiles.append({"name":assayFileName, "submittedName":"assay.json", "url":fileDescription.url, "dss_uuid": assayDssUuid, "indexed": True})
 
             self.logger.info("All files staged...")
 
@@ -241,13 +269,15 @@ class IngestExporter:
             # for prot in nestedProtocols:
             #     protocolUuids.append(prot["core"]["uuid"])
 
-            # write to DSS
+            if not self.dryrun:
+                # write to DSS
+                self.dss_api.createBundle(bundleManifest.bundleUuid, submittedFiles)
+                # write bundle manifest to ingest API
+                self.ingest_api.createBundleManifest(bundleManifest)
 
-            # self.dss_api.createBundle(bundleManifest.bundleUuid, submittedFiles)
+            else:
+                self.dumpJsonToFile(bundleManifest.__dict__, projectBundle["content"]["project_id"], "bundleManifest_" + str(index))
 
-            # write bundle manifest to ingest API
-
-            # self.ingest_api.createBundleManifest(bundleManifest)
             self.logger.info("bundles generated! "+bundleManifest.bundleUuid)
 
     def writeMetadataToStaging(self, submissionId, fileName, content, contentType):
@@ -268,14 +298,18 @@ class IngestExporter:
         del entity["updateDate"]
         del entity["content"]
         del entity["_links"]
+        del entity["events"]
+        del entity["validationState"]
         core = entity
         content["hca_ingest"] =  core
         # need to clean the uuid from the ingest json
-        uuid =  content["core"]["uuid"]["uuid"]
+        uuid =  content["hca_ingest"]["uuid"]["uuid"]
         del content["hca_ingest"]["uuid"]
         content["hca_ingest"]["document_id"] = uuid
-        content["hca_ingest"]["submissionDate"] = {"date" : submissionDate}
-        content["hca_ingest"]["updateDate"] = {"date" : updateDate}
+        content["hca_ingest"]["submissionDate"] = submissionDate
+        content["hca_ingest"]["updateDate"] = updateDate
+        if content["hca_ingest"]["accession"] is None:
+            content["hca_ingest"]["accession"] = ""
         return content
 
     # returns a copy of a bundle manifest JSON, but with a new bundleUuid
@@ -289,9 +323,9 @@ class IngestExporter:
         newBundle.fileProtocolMap = bundleToCopy["fileProtocolMap"]
         return newBundle
 
-    def dumpJsonToFile(self, outputDir, object, projectId, name):
-        # if self.outputDir:
-            dir = os.path.abspath(outputDir)
+    def dumpJsonToFile(self, object, projectId, name):
+        if self.outputDir:
+            dir = os.path.abspath(self.outputDir)
             if not os.path.exists(dir):
                 os.makedirs(dir)
             tmpFile = open(dir + "/" + projectId + "_" + name + ".json", "w")
@@ -314,6 +348,23 @@ class File:
 if __name__ == '__main__':
     logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 
-    ex = IngestExporter()
+    parser = OptionParser()
+    parser.add_option("-e", "--subsEnvId", dest="submissionsEnvelopeId",
+                      help="Submission envelope ID for which to generate bundles")
+    parser.add_option("-D", "--dry", help="do a dry run without submitting to ingest", action="store_true",
+                      default=False)
+    parser.add_option("-o", "--output", dest="output",
+                      help="output directory where to dump json files submitted to ingest", metavar="FILE",
+                      default=None)
+    parser.add_option("-i", "--ingest", help="the URL to the ingest API")
+    parser.add_option("-s", "--staging", help="the URL to the staging API")
+    parser.add_option("-d", "--dss", help="the URL to the datastore service")
+    parser.add_option("-l", "--log", help="the logging level", default='INFO')
 
-    ex.generateBundles("5a00e5685e11a20006e4ef92")
+    (options, args) = parser.parse_args()
+    if not options.submissionsEnvelopeId:
+        print ("You must supply a submission envelope ID")
+        exit(2)
+
+    ex = IngestExporter(options.dry, options.output)
+    ex.generateBundles(options.submissionsEnvelopeId)

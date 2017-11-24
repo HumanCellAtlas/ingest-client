@@ -66,20 +66,21 @@ class StagingApi:
     def stageFile(self,submissionId, filename, body, type):
 
         fileUrl = urlparse.urljoin( self.url, self.apiversion+'/area/'+submissionId+"/"+filename)
-
-        header = dict(self.header)
-        header['Content-type'] = 'application/json; dcp-type=' + type
-        r = requests.put(fileUrl,  data=json.dumps(body), headers=header)
-        if r.status_code == requests.codes.ok or requests.codes.created:
-            responseObject = json.loads(r.text)
-            return FileDescription(responseObject["checksums"],type,responseObject["name"],responseObject["size"],responseObject["url"], )
-        raise ValueError('Can\'t create staging area for sub id:' +submissionId)
+        #
+        # header = dict(self.header)
+        # header['Content-type'] = 'application/json; dcp-type=' + type
+        # r = requests.put(fileUrl,  data=json.dumps(body), headers=header)
+        # if r.status_code == requests.codes.ok or requests.codes.created:
+        #     responseObject = json.loads(r.text)
+        #     return FileDescription(responseObject["checksums"],type,responseObject["name"],responseObject["size"],responseObject["url"], )
+        # raise ValueError('Can\'t create staging area for sub id:' +submissionId)
 
     def hasStagingArea(self, submissionId):
-        base = urlparse.urljoin( self.url, self.apiversion+'/area/'+submissionId)
-
-        r = requests.get(base, headers=self.header)
-        return r.status_code == requests.codes.ok
+        # base = urlparse.urljoin( self.url, self.apiversion+'/area/'+submissionId)
+        #
+        # r = requests.get(base, headers=self.header)
+        # return r.status_code == requests.codes.ok
+        return True
 
 
 class FileDescription:
