@@ -171,7 +171,7 @@ class SpreadsheetSubmission:
         specimenStateSheet = wb.get_sheet_by_name("state_of_specimen")
         donorSheet = wb.get_sheet_by_name("sample.donor")
         cellSuspensionSheet = wb.get_sheet_by_name("sample.cell_suspension")
-        cellSuspensionEnrichmentSheet = wb.get_sheet_by_name("sample.cell_suspension.enrichment")
+        cellSuspensionEnrichmentSheet = wb.get_sheet_by_name("cell_suspension.enrichment")
         cellSuspensionWellSheet = wb.get_sheet_by_name("sample.cell_suspension.well")
 
         organoidSheet = wb.create_sheet()
