@@ -176,7 +176,12 @@ class IngestExporter:
             # track the file names we have uploaded to staging based on uuid
             # this avoids duplicating files on staging
             projectUuid = project["uuid"]["uuid"]
-            projectBundle = self.getBundleDocument(project)
+
+
+            #TO DO: this is hack in v4 because the bundle schema is specified as an array rather than an object! this should be corrected in v5
+            projectBundle = []
+            projectEntity = self.getBundleDocument(project)
+            projectBundle.append(projectEntity)
 
             if projectUuid not in projectUuidToBundleData:
                 projectDssUuid = unicode(uuid.uuid4())
@@ -187,7 +192,7 @@ class IngestExporter:
                     projectUuidToBundleData[projectUuid] = {"name":projectFileName,"submittedName":"project.json", "url":fileDescription.url, "dss_uuid": projectDssUuid, "indexed": True}
                 else:
                     projectUuidToBundleData[projectUuid] = {"name":projectFileName,"submittedName":"project.json", "url":"", "dss_uuid": projectDssUuid, "indexed": True}
-                    self.dumpJsonToFile(projectBundle, projectBundle["content"]["project_id"],
+                    self.dumpJsonToFile(projectBundle, projectBundle[0]["content"]["project_id"],
                                         "project_bundle_" + str(index))
 
                 bundleManifest.fileProjectMap = {projectDssUuid: [projectUuid]}
@@ -209,9 +214,11 @@ class IngestExporter:
 
             sampleBundle = []
             primarySample = self.getBundleDocument(sample)
+            primarySample["derivation_protocols"] = []
 
-            for index, protocol in enumerate(nestedProtocols):
-                primarySample["derivation_protocols"][index] = nestedProtocols[index]["content"]
+            for p, protocol in enumerate(nestedProtocols):
+                primarySample["derivation_protocols"].append(nestedProtocols[p]["content"])
+
             primarySample["derived_from"] = nestedSample[0]["hca_ingest"]["document_id"]
 
             sampleBundle.append(primarySample)
@@ -230,7 +237,7 @@ class IngestExporter:
 
                 else:
                     sampleUuidToBundleData[sampleUuid] = {"name":sampleFileName, "submittedName":"sample.json", "url":"", "dss_uuid": sampleDssUuid, "indexed": True}
-                    self.dumpJsonToFile(sampleBundle, projectBundle["content"]["project_id"], "sample_bundle_" + str(index))
+                    self.dumpJsonToFile(sampleBundle, projectBundle[0]["content"]["project_id"], "sample_bundle_" + str(index))
 
                 bundleManifest.fileSampleMap = {sampleDssUuid: sampleRelatedUuids}
             else:
@@ -248,7 +255,13 @@ class IngestExporter:
                 bundleManifest.files.append(fileUuid)
 
             assayUuid = assay["uuid"]["uuid"]
-            assaysBundle = self.getBundleDocument(assay)
+
+            #TO DO: this is hack in v4 because the bundle schema is specified as an array rather than an object! this should be corrected in v5
+            assaysBundle = []
+            assayEntity = self.getBundleDocument(assay)
+            assaysBundle.append(assayEntity)
+
+
             assayDssUuid = unicode(uuid.uuid4())
             assayFileName = "assay_bundle_" + str(index) + ".json"
 
@@ -258,7 +271,7 @@ class IngestExporter:
                 submittedFiles.append({"name":assayFileName, "submittedName":"assay.json", "url":fileDescription.url, "dss_uuid": assayDssUuid, "indexed": True})
             else:
                 submittedFiles.append({"name":assayFileName, "submittedName":"assay.json", "url":"", "dss_uuid": assayDssUuid, "indexed": True})
-                self.dumpJsonToFile(assaysBundle, projectBundle["content"]["project_id"], "assay_bundle_" + str(index))
+                self.dumpJsonToFile(assaysBundle, projectBundle[0]["content"]["project_id"], "assay_bundle_" + str(index))
 
             bundleManifest.fileAssayMap = {assayDssUuid: [assayUuid]}
 
@@ -276,7 +289,7 @@ class IngestExporter:
                 self.ingest_api.createBundleManifest(bundleManifest)
 
             else:
-                self.dumpJsonToFile(bundleManifest.__dict__, projectBundle["content"]["project_id"], "bundleManifest_" + str(index))
+                self.dumpJsonToFile(bundleManifest.__dict__, projectBundle[0]["content"]["project_id"], "bundleManifest_" + str(index))
 
             self.logger.info("bundles generated! "+bundleManifest.bundleUuid)
 

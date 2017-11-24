@@ -1,0 +1,24 @@
+{
+    "files": [
+        "18e78e42-3f98-4632-99ab-0f0c20f23c52"
+    ], 
+    "fileProjectMap": {
+        "0c553736-7dd6-49b9-ad53-fefea97fa40c": [
+            "4ca9931c-6dec-4c42-bd1b-1f1cbd7b3fd9"
+        ]
+    }, 
+    "fileSampleMap": {
+        "c600f136-5b3b-4d8f-ace3-a7b893ec90fa": [
+            "0a5613f6-4da1-41cc-ab95-6c83d33a1836", 
+            "6be06c13-a3e9-4b62-ab6a-2b82e2358100"
+        ]
+    }, 
+    "envelopeUuid": "5e7a71b4-aacd-4289-9d5f-0703132c4894", 
+    "bundleUuid": "ffdf9c75-7d71-4dd4-92e0-8f2094ccc055", 
+    "fileProtocolMap": {}, 
+    "fileAssayMap": {
+        "a23d72da-2d53-4133-9f47-4a36cd9f859b": [
+            "b298d102-4ad8-452a-9841-a968e8c72e2e"
+        ]
+    }
+}

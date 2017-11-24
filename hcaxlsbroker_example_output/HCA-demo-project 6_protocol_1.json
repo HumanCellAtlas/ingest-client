@@ -1,0 +1,11 @@
+{
+    "core": {
+        "type": "protocol"
+    }, 
+    "description": "Another test protocol", 
+    "protocol_id": "A456", 
+    "type": {
+        "text": "cell suspension protocol"
+    }, 
+    "name": "Test protocol 2"
+}

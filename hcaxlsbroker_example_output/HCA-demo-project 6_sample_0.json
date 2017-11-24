@@ -1,0 +1,26 @@
+{
+    "core": {
+        "type": "sample"
+    }, 
+    "name": "pancreas islet normal", 
+    "specimen_from_organism": {
+        "body_part": {
+            "text": "islet of Langerhans"
+        }, 
+        "organ": {
+            "text": "pancreas"
+        }
+    }, 
+    "genus_species": {
+        "text": "Homo sapiens"
+    }, 
+    "supplementary_files": [
+        "E-MTAB-5061.processed.1.zip"
+    ], 
+    "ncbi_taxon_id": 9606, 
+    "derived_from": "AZ", 
+    "sample_id": "AZ_A1", 
+    "sample_accessions": {
+        "insdc_sample": "ERS1348470"
+    }
+}
