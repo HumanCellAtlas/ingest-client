@@ -346,6 +346,13 @@ class SpreadsheetSubmission:
                     sampleMap[state["sample_id"]]["cell_suspension"]["enrichment"].append(e["enrichment"])
                 else:
                     sampleMap[state["sample_id"]]["cell_suspension"]["enrichment"] = [e["enrichment"]]
+            else:
+                for index, sample_id in enumerate(sampleMap.keys()):
+                    if "cell_suspension" in sampleMap[sample_id]:
+                        if "enrichment" in sampleMap[sample_id]["cell_suspension"]:
+                            sampleMap[sample_id]["cell_suspension"]["enrichment"].append(e["enrichment"])
+                        else:
+                            sampleMap[sample_id]["cell_suspension"]["enrichment"] = [e["enrichment"]]
 
         for w in well:
             if "sample_id" in w:
