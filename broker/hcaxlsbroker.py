@@ -262,7 +262,7 @@ class SpreadsheetSubmission:
         if not self.dryrun and not submissionUrl:
             submissionUrl = self.createSubmission()
 
-        project["core"] = {"type": "project"}
+        project["core"] = {"type": "project", "schema_url": "https://raw.githubusercontent.com/HumanCellAtlas/metadata-schema/4.0.0/json_schema/project.json"}
 
         self.dumpJsonToFile(project, projectId, "project")
 
@@ -275,7 +275,7 @@ class SpreadsheetSubmission:
             if "protocol_id" not in protocol:
                 raise ValueError('Protocol must have an id attribute')
 
-            protocol["core"] = {"type": "protocol"}
+            protocol["core"] = {"type": "protocol", "schema_url": "https://raw.githubusercontent.com/HumanCellAtlas/metadata-schema/4.0.0/json_schema/protocol.json"}
             self.dumpJsonToFile(protocol, projectId, "protocol_" + str(index))
             protocolMap[protocol["protocol_id"]] = protocol
             if not self.dryrun:
@@ -313,7 +313,7 @@ class SpreadsheetSubmission:
                 sampleProtocols = donor["protocol_ids"]
                 del donor["protocol_ids"]
 
-            donor["core"] = {"type" : "sample"}
+            donor["core"] = {"type" : "sample", "schema_url": "https://raw.githubusercontent.com/HumanCellAtlas/metadata-schema/4.0.0/json_schema/sample.json"}
 
             self.dumpJsonToFile(donor, projectId, "donor_" + str(index))
             if not self.dryrun:
@@ -366,7 +366,7 @@ class SpreadsheetSubmission:
                     sampleProtocols = sample["protocol_ids"]
                     del sample["protocol_ids"]
 
-                sample["core"] = {"type" : "sample"}
+                sample["core"] = {"type" : "sample", "schema_url": "https://raw.githubusercontent.com/HumanCellAtlas/metadata-schema/4.0.0/json_schema/sample.json"}
 
                 self.dumpJsonToFile(sample, projectId, "sample_" + str(index))
                 if not self.dryrun:
@@ -512,7 +512,7 @@ class SpreadsheetSubmission:
                 assayMap[assay]["seq"]["insdc_run"] = []
                 assayMap[assay]["seq"]["insdc_run"].append(seqFile["insdc_run"])
 
-            file["core"] = {"type" : "file"}
+            file["core"] = {"type" : "file", "schema_url": "https://raw.githubusercontent.com/HumanCellAtlas/metadata-schema/4.0.0/json_schema/file.json"}
 
             self.dumpJsonToFile(file, projectId, "files_" + str(index))
             if not self.dryrun:
@@ -544,7 +544,7 @@ class SpreadsheetSubmission:
             samples = assay["sample_id"]
             del assay["sample_id"]
 
-            assay["core"] = {"type" : "assay"}
+            assay["core"] = {"type" : "assay", "schema_url": "https://raw.githubusercontent.com/HumanCellAtlas/metadata-schema/4.0.0/json_schema/assay.json"}
             self.dumpJsonToFile(assay, projectId, "assay_" + str(index))
 
             if not self.dryrun:
