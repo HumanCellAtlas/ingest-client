@@ -40,7 +40,7 @@ def index():
     submissions = []
     try:
         submissions = IngestApi().getSubmissions()
-    except Exception, e:
+    except Exception as e:
         flash("Can't connect to ingest API!!", "alert-danger")
     return render_template('index.html', submissions=submissions, helper=HTML_HELPER)
 
@@ -118,7 +118,7 @@ def get_submission_files(id):
 @app.route('/upload', methods=['POST'])
 def upload_file():
     if request.method == 'POST':
-        print "saving.."
+        print ("saving..")
         f = request.files['file']
         filename = secure_filename(f .filename)
         path = os.path.join(tempfile.gettempdir(), filename)
@@ -128,10 +128,10 @@ def upload_file():
         submission = SpreadsheetSubmission(dry=True)
         try:
             submission.submit(path,None)
-        except ValueError, e:
+        except ValueError as e:
             flash(str(e), 'alert-danger')
             return redirect(url_for('index'))
-        except Exception, e:
+        except Exception as e:
             flash(str(e), 'alert-danger')
             return redirect(url_for('index'))
 

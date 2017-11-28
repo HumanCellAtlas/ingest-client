@@ -1,0 +1,32 @@
+{
+    "core": {
+        "type": "assay"
+    }, 
+    "seq": {
+        "paired_ends": false, 
+        "lanes": [
+            {
+                "r1": "AZ_A1.fastq.gz"
+            }
+        ], 
+        "instrument_platform": "Illumina", 
+        "molecule": "polyA RNA", 
+        "instrument_model": "HiSeq 2000", 
+        "insdc_run": [
+            "ERR1630013"
+        ], 
+        "insdc_experiment": "ERX1700346"
+    }, 
+    "rna": {
+        "spike_in_dilution": 40000, 
+        "spike_in": "ERCC", 
+        "end_bias": "none", 
+        "primer": "poly-dT", 
+        "strand": "both", 
+        "library_construction": "smart-seq2"
+    }, 
+    "single_cell": {
+        "cell_handling": "FACS"
+    }, 
+    "assay_id": "ERR1630013"
+}

@@ -1,0 +1,12 @@
+[
+    "sample_AZ_A1-derivedFromSamples_AZ", 
+    "sample_AZ_A1-protocol_A123", 
+    "sample_AZ_A1-protocol_A456", 
+    "sample_AZ_A7-derivedFromSamples_AZ", 
+    "sample_AZ_A7-protocol_A123", 
+    "sample_AZ_A7-protocol_A456", 
+    "assay_ERR1630014-sample_AZ_A7", 
+    "assay_ERR1630014-file_AZ_A7.fastq.gz", 
+    "assay_ERR1630013-sample_AZ_A1", 
+    "assay_ERR1630013-file_AZ_A1.fastq.gz"
+]

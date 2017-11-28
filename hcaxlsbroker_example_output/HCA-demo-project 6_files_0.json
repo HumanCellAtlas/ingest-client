@@ -1,0 +1,7 @@
+{
+    "core": {
+        "type": "file"
+    }, 
+    "file_format": "fastq.gz", 
+    "filename": "AZ_A1.fastq.gz"
+}
