@@ -135,7 +135,8 @@ class IngestExporter:
                                     "submittedName":"analysis.json",
                                     "url":fileDescription.url,
                                     "dss_uuid": analysisDssUuid,
-                                    "indexed" : True})
+                                    "indexed" : True,
+                                    "content-type": "hca-analysis"})
 
                 # generate new bundle
                 # write to DSS
@@ -188,10 +189,10 @@ class IngestExporter:
                 projectFileName = "project_bundle_"+str(index)+".json"
 
                 if not self.dryrun:
-                    fileDescription = self.writeMetadataToStaging(submissionEnvelopeUuid, projectFileName, projectBundle, "hca-project")
-                    projectUuidToBundleData[projectUuid] = {"name":projectFileName,"submittedName":"project.json", "url":fileDescription.url, "dss_uuid": projectDssUuid, "indexed": True}
+                    fileDescription = self.writeMetadataToStaging(submissionEnvelopeUuid, projectFileName, projectBundle, '"metadata/project"')
+                    projectUuidToBundleData[projectUuid] = {"name":projectFileName,"submittedName":"project.json", "url":fileDescription.url, "dss_uuid": projectDssUuid, "indexed": True, "content-type" : '"metadata/project"'}
                 else:
-                    projectUuidToBundleData[projectUuid] = {"name":projectFileName,"submittedName":"project.json", "url":"", "dss_uuid": projectDssUuid, "indexed": True}
+                    projectUuidToBundleData[projectUuid] = {"name":projectFileName,"submittedName":"project.json", "url":"", "dss_uuid": projectDssUuid, "indexed": True, "content-type" : '"metadata/project"'}
                     self.dumpJsonToFile(projectBundle, projectBundle[0]["content"]["project_id"],
                                         "project_bundle_" + str(index))
 
@@ -232,11 +233,11 @@ class IngestExporter:
                 sampleFileName = "sample_bundle_"+str(index)+".json"
 
                 if not self.dryrun:
-                    fileDescription = self.writeMetadataToStaging(submissionEnvelopeUuid, sampleFileName, sampleBundle, "hca-sample")
-                    sampleUuidToBundleData[sampleUuid] = {"name":sampleFileName, "submittedName":"sample.json", "url":fileDescription.url, "dss_uuid": sampleDssUuid, "indexed": True}
+                    fileDescription = self.writeMetadataToStaging(submissionEnvelopeUuid, sampleFileName, sampleBundle, '"metadata/sample"')
+                    sampleUuidToBundleData[sampleUuid] = {"name":sampleFileName, "submittedName":"sample.json", "url":fileDescription.url, "dss_uuid": sampleDssUuid, "indexed": True, "content-type" : '"metadata/sample"'}
 
                 else:
-                    sampleUuidToBundleData[sampleUuid] = {"name":sampleFileName, "submittedName":"sample.json", "url":"", "dss_uuid": sampleDssUuid, "indexed": True}
+                    sampleUuidToBundleData[sampleUuid] = {"name":sampleFileName, "submittedName":"sample.json", "url":"", "dss_uuid": sampleDssUuid, "indexed": True, "content-type" : '"metadata/sample"'}
                     self.dumpJsonToFile(sampleBundle, projectBundle[0]["content"]["project_id"], "sample_bundle_" + str(index))
 
                 bundleManifest.fileSampleMap = {sampleDssUuid: sampleRelatedUuids}
@@ -250,7 +251,7 @@ class IngestExporter:
                 fileUuid = file["uuid"]["uuid"]
                 fileName = file["fileName"]
                 cloudUrl = file["cloudUrl"]
-                fileToBundleData[fileUuid] = {"name":fileName, "submittedName":fileName, "url":cloudUrl, "dss_uuid": fileUuid, "indexed": False}
+                fileToBundleData[fileUuid] = {"name":fileName, "submittedName":fileName, "url":cloudUrl, "dss_uuid": fileUuid, "indexed": False, "content-type" : "data"}
                 submittedFiles.append(fileToBundleData[fileUuid])
                 bundleManifest.files.append(fileUuid)
 
@@ -267,10 +268,10 @@ class IngestExporter:
 
 
             if not self.dryrun:
-                fileDescription = self.writeMetadataToStaging(submissionEnvelopeUuid, assayFileName, assaysBundle, "hca-assay")
-                submittedFiles.append({"name":assayFileName, "submittedName":"assay.json", "url":fileDescription.url, "dss_uuid": assayDssUuid, "indexed": True})
+                fileDescription = self.writeMetadataToStaging(submissionEnvelopeUuid, assayFileName, assaysBundle, '"metadata/assay"')
+                submittedFiles.append({"name":assayFileName, "submittedName":"assay.json", "url":fileDescription.url, "dss_uuid": assayDssUuid, "indexed": True, "content-type" : '"metadata/assay"'})
             else:
-                submittedFiles.append({"name":assayFileName, "submittedName":"assay.json", "url":"", "dss_uuid": assayDssUuid, "indexed": True})
+                submittedFiles.append({"name":assayFileName, "submittedName":"assay.json", "url":"", "dss_uuid": assayDssUuid, "indexed": True, "content-type" : '"metadata/assay"'})
                 self.dumpJsonToFile(assaysBundle, projectBundle[0]["content"]["project_id"], "assay_bundle_" + str(index))
 
             bundleManifest.fileAssayMap = {assayDssUuid: [assayUuid]}
