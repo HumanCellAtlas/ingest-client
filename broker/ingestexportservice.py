@@ -130,7 +130,7 @@ class IngestExporter:
             bundleManifest.fileAnalysisMap = { analysisDssUuid : [analysisUuid] }
 
             if not self.dryrun:
-                fileDescription = self.writeMetadataToStaging(submissionEnvelopeUuid, analysisFileName, analysisBundleContent, "hca-analysis")
+                fileDescription = self.writeMetadataToStaging(submissionEnvelopeUuid, analysisFileName, analysisBundleContent, "\"metadata/analysis\"")
                 filesToTransfer.append({"name":analysisFileName,
                                     "submittedName":"analysis.json",
                                     "url":fileDescription.url,
