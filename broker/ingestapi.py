@@ -38,7 +38,7 @@ class IngestApi:
     def getSubmissions(self):
         params = {'sort':'submissionDate,desc'}
         r = requests.get(self.ingest_api["submissionEnvelopes"]["href"].rsplit("{")[0], params=params,
-                          headers=self.headers)
+                         headers=self.headers)
         if r.status_code == requests.codes.ok:
             return json.loads(r.text)["_embedded"]["submissionEnvelopes"]
 
@@ -99,6 +99,31 @@ class IngestApi:
         if r.status_code == requests.codes.update:
             self.logger.info("Submission complete!")
             return r.text
+
+    def updateSubmissionState(self, submissionId, state):
+        state_url = self.getSubmissionStateUrl(submissionId, state)
+
+        if state_url:
+            r = requests.put(state_url, headers=self.headers)
+
+        return self.handleResponse(r)
+
+    def getSubmissionStateUrl(self, submissionId, state):
+        submissionUrl = self.getSubmissionUri(submissionId)
+        response = requests.get(submissionUrl, headers=self.headers)
+        submission = self.handleResponse(response)
+
+        if submission and state in submission['_links']:
+            return submission['_links'][state]["href"].rsplit("{")[0]
+
+        return None
+
+    def handleResponse(self, response):
+        if response.ok:
+            return json.loads(response.text)
+        else:
+            self.logger.error('Response:' + response.text)
+            return None
 
     def getSubmissionUri(self, submissionId):
         return self.ingest_api["submissionEnvelopes"]["href"].rsplit("{")[0]+ "/"+submissionId
@@ -180,7 +205,6 @@ class IngestApi:
         if r.status_code == requests.codes.created or r.status_code == requests.codes.accepted:
             return json.loads(r.text)
 
-
     # given a HCA object return the URI for the object from ingest
     def getObjectId(self, entity):
         if "_links" in entity:
@@ -190,7 +214,7 @@ class IngestApi:
 
     def getObjectUuid(self, entityUri):
         r = requests.get(entityUri,
-                          headers=self.headers)
+                         headers=self.headers)
         if r.status_code == requests.codes.ok:
             return json.loads(r.text)["uuid"]["uuid"]
 
@@ -207,20 +231,20 @@ class IngestApi:
 
     def createBundleManifest(self, bundleManifest):
         r = requests.post(self.ingest_api["bundleManifests"]["href"].rsplit("{")[0], data=json.dumps(bundleManifest.__dict__),
-                           headers=self.headers)
+                          headers=self.headers)
 
     def updateSubmissionWithStagingCredentials(self, subUrl, uuid, submissionCredentials):
         stagingDetails = \
-                {
-                     "stagingDetails": {
-                        "stagingAreaUuid": {
-                            "uuid" : uuid
-                        },
-                        "stagingAreaLocation": {
-                            "value": submissionCredentials
-                        }
+            {
+                "stagingDetails": {
+                    "stagingAreaUuid": {
+                        "uuid" : uuid
+                    },
+                    "stagingAreaLocation": {
+                        "value": submissionCredentials
                     }
                 }
+            }
 
         if self.retrySubmissionUpdateWithStagingDetails(subUrl, stagingDetails, 0):
             self.logger.debug("envelope updated with staging details " + json.dumps(stagingDetails))

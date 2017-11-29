@@ -20,7 +20,7 @@ STATUS_LABEL = {
     'Validating': 'label-info',
     'Invalid': 'label-danger',
     'Submitted': 'label-default',
-    'Completed': 'label-default'
+    'Complete': 'label-default'
 }
 
 DEFAULT_STATUS_LABEL = 'label-warning'
@@ -85,12 +85,12 @@ def get_submission_view(id):
             bundleManifestObj['page']['len'] = len(bundleManifests)
 
         return render_template('submission.html',
-            sub=submission,
-            helper=HTML_HELPER,
-            project=project,
-            files=files,
-            filePage=filePage,
-            bundleManifestObj=bundleManifestObj)
+                               sub=submission,
+                               helper=HTML_HELPER,
+                               project=project,
+                               files=files,
+                               filePage=filePage,
+                               bundleManifestObj=bundleManifestObj)
     else:
         flash("Submission doesn't exist!", "alert-danger")
         return  redirect(url_for('index'))
@@ -111,9 +111,9 @@ def get_submission_files(id):
 
 
     return render_template('submission-files-table.html',
-                               files=files,
-                               filePage=filePage,
-                               helper=HTML_HELPER)
+                           files=files,
+                           filePage=filePage,
+                           helper=HTML_HELPER)
 
 @app.route('/upload', methods=['POST'])
 def upload_file():
@@ -180,4 +180,3 @@ if __name__ == '__main__':
     logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 
     app.run(host='0.0.0.0', port=5000)
-

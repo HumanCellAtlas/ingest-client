@@ -337,6 +337,14 @@ class IngestExporter:
         newBundle.fileProtocolMap = bundleToCopy["fileProtocolMap"]
         return newBundle
 
+    def completeSubmission(self, submissionEnvelopeId):
+        self.ingest_api.updateSubmissionState(submissionEnvelopeId, 'cleaning')
+        self.ingest_api.updateSubmissionState(submissionEnvelopeId, 'complete')
+        self.logger.info('Submission status is COMPLETE')
+
+    def processSubmission(self, submissionEnvelopeId):
+        self.ingest_api.updateSubmissionState(submissionEnvelopeId, 'processing')
+
     def dumpJsonToFile(self, object, projectId, name):
         if self.outputDir:
             dir = os.path.abspath(self.outputDir)
