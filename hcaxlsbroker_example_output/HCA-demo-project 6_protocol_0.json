@@ -1,0 +1,11 @@
+{
+    "core": {
+        "type": "protocol"
+    }, 
+    "description": "A protocol to test protocol ingest", 
+    "protocol_id": "A123", 
+    "type": {
+        "text": "sequencing protocol"
+    }, 
+    "name": "Test protocol"
+}

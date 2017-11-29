@@ -43,9 +43,9 @@ class StagingApi:
         base = urlparse.urljoin( self.url, self.apiversion+'/area/'+submissionId)
         r = requests.post(base, headers=self.header)
         if r.status_code == requests.codes.created:
-            print "Waiting 10 seconds for IAM policy to take effect...",
+            print ("Waiting 10 seconds for IAM policy to take effect..."),
             sleep(10)
-            print "staging area created!:" + base
+            print ("staging area created!:" + base)
             return json.loads(r.text)
 
         raise ValueError('Can\'t create staging area for sub id:' +submissionId + ', Error:' +r.text)
@@ -56,7 +56,7 @@ class StagingApi:
 
             r = requests.delete(base, headers=self.header)
             if r.status_code == requests.codes.no_content:
-                print "staging area deleted!"
+                print ("staging area deleted!")
                 return base
             else:
                 return base
@@ -67,7 +67,9 @@ class StagingApi:
 
         fileUrl = urlparse.urljoin( self.url, self.apiversion+'/area/'+submissionId+"/"+filename)
 
-        r = requests.put(fileUrl,  data=json.dumps(body), headers=self.header)
+        header = dict(self.header)
+        header['Content-type'] = 'application/json; dcp-type=' + type
+        r = requests.put(fileUrl,  data=json.dumps(body), headers=header)
         if r.status_code == requests.codes.ok or requests.codes.created:
             responseObject = json.loads(r.text)
             return FileDescription(responseObject["checksums"],type,responseObject["name"],responseObject["size"],responseObject["url"], )

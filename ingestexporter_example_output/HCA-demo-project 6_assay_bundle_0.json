@@ -1,0 +1,42 @@
+[
+    {
+        "content": {
+            "single_cell": {
+                "cell_handling": "FACS"
+            }, 
+            "core": {
+                "type": "assay"
+            }, 
+            "rna": {
+                "spike_in_dilution": 40000, 
+                "spike_in": "ERCC", 
+                "end_bias": "none", 
+                "primer": "poly-dT", 
+                "strand": "both", 
+                "library_construction": "smart-seq2"
+            }, 
+            "assay_id": "ERR1630014", 
+            "seq": {
+                "paired_ends": false, 
+                "lanes": [
+                    {
+                        "r1": "AZ_A7.fastq.gz"
+                    }
+                ], 
+                "instrument_platform": "Illumina", 
+                "molecule": "polyA RNA", 
+                "instrument_model": "HiSeq 2000", 
+                "insdc_run": [
+                    "ERR1630014"
+                ], 
+                "insdc_experiment": "ERX1700347"
+            }
+        }, 
+        "hca_ingest": {
+            "accession": "", 
+            "submissionDate": "2017-11-24T16:00:47.744Z", 
+            "updateDate": "2017-11-24T16:01:58.035Z", 
+            "document_id": "f1911171-9c9d-4eb8-92c6-6b5547ec2eeb"
+        }
+    }
+]

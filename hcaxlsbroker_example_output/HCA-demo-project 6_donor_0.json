@@ -1,0 +1,23 @@
+{
+    "core": {
+        "type": "sample"
+    }, 
+    "ncbi_taxon_id": 9606, 
+    "sample_id": "AZ", 
+    "donor": {
+        "is_living": true, 
+        "age": 43, 
+        "life_stage": "adult", 
+        "disease": [
+            {
+                "text": "normal"
+            }
+        ], 
+        "age_unit": "year", 
+        "sex": "male", 
+        "body_mass_index": 30.8
+    }, 
+    "genus_species": {
+        "text": "Homo sapiens"
+    }
+}

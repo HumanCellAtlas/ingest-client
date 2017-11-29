@@ -91,7 +91,7 @@ class Bundle2Xls:
                 entry = "||".join(['"%s"' % w for w in value])
             worksheet.write(row, 1, entry)
             row += 1
-            print sheetName + "." + key + "\t" + unicode(value)
+            print(sheetName + "." + key + "\t" + str(value))
 
     # create a worksheet from a list of map of key/values where each key is a column heading
     def writeMultiEntityWorksheet(self, workbook, sheetName, items):
@@ -109,7 +109,7 @@ class Bundle2Xls:
                     entry = ",".join(['"%s"' % w for w in value])
                 sheet.write(row, col, entry)
                 col += 1
-                print sheetName + "." + key + "\t" + unicode(value)
+                print(sheetName + "." + key + "\t" + str(value))
             init = False
             row += 1
             col = 0
@@ -129,7 +129,7 @@ class Bundle2Xls:
             tp = self.flatten(projectRaw)
             if not self.project:
                 if not cmp(tp, self.project):
-                    print "Warn, projects aren't equal!"
+                    print ("Warn, projects aren't equal!")
                 else:
                     self.project = tp
             self.assays.append(self.flatten(assayRaw))
@@ -153,6 +153,6 @@ if __name__ == '__main__':
 
     (options, args) = parser.parse_args()
     if not options.path:
-        print "You must supply path to the HCA bundles directory"
+        print ("You must supply path to the HCA bundles directory")
         exit(2)
     Bundle2Xls(options.path)

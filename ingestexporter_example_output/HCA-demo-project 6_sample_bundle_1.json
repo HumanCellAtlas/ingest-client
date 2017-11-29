@@ -1,0 +1,92 @@
+[
+    {
+        "content": {
+            "core": {
+                "type": "sample"
+            }, 
+            "name": "pancreas islet normal", 
+            "specimen_from_organism": {
+                "body_part": {
+                    "text": "islet of Langerhans"
+                }, 
+                "organ": {
+                    "text": "pancreas"
+                }
+            }, 
+            "genus_species": {
+                "text": "Homo sapiens"
+            }, 
+            "supplementary_files": [
+                "E-MTAB-5061.processed.1.zip"
+            ], 
+            "ncbi_taxon_id": 9606, 
+            "derived_from": "AZ", 
+            "sample_id": "AZ_A1", 
+            "sample_accessions": {
+                "insdc_sample": "ERS1348470"
+            }
+        }, 
+        "derivation_protocols": [
+            {
+                "core": {
+                    "type": "protocol"
+                }, 
+                "type": {
+                    "text": "sequencing protocol"
+                }, 
+                "description": "A protocol to test protocol ingest", 
+                "name": "Test protocol", 
+                "protocol_id": "A123"
+            }, 
+            {
+                "core": {
+                    "type": "protocol"
+                }, 
+                "type": {
+                    "text": "cell suspension protocol"
+                }, 
+                "description": "Another test protocol", 
+                "name": "Test protocol 2", 
+                "protocol_id": "A456"
+            }
+        ], 
+        "hca_ingest": {
+            "accession": "", 
+            "submissionDate": "2017-11-24T16:00:47.614Z", 
+            "updateDate": "2017-11-24T16:01:47.932Z", 
+            "document_id": "0a5613f6-4da1-41cc-ab95-6c83d33a1836"
+        }, 
+        "derived_from": "6be06c13-a3e9-4b62-ab6a-2b82e2358100"
+    }, 
+    {
+        "content": {
+            "core": {
+                "type": "sample"
+            }, 
+            "donor": {
+                "is_living": true, 
+                "age": 43, 
+                "life_stage": "adult", 
+                "disease": [
+                    {
+                        "text": "normal"
+                    }
+                ], 
+                "age_unit": "year", 
+                "sex": "male", 
+                "body_mass_index": 30.8
+            }, 
+            "ncbi_taxon_id": 9606, 
+            "genus_species": {
+                "text": "Homo sapiens"
+            }, 
+            "sample_id": "AZ"
+        }, 
+        "hca_ingest": {
+            "accession": "", 
+            "submissionDate": "2017-11-24T16:00:47.594Z", 
+            "updateDate": "2017-11-24T16:01:48.960Z", 
+            "document_id": "6be06c13-a3e9-4b62-ab6a-2b82e2358100"
+        }
+    }
+]
