@@ -70,7 +70,7 @@ class IngestExporter:
         submissionUuid = self.ingest_api.getObjectUuid(submissionUrl)
 
         # check staging area is available
-        if self.staging_api.hasStagingArea(submissionUuid):
+        if self.dryrun or self.staging_api.hasStagingArea(submissionUuid):
 
             assays = self.ingest_api.getAssays(submissionUrl)
             analyses = self.ingest_api.getAnalyses(submissionUrl)
