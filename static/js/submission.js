@@ -76,7 +76,7 @@ function renderSubmissionChanges(url, data) {
         'Validating': 'label-info',
         'Invalid': 'label-danger',
         'Submitted': 'label-default',
-        'Completed': 'label-default'
+        'Complete': 'label-default'
     }
 
     var DEFAULT_STATUS_LABEL = 'label-warning';

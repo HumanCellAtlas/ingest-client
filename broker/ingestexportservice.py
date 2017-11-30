@@ -24,32 +24,22 @@ DEFAULT_DSS_URL=os.environ.get('DSS_API', 'http://dss.dev.data.humancellatlas.or
 
 
 class IngestExporter:
-    def __init__(self, dry=False, output=None):
+    def __init__(self, options={}):
         formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
         logging.basicConfig(formatter=formatter)
         self.logger = logging.getLogger(__name__)
 
-        self.dryrun = dry
-        self.outputDir = output
+        self.dryrun = options.dry if options and options.dry else False
+        self.outputDir = options.output if options and options.output else None
 
-        # if not self.dryrun:
-        #     parser = OptionParser()
-        #     parser.add_option("-i", "--ingest", help="the URL to the ingest API")
-        #     parser.add_option("-s", "--staging", help="the URL to the staging API")
-        #     parser.add_option("-d", "--dss", help="the URL to the datastore service")
-        #     parser.add_option("-l", "--log", help="the logging level", default='INFO')
-        #
-        #     (options, args) = parser.parse_args()
-
-        self.ingest_api = None
-
-        self.ingestUrl = options.ingest if options.ingest else DEFAULT_INGEST_URL
-        self.stagingUrl = options.staging if options.staging else DEFAULT_STAGING_URL
-        self.dssUrl = options.dss if options.dss else DEFAULT_DSS_URL
-        self.logger.debug("ingest url is "+self.ingestUrl )
+        self.ingestUrl = options.ingest if options and options.ingest else os.path.expandvars(DEFAULT_INGEST_URL)
+        self.stagingUrl = options.staging if options and options.staging else os.path.expandvars(DEFAULT_STAGING_URL)
+        self.dssUrl = options.dss if options and options.dss else os.path.expandvars(DEFAULT_DSS_URL)
+        self.logger.debug("ingest url is "+self.ingestUrl)
 
         self.staging_api = StagingApi()
         self.dss_api = DssApi()
+        self.ingest_api = ingestapi.IngestApi(self.ingestUrl)
 
     def writeBundleToFile(self, name, index, type, doc):
         dir = os.path.abspath("bundles/"+name)
@@ -76,14 +66,11 @@ class IngestExporter:
         self.logger.info('submission received '+submissionEnvelopeId)
         # given a sub envelope, generate bundles
 
-        # read assays from ingest API
-        self.ingest_api = ingestapi.IngestApi(self.ingestUrl)
-
         submissionUrl = self.ingest_api.getSubmissionUri(submissionId=submissionEnvelopeId)
         submissionUuid = self.ingest_api.getObjectUuid(submissionUrl)
 
         # check staging area is available
-        if self.staging_api.hasStagingArea(submissionUuid):
+        if self.dryrun or self.staging_api.hasStagingArea(submissionUuid):
 
             assays = self.ingest_api.getAssays(submissionUrl)
             analyses = self.ingest_api.getAnalyses(submissionUrl)
@@ -132,11 +119,11 @@ class IngestExporter:
             if not self.dryrun:
                 fileDescription = self.writeMetadataToStaging(submissionEnvelopeUuid, analysisFileName, analysisBundleContent, "\"metadata/analysis\"")
                 filesToTransfer.append({"name":analysisFileName,
-                                    "submittedName":"analysis.json",
-                                    "url":fileDescription.url,
-                                    "dss_uuid": analysisDssUuid,
-                                    "indexed" : True,
-                                    "content-type": "hca-analysis"})
+                                        "submittedName":"analysis.json",
+                                        "url":fileDescription.url,
+                                        "dss_uuid": analysisDssUuid,
+                                        "indexed" : True,
+                                        "content-type": "hca-analysis"})
 
                 # generate new bundle
                 # write to DSS
@@ -337,6 +324,14 @@ class IngestExporter:
         newBundle.fileProtocolMap = bundleToCopy["fileProtocolMap"]
         return newBundle
 
+    def completeSubmission(self, submissionEnvelopeId):
+        self.ingest_api.updateSubmissionState(submissionEnvelopeId, 'cleaning')
+        self.ingest_api.updateSubmissionState(submissionEnvelopeId, 'complete')
+        self.logger.info('Submission status is COMPLETE')
+
+    def processSubmission(self, submissionEnvelopeId):
+        self.ingest_api.updateSubmissionState(submissionEnvelopeId, 'processing')
+
     def dumpJsonToFile(self, object, projectId, name):
         if self.outputDir:
             dir = os.path.abspath(self.outputDir)
@@ -380,5 +375,5 @@ if __name__ == '__main__':
         print ("You must supply a submission envelope ID")
         exit(2)
 
-    ex = IngestExporter(options.dry, options.output)
+    ex = IngestExporter(options)
     ex.generateBundles(options.submissionsEnvelopeId)
