@@ -69,7 +69,13 @@ class SpreadsheetSubmission:
 
     # this only works for keys nested to two levels, need something smarter to handle arbitrary
     # depth keys e.g. we support <level1>.<level2> = <value>, where value is either a single value or list
-    # this doesn't support <level1>.<level2>.<level3>
+    # this doesn't support <level1>.<level2>.<level3> except if <level3> is "ontology"
+    #This function takes a dictionary object, a key/value pair from the spreadsheet input and an object type, and adds
+    #the key/value pair to the dictionary. The type is used to assess whether a field is an ontology or an array based on the
+    # two lookup dictionaries declared at the top.
+    # For || separated strings, the value field is split. For json arrays, the value is put into an array. Json objects of type
+    # ontology require some extra formatting, which is also done here.
+
     def _keyValueToNestedObject(self, obj, key, value, type):
         d = value
         if "\"" in str(value) or "||" in str(value) or key in hca_v3_lists or (type in v4_arrayFields.keys() and key.split('.')[-1] in v4_arrayFields[type]) or (type in v4_arrayFields.keys() and key.split('.')[-1] == "ontology" and key.split('.')[-2] in v4_arrayFields[type]):
