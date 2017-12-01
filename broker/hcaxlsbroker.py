@@ -145,9 +145,9 @@ class SpreadsheetSubmission:
     def completeSubmission(self):
         self.ingest_api.finishSubmission()
 
-    def submit(self, pathToSpreadsheet, submissionUrl):
+    def submit(self, pathToSpreadsheet, submissionUrl, projectUuid=None):
         try:
-            self._process(pathToSpreadsheet, submissionUrl)
+            self._process(pathToSpreadsheet, submissionUrl, projectUuid)
         except ValueError as e:
             self.logger.error("Error:"+str(e))
             raise e
@@ -161,7 +161,7 @@ class SpreadsheetSubmission:
             tmpFile.write(json.dumps(object, indent=4))
             tmpFile.close()
 
-    def _process(self, pathToSpreadsheet, submissionUrl):
+    def _process(self, pathToSpreadsheet, submissionUrl, projectId):
 
         # parse the spreadsheet
         wb = load_workbook(filename=pathToSpreadsheet)
@@ -233,42 +233,48 @@ class SpreadsheetSubmission:
         samples.extend(immortalized_cell_line)
         samples.extend(primary_cell_line)
 
-
-        # post objects to the Ingest API after some basic validation
-        if "project_id" not in project:
-            raise ValueError('Project must have an id attribute')
-        projectId = project["project_id"]
-
-        # embedd contact & publication into into project for now
-        pubs = []
-        for index, publication in enumerate(publications):
-            pubs.append(publication)
-        project["publications"] = pubs
-
-        subs = []
-        for index, submitter in enumerate(submitters):
-            subs.append(submitter)
-        project["submitters"] = subs
-
-        cont = []
-        for index, contributor in enumerate(contributors):
-            cont.append(contributor)
-        project["contributors"] = cont
-
-
-        linksList = []
         # creating submission
         #
         if not self.dryrun and not submissionUrl:
             submissionUrl = self.createSubmission()
 
-        project["core"] = {"type": "project", "schema_url": "https://raw.githubusercontent.com/HumanCellAtlas/metadata-schema/4.0.0/json_schema/project.json"}
+        # post objects to the Ingest API after some basic validation
+        if projectId is None:
+            if "project_id" not in project:
+                raise ValueError('Project must have an id attribute')
+            projectId = project["project_id"]
 
-        self.dumpJsonToFile(project, projectId, "project")
+             # embedd contact & publication into into project for now
+            pubs = []
+            for index, publication in enumerate(publications):
+                pubs.append(publication)
+            project["publications"] = pubs
 
-        projectIngest = None
-        if not self.dryrun:
-            projectIngest = self.ingest_api.createProject(submissionUrl, json.dumps(project))
+            subs = []
+            for index, submitter in enumerate(submitters):
+                subs.append(submitter)
+            project["submitters"] = subs
+
+            cont = []
+            for index, contributor in enumerate(contributors):
+                cont.append(contributor)
+            project["contributors"] = cont
+
+
+            linksList = []
+
+
+            project["core"] = {"type": "project", "schema_url": "https://raw.githubusercontent.com/HumanCellAtlas/metadata-schema/4.0.0/json_schema/project.json"}
+
+            self.dumpJsonToFile(project, projectId, "project")
+
+            projectIngest = None
+            if not self.dryrun:
+                projectIngest = self.ingest_api.createProject(submissionUrl, json.dumps(project))
+
+        else:
+            projectIngest = "foo"# self.ingest_api_getProject(submissionUrl, project_id)
+
 
         protocolMap = {}
         for index, protocol in enumerate(protocols):
@@ -582,10 +588,12 @@ if __name__ == '__main__':
     parser.add_option("-d", "--dry", help="doa dry run without submitting to ingest", action="store_true", default=False)
     parser.add_option("-o", "--output", dest="output",
                       help="output directory where to dump json files submitted to ingest", metavar="FILE", default=None)
+    parser.add_option("-i", "--id", dest="project_id",
+                      help="The project_id for an existing submission", default=None)
 
     (options, args) = parser.parse_args()
     if not options.path:
         print ("You must supply path to the HCA bundles directory")
         exit(2)
     submission = SpreadsheetSubmission(options.dry, options.output)
-    submission.submit(options.path, None)
+    submission.submit(options.path, None, options.project_id)
