@@ -69,10 +69,16 @@ class SpreadsheetSubmission:
 
     # this only works for keys nested to two levels, need something smarter to handle arbitrary
     # depth keys e.g. we support <level1>.<level2> = <value>, where value is either a single value or list
-    # this doesn't support <level1>.<level2>.<level3>
+    # this doesn't support <level1>.<level2>.<level3> except if <level3> is "ontology"
+    #This function takes a dictionary object, a key/value pair from the spreadsheet input and an object type, and adds
+    #the key/value pair to the dictionary. The type is used to assess whether a field is an ontology or an array based on the
+    # two lookup dictionaries declared at the top.
+    # For || separated strings, the value field is split. For json arrays, the value is put into an array. Json objects of type
+    # ontology require some extra formatting, which is also done here.
+
     def _keyValueToNestedObject(self, obj, key, value, type):
         d = value
-        if "\"" in str(value) or "||" in str(value) or key in hca_v3_lists or (type in v4_arrayFields.keys() and key.split('.')[-1] in v4_arrayFields[type]):
+        if "\"" in str(value) or "||" in str(value) or key in hca_v3_lists or (type in v4_arrayFields.keys() and key.split('.')[-1] in v4_arrayFields[type]) or (type in v4_arrayFields.keys() and key.split('.')[-1] == "ontology" and key.split('.')[-2] in v4_arrayFields[type]):
             if "||" in str(value):
             # d = map(lambda it: it.strip(' "\''), str(value).split("||"))
                 d = str(value).split("||")
@@ -82,14 +88,24 @@ class SpreadsheetSubmission:
         if len(key.split('.')) > 3:
             raise ValueError('We don\'t support keys nested greater than 3 levels, found:'+key)
 
-        if type in v4_ontologyFields.keys() and key.split('.')[-1] in v4_ontologyFields[type]:
-            if isinstance(d, list):
-                t = []
-                for index, v in enumerate(d):
-                    t.append({"text" : d[index]})
-                d = t
-            else:
-                d = {"text" : d}
+        if type in v4_ontologyFields.keys():
+            if key.split('.')[-1] in v4_ontologyFields[type]:
+                if isinstance(d, list):
+                    t = []
+                    for index, v in enumerate(d):
+                        t.append({"text" : d[index]})
+                    d = t
+                else:
+                    d = {"text" : d}
+            elif key.split('.')[-1] == "ontology":
+                if isinstance(d, list):
+                    t = []
+                    for index, v in enumerate(d):
+                        t.append({"ontology": d[index]})
+                    d = t
+                else:
+                    d = {"ontology": d}
+                key = ".". join(key.split('.')[:-1])
 
         for part in reversed(key.split('.')):
             d = {part: d}
@@ -102,6 +118,9 @@ class SpreadsheetSubmission:
             if k in dict3:
                 if isinstance(v, dict):
                     dict3[k].update(self._mergeDict(dict3[k], v))
+                elif isinstance(v, list) and isinstance(dict3[k], list) and len(v) == len(dict3[k]):
+                    for index, e in enumerate(v):
+                        dict3[k][index].update(self._mergeDict(dict3[k][index], e))
                 else:
                     dict3[k].update(v)
             else:
@@ -307,6 +326,10 @@ class SpreadsheetSubmission:
             else:
                 raise ValueError('Field is_living in sample ' + sample_id + ' must either contain one of yes, true, no or false')
 
+            if "ncbi_taxon_id" in donor and "genus_species" in donor:
+                donor["genus_species"]["ontology"] = "NCBITaxon_" + str(donor["ncbi_taxon_id"])
+
+
             sampleMap[sample_id] = donor
             donorIds.append(sample_id)
 
@@ -340,6 +363,9 @@ class SpreadsheetSubmission:
             if "sample_id" not in sample:
                 raise ValueError('Sample must have an id attribute')
             sampleMap[sample["sample_id"]] = sample
+
+        if "ncbi_taxon_id" in sample and "genus_species" in sample:
+            sample["genus_species"]["ontology"] = "NCBITaxon_" + str(sample["ncbi_taxon_id"])
 
         # add dependent information to various sample types
         for state in specimen_state:
