@@ -304,8 +304,14 @@ class SpreadsheetSubmission:
                 projectIngest = self.ingest_api.createProject(submissionUrl, json.dumps(project))
 
         else:
-            projectIngest = self.ingest_api.getProjectById(projectUuid)
+            if not self.dryrun:
+                projectIngest = self.ingest_api.getProjectById(projectUuid)
+            else:
+                projectIngest = {"content" :
+                                     {"project_id" : "dummy_project_id"}}
+
             projectId = projectIngest["content"]["project_id"]
+
             self.dumpJsonToFile(projectIngest, projectId, "existing_project")
 
         protocolMap = {}
