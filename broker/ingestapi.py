@@ -66,6 +66,16 @@ class IngestApi:
             projects = json.loads(r.text)
         return projects
 
+    def getProjectById(self, id):
+        submissionUrl = self.url + '/projects/' + id
+        r = requests.get(submissionUrl, headers=self.headers)
+        if r.status_code == requests.codes.ok:
+            project = json.loads(r.text)
+            return project
+        else:
+            raise ValueError("Project " + id + " could not be retrieved")
+
+
     def getFiles(self, id):
         submissionUrl =  self.url + '/submissionEnvelopes/' + id + '/files'
         r = requests.get(submissionUrl, headers=self.headers)

@@ -18,8 +18,6 @@ from collections import defaultdict
 
 # these are spreadsheet fields that can be a list
 # todo - these should be read out of the json schema at the start
-hca_v3_lists = ['seq.lanes']
-
 v4_ontologyFields = {"donor" : ["ancestry", "development_stage", "disease", "medication", "strain", "genus_species"],
                     "cell_suspension" : ["target_cell_type", "genus_species"],
                     "death" : ["cause_of_death"],
@@ -55,8 +53,8 @@ class SpreadsheetSubmission:
         self.dryrun = dry
         self.outputDir = output
         self.ingest_api = None
-        if not self.dryrun:
-            self.ingest_api = IngestApi()
+        # if not self.dryrun:
+        self.ingest_api = IngestApi()
 
     def createSubmission(self):
         self.logger.info("creating submission...")
@@ -78,16 +76,23 @@ class SpreadsheetSubmission:
 
     def _keyValueToNestedObject(self, obj, key, value, type):
         d = value
-        if "\"" in str(value) or "||" in str(value) or key in hca_v3_lists or (type in v4_arrayFields.keys() and key.split('.')[-1] in v4_arrayFields[type]) or (type in v4_arrayFields.keys() and key.split('.')[-1] == "ontology" and key.split('.')[-2] in v4_arrayFields[type]):
+        # If the value contains a double pipe (||) or the key is for a field that can be a list (with or without also being
+        # an ontology field), put value into an array (splitting if necessary)
+        if "\"" in str(value) or "||" in str(value) \
+                or (type in v4_arrayFields.keys() and key.split('.')[-1] in v4_arrayFields[type]) \
+                or (type in v4_arrayFields.keys() and key.split('.')[-1] == "ontology"
+                    and key.split('.')[-2] in v4_arrayFields[type]):
             if "||" in str(value):
             # d = map(lambda it: it.strip(' "\''), str(value).split("||"))
                 d = str(value).split("||")
             else:
                 d = [value]
 
+        # Raise an error if the key is too nested
         if len(key.split('.')) > 3:
             raise ValueError('We don\'t support keys nested greater than 3 levels, found:'+key)
 
+        # If the key is in the ontology field list, or contains "ontology", format it according to the ontology json schema
         if type in v4_ontologyFields.keys():
             if key.split('.')[-1] in v4_ontologyFields[type]:
                 if isinstance(d, list):
@@ -107,6 +112,7 @@ class SpreadsheetSubmission:
                     d = {"ontology": d}
                 key = ".". join(key.split('.')[:-1])
 
+        # Build up the key-value dictionary
         for part in reversed(key.split('.')):
             d = {part: d}
 
@@ -164,9 +170,9 @@ class SpreadsheetSubmission:
     def completeSubmission(self):
         self.ingest_api.finishSubmission()
 
-    def submit(self, pathToSpreadsheet, submissionUrl):
+    def submit(self, pathToSpreadsheet, submissionUrl, projectUuid=None):
         try:
-            self._process(pathToSpreadsheet, submissionUrl)
+            self._process(pathToSpreadsheet, submissionUrl, projectUuid)
         except ValueError as e:
             self.logger.error("Error:"+str(e))
             raise e
@@ -180,14 +186,26 @@ class SpreadsheetSubmission:
             tmpFile.write(json.dumps(object, indent=4))
             tmpFile.close()
 
-    def _process(self, pathToSpreadsheet, submissionUrl):
+    def _process(self, pathToSpreadsheet, submissionUrl, projectUuid):
 
         # parse the spreadsheet
         wb = load_workbook(filename=pathToSpreadsheet)
-        projectSheet = wb.get_sheet_by_name("project")
-        projectPubsSheet = wb.get_sheet_by_name("project.publications")
-        submitterSheet = wb.get_sheet_by_name("contact.submitter")
-        contributorSheet = wb.get_sheet_by_name("contact.contributors")
+
+        # This code section deals with cases where the project has already been submitted
+        # ASSUMPTION: now additional project information (publications, contributors etc) is added via
+        # the spreadsheet if the project already exists
+
+        projectSheet = wb.create_sheet()
+        projectPubsSheet = wb.create_sheet()
+        submitterSheet = wb.create_sheet()
+        contributorSheet = wb.create_sheet()
+
+        if projectUuid is None:
+            projectSheet = wb.get_sheet_by_name("project")
+            projectPubsSheet = wb.get_sheet_by_name("project.publications")
+            submitterSheet = wb.get_sheet_by_name("contact.submitter")
+            contributorSheet = wb.get_sheet_by_name("contact.contributors")
+
         specimenSheet = wb.get_sheet_by_name("sample.specimen_from_organism")
         specimenStateSheet = wb.get_sheet_by_name("state_of_specimen")
         donorSheet = wb.get_sheet_by_name("sample.donor")
@@ -226,10 +244,6 @@ class SpreadsheetSubmission:
         seq = self._multiRowToObjectFromSheet("seq", seqSheet)
         seq_barcode = self._multiRowToObjectFromSheet("barcode", seqBarcodeSheet)
 
-        # samples = self._multiRowToObjectFromSheet("sample", sampleSheet)
-        # assays = self._multiRowToObjectFromSheet("assay", assaySheet)
-        # lanes = self._multiRowToObjectFromSheet("lanes", lanesSheet)
-
         protocols = self._multiRowToObjectFromSheet("protocol", protocolSheet)
         donors = self._multiRowToObjectFromSheet("donor", donorSheet)
         publications = self._multiRowToObjectFromSheet("publication", projectPubsSheet)
@@ -252,42 +266,47 @@ class SpreadsheetSubmission:
         samples.extend(immortalized_cell_line)
         samples.extend(primary_cell_line)
 
-
-        # post objects to the Ingest API after some basic validation
-        if "project_id" not in project:
-            raise ValueError('Project must have an id attribute')
-        projectId = project["project_id"]
-
-        # embedd contact & publication into into project for now
-        pubs = []
-        for index, publication in enumerate(publications):
-            pubs.append(publication)
-        project["publications"] = pubs
-
-        subs = []
-        for index, submitter in enumerate(submitters):
-            subs.append(submitter)
-        project["submitters"] = subs
-
-        cont = []
-        for index, contributor in enumerate(contributors):
-            cont.append(contributor)
-        project["contributors"] = cont
-
-
-        linksList = []
         # creating submission
         #
         if not self.dryrun and not submissionUrl:
             submissionUrl = self.createSubmission()
 
-        project["core"] = {"type": "project", "schema_url": "https://raw.githubusercontent.com/HumanCellAtlas/metadata-schema/4.0.0/json_schema/project.json"}
+        linksList = []
 
-        self.dumpJsonToFile(project, projectId, "project")
+        # post objects to the Ingest API after some basic validation
+        if projectUuid is None:
+            if "project_id" not in project:
+                raise ValueError('Project must have an id attribute')
+            projectId = project["project_id"]
 
-        projectIngest = None
-        if not self.dryrun:
-            projectIngest = self.ingest_api.createProject(submissionUrl, json.dumps(project))
+             # embedd contact & publication into into project for now
+            pubs = []
+            for index, publication in enumerate(publications):
+                pubs.append(publication)
+            project["publications"] = pubs
+
+            subs = []
+            for index, submitter in enumerate(submitters):
+                subs.append(submitter)
+            project["submitters"] = subs
+
+            cont = []
+            for index, contributor in enumerate(contributors):
+                cont.append(contributor)
+            project["contributors"] = cont
+
+            project["core"] = {"type": "project", "schema_url": "https://raw.githubusercontent.com/HumanCellAtlas/metadata-schema/4.0.0/json_schema/project.json"}
+
+            self.dumpJsonToFile(project, projectId, "project")
+
+            projectIngest = None
+            if not self.dryrun:
+                projectIngest = self.ingest_api.createProject(submissionUrl, json.dumps(project))
+
+        else:
+            projectIngest = self.ingest_api.getProjectById(projectUuid)
+            projectId = projectIngest["content"]["project_id"]
+            self.dumpJsonToFile(projectIngest, projectId, "existing_project")
 
         protocolMap = {}
         for index, protocol in enumerate(protocols):
@@ -348,7 +367,8 @@ class SpreadsheetSubmission:
                     for sampleProtocolId in sampleProtocols:
                         self.ingest_api.linkEntity(sampleIngest, protocolMap[sampleProtocolId], "protocols")
             else:
-                 if sampleProtocols:
+                linksList.append("sample_" + sample_id + "-project_" + projectId)
+                if sampleProtocols:
                     for sampleProtocolId in sampleProtocols:
                         linksList.append("sample_" + sample_id + "-protocol_" + sampleProtocolId)
 
@@ -414,6 +434,7 @@ class SpreadsheetSubmission:
                         for sampleProtocolId in sampleProtocols:
                             self.ingest_api.linkEntity(sampleIngest, protocolMap[sampleProtocolId], "protocols")
                 else:
+                    linksList.append("sample_" + sample_id + "-project_" + projectId)
                     if "derived_from" in sampleMap[sample_id]:
                         linksList.append("sample_" + sample_id + "-derivedFromSamples_" + sampleMap[sample_id]["derived_from"])
 
@@ -590,6 +611,8 @@ class SpreadsheetSubmission:
                 for file in files:
                     self.ingest_api.linkEntity(assayIngest, filesMap[file], "files")
             else:
+                linksList.append("assay" + assay["assay_id"] + "-project_" + projectId)
+
                 if samples in sampleMap:
                     linksList.append("assay_" + assay["assay_id"] + "-sample_" + samples)
 
@@ -608,10 +631,12 @@ if __name__ == '__main__':
     parser.add_option("-d", "--dry", help="doa dry run without submitting to ingest", action="store_true", default=False)
     parser.add_option("-o", "--output", dest="output",
                       help="output directory where to dump json files submitted to ingest", metavar="FILE", default=None)
+    parser.add_option("-i", "--id", dest="project_id",
+                      help="The project_id for an existing submission", default=None)
 
     (options, args) = parser.parse_args()
     if not options.path:
         print ("You must supply path to the HCA bundles directory")
         exit(2)
     submission = SpreadsheetSubmission(options.dry, options.output)
-    submission.submit(options.path, None)
+    submission.submit(options.path, None, options.project_id)
