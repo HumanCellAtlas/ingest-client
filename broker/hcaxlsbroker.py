@@ -31,13 +31,13 @@ v4_ontologyFields = {"donor" : ["ancestry", "development_stage", "disease", "med
 
 
 v4_arrayFields = {"seq" : ["insdc_run"],
-                "state_of_specimen" : ["gross_image", "microscopic_image"],
-                "donor" : ["ancestry", "disease", "medication", "strain", "supplementary_files"],
-                "immortalized_cell_line" : ["supplementary_files"],
-                "primary_cell_line" : ["supplementary_files"],
-                "organoid": ["supplementary_files"],
-                "specimen_from_organism": ["supplementary_files"],
-                "cell_suspension" : ["target_cell_type", "enrichment", "supplementary_files"],
+                "state_of_specimen" : ["gross_image", "microscopic_image", "protocol_ids"],
+                "donor" : ["ancestry", "disease", "medication", "strain", "supplementary_files", "protocol_ids"],
+                "immortalized_cell_line" : ["supplementary_files", "protocol_ids"],
+                "primary_cell_line" : ["supplementary_files", "protocol_ids"],
+                "organoid": ["supplementary_files", "protocol_ids"],
+                "specimen_from_organism": ["supplementary_files", "protocol_ids"],
+                "cell_suspension" : ["target_cell_type", "enrichment", "supplementary_files", "protocol_ids"],
                 "publication" : ["authors"],
                 "project" : ["supplementary_files", "experimental_design", "experimental_factor_name"]
                   }
@@ -428,10 +428,10 @@ class SpreadsheetSubmission:
 
         for e in enrichment:
             if "sample_id" in e:
-                if "enrichment" in sampleMap[state["sample_id"]]["cell_suspension"]:
-                    sampleMap[state["sample_id"]]["cell_suspension"]["enrichment"].append(e["enrichment"])
+                if "enrichment" in sampleMap[e["sample_id"]]["cell_suspension"]:
+                    sampleMap[e["sample_id"]]["cell_suspension"]["enrichment"].append(e["enrichment"])
                 else:
-                    sampleMap[state["sample_id"]]["cell_suspension"]["enrichment"] = [e["enrichment"]]
+                    sampleMap[e["sample_id"]]["cell_suspension"]["enrichment"] = [e["enrichment"]]
             else:
                 for index, sample_id in enumerate(sampleMap.keys()):
                     if "cell_suspension" in sampleMap[sample_id]:
@@ -442,7 +442,7 @@ class SpreadsheetSubmission:
 
         for w in well:
             if "sample_id" in w:
-                sampleMap[state["sample_id"]]["cell_suspension"]["well"] = w["well"]
+                sampleMap[w["sample_id"]]["cell_suspension"]["well"] = w["well"]
 
         # create derived_from links between samples
         for index, sample_id in enumerate(sampleMap.keys()):
