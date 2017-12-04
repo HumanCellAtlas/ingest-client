@@ -651,7 +651,7 @@ class SpreadsheetSubmission:
                 for file in files:
                     self.ingest_api.linkEntity(assayIngest, filesMap[file], "files")
             else:
-                linksList.append("assay" + assay["assay_id"] + "-project_" + projectId)
+                linksList.append("assay_" + assay["assay_id"] + "-project_" + projectId)
 
                 if samples in sampleMap:
                     linksList.append("assay_" + assay["assay_id"] + "-sample_" + samples)
