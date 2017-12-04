@@ -75,6 +75,8 @@ class SpreadsheetSubmission:
     # ontology require some extra formatting, which is also done here.
 
     def _keyValueToNestedObject(self, obj, key, value, type):
+        if "*" in key:
+            key = key.replace("*", "")
         d = value
         # If the value contains a double pipe (||) or the key is for a field that can be a list (with or without also being
         # an ontology field), put value into an array (splitting if necessary)
