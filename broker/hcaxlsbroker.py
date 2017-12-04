@@ -202,16 +202,33 @@ class SpreadsheetSubmission:
 
         if projectUuid is None:
             projectSheet = wb.get_sheet_by_name("project")
-            projectPubsSheet = wb.get_sheet_by_name("project.publications")
-            submitterSheet = wb.get_sheet_by_name("contact.submitter")
-            contributorSheet = wb.get_sheet_by_name("contact.contributors")
 
-        specimenSheet = wb.get_sheet_by_name("sample.specimen_from_organism")
-        specimenStateSheet = wb.get_sheet_by_name("state_of_specimen")
-        donorSheet = wb.get_sheet_by_name("sample.donor")
-        cellSuspensionSheet = wb.get_sheet_by_name("sample.cell_suspension")
-        cellSuspensionEnrichmentSheet = wb.get_sheet_by_name("cell_suspension.enrichment")
-        cellSuspensionWellSheet = wb.get_sheet_by_name("sample.cell_suspension.well")
+            if "project.publications" in wb.sheetnames:
+                projectPubsSheet = wb.get_sheet_by_name("project.publications")
+            if "project.submitter" in wb.sheetnames:
+                submitterSheet = wb.get_sheet_by_name("contact.submitter")
+            if "project.contributor" in wb.sheetnames:
+                contributorSheet = wb.get_sheet_by_name("contact.contributors")
+
+        specimenSheet = wb.create_sheet()
+        specimenStateSheet = wb.create_sheet()
+        donorSheet = wb.create_sheet()
+        cellSuspensionSheet = wb.create_sheet()
+        cellSuspensionEnrichmentSheet = wb.create_sheet()
+        cellSuspensionWellSheet = wb.create_sheet()
+
+        if "sample.specimen_from_organism" in wb.sheetnames:
+            specimenSheet = wb.get_sheet_by_name("sample.specimen_from_organism")
+        if "state_of_specimen" in wb.sheetnames:
+            specimenStateSheet = wb.get_sheet_by_name("state_of_specimen")
+        if "sample.donor" in wb.sheetnames:
+            donorSheet = wb.get_sheet_by_name("sample.donor")
+        if "sample.cell_suspension" in wb.sheetnames:
+            cellSuspensionSheet = wb.get_sheet_by_name("sample.cell_suspension")
+        if "cell_suspension.enrichment" in wb.sheetnames:
+            cellSuspensionEnrichmentSheet = wb.get_sheet_by_name("cell_suspension.enrichment")
+        if "sample.cell_suspension.well" in wb.sheetnames:
+            cellSuspensionWellSheet = wb.get_sheet_by_name("sample.cell_suspension.well")
 
         organoidSheet = wb.create_sheet()
         if "sample.organoid" in wb.sheetnames:
@@ -224,14 +241,29 @@ class SpreadsheetSubmission:
         primaryCLSheet = wb.create_sheet()
         if "sample.primary_cell_line" in wb.sheetnames:
             primaryCLSheet = wb.get_sheet_by_name("sample.primary_cell_line")
-        protocolSheet = wb.get_sheet_by_name("protocols")
-        # assaySheet = wb.get_sheet_by_name("assay")
-        singleCellSheet = wb.get_sheet_by_name("single_cell")
-        singleCellBarcodeSheet = wb.get_sheet_by_name("single_cell.barcode")
-        rnaSheet = wb.get_sheet_by_name("rna")
-        seqSheet = wb.get_sheet_by_name("seq")
-        seqBarcodeSheet = wb.get_sheet_by_name("seq.barcode")
-        filesSheet = wb.get_sheet_by_name("file")
+
+        protocolSheet = wb.create_sheet()
+        singleCellSheet = wb.create_sheet()
+        singleCellBarcodeSheet = wb.create_sheet()
+        rnaSheet = wb.create_sheet()
+        seqSheet = wb.create_sheet()
+        seqBarcodeSheet = wb.create_sheet()
+        filesSheet = wb.create_sheet()
+
+        if "protocols" in wb.sheetnames:
+            protocolSheet = wb.get_sheet_by_name("protocols")
+        if "single_cell" in wb.sheetnames:
+            singleCellSheet = wb.get_sheet_by_name("single_cell")
+        if "single_cell.barcode" in wb.sheetnames:
+            singleCellBarcodeSheet = wb.get_sheet_by_name("single_cell.barcode")
+        if "rna" in wb.sheetnames:
+            rnaSheet = wb.get_sheet_by_name("rna")
+        if "seq" in wb.sheetnames:
+            seqSheet = wb.get_sheet_by_name("seq")
+        if "seq.barcode" in wb.sheetnames:
+            seqBarcodeSheet = wb.get_sheet_by_name("seq.barcode")
+        if "file" in wb.sheetnames:
+            filesSheet = wb.get_sheet_by_name("file")
 
 
         # convert data in sheets back into dict
