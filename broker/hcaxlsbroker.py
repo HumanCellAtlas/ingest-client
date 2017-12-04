@@ -53,8 +53,8 @@ class SpreadsheetSubmission:
         self.dryrun = dry
         self.outputDir = output
         self.ingest_api = None
-        # if not self.dryrun:
-        self.ingest_api = IngestApi()
+        if not self.dryrun:
+            self.ingest_api = IngestApi()
 
     def createSubmission(self):
         self.logger.info("creating submission...")
