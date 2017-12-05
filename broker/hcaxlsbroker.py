@@ -12,6 +12,7 @@ from openpyxl import load_workbook
 from ingestapi import IngestApi
 from optparse import OptionParser
 import logging
+import datetime
 
 from itertools import chain
 from collections import defaultdict
@@ -41,6 +42,11 @@ v4_arrayFields = {"seq" : ["insdc_run"],
                 "publication" : ["authors"],
                 "project" : ["supplementary_files", "experimental_design", "experimental_factor_name"]
                   }
+
+v4_timeFields = {"immortalized_cell_line" : ["date_established"],
+                 "primary_cell_line" : ["date_established"],
+                 "death" : ["time_of_death"]
+                }
 
 SCHEMA_URL = "https://raw.githubusercontent.com/HumanCellAtlas/metadata-schema/4.1.0/json_schema/"
 
@@ -94,6 +100,14 @@ class SpreadsheetSubmission:
         # Raise an error if the key is too nested
         if len(key.split('.')) > 3:
             raise ValueError('We don\'t support keys nested greater than 3 levels, found:'+key)
+
+        if type in v4_timeFields.keys():
+            if key.split('.')[-1] in v4_timeFields[type]:
+                if isinstance(d, list):
+                    for i, v in enumerate(d):
+                        d[i] = str(v)
+                else:
+                    d = str(d)
 
         # If the key is in the ontology field list, or contains "ontology", format it according to the ontology json schema
         if type in v4_ontologyFields.keys():
@@ -216,6 +230,7 @@ class SpreadsheetSubmission:
         specimenSheet = wb.create_sheet()
         specimenStateSheet = wb.create_sheet()
         donorSheet = wb.create_sheet()
+        deathSheet = wb.create_sheet()
         cellSuspensionSheet = wb.create_sheet()
         cellSuspensionEnrichmentSheet = wb.create_sheet()
         cellSuspensionWellSheet = wb.create_sheet()
@@ -226,6 +241,8 @@ class SpreadsheetSubmission:
             specimenStateSheet = wb.get_sheet_by_name("state_of_specimen")
         if "sample.donor" in wb.sheetnames:
             donorSheet = wb.get_sheet_by_name("sample.donor")
+        if "sample.donor.death" in wb.sheetnames:
+            deathSheet = wb.get_sheet_by_name("sample.donor.death")
         if "sample.cell_suspension" in wb.sheetnames:
             cellSuspensionSheet = wb.get_sheet_by_name("sample.cell_suspension")
         if "cell_suspension.enrichment" in wb.sheetnames:
@@ -281,6 +298,7 @@ class SpreadsheetSubmission:
 
         protocols = self._multiRowToObjectFromSheet("protocol", protocolSheet)
         donors = self._multiRowToObjectFromSheet("donor", donorSheet)
+        death = self._multiRowToObjectFromSheet("death", deathSheet)
         publications = self._multiRowToObjectFromSheet("publication", projectPubsSheet)
         submitters = self._multiRowToObjectFromSheet("submitter", submitterSheet)
         contributors = self._multiRowToObjectFromSheet("contributor", contributorSheet)
@@ -366,6 +384,11 @@ class SpreadsheetSubmission:
 
         sampleMap = {}
         donorIds = []
+        deathMap = {}
+
+        for d in death:
+            if "sample_id" in d:
+                deathMap[d["sample_id"]] = d
 
         for index, donor in enumerate(donors):
             if "sample_id" not in donor:
@@ -383,6 +406,8 @@ class SpreadsheetSubmission:
             if "ncbi_taxon_id" in donor and "genus_species" in donor:
                 donor["genus_species"]["ontology"] = "NCBITaxon_" + str(donor["ncbi_taxon_id"])
 
+            if sample_id in deathMap.keys():
+                donor["donor"]["death"] = d["death"]
 
             sampleMap[sample_id] = donor
             donorIds.append(sample_id)
