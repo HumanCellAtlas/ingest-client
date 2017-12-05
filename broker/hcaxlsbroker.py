@@ -42,6 +42,7 @@ v4_arrayFields = {"seq" : ["insdc_run"],
                 "project" : ["supplementary_files", "experimental_design", "experimental_factor_name"]
                   }
 
+SCHEMA_URL = "https://raw.githubusercontent.com/HumanCellAtlas/metadata-schema/4.1.0/json_schema/"
 
 class SpreadsheetSubmission:
 
@@ -329,7 +330,7 @@ class SpreadsheetSubmission:
                 cont.append(contributor)
             project["contributors"] = cont
 
-            project["core"] = {"type": "project", "schema_url": "https://raw.githubusercontent.com/HumanCellAtlas/metadata-schema/4.0.0/json_schema/project.json"}
+            project["core"] = {"type": "project", "schema_url": SCHEMA_URL + "project.json"}
 
             self.dumpJsonToFile(project, projectId, "project")
 
@@ -353,7 +354,7 @@ class SpreadsheetSubmission:
             if "protocol_id" not in protocol:
                 raise ValueError('Protocol must have an id attribute')
 
-            protocol["core"] = {"type": "protocol", "schema_url": "https://raw.githubusercontent.com/HumanCellAtlas/metadata-schema/4.0.0/json_schema/protocol.json"}
+            protocol["core"] = {"type": "protocol", "schema_url": SCHEMA_URL + "protocol.json"}
             self.dumpJsonToFile(protocol, projectId, "protocol_" + str(index))
             protocolMap[protocol["protocol_id"]] = protocol
             if not self.dryrun:
@@ -395,7 +396,7 @@ class SpreadsheetSubmission:
                 sampleProtocols = donor["protocol_ids"]
                 del donor["protocol_ids"]
 
-            donor["core"] = {"type" : "sample", "schema_url": "https://raw.githubusercontent.com/HumanCellAtlas/metadata-schema/4.0.0/json_schema/sample.json"}
+            donor["core"] = {"type" : "sample", "schema_url": SCHEMA_URL + "sample.json"}
 
             self.dumpJsonToFile(donor, projectId, "donor_" + str(index))
             if not self.dryrun:
@@ -459,7 +460,7 @@ class SpreadsheetSubmission:
                     sampleProtocols = sample["protocol_ids"]
                     del sample["protocol_ids"]
 
-                sample["core"] = {"type" : "sample", "schema_url": "https://raw.githubusercontent.com/HumanCellAtlas/metadata-schema/4.0.0/json_schema/sample.json"}
+                sample["core"] = {"type" : "sample", "schema_url": SCHEMA_URL + "sample.json"}
 
                 self.dumpJsonToFile(sample, projectId, "sample_" + str(index))
                 if not self.dryrun:
@@ -606,7 +607,7 @@ class SpreadsheetSubmission:
                 assayMap[assay]["seq"]["insdc_run"] = []
                 assayMap[assay]["seq"]["insdc_run"].append(seqFile["insdc_run"])
 
-            file["core"] = {"type" : "file", "schema_url": "https://raw.githubusercontent.com/HumanCellAtlas/metadata-schema/4.0.0/json_schema/file.json"}
+            file["core"] = {"type" : "file", "schema_url": SCHEMA_URL + "file.json"}
 
             self.dumpJsonToFile(file, projectId, "files_" + str(index))
             if not self.dryrun:
@@ -638,7 +639,7 @@ class SpreadsheetSubmission:
             samples = assay["sample_id"]
             del assay["sample_id"]
 
-            assay["core"] = {"type" : "assay", "schema_url": "https://raw.githubusercontent.com/HumanCellAtlas/metadata-schema/4.0.0/json_schema/assay.json"}
+            assay["core"] = {"type" : "assay", "schema_url": SCHEMA_URL + "assay.json"}
             self.dumpJsonToFile(assay, projectId, "assay_" + str(index))
 
             if not self.dryrun:
