@@ -473,7 +473,7 @@ class SpreadsheetSubmission:
             if "sample_id" in w:
                 sampleMap[w["sample_id"]]["cell_suspension"]["well"] = w["well"]
 
-        # create derived_from links between samples
+        # submit samples to ingest and link to project and protocols
         for index, sample_id in enumerate(sampleMap.keys()):
             if sample_id not in donorIds:
                 sample = sampleMap[sample_id]
@@ -495,22 +495,27 @@ class SpreadsheetSubmission:
                     sampleIngest = self.ingest_api.createSample(submissionUrl, json.dumps(sample))
                     self.ingest_api.linkEntity(sampleIngest, projectIngest, "projects")
                     sampleMap[sample["sample_id"]] = sampleIngest
-
-                    if "derived_from" in sampleMap[sample_id]['content']:
-                        self.ingest_api.linkEntity(sampleMap[sample_id], sampleMap[sampleMap[sample_id]['content']["derived_from"]], "derivedFromSamples")
-
                     if sampleProtocols:
                         for sampleProtocolId in sampleProtocols:
                             self.ingest_api.linkEntity(sampleIngest, protocolMap[sampleProtocolId], "protocols")
                 else:
                     linksList.append("sample_" + sample_id + "-project_" + projectId)
-                    if "derived_from" in sampleMap[sample_id]:
-                        linksList.append("sample_" + sample_id + "-derivedFromSamples_" + sampleMap[sample_id]["derived_from"])
-
                     if sampleProtocols:
                         for sampleProtocolId in sampleProtocols:
                             linksList.append("sample_" + sample_id + "-protocol_" + sampleProtocolId)
 
+        # create derived_from links between samples separately to make sure all samples are submitted
+        for index, sample_id in enumerate(sampleMap.keys()):
+            if not self.dryrun:
+                if "derived_from" in sampleMap[sample_id]['content']:
+                    self.ingest_api.linkEntity(sampleMap[sample_id],
+                                               sampleMap[sampleMap[sample_id]['content']["derived_from"]],
+                                               "derivedFromSamples")
+
+            else:
+                if "derived_from" in sampleMap[sample_id]:
+                    linksList.append(
+                        "sample_" + sample_id + "-derivedFromSamples_" + sampleMap[sample_id]["derived_from"])
 
         #build the assay map from the different types of assay infromation
         assayMap={}
