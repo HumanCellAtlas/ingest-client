@@ -48,7 +48,7 @@ v4_timeFields = {"immortalized_cell_line" : ["date_established"],
                  "death" : ["time_of_death"]
                 }
 
-SCHEMA_URL = "https://raw.githubusercontent.com/HumanCellAtlas/metadata-schema/4.1.0/json_schema/"
+SCHEMA_URL = "https://raw.githubusercontent.com/HumanCellAtlas/metadata-schema/4.2.0/json_schema/"
 
 class SpreadsheetSubmission:
 
@@ -407,7 +407,7 @@ class SpreadsheetSubmission:
                 raise ValueError('Field is_living in sample ' + sample_id + ' must either contain one of yes, true, no or false')
 
             if "ncbi_taxon_id" in donor and "genus_species" in donor:
-                donor["genus_species"]["ontology"] = "NCBITaxon_" + str(donor["ncbi_taxon_id"])
+                donor["genus_species"]["ontology"] = "NCBITaxon:" + str(donor["ncbi_taxon_id"])
 
             if sample_id in deathMap.keys():
                 donor["donor"]["death"] = d["death"]
@@ -448,7 +448,7 @@ class SpreadsheetSubmission:
             sampleMap[sample["sample_id"]] = sample
 
         if "ncbi_taxon_id" in sample and "genus_species" in sample:
-            sample["genus_species"]["ontology"] = "NCBITaxon_" + str(sample["ncbi_taxon_id"])
+            sample["genus_species"]["ontology"] = "NCBITaxon:" + str(sample["ncbi_taxon_id"])
 
         # add dependent information to various sample types
         for state in specimen_state:
