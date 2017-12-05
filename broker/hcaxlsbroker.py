@@ -101,13 +101,16 @@ class SpreadsheetSubmission:
         if len(key.split('.')) > 3:
             raise ValueError('We don\'t support keys nested greater than 3 levels, found:'+key)
 
+        # If the key is in the date_time field list, convert the date time into a string of format YYYY-MM-DDThh:mm:ssZ
+        # so it validates
         if type in v4_timeFields.keys():
             if key.split('.')[-1] in v4_timeFields[type]:
                 if isinstance(d, list):
                     for i, v in enumerate(d):
-                        d[i] = str(v)
+                        date_string = v.strftime("%Y-%m-%dT%H:%M:%SZ")
+                        d[i] = date_string
                 else:
-                    d = str(d)
+                    d = d.strftime("%Y-%m-%dT%H:%M:%SZ")
 
         # If the key is in the ontology field list, or contains "ontology", format it according to the ontology json schema
         if type in v4_ontologyFields.keys():
