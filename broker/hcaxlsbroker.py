@@ -208,9 +208,9 @@ class SpreadsheetSubmission:
 
             if "project.publications" in wb.sheetnames:
                 projectPubsSheet = wb.get_sheet_by_name("project.publications")
-            if "project.submitter" in wb.sheetnames:
+            if "contact.submitter" in wb.sheetnames:
                 submitterSheet = wb.get_sheet_by_name("contact.submitter")
-            if "project.contributor" in wb.sheetnames:
+            if "contact.contributors" in wb.sheetnames:
                 contributorSheet = wb.get_sheet_by_name("contact.contributors")
 
         specimenSheet = wb.create_sheet()
