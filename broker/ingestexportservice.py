@@ -16,6 +16,7 @@ import requests
 from optparse import OptionParser
 import os, sys
 from stagingapi import StagingApi
+import bundlevalidator
 
 DEFAULT_INGEST_URL=os.environ.get('INGEST_API', 'http://api.ingest.dev.data.humancellatlas.org')
 DEFAULT_STAGING_URL=os.environ.get('STAGING_API', 'http://staging.dev.data.humancellatlas.org')
@@ -172,7 +173,7 @@ class IngestExporter:
             projectBundle.append(projectEntity)
 
             if projectUuid not in projectUuidToBundleData:
-                projectDssUuid = unicode(uuid.uuid4())
+                projectDssUuid = str(uuid.uuid4())
                 projectFileName = "project_bundle_"+str(index)+".json"
 
                 if not self.dryrun:
@@ -180,6 +181,7 @@ class IngestExporter:
                     projectUuidToBundleData[projectUuid] = {"name":projectFileName,"submittedName":"project.json", "url":fileDescription.url, "dss_uuid": projectDssUuid, "indexed": True, "content-type" : '"metadata/project"'}
                 else:
                     projectUuidToBundleData[projectUuid] = {"name":projectFileName,"submittedName":"project.json", "url":"", "dss_uuid": projectDssUuid, "indexed": True, "content-type" : '"metadata/project"'}
+                    bundlevalidator.validate(projectBundle, "project")
                     self.dumpJsonToFile(projectBundle, projectBundle[0]["content"]["project_id"],
                                         "project_bundle_" + str(index))
 
@@ -216,7 +218,7 @@ class IngestExporter:
 
 
             if sampleUuid not in sampleUuidToBundleData:
-                sampleDssUuid = unicode(uuid.uuid4())
+                sampleDssUuid = str(uuid.uuid4())
                 sampleFileName = "sample_bundle_"+str(index)+".json"
 
                 if not self.dryrun:
@@ -225,6 +227,7 @@ class IngestExporter:
 
                 else:
                     sampleUuidToBundleData[sampleUuid] = {"name":sampleFileName, "submittedName":"sample.json", "url":"", "dss_uuid": sampleDssUuid, "indexed": True, "content-type" : '"metadata/sample"'}
+                    bundlevalidator.validate(sampleBundle, "sample")
                     self.dumpJsonToFile(sampleBundle, projectBundle[0]["content"]["project_id"], "sample_bundle_" + str(index))
 
                 bundleManifest.fileSampleMap = {sampleDssUuid: sampleRelatedUuids}
@@ -250,7 +253,7 @@ class IngestExporter:
             assaysBundle.append(assayEntity)
 
 
-            assayDssUuid = unicode(uuid.uuid4())
+            assayDssUuid = str(uuid.uuid4())
             assayFileName = "assay_bundle_" + str(index) + ".json"
 
 
@@ -259,6 +262,7 @@ class IngestExporter:
                 submittedFiles.append({"name":assayFileName, "submittedName":"assay.json", "url":fileDescription.url, "dss_uuid": assayDssUuid, "indexed": True, "content-type" : '"metadata/assay"'})
             else:
                 submittedFiles.append({"name":assayFileName, "submittedName":"assay.json", "url":"", "dss_uuid": assayDssUuid, "indexed": True, "content-type" : '"metadata/assay"'})
+                bundlevalidator.validate(assaysBundle, "assay")
                 self.dumpJsonToFile(assaysBundle, projectBundle[0]["content"]["project_id"], "assay_bundle_" + str(index))
 
             bundleManifest.fileAssayMap = {assayDssUuid: [assayUuid]}
