@@ -50,7 +50,8 @@ v4_timeFields = {"immortalized_cell_line" : ["date_established"],
 
 v4_stringFields = {"donor" : ["age", "weight", "height"]}
 
-SCHEMA_URL = "https://raw.githubusercontent.com/HumanCellAtlas/metadata-schema/4.2.0/json_schema/"
+SCHEMA_URL = "https://raw.githubusercontent.com/HumanCellAtlas/metadata-schema/4.3.0/json_schema/"
+SCHEMA_URL = os.path.expandvars(os.environ.get('SCHEMA_URL', SCHEMA_URL))
 
 class SpreadsheetSubmission:
 
