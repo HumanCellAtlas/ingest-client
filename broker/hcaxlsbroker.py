@@ -48,7 +48,10 @@ v4_timeFields = {"immortalized_cell_line" : ["date_established"],
                  "death" : ["time_of_death"]
                 }
 
-SCHEMA_URL = "https://raw.githubusercontent.com/HumanCellAtlas/metadata-schema/4.2.0/json_schema/"
+v4_stringFields = {"donor" : ["age", "weight", "height"]}
+
+SCHEMA_URL = "https://raw.githubusercontent.com/HumanCellAtlas/metadata-schema/4.3.0/json_schema/"
+SCHEMA_URL = os.path.expandvars(os.environ.get('SCHEMA_URL', SCHEMA_URL))
 
 class SpreadsheetSubmission:
 
@@ -111,6 +114,10 @@ class SpreadsheetSubmission:
                         d[i] = date_string
                 else:
                     d = d.strftime("%Y-%m-%dT%H:%M:%SZ")
+
+        if type in v4_stringFields.keys():
+            if key.split('.')[-1] in v4_stringFields[type]:
+                d = str(d)
 
         # If the key is in the ontology field list, or contains "ontology", format it according to the ontology json schema
         if type in v4_ontologyFields.keys():
@@ -628,15 +635,18 @@ class SpreadsheetSubmission:
                         for lane in assayMap[assay]["seq"]["lanes"]:
                             if lane["number"] == seqFile["lanes"]["number"]:
                                 if "run" in seqFile["lanes"]:
-                                    lane[seqFile["lanes"]["run"]] = file["filename"]
+                                    run = seqFile["lanes"]["run"].lower()
+                                    lane[run] = file["filename"]
                                     added = True
                     if added == False:
                         if "run" in seqFile["lanes"]:
+                            run = seqFile["lanes"]["run"].lower()
                             assayMap[assay]["seq"]["lanes"].append({"number": seqFile["lanes"]["number"],
-                                                                    seqFile["lanes"]["run"] : file["filename"]})
+                                                                    run : file["filename"]})
                 else:
                     if "run" in seqFile["lanes"]:
-                        assayMap[assay]["seq"]["lanes"].append({seqFile["lanes"]["run"]: file["filename"]})
+                        run = seqFile["lanes"]["run"].lower()
+                        assayMap[assay]["seq"]["lanes"].append({run: file["filename"]})
 
 
 
