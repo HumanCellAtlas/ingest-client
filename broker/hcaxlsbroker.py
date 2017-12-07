@@ -455,23 +455,30 @@ class SpreadsheetSubmission:
             if "sample_id" in state:
                 sampleMap[state["sample_id"]]["specimen_from_organism"]["state_of_specimen"] = state["state_of_specimen"]
 
-        for e in enrichment:
-            if "sample_id" in e:
-                if "enrichment" in sampleMap[e["sample_id"]]["cell_suspension"]:
-                    sampleMap[e["sample_id"]]["cell_suspension"]["enrichment"].append(e["enrichment"])
+        if enrichment:
+            for e in enrichment:
+                if "sample_id" in e:
+                    if "cell_suspension" in sampleMap[e["sample_id"]] and "enrichment" in sampleMap[e["sample_id"]]["cell_suspension"]:
+                        sampleMap[e["sample_id"]]["cell_suspension"]["enrichment"].append(e["enrichment"])
+                    else:
+                        sampleMap[e["sample_id"]]["cell_suspension"] = {}
+                        sampleMap[e["sample_id"]]["cell_suspension"]["enrichment"] = [e["enrichment"]]
                 else:
-                    sampleMap[e["sample_id"]]["cell_suspension"]["enrichment"] = [e["enrichment"]]
-            else:
-                for index, sample_id in enumerate(sampleMap.keys()):
-                    if "cell_suspension" in sampleMap[sample_id]:
-                        if "enrichment" in sampleMap[sample_id]["cell_suspension"]:
-                            sampleMap[sample_id]["cell_suspension"]["enrichment"].append(e["enrichment"])
-                        else:
-                            sampleMap[sample_id]["cell_suspension"]["enrichment"] = [e["enrichment"]]
+                    for index, sample_id in enumerate(sampleMap.keys()):
+                        if "cell_suspension" in sampleMap[sample_id]:
+                            if "enrichment" in sampleMap[sample_id]["cell_suspension"]:
+                                sampleMap[sample_id]["cell_suspension"]["enrichment"].append(e["enrichment"])
+                            else:
+                                sampleMap[sample_id]["cell_suspension"]= {}
+                                sampleMap[sample_id]["cell_suspension"]["enrichment"] = [e["enrichment"]]
 
-        for w in well:
-            if "sample_id" in w:
-                sampleMap[w["sample_id"]]["cell_suspension"]["well"] = w["well"]
+
+        if well:
+            for w in well:
+                if "sample_id" in w:
+                    if "cell_suspension" not in sampleMap[w["sample_id"]]:
+                        sampleMap[w["sample_id"]]["cell_suspension"] = {}
+                    sampleMap[w["sample_id"]]["cell_suspension"]["well"] = w["well"]
 
         # submit samples to ingest and link to project and protocols
         for index, sample_id in enumerate(sampleMap.keys()):
