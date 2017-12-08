@@ -21,7 +21,7 @@ DEFAULT_INGEST_URL=os.environ.get('INGEST_API', 'http://api.ingest.dev.data.huma
 DEFAULT_STAGING_URL=os.environ.get('STAGING_API', 'http://staging.dev.data.humancellatlas.org')
 DEFAULT_DSS_URL=os.environ.get('DSS_API', 'http://dss.dev.data.humancellatlas.org')
 
-
+BUNDLE_SCHEMA_BASE_URL=os.environ.get('BUNDLE_SCHEMA_BASE_URL', 'https://github.com/HumanCellAtlas/metadata-schema/tree/4.3.0/json_schema/')
 
 class IngestExporter:
     def __init__(self, options={}):
@@ -166,21 +166,20 @@ class IngestExporter:
             projectUuid = project["uuid"]["uuid"]
 
 
-            #TO DO: this is hack in v4 because the bundle schema is specified as an array rather than an object! this should be corrected in v5
-            projectBundle = []
             projectEntity = self.getBundleDocument(project)
-            projectBundle.append(projectEntity)
+            # add bundle schema reference
+            projectEntity["core"] = {"type" : "project", "schema_url": BUNDLE_SCHEMA_BASE_URL + "project_bundle.json"}
 
             if projectUuid not in projectUuidToBundleData:
                 projectDssUuid = unicode(uuid.uuid4())
                 projectFileName = "project_bundle_"+str(index)+".json"
 
                 if not self.dryrun:
-                    fileDescription = self.writeMetadataToStaging(submissionEnvelopeUuid, projectFileName, projectBundle, '"metadata/project"')
+                    fileDescription = self.writeMetadataToStaging(submissionEnvelopeUuid, projectFileName, projectEntity, '"metadata/project"')
                     projectUuidToBundleData[projectUuid] = {"name":projectFileName,"submittedName":"project.json", "url":fileDescription.url, "dss_uuid": projectDssUuid, "indexed": True, "content-type" : '"metadata/project"'}
                 else:
                     projectUuidToBundleData[projectUuid] = {"name":projectFileName,"submittedName":"project.json", "url":"", "dss_uuid": projectDssUuid, "indexed": True, "content-type" : '"metadata/project"'}
-                    self.dumpJsonToFile(projectBundle, projectBundle[0]["content"]["project_id"],
+                    self.dumpJsonToFile(projectEntity, projectEntity["content"]["project_id"],
                                         "project_bundle_" + str(index))
 
                 bundleManifest.fileProjectMap = {projectDssUuid: [projectUuid]}
@@ -211,6 +210,10 @@ class IngestExporter:
 
             sampleBundle.append(primarySample)
             sampleBundle.append(nestedSample[0])
+            # add bundle schema reference to each sample
+            for sample in sampleBundle:
+                sample["core"] = {"type": "sample", "schema_url": BUNDLE_SCHEMA_BASE_URL + "sample_bundle.json"}
+
             sampleUuid = sample["document_id"]
             sampleRelatedUuids = [sampleUuid, sampleBundle[1]["hca_ingest"]["document_id"]]
 
@@ -245,17 +248,15 @@ class IngestExporter:
             assayUuid = assay["uuid"]["uuid"]
 
             #TO DO: this is hack in v4 because the bundle schema is specified as an array rather than an object! this should be corrected in v5
-            assaysBundle = []
             assayEntity = self.getBundleDocument(assay)
-            assaysBundle.append(assayEntity)
-
+            assayEntity["core"] = {"type": "assay", "schema_url": BUNDLE_SCHEMA_BASE_URL + "assay_bundle.json"}
 
             assayDssUuid = unicode(uuid.uuid4())
             assayFileName = "assay_bundle_" + str(index) + ".json"
 
 
             if not self.dryrun:
-                fileDescription = self.writeMetadataToStaging(submissionEnvelopeUuid, assayFileName, assaysBundle, '"metadata/assay"')
+                fileDescription = self.writeMetadataToStaging(submissionEnvelopeUuid, assayFileName, assayEntity, '"metadata/assay"')
                 submittedFiles.append({"name":assayFileName, "submittedName":"assay.json", "url":fileDescription.url, "dss_uuid": assayDssUuid, "indexed": True, "content-type" : '"metadata/assay"'})
             else:
                 submittedFiles.append({"name":assayFileName, "submittedName":"assay.json", "url":"", "dss_uuid": assayDssUuid, "indexed": True, "content-type" : '"metadata/assay"'})
@@ -301,6 +302,8 @@ class IngestExporter:
         del entity["_links"]
         del entity["events"]
         del entity["validationState"]
+        del entity["validationErrors"]
+
         core = entity
         content["hca_ingest"] =  core
         # need to clean the uuid from the ingest json
