@@ -629,8 +629,11 @@ class SpreadsheetSubmission:
             assayMap[assay]["files"].append(file["filename"])
 
             if "lanes" in seqFile:
+                # if there are lane numbers, base the creation of each lane object around them
                 if "number" in seqFile["lanes"]:
                     added = False
+                    # if there is already a lanes object, check if the current lane number
+                    #  matches the lane number in the object
                     if len(assayMap[assay]["seq"]["lanes"]) > 0:
                         for lane in assayMap[assay]["seq"]["lanes"]:
                             if lane["number"] == seqFile["lanes"]["number"]:
@@ -638,15 +641,22 @@ class SpreadsheetSubmission:
                                     run = seqFile["lanes"]["run"].lower()
                                     lane[run] = file["filename"]
                                     added = True
+                    # if nothing was added as part of the above clauses, append a new lane object to the lanes array
                     if added == False:
                         if "run" in seqFile["lanes"]:
                             run = seqFile["lanes"]["run"].lower()
                             assayMap[assay]["seq"]["lanes"].append({"number": seqFile["lanes"]["number"],
                                                                     run : file["filename"]})
+                # ASSUMPTION: if there are no lane numbers provide in the s/sheet, there is only one lane per assay
                 else:
                     if "run" in seqFile["lanes"]:
                         run = seqFile["lanes"]["run"].lower()
-                        assayMap[assay]["seq"]["lanes"].append({run: file["filename"]})
+                        # if the lanes object is currently empty, put a new dictionary with the run name into position [0]
+                        if assayMap[assay]["seq"]["lanes"]:
+                            assayMap[assay]["seq"]["lanes"][0][run] = file["filename"]
+                        # if there is already an object in the lanes array for this assay, append the new run
+                        else:
+                            assayMap[assay]["seq"]["lanes"].append({run: file["filename"]})
 
 
 
