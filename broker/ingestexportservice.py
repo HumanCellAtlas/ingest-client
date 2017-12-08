@@ -214,7 +214,7 @@ class IngestExporter:
             for sample in sampleBundle:
                 sample["core"] = {"type": "sample_bundle", "schema_url": BUNDLE_SCHEMA_BASE_URL + "sample_bundle.json"}
 
-            sampleUuid = sample["document_id"]
+            sampleUuid = sample["hca_ingest"]["document_id"]
             sampleRelatedUuids = [sampleUuid, sampleBundle[1]["hca_ingest"]["document_id"]]
 
 
@@ -228,7 +228,7 @@ class IngestExporter:
 
                 else:
                     sampleUuidToBundleData[sampleUuid] = {"name":sampleFileName, "submittedName":"sample.json", "url":"", "dss_uuid": sampleDssUuid, "indexed": True, "content-type" : '"metadata/sample"'}
-                    self.dumpJsonToFile(sampleBundle, projectBundle[0]["content"]["project_id"], "sample_bundle_" + str(index))
+                    self.dumpJsonToFile(sampleBundle, projectEntity["content"]["project_id"], "sample_bundle_" + str(index))
 
                 bundleManifest.fileSampleMap = {sampleDssUuid: sampleRelatedUuids}
             else:
@@ -260,7 +260,7 @@ class IngestExporter:
                 submittedFiles.append({"name":assayFileName, "submittedName":"assay.json", "url":fileDescription.url, "dss_uuid": assayDssUuid, "indexed": True, "content-type" : '"metadata/assay"'})
             else:
                 submittedFiles.append({"name":assayFileName, "submittedName":"assay.json", "url":"", "dss_uuid": assayDssUuid, "indexed": True, "content-type" : '"metadata/assay"'})
-                self.dumpJsonToFile(assaysBundle, projectBundle[0]["content"]["project_id"], "assay_bundle_" + str(index))
+                self.dumpJsonToFile(assayEntity, projectEntity["content"]["project_id"], "assay_bundle_" + str(index))
 
             bundleManifest.fileAssayMap = {assayDssUuid: [assayUuid]}
 
@@ -278,7 +278,7 @@ class IngestExporter:
                 self.ingest_api.createBundleManifest(bundleManifest)
 
             else:
-                self.dumpJsonToFile(bundleManifest.__dict__, projectBundle[0]["content"]["project_id"], "bundleManifest_" + str(index))
+                self.dumpJsonToFile(bundleManifest.__dict__, projectEntity["content"]["project_id"], "bundleManifest_" + str(index))
 
             self.logger.info("bundles generated! "+bundleManifest.bundleUuid)
 
