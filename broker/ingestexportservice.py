@@ -199,7 +199,9 @@ class IngestExporter:
             nestedSample = self.getNestedObjects("derivedFromSamples", sample, "samples")
             nestedProtocols = self.getNestedObjects("protocols", sample, "protocols")
 
-            sampleBundle = []
+            sampleBundle = {}
+            sampleBundle["core"] = {"type": "sample_bundle", "schema_url": BUNDLE_SCHEMA_BASE_URL + "sample_bundle.json"}
+            sampleBundle["samples"] = []
             primarySample = self.getBundleDocument(sample)
             primarySample["derivation_protocols"] = []
 
@@ -208,14 +210,10 @@ class IngestExporter:
 
             primarySample["derived_from"] = nestedSample[0]["hca_ingest"]["document_id"]
 
-            sampleBundle.append(primarySample)
-            sampleBundle.append(nestedSample[0])
-            # add bundle schema reference to each sample
-            for sample in sampleBundle:
-                sample["core"] = {"type": "sample_bundle", "schema_url": BUNDLE_SCHEMA_BASE_URL + "sample_bundle.json"}
-
-            sampleUuid = sample["hca_ingest"]["document_id"]
-            sampleRelatedUuids = [sampleUuid, sampleBundle[1]["hca_ingest"]["document_id"]]
+            sampleBundle["samples"].append(primarySample)
+            sampleBundle["samples"].append(nestedSample[0])
+            sampleUuid = sample["document_id"]
+            sampleRelatedUuids = [sampleUuid, sampleBundle["samples"][1]["hca_ingest"]["document_id"]]
 
 
             if sampleUuid not in sampleUuidToBundleData:
