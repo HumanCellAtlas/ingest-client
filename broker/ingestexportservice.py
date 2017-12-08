@@ -168,7 +168,7 @@ class IngestExporter:
 
             projectEntity = self.getBundleDocument(project)
             # add bundle schema reference
-            projectEntity["core"] = {"type" : "project", "schema_url": BUNDLE_SCHEMA_BASE_URL + "project_bundle.json"}
+            projectEntity["core"] = {"type" : "project_bundle", "schema_url": BUNDLE_SCHEMA_BASE_URL + "project_bundle.json"}
 
             if projectUuid not in projectUuidToBundleData:
                 projectDssUuid = unicode(uuid.uuid4())
@@ -212,7 +212,7 @@ class IngestExporter:
             sampleBundle.append(nestedSample[0])
             # add bundle schema reference to each sample
             for sample in sampleBundle:
-                sample["core"] = {"type": "sample", "schema_url": BUNDLE_SCHEMA_BASE_URL + "sample_bundle.json"}
+                sample["core"] = {"type": "sample_bundle", "schema_url": BUNDLE_SCHEMA_BASE_URL + "sample_bundle.json"}
 
             sampleUuid = sample["document_id"]
             sampleRelatedUuids = [sampleUuid, sampleBundle[1]["hca_ingest"]["document_id"]]
@@ -249,7 +249,7 @@ class IngestExporter:
 
             #TO DO: this is hack in v4 because the bundle schema is specified as an array rather than an object! this should be corrected in v5
             assayEntity = self.getBundleDocument(assay)
-            assayEntity["core"] = {"type": "assay", "schema_url": BUNDLE_SCHEMA_BASE_URL + "assay_bundle.json"}
+            assayEntity["core"] = {"type": "assay_bundle", "schema_url": BUNDLE_SCHEMA_BASE_URL + "assay_bundle.json"}
 
             assayDssUuid = unicode(uuid.uuid4())
             assayFileName = "assay_bundle_" + str(index) + ".json"
