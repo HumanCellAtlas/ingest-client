@@ -21,8 +21,8 @@ DEFAULT_INGEST_URL=os.environ.get('INGEST_API', 'http://api.ingest.dev.data.huma
 DEFAULT_STAGING_URL=os.environ.get('STAGING_API', 'http://staging.dev.data.humancellatlas.org')
 DEFAULT_DSS_URL=os.environ.get('DSS_API', 'http://dss.dev.data.humancellatlas.org')
 
-BUNDLE_SCHEMA_BASE_URL='https://raw.githubusercontent.com/HumanCellAtlas/metadata-schema/%s/json_schema/'
-METADATA_SCHEMA_VERSION = '4.4.0'
+BUNDLE_SCHEMA_BASE_URL=os.environ.get('BUNDLE_SCHEMA_BASE_URL', 'https://raw.githubusercontent.com/HumanCellAtlas/metadata-schema/%s/json_schema/')
+METADATA_SCHEMA_VERSION = os.environ.get('SCHEMA_VERSION', '4.4.0')
 
 
 class IngestExporter:
@@ -37,8 +37,8 @@ class IngestExporter:
         self.ingestUrl = options.ingest if options and options.ingest else os.path.expandvars(DEFAULT_INGEST_URL)
         self.stagingUrl = options.staging if options and options.staging else os.path.expandvars(DEFAULT_STAGING_URL)
         self.dssUrl = options.dss if options and options.dss else os.path.expandvars(DEFAULT_DSS_URL)
-        self.schema_version = options.schema_version if options and options.schema_version else METADATA_SCHEMA_VERSION
-        self.schema_url = os.path.expandvars(os.environ.get('BUNDLE_SCHEMA_BASE_URL', BUNDLE_SCHEMA_BASE_URL % self.schema_version))
+        self.schema_version = options.schema_version if options and options.schema_version else os.path.expandvars(METADATA_SCHEMA_VERSION)
+        self.schema_url = os.path.expandvars(BUNDLE_SCHEMA_BASE_URL % self.schema_version)
 
         self.logger.debug("ingest url is "+self.ingestUrl)
 

@@ -50,9 +50,9 @@ v4_timeFields = {"immortalized_cell_line" : ["date_established"],
 
 v4_stringFields = {"donor" : ["age", "weight", "height"]}
 
-SCHEMA_URL = "https://raw.githubusercontent.com/HumanCellAtlas/metadata-schema/%s/json_schema/"
+SCHEMA_URL = os.environ.get('SCHEMA_URL', "https://raw.githubusercontent.com/HumanCellAtlas/metadata-schema/%s/json_schema/")
 # SCHEMA_URL = os.path.expandvars(os.environ.get('SCHEMA_URL', SCHEMA_URL))
-SCHEMA_VERSION = '4.4.0'
+SCHEMA_VERSION = os.environ.get('SCHEMA_VERSION', '4.4.0')
 
 
 class SpreadsheetSubmission:
@@ -66,7 +66,7 @@ class SpreadsheetSubmission:
         self.outputDir = output
         self.ingest_api = None
         self.schema_version = schema_version if schema_version else SCHEMA_VERSION
-        self.schema_url = os.path.expandvars(os.environ.get('SCHEMA_URL', SCHEMA_URL % self.schema_version))
+        self.schema_url = os.path.expandvars(SCHEMA_URL % self.schema_version)
         if not self.dryrun:
             self.ingest_api = IngestApi()
 
