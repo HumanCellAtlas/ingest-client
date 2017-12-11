@@ -16,7 +16,7 @@ import requests
 from optparse import OptionParser
 import os, sys
 from stagingapi import StagingApi
-import bundlevalidator
+from bundlevalidator import BundleValidator
 
 DEFAULT_INGEST_URL=os.environ.get('INGEST_API', 'http://api.ingest.dev.data.humancellatlas.org')
 DEFAULT_STAGING_URL=os.environ.get('STAGING_API', 'http://staging.dev.data.humancellatlas.org')
@@ -46,6 +46,7 @@ class IngestExporter:
         self.staging_api = StagingApi()
         self.dss_api = DssApi()
         self.ingest_api = ingestapi.IngestApi(self.ingestUrl)
+        self.bundle_validator = BundleValidator()
 
     def writeBundleToFile(self, name, index, type, doc):
         dir = os.path.abspath("bundles/"+name)
@@ -187,7 +188,7 @@ class IngestExporter:
                     projectUuidToBundleData[projectUuid] = {"name":projectFileName,"submittedName":"project.json", "url":fileDescription.url, "dss_uuid": projectDssUuid, "indexed": True, "content-type" : '"metadata/project"'}
                 else:
                     projectUuidToBundleData[projectUuid] = {"name":projectFileName,"submittedName":"project.json", "url":"", "dss_uuid": projectDssUuid, "indexed": True, "content-type" : '"metadata/project"'}
-                    valid = bundlevalidator.validate(projectEntity, "project")
+                    valid = self.bundle_validator.validate(projectEntity, "project")
                     if valid:
                         self.logger.info("Project entity " + projectDssUuid + " is valid")
                     else:
@@ -241,7 +242,7 @@ class IngestExporter:
 
                 else:
                     sampleUuidToBundleData[sampleUuid] = {"name":sampleFileName, "submittedName":"sample.json", "url":"", "dss_uuid": sampleDssUuid, "indexed": True, "content-type" : '"metadata/sample"'}
-                    valid = bundlevalidator.validate(sampleBundle, "sample")
+                    valid = self.bundle_validator.validate(sampleBundle, "sample")
                     if valid:
                         self.logger.info("Sample entity " + sampleDssUuid + " is valid")
                     else:
@@ -280,7 +281,7 @@ class IngestExporter:
                 submittedFiles.append({"name":assayFileName, "submittedName":"assay.json", "url":fileDescription.url, "dss_uuid": assayDssUuid, "indexed": True, "content-type" : '"metadata/assay"'})
             else:
                 submittedFiles.append({"name":assayFileName, "submittedName":"assay.json", "url":"", "dss_uuid": assayDssUuid, "indexed": True, "content-type" : '"metadata/assay"'})
-                valid = bundlevalidator.validate(assayEntity, "assay")
+                valid = self.bundle_validator.validate(assayEntity, "assay")
                 if valid:
                     self.logger.info("Assay entity " + assayDssUuid + " is valid")
                 else:
