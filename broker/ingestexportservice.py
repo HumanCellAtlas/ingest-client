@@ -22,6 +22,8 @@ DEFAULT_INGEST_URL=os.environ.get('INGEST_API', 'http://api.ingest.dev.data.huma
 DEFAULT_STAGING_URL=os.environ.get('STAGING_API', 'http://staging.dev.data.humancellatlas.org')
 DEFAULT_DSS_URL=os.environ.get('DSS_API', 'http://dss.dev.data.humancellatlas.org')
 
+BUNDLE_SCHEMA_BASE_URL=os.environ.get('BUNDLE_SCHEMA_BASE_URL', 'https://raw.githubusercontent.com/HumanCellAtlas/metadata-schema/%s/json_schema/')
+METADATA_SCHEMA_VERSION = os.environ.get('SCHEMA_VERSION', '4.4.0')
 
 
 class IngestExporter:
@@ -36,6 +38,9 @@ class IngestExporter:
         self.ingestUrl = options.ingest if options and options.ingest else os.path.expandvars(DEFAULT_INGEST_URL)
         self.stagingUrl = options.staging if options and options.staging else os.path.expandvars(DEFAULT_STAGING_URL)
         self.dssUrl = options.dss if options and options.dss else os.path.expandvars(DEFAULT_DSS_URL)
+        self.schema_version = options.schema_version if options and options.schema_version else os.path.expandvars(METADATA_SCHEMA_VERSION)
+        self.schema_url = os.path.expandvars(BUNDLE_SCHEMA_BASE_URL % self.schema_version)
+
         self.logger.debug("ingest url is "+self.ingestUrl)
 
         self.staging_api = StagingApi()
@@ -167,22 +172,27 @@ class IngestExporter:
             projectUuid = project["uuid"]["uuid"]
 
 
-            #TO DO: this is hack in v4 because the bundle schema is specified as an array rather than an object! this should be corrected in v5
-            projectBundle = []
             projectEntity = self.getBundleDocument(project)
-            projectBundle.append(projectEntity)
+            # add bundle schema reference
+            projectEntity["core"] = {"type" : "project_bundle",
+                                     "schema_url": self.schema_url + "project_bundle.json",
+                                     "schema_version": self.schema_version}
 
             if projectUuid not in projectUuidToBundleData:
                 projectDssUuid = str(uuid.uuid4())
                 projectFileName = "project_bundle_"+str(index)+".json"
 
                 if not self.dryrun:
-                    fileDescription = self.writeMetadataToStaging(submissionEnvelopeUuid, projectFileName, projectBundle, '"metadata/project"')
+                    fileDescription = self.writeMetadataToStaging(submissionEnvelopeUuid, projectFileName, projectEntity, '"metadata/project"')
                     projectUuidToBundleData[projectUuid] = {"name":projectFileName,"submittedName":"project.json", "url":fileDescription.url, "dss_uuid": projectDssUuid, "indexed": True, "content-type" : '"metadata/project"'}
                 else:
                     projectUuidToBundleData[projectUuid] = {"name":projectFileName,"submittedName":"project.json", "url":"", "dss_uuid": projectDssUuid, "indexed": True, "content-type" : '"metadata/project"'}
-                    bundlevalidator.validate(projectBundle, "project")
-                    self.dumpJsonToFile(projectBundle, projectBundle[0]["content"]["project_id"],
+                    valid = bundlevalidator.validate(projectEntity, "project")
+                    if valid:
+                        self.logger.info("Project entity " + projectDssUuid + " is valid")
+                    else:
+                        self.logger.info("Project entity " + projectDssUuid + " is not valid")
+                    self.dumpJsonToFile(projectEntity, projectEntity["content"]["project_id"],
                                         "project_bundle_" + str(index))
 
                 bundleManifest.fileProjectMap = {projectDssUuid: [projectUuid]}
@@ -202,7 +212,11 @@ class IngestExporter:
             nestedSample = self.getNestedObjects("derivedFromSamples", sample, "samples")
             nestedProtocols = self.getNestedObjects("protocols", sample, "protocols")
 
-            sampleBundle = []
+            sampleBundle = {}
+            sampleBundle["core"] = {"type": "sample_bundle",
+                                    "schema_url": self.schema_url + "sample_bundle.json",
+                                    "schema_version": self.schema_version}
+            sampleBundle["samples"] = []
             primarySample = self.getBundleDocument(sample)
             primarySample["derivation_protocols"] = []
 
@@ -211,10 +225,10 @@ class IngestExporter:
 
             primarySample["derived_from"] = nestedSample[0]["hca_ingest"]["document_id"]
 
-            sampleBundle.append(primarySample)
-            sampleBundle.append(nestedSample[0])
+            sampleBundle["samples"].append(primarySample)
+            sampleBundle["samples"].append(nestedSample[0])
             sampleUuid = sample["document_id"]
-            sampleRelatedUuids = [sampleUuid, sampleBundle[1]["hca_ingest"]["document_id"]]
+            sampleRelatedUuids = [sampleUuid, sampleBundle["samples"][1]["hca_ingest"]["document_id"]]
 
 
             if sampleUuid not in sampleUuidToBundleData:
@@ -227,8 +241,12 @@ class IngestExporter:
 
                 else:
                     sampleUuidToBundleData[sampleUuid] = {"name":sampleFileName, "submittedName":"sample.json", "url":"", "dss_uuid": sampleDssUuid, "indexed": True, "content-type" : '"metadata/sample"'}
-                    bundlevalidator.validate(sampleBundle, "sample")
-                    self.dumpJsonToFile(sampleBundle, projectBundle[0]["content"]["project_id"], "sample_bundle_" + str(index))
+                    valid = bundlevalidator.validate(sampleBundle, "sample")
+                    if valid:
+                        self.logger.info("Sample entity " + sampleDssUuid + " is valid")
+                    else:
+                        self.logger.info("Sample entity " + sampleDssUuid + " is not valid")
+                    self.dumpJsonToFile(sampleBundle, projectEntity["content"]["project_id"], "sample_bundle_" + str(index))
 
                 bundleManifest.fileSampleMap = {sampleDssUuid: sampleRelatedUuids}
             else:
@@ -248,22 +266,27 @@ class IngestExporter:
             assayUuid = assay["uuid"]["uuid"]
 
             #TO DO: this is hack in v4 because the bundle schema is specified as an array rather than an object! this should be corrected in v5
-            assaysBundle = []
             assayEntity = self.getBundleDocument(assay)
-            assaysBundle.append(assayEntity)
-
+            assayEntity["core"] = {"type": "assay_bundle",
+                                   "schema_url": self.schema_url + "assay_bundle.json",
+                                   "schema_version": self.schema_version}
 
             assayDssUuid = str(uuid.uuid4())
             assayFileName = "assay_bundle_" + str(index) + ".json"
 
 
             if not self.dryrun:
-                fileDescription = self.writeMetadataToStaging(submissionEnvelopeUuid, assayFileName, assaysBundle, '"metadata/assay"')
+                fileDescription = self.writeMetadataToStaging(submissionEnvelopeUuid, assayFileName, assayEntity, '"metadata/assay"')
                 submittedFiles.append({"name":assayFileName, "submittedName":"assay.json", "url":fileDescription.url, "dss_uuid": assayDssUuid, "indexed": True, "content-type" : '"metadata/assay"'})
             else:
                 submittedFiles.append({"name":assayFileName, "submittedName":"assay.json", "url":"", "dss_uuid": assayDssUuid, "indexed": True, "content-type" : '"metadata/assay"'})
-                bundlevalidator.validate(assaysBundle, "assay")
-                self.dumpJsonToFile(assaysBundle, projectBundle[0]["content"]["project_id"], "assay_bundle_" + str(index))
+                valid = bundlevalidator.validate(assayEntity, "assay")
+                if valid:
+                    self.logger.info("Assay entity " + assayDssUuid + " is valid")
+                else:
+                    self.logger.info("Assay entity " + assayDssUuid + " is not valid")
+
+                self.dumpJsonToFile(assayEntity, projectEntity["content"]["project_id"], "assay_bundle_" + str(index))
 
             bundleManifest.fileAssayMap = {assayDssUuid: [assayUuid]}
 
@@ -281,7 +304,7 @@ class IngestExporter:
                 self.ingest_api.createBundleManifest(bundleManifest)
 
             else:
-                self.dumpJsonToFile(bundleManifest.__dict__, projectBundle[0]["content"]["project_id"], "bundleManifest_" + str(index))
+                self.dumpJsonToFile(bundleManifest.__dict__, projectEntity["content"]["project_id"], "bundleManifest_" + str(index))
 
             self.logger.info("bundles generated! "+bundleManifest.bundleUuid)
 
@@ -305,6 +328,8 @@ class IngestExporter:
         del entity["_links"]
         del entity["events"]
         del entity["validationState"]
+        del entity["validationErrors"]
+
         core = entity
         content["hca_ingest"] =  core
         # need to clean the uuid from the ingest json
@@ -373,6 +398,7 @@ if __name__ == '__main__':
     parser.add_option("-s", "--staging", help="the URL to the staging API")
     parser.add_option("-d", "--dss", help="the URL to the datastore service")
     parser.add_option("-l", "--log", help="the logging level", default='INFO')
+    parser.add_option("-v", "--version", dest="schema_version", help="Metadata schema version", default=None)
 
     (options, args) = parser.parse_args()
     if not options.submissionsEnvelopeId:
