@@ -65,7 +65,7 @@ class SpreadsheetSubmission:
         self.dryrun = dry
         self.outputDir = output
         self.ingest_api = None
-        self.schema_version = schema_version if schema_version else SCHEMA_VERSION
+        self.schema_version = schema_version if schema_version else os.path.expandvars(SCHEMA_VERSION)
         self.schema_url = os.path.expandvars(SCHEMA_URL % self.schema_version)
         if not self.dryrun:
             self.ingest_api = IngestApi()
