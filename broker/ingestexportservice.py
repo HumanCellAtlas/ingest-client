@@ -21,7 +21,9 @@ DEFAULT_INGEST_URL=os.environ.get('INGEST_API', 'http://api.ingest.dev.data.huma
 DEFAULT_STAGING_URL=os.environ.get('STAGING_API', 'http://staging.dev.data.humancellatlas.org')
 DEFAULT_DSS_URL=os.environ.get('DSS_API', 'http://dss.dev.data.humancellatlas.org')
 
-BUNDLE_SCHEMA_BASE_URL=os.environ.get('BUNDLE_SCHEMA_BASE_URL', 'https://raw.githubusercontent.com/HumanCellAtlas/metadata-schema/4.3.0/json_schema/')
+BUNDLE_SCHEMA_BASE_URL=os.environ.get('BUNDLE_SCHEMA_BASE_URL', 'https://raw.githubusercontent.com/HumanCellAtlas/metadata-schema/%s/json_schema/')
+METADATA_SCHEMA_VERSION = os.environ.get('SCHEMA_VERSION', '4.4.0')
+
 
 class IngestExporter:
     def __init__(self, options={}):
@@ -35,6 +37,9 @@ class IngestExporter:
         self.ingestUrl = options.ingest if options and options.ingest else os.path.expandvars(DEFAULT_INGEST_URL)
         self.stagingUrl = options.staging if options and options.staging else os.path.expandvars(DEFAULT_STAGING_URL)
         self.dssUrl = options.dss if options and options.dss else os.path.expandvars(DEFAULT_DSS_URL)
+        self.schema_version = options.schema_version if options and options.schema_version else os.path.expandvars(METADATA_SCHEMA_VERSION)
+        self.schema_url = os.path.expandvars(BUNDLE_SCHEMA_BASE_URL % self.schema_version)
+
         self.logger.debug("ingest url is "+self.ingestUrl)
 
         self.staging_api = StagingApi()
@@ -168,7 +173,9 @@ class IngestExporter:
 
             projectEntity = self.getBundleDocument(project)
             # add bundle schema reference
-            projectEntity["core"] = {"type" : "project_bundle", "schema_url": BUNDLE_SCHEMA_BASE_URL + "project_bundle.json"}
+            projectEntity["core"] = {"type" : "project_bundle",
+                                     "schema_url": self.schema_url + "project_bundle.json",
+                                     "schema_version": self.schema_version}
 
             if projectUuid not in projectUuidToBundleData:
                 projectDssUuid = unicode(uuid.uuid4())
@@ -200,7 +207,9 @@ class IngestExporter:
             nestedProtocols = self.getNestedObjects("protocols", sample, "protocols")
 
             sampleBundle = {}
-            sampleBundle["core"] = {"type": "sample_bundle", "schema_url": BUNDLE_SCHEMA_BASE_URL + "sample_bundle.json"}
+            sampleBundle["core"] = {"type": "sample_bundle",
+                                    "schema_url": self.schema_url + "sample_bundle.json",
+                                    "schema_version": self.schema_version}
             sampleBundle["samples"] = []
             primarySample = self.getBundleDocument(sample)
             primarySample["derivation_protocols"] = []
@@ -247,7 +256,9 @@ class IngestExporter:
 
             #TO DO: this is hack in v4 because the bundle schema is specified as an array rather than an object! this should be corrected in v5
             assayEntity = self.getBundleDocument(assay)
-            assayEntity["core"] = {"type": "assay_bundle", "schema_url": BUNDLE_SCHEMA_BASE_URL + "assay_bundle.json"}
+            assayEntity["core"] = {"type": "assay_bundle",
+                                   "schema_url": self.schema_url + "assay_bundle.json",
+                                   "schema_version": self.schema_version}
 
             assayDssUuid = unicode(uuid.uuid4())
             assayFileName = "assay_bundle_" + str(index) + ".json"
@@ -370,6 +381,7 @@ if __name__ == '__main__':
     parser.add_option("-s", "--staging", help="the URL to the staging API")
     parser.add_option("-d", "--dss", help="the URL to the datastore service")
     parser.add_option("-l", "--log", help="the logging level", default='INFO')
+    parser.add_option("-v", "--version", dest="schema_version", help="Metadata schema version", default=None)
 
     (options, args) = parser.parse_args()
     if not options.submissionsEnvelopeId:

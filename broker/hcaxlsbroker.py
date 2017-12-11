@@ -50,12 +50,14 @@ v4_timeFields = {"immortalized_cell_line" : ["date_established"],
 
 v4_stringFields = {"donor" : ["age", "weight", "height"]}
 
-SCHEMA_URL = "https://raw.githubusercontent.com/HumanCellAtlas/metadata-schema/4.3.0/json_schema/"
-SCHEMA_URL = os.path.expandvars(os.environ.get('SCHEMA_URL', SCHEMA_URL))
+SCHEMA_URL = os.environ.get('SCHEMA_URL', "https://raw.githubusercontent.com/HumanCellAtlas/metadata-schema/%s/json_schema/")
+# SCHEMA_URL = os.path.expandvars(os.environ.get('SCHEMA_URL', SCHEMA_URL))
+SCHEMA_VERSION = os.environ.get('SCHEMA_VERSION', '4.4.0')
+
 
 class SpreadsheetSubmission:
 
-    def __init__(self, dry=False, output=None):
+    def __init__(self, dry=False, output=None, schema_version=None):
         # formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
         # logging.basicConfig(formatter=formatter, level=logging.INFO)
         self.logger = logging.getLogger(__name__)
@@ -63,6 +65,8 @@ class SpreadsheetSubmission:
         self.dryrun = dry
         self.outputDir = output
         self.ingest_api = None
+        self.schema_version = schema_version if schema_version else os.path.expandvars(SCHEMA_VERSION)
+        self.schema_url = os.path.expandvars(SCHEMA_URL % self.schema_version)
         if not self.dryrun:
             self.ingest_api = IngestApi()
 
@@ -358,7 +362,9 @@ class SpreadsheetSubmission:
                 cont.append(contributor)
             project["contributors"] = cont
 
-            project["core"] = {"type": "project", "schema_url": SCHEMA_URL + "project.json"}
+            project["core"] = {"type": "project",
+                               "schema_url": self.schema_url + "project.json",
+                               "schema_version": self.schema_version}
 
             self.dumpJsonToFile(project, projectId, "project")
 
@@ -382,7 +388,9 @@ class SpreadsheetSubmission:
             if "protocol_id" not in protocol:
                 raise ValueError('Protocol must have an id attribute')
 
-            protocol["core"] = {"type": "protocol", "schema_url": SCHEMA_URL + "protocol.json"}
+            protocol["core"] = {"type": "protocol",
+                                "schema_url": self.schema_url + "protocol.json",
+                               "schema_version": self.schema_version}
             self.dumpJsonToFile(protocol, projectId, "protocol_" + str(index))
             protocolMap[protocol["protocol_id"]] = protocol
             if not self.dryrun:
@@ -431,7 +439,9 @@ class SpreadsheetSubmission:
                 sampleProtocols = donor["protocol_ids"]
                 del donor["protocol_ids"]
 
-            donor["core"] = {"type" : "sample", "schema_url": SCHEMA_URL + "sample.json"}
+            donor["core"] = {"type" : "sample",
+                             "schema_url": self.schema_url + "sample.json",
+                            "schema_version": self.schema_version}
 
             self.dumpJsonToFile(donor, projectId, "donor_" + str(index))
             if not self.dryrun:
@@ -502,7 +512,9 @@ class SpreadsheetSubmission:
                     sampleProtocols = sample["protocol_ids"]
                     del sample["protocol_ids"]
 
-                sample["core"] = {"type" : "sample", "schema_url": SCHEMA_URL + "sample.json"}
+                sample["core"] = {"type" : "sample",
+                                  "schema_url": self.schema_url + "sample.json",
+                                "schema_version": self.schema_version}
 
                 self.dumpJsonToFile(sample, projectId, "sample_" + str(index))
                 if not self.dryrun:
@@ -667,7 +679,9 @@ class SpreadsheetSubmission:
                 assayMap[assay]["seq"]["insdc_run"] = []
                 assayMap[assay]["seq"]["insdc_run"].append(seqFile["insdc_run"])
 
-            file["core"] = {"type" : "file", "schema_url": SCHEMA_URL + "file.json"}
+            file["core"] = {"type" : "file",
+                            "schema_url": self.schema_url + "file.json",
+                           "schema_version": self.schema_version}
 
             self.dumpJsonToFile(file, projectId, "files_" + str(index))
             if not self.dryrun:
@@ -699,7 +713,9 @@ class SpreadsheetSubmission:
             samples = assay["sample_id"]
             del assay["sample_id"]
 
-            assay["core"] = {"type" : "assay", "schema_url": SCHEMA_URL + "assay.json"}
+            assay["core"] = {"type" : "assay",
+                             "schema_url": self.schema_url + "assay.json",
+                             "schema_version": self.schema_version}
             self.dumpJsonToFile(assay, projectId, "assay_" + str(index))
 
             if not self.dryrun:
@@ -734,10 +750,12 @@ if __name__ == '__main__':
                       help="output directory where to dump json files submitted to ingest", metavar="FILE", default=None)
     parser.add_option("-i", "--id", dest="project_id",
                       help="The project_id for an existing submission", default=None)
+    parser.add_option("-v", "--version", dest="schema_version", help="Metadata schema version", default=None)
+
 
     (options, args) = parser.parse_args()
     if not options.path:
         print ("You must supply path to the HCA bundles directory")
         exit(2)
-    submission = SpreadsheetSubmission(options.dry, options.output)
+    submission = SpreadsheetSubmission(options.dry, options.output, options.schema_version)
     submission.submit(options.path, None, options.project_id)
