@@ -209,6 +209,7 @@ class IngestExporter:
                         self.logger.info("Project entity " + projectDssUuid + " is valid")
                     else:
                         self.logger.info("Project entity " + projectDssUuid + " is not valid")
+                        self.logger.info(valid)
                     self.dumpJsonToFile(projectEntity, projectEntity["content"]["project_id"],
                                         "project_bundle_" + str(index))
 
@@ -235,42 +236,48 @@ class IngestExporter:
 
             # In v4 bundles, all samples in one derivation chain sit as equivalent objects in an array in the bundle. Starting from the assay-related sample, build up the derivation chain
             done = False
+            sampleRelatedUuids = []
+
+            assaySampleUuid = sample["uuid"]["uuid"]
+
+
             while not done:
                 nestedSamples = self.getNestedObjects("derivedFromSamples", sample, "samples")
                 primarySample = self.buildSampleObject(sample, nestedSamples)
 
                 sampleBundle["samples"].append(primarySample)
                 sampleUuid = sample["document_id"]
-                sampleRelatedUuids = [sampleUuid, sampleBundle["samples"][-1]["hca_ingest"]["document_id"]]
+                sampleRelatedUuids.append(sampleUuid)
 
                 if nestedSamples:
                     sample = nestedSamples[0]
                 else:
                     done = True
 
-
-            if sampleUuid not in sampleUuidToBundleData:
+            # if this sample derivation chain has not been seen in relation to an existing sample
+            if assaySampleUuid not in sampleUuidToBundleData:
                 sampleDssUuid = str(uuid.uuid4())
                 sampleFileName = "sample_bundle_"+str(index)+".json"
 
                 if not self.dryrun:
                     fileDescription = self.writeMetadataToStaging(submissionEnvelopeUuid, sampleFileName, sampleBundle, '"metadata/sample"')
-                    sampleUuidToBundleData[sampleUuid] = {"name":sampleFileName, "submittedName":"sample.json", "url":fileDescription.url, "dss_uuid": sampleDssUuid, "indexed": True, "content-type" : '"metadata/sample"'}
-
+                    sampleUuidToBundleData[assaySampleUuid] = {"name":sampleFileName, "submittedName":"sample.json", "url":fileDescription.url, "dss_uuid": sampleDssUuid, "indexed": True, "content-type" : '"metadata/sample"'}
                 else:
-                    sampleUuidToBundleData[sampleUuid] = {"name":sampleFileName, "submittedName":"sample.json", "url":"", "dss_uuid": sampleDssUuid, "indexed": True, "content-type" : '"metadata/sample"'}
+                    sampleUuidToBundleData[assaySampleUuid] = {"name":sampleFileName, "submittedName":"sample.json", "url":"", "dss_uuid": sampleDssUuid, "indexed": True, "content-type" : '"metadata/sample"'}
                     valid = self.bundle_validator.validate(sampleBundle, "sample")
                     if valid:
                         self.logger.info("Sample entity " + sampleDssUuid + " is valid")
                     else:
                         self.logger.info("Sample entity " + sampleDssUuid + " is not valid")
+                        self.logger.info(valid)
                     self.dumpJsonToFile(sampleBundle, projectEntity["content"]["project_id"], "sample_bundle_" + str(index))
 
                 bundleManifest.fileSampleMap = {sampleDssUuid: sampleRelatedUuids}
+            # else add any new sampleUuids to the related samples list
             else:
-                bundleManifest.fileSampleMap = {sampleUuidToBundleData[sampleUuid]["dss_uuid"]: sampleRelatedUuids}
+               bundleManifest.fileSampleMap = {sampleUuidToBundleData[assaySampleUuid]["dss_uuid"]: sampleRelatedUuids}
 
-            submittedFiles.append(sampleUuidToBundleData[sampleUuid])
+            submittedFiles.append(sampleUuidToBundleData[assaySampleUuid])
 
             fileToBundleData = {}
             for file in self.ingest_api.getRelatedEntities("files", assay, "files"):
@@ -303,6 +310,7 @@ class IngestExporter:
                     self.logger.info("Assay entity " + assayDssUuid + " is valid")
                 else:
                     self.logger.info("Assay entity " + assayDssUuid + " is not valid")
+                    self.logger.info(valid)
 
                 self.dumpJsonToFile(assayEntity, projectEntity["content"]["project_id"], "assay_bundle_" + str(index))
 

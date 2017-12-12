@@ -1,8 +1,10 @@
+from functools import reduce
+
+import broker.errorreport as errorreport
 import jsonschema
 import requests
-import common.validationreport as validationreport
-import common.errorreport as errorreport
-from functools import reduce
+
+import broker.validationreport as validationreport
 
 SCHEMA_URL = "https://raw.githubusercontent.com/HumanCellAtlas/metadata-schema/4.4.0/json_schema/"
 
@@ -24,10 +26,11 @@ class BundleValidator:
             validation_report.validation_state = "INVALID"
 
             for error in validator.iter_errors(instance=metadata):
-                validation_report.error_reports.append(errorreport.ErrorReport(self.generate_error_message(error), error, "schema validation"))
+                validation_report.error_reports.append(
+                    errorreport.ErrorReport(self.generate_error_message(error), error, "schema validation"))
 
-            # return validation_report
-            return False
+            return validation_report
+            # return False
 
     def generate_error_message(self, error):
         """
