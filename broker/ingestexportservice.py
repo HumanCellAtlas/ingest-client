@@ -63,11 +63,27 @@ class IngestExporter:
     def getNestedObjects(self, relation, entity, entityType):
         nestedChildren = []
         for nested in self.ingest_api.getRelatedEntities(relation, entity, entityType):
-            children = self.getNestedObjects(relation, nested, entityType)
-            if len(children) > 0:
-                nested["content"][relation] = children
-            nestedChildren.append(self.getBundleDocument(nested))
+            # children = self.getNestedObjects(relation, nested, entityType)
+            # if len(children) > 0:
+            #     nested["content"][relation] = children
+            nestedChildren.append(nested)
+            # for child in children:
+            #     nestedChildren.append(self.getBundleDocument(child))
         return nestedChildren
+
+    def buildSampleObject(self, sample, nestedSamples):
+        nestedProtocols = self.getNestedObjects("protocols", sample, "protocols")
+
+        primarySample = self.getBundleDocument(sample)
+        primarySample["derivation_protocols"] = []
+
+        for p, protocol in enumerate(nestedProtocols):
+            primarySample["derivation_protocols"].append(nestedProtocols[p]["content"])
+
+        if nestedSamples:
+            primarySample["derived_from"] = nestedSamples[0]["uuid"]["uuid"]
+
+        return primarySample
 
     def generateBundles(self, submissionEnvelopeId):
         self.logger.info('submission received '+submissionEnvelopeId)
@@ -209,27 +225,28 @@ class IngestExporter:
             if len(samples) > 1:
                 raise ValueError("Can only be one sample per assay")
 
-            sample = samples[0]
-            nestedSample = self.getNestedObjects("derivedFromSamples", sample, "samples")
-            nestedProtocols = self.getNestedObjects("protocols", sample, "protocols")
-
             sampleBundle = {}
             sampleBundle["core"] = {"type": "sample_bundle",
                                     "schema_url": self.schema_url + "sample_bundle.json",
                                     "schema_version": self.schema_version}
             sampleBundle["samples"] = []
-            primarySample = self.getBundleDocument(sample)
-            primarySample["derivation_protocols"] = []
 
-            for p, protocol in enumerate(nestedProtocols):
-                primarySample["derivation_protocols"].append(nestedProtocols[p]["content"])
+            sample = samples[0]
 
-            primarySample["derived_from"] = nestedSample[0]["hca_ingest"]["document_id"]
+            # In v4 bundles, all samples in one derivation chain sit as equivalent objects in an array in the bundle. Starting from the assay-related sample, build up the derivation chain
+            done = False
+            while not done:
+                nestedSamples = self.getNestedObjects("derivedFromSamples", sample, "samples")
+                primarySample = self.buildSampleObject(sample, nestedSamples)
 
-            sampleBundle["samples"].append(primarySample)
-            sampleBundle["samples"].append(nestedSample[0])
-            sampleUuid = sample["document_id"]
-            sampleRelatedUuids = [sampleUuid, sampleBundle["samples"][1]["hca_ingest"]["document_id"]]
+                sampleBundle["samples"].append(primarySample)
+                sampleUuid = sample["document_id"]
+                sampleRelatedUuids = [sampleUuid, sampleBundle["samples"][-1]["hca_ingest"]["document_id"]]
+
+                if nestedSamples:
+                    sample = nestedSamples[0]
+                else:
+                    done = True
 
 
             if sampleUuid not in sampleUuidToBundleData:

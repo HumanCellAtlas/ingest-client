@@ -1,10 +1,10 @@
 import jsonschema
 import requests
-# import common.validationreport as validationreport
-# import common.errorreport as errorreport
+import common.validationreport as validationreport
+import common.errorreport as errorreport
 from functools import reduce
 
-SCHEMA_URL = "https://raw.githubusercontent.com/HumanCellAtlas/metadata-schema/4.2.0/json_schema/"
+SCHEMA_URL = "https://raw.githubusercontent.com/HumanCellAtlas/metadata-schema/4.4.0/json_schema/"
 
 class BundleValidator:
 
@@ -17,15 +17,15 @@ class BundleValidator:
 
         validator = jsonschema.Draft4Validator(schema=schema)
         if validator.is_valid(instance=metadata):
-            # return validationreport.ValidationReport.validation_report_ok()
+            validationreport.ValidationReport.validation_report_ok()
             return True
         else:
-            # validation_report = validationreport.ValidationReport()
-            # validation_report.validation_state = "INVALID"
-            #
-            # for error in validator.iter_errors(instance=metadata):
-            #     validation_report.error_reports.append(errorreport.ErrorReport(self.generate_error_message(error), error, "schema validation"))
-            #
+            validation_report = validationreport.ValidationReport()
+            validation_report.validation_state = "INVALID"
+
+            for error in validator.iter_errors(instance=metadata):
+                validation_report.error_reports.append(errorreport.ErrorReport(self.generate_error_message(error), error, "schema validation"))
+
             # return validation_report
             return False
 
