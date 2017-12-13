@@ -52,7 +52,7 @@ v4_stringFields = {"donor" : ["age", "weight", "height"]}
 
 SCHEMA_URL = os.environ.get('SCHEMA_URL', "https://raw.githubusercontent.com/HumanCellAtlas/metadata-schema/%s/json_schema/")
 # SCHEMA_URL = os.path.expandvars(os.environ.get('SCHEMA_URL', SCHEMA_URL))
-SCHEMA_VERSION = os.environ.get('SCHEMA_VERSION', '4.4.0')
+SCHEMA_VERSION = os.environ.get('SCHEMA_VERSION', '4.5.0')
 
 
 class SpreadsheetSubmission:
