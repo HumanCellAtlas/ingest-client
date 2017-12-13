@@ -137,6 +137,10 @@ class IngestExporter:
             analysisBundleContent = self.getBundleDocument(analysis)
             analysisFileName = "analysis_0.json" # TODO: shouldn't be hardcoded
 
+            analysisBundleContent["core"] = {"type": "analysis_bundle",
+                                            "schema_url": self.schema_url + "analysis_bundle.json",
+                                            "schema_version": self.schema_version}
+
             bundleManifest.fileAnalysisMap = { analysisDssUuid : [analysisUuid] }
 
             if not self.dryrun:
@@ -154,6 +158,18 @@ class IngestExporter:
 
                 # write bundle manifest to ingest API
                 self.ingest_api.createBundleManifest(bundleManifest)
+
+            else:
+                valid = self.bundle_validator.validate(analysisBundleContent, "analysis")
+                if valid:
+                    self.logger.info("Assay entity " + analysisDssUuid + " is valid")
+                else:
+                    self.logger.info("Assay entity " + analysisDssUuid + " is not valid")
+                    self.logger.info(valid)
+
+                self.dumpJsonToFile(analysisBundleContent, analysisBundleContent["content"]["analysis_id"], "analysis_bundle_" + str(index))
+                self.dumpJsonToFile(bundleManifest.__dict__, analysisBundleContent["content"]["analysis_id"], "bundleManifest_" + str(index))
+
 
     def primarySubmission(self, submissionEnvelopeUuid, assays):
 
@@ -295,6 +311,9 @@ class IngestExporter:
             assayEntity["core"] = {"type": "assay_bundle",
                                    "schema_url": self.schema_url + "assay_bundle.json",
                                    "schema_version": self.schema_version}
+
+            assayEntity["has_input"] = assaySampleUuid
+            assayEntity["has_output"] = fileToBundleData.keys()
 
             assayDssUuid = str(uuid.uuid4())
             assayFileName = "assay_bundle_" + str(index) + ".json"
