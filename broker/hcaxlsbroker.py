@@ -70,12 +70,12 @@ class SpreadsheetSubmission:
         if not self.dryrun:
             self.ingest_api = IngestApi()
 
-    def createSubmission(self):
+    def createSubmission(self, token):
         self.logger.info("creating submission...")
         if not self.ingest_api:
             self.ingest_api = IngestApi()
 
-        submissionUrl = self.ingest_api.createSubmission()
+        submissionUrl = self.ingest_api.createSubmission(token)
         self.logger.info("new submission " + submissionUrl)
         return submissionUrl
 
