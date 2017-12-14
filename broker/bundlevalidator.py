@@ -1,11 +1,11 @@
 from functools import reduce
 
-import broker.errorreport as errorreport
+import errorreport as errorreport
 import jsonschema
 import requests
 import os
 
-import broker.validationreport as validationreport
+import validationreport as validationreport
 
 BUNDLE_SCHEMA_BASE_URL = "https://raw.githubusercontent.com/HumanCellAtlas/metadata-schema/%s/json_schema/"
 BUNDLE_SCHEMA_VERSION = "4.5.0"
