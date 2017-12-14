@@ -3,10 +3,14 @@ from functools import reduce
 import broker.errorreport as errorreport
 import jsonschema
 import requests
+import os
 
 import broker.validationreport as validationreport
 
-SCHEMA_URL = "https://raw.githubusercontent.com/HumanCellAtlas/metadata-schema/4.4.0/json_schema/"
+BUNDLE_SCHEMA_BASE_URL = "https://raw.githubusercontent.com/HumanCellAtlas/metadata-schema/%s/json_schema/"
+BUNDLE_SCHEMA_VERSION = "4.5.0"
+BUNDLE_SCHEMA_VERSION = os.environ.get('BUNDLE_SCHEMA_VERSION', BUNDLE_SCHEMA_VERSION)
+BUNDLE_SCHEMA_BASE_URL = os.environ.get('BUNDLE_SCHEMA_BASE_URL', BUNDLE_SCHEMA_BASE_URL % BUNDLE_SCHEMA_VERSION)
 
 class BundleValidator:
 
@@ -55,7 +59,7 @@ class BundleValidator:
 
     def load_bundle_schema(self, schema_type):
 
-        url = SCHEMA_URL + schema_type + "_bundle.json"
+        url = BUNDLE_SCHEMA_BASE_URL + schema_type + "_bundle.json"
         schema = self.get_schema_from_url(url)
 
         return schema
