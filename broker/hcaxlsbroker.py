@@ -413,6 +413,13 @@ class SpreadsheetSubmission:
                 raise ValueError('Sample of type donor must have an id attribute')
             sample_id = donor["sample_id"]
 
+            # Check existence of all required fields
+            if "is_living" not in donor:
+                raise ValueError('Sample of type donor must have a value for is_living')
+
+            if "ncbi_taxon_id" not in donor:
+                raise ValueError('Sample of type donor must have a value for ncbi_taxon_id')
+
             if "is_living" in donor["donor"]:
                 if donor["donor"]["is_living"].lower()in ["true", "yes"]:
                     donor["donor"]["is_living"] = True
