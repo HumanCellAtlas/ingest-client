@@ -422,9 +422,12 @@ class SpreadsheetSubmission:
                         donor["donor"]["is_living"] = True
                     elif donor["donor"]["is_living"].lower() in ["false", "no"]:
                         donor["donor"]["is_living"] = False
+                    '''
+                    # Commented out because we shouldn't be doing content validation in the converter
                     else:
                         # Returns ValueError if donor.is_living isn't true,yes,false,no
                         raise ValueError('Field is_living for sample ' + sample_id + ' is a required field and must either contain one of yes, true, no, or false')
+                    '''
                 else:
                     # Returns ValueError if there are other donor.fields but donor.is_living is empty
                     raise ValueError('Field is_living for sample ' + sample_id + ' is a required field and must either contain one of yes, true, no, or false')
