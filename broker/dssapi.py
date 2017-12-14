@@ -61,6 +61,8 @@ class DssApi:
                 }
                 bundleFile["files"].append(fileObject)
             else:
+                self.logger.error('Response:' + r.text)
+                self.logger.error('Request: url: ' + fileUrl + ', data: ' + json.dumps(requestBody))
                 raise ValueError('Can\'t create bundle file :' +url)
 
         # finally create the bundle
@@ -110,6 +112,8 @@ class DssApi:
                 }
                 bundleCreatePayload["files"].append(fileObject)
             else:
+                self.logger.error('Response:' + r.text)
+                self.logger.error('Request: url: ' + fileUrl + ', data: ' + json.dumps(requestBody))
                 raise ValueError('Can\'t create bundle file :' +url)
 
         # merge the bundleCreatePayload.files with provenanceBundle.files
