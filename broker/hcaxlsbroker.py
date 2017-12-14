@@ -475,7 +475,7 @@ class SpreadsheetSubmission:
             if "sample_id" not in sample:
                 raise ValueError('Sample must have an id attribute')
             sampleMap[sample["sample_id"]] = sample
-            sample_id = donor["sample_id"]
+            sample_id = sample["sample_id"]
 
             if "ncbi_taxon_id" not in sample:
                 # Returns ValueError if donor.ncbi_taxon_id is empty
