@@ -11,8 +11,7 @@ import glob, json, os, urllib, requests, logging, uuid
 
 class IngestApi:
     def __init__(self, url=None):
-
-        formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+        formatter = logging.Formatter(' %(asctime)s  - %(name)s - %(levelname)s in %(filename)s:%(lineno)s %(funcName)s(): %(message)s')
         logging.basicConfig(formatter=formatter)
         logging.getLogger("requests").setLevel(logging.WARNING)
         self.logger = logging.getLogger(__name__)
