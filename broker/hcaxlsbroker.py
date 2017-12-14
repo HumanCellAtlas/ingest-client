@@ -3,19 +3,23 @@
 This script will read a spreadsheet, generate a manifest, submit all items to the ingest API, 
 assign uuid and generate a directory of bundles for the submitted data
 """
+from broker.spreadsheetUploadError import SpreadsheetUploadError
+
 __author__ = "jupp"
 __license__ = "Apache 2.0"
 
 
-import glob, json, os, urllib, requests
-from openpyxl import load_workbook
-from ingestapi import IngestApi
-from optparse import OptionParser
+import json
 import logging
-import datetime
-
-from itertools import chain
+import os
 from collections import defaultdict
+from itertools import chain
+from optparse import OptionParser
+
+from openpyxl import load_workbook
+from openpyxl.utils.exceptions import InvalidFileException
+
+from ingestapi import IngestApi
 
 # these are spreadsheet fields that can be a list
 # todo - these should be read out of the json schema at the start
@@ -52,7 +56,7 @@ v4_stringFields = {"donor" : ["age", "weight", "height"]}
 
 SCHEMA_URL = os.environ.get('SCHEMA_URL', "https://raw.githubusercontent.com/HumanCellAtlas/metadata-schema/%s/json_schema/")
 # SCHEMA_URL = os.path.expandvars(os.environ.get('SCHEMA_URL', SCHEMA_URL))
-SCHEMA_VERSION = os.environ.get('SCHEMA_VERSION', '4.4.0')
+SCHEMA_VERSION = os.environ.get('SCHEMA_VERSION', '4.5.0')
 
 
 class SpreadsheetSubmission:
@@ -201,9 +205,9 @@ class SpreadsheetSubmission:
     def completeSubmission(self):
         self.ingest_api.finishSubmission()
 
-    def submit(self, pathToSpreadsheet, submissionUrl, projectUuid=None):
+    def submit(self, pathToSpreadsheet, submissionUrl, token=None, projectUuid=None):
         try:
-            self._process(pathToSpreadsheet, submissionUrl, projectUuid)
+            self._process(pathToSpreadsheet, submissionUrl, token, projectUuid)
         except ValueError as e:
             self.logger.error("Error:"+str(e))
             raise e
@@ -217,11 +221,13 @@ class SpreadsheetSubmission:
             tmpFile.write(json.dumps(object, indent=4))
             tmpFile.close()
 
-    def _process(self, pathToSpreadsheet, submissionUrl, projectUuid):
+    def _process(self, pathToSpreadsheet, submissionUrl, token, projectUuid):
 
         # parse the spreadsheet
-        wb = load_workbook(filename=pathToSpreadsheet)
-
+        try:
+            wb = load_workbook(filename=pathToSpreadsheet)
+        except InvalidFileException:
+            raise SpreadsheetUploadError(400, "The uploaded file is not a valid XLSX spreadsheet", "")
         # This code section deals with cases where the project has already been submitted
         # ASSUMPTION: now additional project information (publications, contributors etc) is added via
         # the spreadsheet if the project already exists
@@ -336,7 +342,7 @@ class SpreadsheetSubmission:
         # creating submission
         #
         if not self.dryrun and not submissionUrl:
-            submissionUrl = self.createSubmission()
+            submissionUrl = self.createSubmission(token)
 
         linksList = []
 
@@ -413,15 +419,30 @@ class SpreadsheetSubmission:
                 raise ValueError('Sample of type donor must have an id attribute')
             sample_id = donor["sample_id"]
 
-            if "is_living" in donor["donor"]:
-                if donor["donor"]["is_living"].lower()in ["true", "yes"]:
-                    donor["donor"]["is_living"] = True
-                elif donor["donor"]["is_living"].lower() in ["false", "no"]:
-                    donor["donor"]["is_living"] = False
+            if "donor" not in donor:
+                # Returns ValueError if there are no other donor.fields and donor.is_living is missing
+                raise ValueError('Field is_living for sample ' + sample_id + ' is a required field and must either contain one of yes, true, no, or false')
             else:
-                raise ValueError('Field is_living in sample ' + sample_id + ' must either contain one of yes, true, no or false')
+                if "is_living" in donor["donor"]:
+                    if donor["donor"]["is_living"].lower()in ["true", "yes"]:
+                        donor["donor"]["is_living"] = True
+                    elif donor["donor"]["is_living"].lower() in ["false", "no"]:
+                        donor["donor"]["is_living"] = False
+                    '''
+                    # Commented out because we shouldn't be doing content validation in the converter
+                    else:
+                        # Returns ValueError if donor.is_living isn't true,yes,false,no
+                        raise ValueError('Field is_living for sample ' + sample_id + ' is a required field and must either contain one of yes, true, no, or false')
+                    '''
+                else:
+                    # Returns ValueError if there are other donor.fields but donor.is_living is empty
+                    raise ValueError('Field is_living for sample ' + sample_id + ' is a required field and must either contain one of yes, true, no, or false')
 
-            if "ncbi_taxon_id" in donor and "genus_species" in donor:
+            if "ncbi_taxon_id" not in donor:
+                # Returns ValueError if donor.ncbi_taxon_id is empty
+                raise ValueError('Field ncbi_taxon_id for sample ' + sample_id + ' is a required field and must contain a valid NCBI Taxon ID')
+
+            if "genus_species" in donor:
                 donor["genus_species"]["ontology"] = "NCBITaxon:" + str(donor["ncbi_taxon_id"])
 
             if sample_id in deathMap.keys():
@@ -463,9 +484,15 @@ class SpreadsheetSubmission:
             if "sample_id" not in sample:
                 raise ValueError('Sample must have an id attribute')
             sampleMap[sample["sample_id"]] = sample
+            sample_id = sample["sample_id"]
 
-        if "ncbi_taxon_id" in sample and "genus_species" in sample:
-            sample["genus_species"]["ontology"] = "NCBITaxon:" + str(sample["ncbi_taxon_id"])
+            if "ncbi_taxon_id" not in sample:
+                # Returns ValueError if donor.ncbi_taxon_id is empty
+                raise ValueError(
+                    'Field ncbi_taxon_id for sample ' + sample_id + ' is a required field and must contain a valid NCBI Taxon ID')
+
+            if "genus_species" in sample:
+                sample["genus_species"]["ontology"] = "NCBITaxon:" + str(sample["ncbi_taxon_id"])
 
         # add dependent information to various sample types
         for state in specimen_state:
@@ -758,4 +785,4 @@ if __name__ == '__main__':
         print ("You must supply path to the HCA bundles directory")
         exit(2)
     submission = SpreadsheetSubmission(options.dry, options.output, options.schema_version)
-    submission.submit(options.path, None, options.project_id)
+    submission.submit(options.path, None, None, options.project_id)

@@ -1,7 +1,6 @@
 #!/usr/bin/env python
-"""
-desc goes here 
-"""
+from broker.spreadsheetUploadError import SpreadsheetUploadError
+
 __author__ = "jupp"
 __license__ = "Apache 2.0"
 
@@ -10,230 +9,128 @@ import os
 import sys
 import tempfile
 import threading
+import traceback
 
-from flask import Flask, Markup, flash, request, render_template, redirect, url_for
+from flask import Flask, request
 from flask import json
 from flask_cors import CORS, cross_origin
 from werkzeug.utils import secure_filename
 
 from broker.hcaxlsbroker import SpreadsheetSubmission
 from broker.ingestapi import IngestApi
-from broker.stagingapi import StagingApi
 
-STATUS_LABEL = {
-    'Valid': 'label-success',
-    'Validating': 'label-info',
-    'Invalid': 'label-danger',
-    'Submitted': 'label-default',
-    'Complete': 'label-default'
-}
-
-DEFAULT_STATUS_LABEL = 'label-warning'
-
-HTML_HELPER = {
-    'status_label': STATUS_LABEL,
-    'default_status_label': DEFAULT_STATUS_LABEL
-}
-
-app = Flask(__name__, static_folder='static')
+app = Flask(__name__)
 app.secret_key = 'cells'
 cors = CORS(app)
 app.config['CORS_HEADERS'] = 'Content-Type'
 
 
-@app.route('/')
-def index():
-    submissions = []
-    try:
-        submissions = IngestApi().getSubmissions()
-    except Exception as e:
-        flash("Can't connect to ingest API!!", "alert-danger")
-    return render_template('index.html', submissions=submissions, helper=HTML_HELPER)
-
-
-@app.route('/submissions/<id>')
-def get_submission_view(id):
-    ingest_api = IngestApi()
-    submission = ingest_api.getSubmissionIfModifiedSince(id, None)
-
-    if (submission):
-        response = ingest_api.getProjects(id)
-
-        projects = []
-
-        if ('_embedded' in response and 'projects' in response['_embedded']):
-            projects = response['_embedded']['projects']
-
-        project = projects[0] if projects else None  # there should always 1 project
-
-        files = []
-
-        response = ingest_api.getFiles(id)
-        if ('_embedded' in response and 'files' in response['_embedded']):
-            files = response['_embedded']['files']
-
-        filePage = None
-        if ('page' in response):
-            filePage = response['page']
-            filePage['len'] = len(files)
-
-        bundleManifests = []
-        bundleManifestObj = {}
-
-        response = ingest_api.getBundleManifests(id)
-        if ('_embedded' in response and 'bundleManifests' in response['_embedded']):
-            bundleManifests = response['_embedded']['bundleManifests']
-
-        bundleManifestObj['list'] = bundleManifests
-        bundleManifestObj['page'] = None
-
-        if ('page' in response):
-            bundleManifestObj['page'] = response['page']
-            bundleManifestObj['page']['len'] = len(bundleManifests)
-
-        return render_template('submission.html',
-                               sub=submission,
-                               helper=HTML_HELPER,
-                               project=project,
-                               files=files,
-                               filePage=filePage,
-                               bundleManifestObj=bundleManifestObj)
-    else:
-        flash("Submission doesn't exist!", "alert-danger")
-        return redirect(url_for('index'))
-
-
-@app.route('/submissions/<id>/files')
-def get_submission_files(id):
-    ingest_api = IngestApi()
-    response = ingest_api.getFiles(id)
-
-    files = []
-    if ('_embedded' in response and 'files' in response['_embedded']):
-        files = response['_embedded']['files']
-
-    filePage = None
-    if ('page' in response):
-        filePage = response['page']
-        filePage['len'] = len(files)
-
-    return render_template('submission-files-table.html',
-                           files=files,
-                           filePage=filePage,
-                           helper=HTML_HELPER)
-
-
-@app.route('/upload_api', methods=['POST'])
+@app.route('/upload', methods=['POST'])
 @cross_origin()
-def upload_file_api():
-    if request.method == 'POST':
-        print ("Saving file..")
-        f = request.files['file']
-        filename = secure_filename(f.filename)
-        path = os.path.join(tempfile.gettempdir(), filename)
-        f.save(path)
-
-        submission = SpreadsheetSubmission(dry=False)
-
+def upload_spreadsheet():
+    try:
+        # check token
         token = request.headers.get('Authorization')
         if token is None:
-            data = {
-                "message": "An authentication token must be supplied when uploading spreadsheets",
-            }
-            failure_response = app.response_class(
-                response=json.dumps(data),
-                status=400,
-                mimetype='application/json'
-            )
-            return failure_response
+            raise SpreadsheetUploadError(401, "An authentication token must be supplied when uploading a spreadsheet",
+                                         "")
 
-        submissionUrl = submission.createSubmission(token)
-        thread = threading.Thread(target=submission.submit, args=(path, submissionUrl))
-        thread.start()
-
-        ingestApi = IngestApi()
-        submissionUUID = ingestApi.getObjectUuid(submissionUrl)
-        displayId = submissionUUID or '<UUID not generated yet>'
-        submissionId = submissionUrl.rsplit('/', 1)[-1]
-
-        data = {
-            "submission_url": submissionUrl,
-            "submission_uuid": submissionUUID,
-            "display_uuid": displayId,
-            "submission_id": submissionId
-        }
-
-        success_response = app.response_class(
-            response=json.dumps(data),
-            status=200,
-            mimetype='application/json'
-        )
-        return success_response
-
-
-@app.route('/upload', methods=['POST'])
-def upload_file():
-    if request.method == 'POST':
-        print ("saving..")
-        f = request.files['file']
-        filename = secure_filename(f.filename)
-        path = os.path.join(tempfile.gettempdir(), filename)
-        f.save(path)
+        # save file
+        try:
+            print ("Saving file..")
+            f = request.files['file']
+            filename = secure_filename(f.filename)
+            path = os.path.join(tempfile.gettempdir(), filename)
+            f.save(path)
+        except Exception as err:
+            print(traceback.format_exc())
+            message = "We experienced a problem when saving your spreadsheet"
+            raise SpreadsheetUploadError(500, message, str(err))
 
         # do a dry run to minimally validate spreadsheet
-        submission = SpreadsheetSubmission(dry=True)
         try:
+            submission = SpreadsheetSubmission(dry=True)
             submission.submit(path, None)
-        except ValueError as e:
-            flash(str(e), 'alert-danger')
-            return redirect(url_for('index'))
-        except Exception as e:
-            flash(str(e), 'alert-danger')
-            return redirect(url_for('index'))
+        except ValueError as err:
+            print(traceback.format_exc())
+            message = "There was a problem validating your spreadsheet"
+            raise SpreadsheetUploadError(400, message, str(err))
+        except KeyError as err:
+            print(traceback.format_exc())
+            message = "There was a problem with the content of your spreadsheet"
+            raise SpreadsheetUploadError(400, message, str(err))
 
         # if we get here can go ahead and submit
-        submission.dryrun = False
-        submissionUrl = submission.createSubmission()
-        thread = threading.Thread(target=submission.submit, args=(path, submissionUrl))
-        thread.start()
+        try:
+            submission.dryrun = False
+            submission_url = submission.createSubmission(token)
+            thread = threading.Thread(target=submission.submit, args=(path, submission_url, token, None))
+            thread.start()
+        except Exception as err:
+            print(traceback.format_exc())
+            message = "We experienced a problem when creating a submission from your spreadsheet"
+            raise SpreadsheetUploadError(500, message, str(err))
 
-        ingestApi = IngestApi()
-        submissionUUID = ingestApi.getObjectUuid(submissionUrl)
-        displayId = submissionUUID or '<UUID not generated yet>'
-        submissionId = submissionUrl.rsplit('/', 1)[-1]
-
-        message = Markup(
-            "Submission created with UUID : <a class='submission-id' href='" + submissionUrl + "'>" + displayId + "</a>")
-
-        flash(message, "alert-success")
-        return redirect(
-            url_for('index') + '#' + submissionId)  # temporarily adding submission id in url for integration testing
-    flash("You can only POST to the upload endpoint", "alert-warning")
-    return redirect(url_for('index'))
-
-
-@app.route('/submit', methods=['POST'])
-def submit_envelope():
-    subUrl = request.form.get("submissionUrl")
-    ingestApi = IngestApi()
-    if subUrl:
-        text = ingestApi.finishSubmission(subUrl)
-
-    return redirect(url_for('index'))
+        return create_upload_success_response(submission_url)
+    except SpreadsheetUploadError as spreadsheetUploadError:
+        return create_upload_failure_response(spreadsheetUploadError.http_code, spreadsheetUploadError.message,
+                                              spreadsheetUploadError.details)
+    except Exception as err:
+        print(traceback.format_exc())
+        return create_upload_failure_response(500, "We experienced a problem while uploading your spreadsheet",
+                                              str(err))
 
 
-@app.route('/staging/delete', methods=['POST'])
-def delete_staging():
-    subUrl = request.form.get("submissionUrl")
-    submissionId = subUrl.rsplit('/', 1)[-1]
-    if submissionId:
-        ingestApi = IngestApi()
-        uuid = ingestApi.getObjectUuid(subUrl)
-        stagingApi = StagingApi()
-        text = stagingApi.deleteStagingArea(uuid)
-        message = Markup("Staging area deleted for <a href='" + text + "'>" + text + "</a>")
-        flash(message, "alert-success")
-    return redirect(url_for('index'))
+def create_upload_success_response(submission_url):
+    ingest_api = IngestApi()
+    submission_uuid = ingest_api.getObjectUuid(submission_url)
+    display_id = submission_uuid or '<UUID not generated yet>'
+    submission_id = submission_url.rsplit('/', 1)[-1]
+
+    data = {
+        "message": "Your spreadsheet was uploaded and processed successfully",
+        "details": {
+            "submission_url": submission_url,
+            "submission_uuid": submission_uuid,
+            "display_uuid": display_id,
+            "submission_id": submission_id
+        }
+    }
+
+    success_response = app.response_class(
+        response=json.dumps(data),
+        status=201,
+        mimetype='application/json'
+    )
+    return success_response
+
+
+def create_upload_failure_response(status_code, message, details):
+    data = {
+        "message": message,
+        "details": details,
+    }
+    failure_response = app.response_class(
+        response=json.dumps(data),
+        status=status_code,
+        mimetype='application/json'
+    )
+    print failure_response
+    return failure_response
+
+
+# @app.route('/staging/delete', methods=['POST'])
+# def delete_staging():
+#    subUrl = request.form.get("submissionUrl")
+#    submissionId = subUrl.rsplit('/', 1)[-1]
+#    if submissionId:
+#        ingestApi = IngestApi()
+#        uuid = ingestApi.getObjectUuid(subUrl)
+#        stagingApi = StagingApi()
+#        text = stagingApi.deleteStagingArea(uuid)
+#        message = Markup("Staging area deleted for <a href='" + text + "'>" + text + "</a>")
+#        flash(message, "alert-success")
+#    return redirect(url_for('index'))
 
 
 if __name__ == '__main__':
