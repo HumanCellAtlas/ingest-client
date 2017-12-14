@@ -413,20 +413,21 @@ class SpreadsheetSubmission:
                 raise ValueError('Sample of type donor must have an id attribute')
             sample_id = donor["sample_id"]
 
-            # Check existence of all required fields
-            if "is_living" not in donor:
+            if "donor" not in donor:
+                # Returns ValueError if there are no other donor.fields and donor.is_living is missing
                 raise ValueError('Sample of type donor must have a value for is_living')
-
-            if "ncbi_taxon_id" not in donor:
-                raise ValueError('Sample of type donor must have a value for ncbi_taxon_id')
-
-            if "is_living" in donor["donor"]:
-                if donor["donor"]["is_living"].lower()in ["true", "yes"]:
-                    donor["donor"]["is_living"] = True
-                elif donor["donor"]["is_living"].lower() in ["false", "no"]:
-                    donor["donor"]["is_living"] = False
             else:
-                raise ValueError('Field is_living in sample ' + sample_id + ' must either contain one of yes, true, no or false')
+                if "is_living" in donor["donor"]:
+                    if donor["donor"]["is_living"].lower()in ["true", "yes"]:
+                        donor["donor"]["is_living"] = True
+                    elif donor["donor"]["is_living"].lower() in ["false", "no"]:
+                        donor["donor"]["is_living"] = False
+                    else:
+                        # Returns ValueError if donor.is_living isn't true,yes,false,no
+                        raise ValueError('Field is_living in sample ' + sample_id + ' is a required field and must either contain one of yes, true, no, or false')
+                else:
+                    # Returns ValueError if there are other donor.fields but donor.is_living is empty
+                    raise ValueError('Field is_living in sample ' + sample_id + ' is a required field and must either contain one of yes, true, no, or false')
 
             if "ncbi_taxon_id" in donor and "genus_species" in donor:
                 donor["genus_species"]["ontology"] = "NCBITaxon:" + str(donor["ncbi_taxon_id"])
