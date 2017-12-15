@@ -93,16 +93,20 @@ class IngestApi:
             bundleManifests = json.loads(r.text)
         return bundleManifests
 
-    def createSubmission(self):
-        r = requests.post(self.ingest_api["submissionEnvelopes"]["href"].rsplit("{")[0], data="{}",
-                          headers=self.headers)
-        if r.status_code == requests.codes.created:
+    def createSubmission(self, token):
+        auth_headers = {'Content-type': 'application/json',
+                        'Authorization': token
+                        }
+        try:
+            r = requests.post(self.ingest_api["submissionEnvelopes"]["href"].rsplit("{")[0], data="{}",
+                              headers=auth_headers)
+            r.raise_for_status()
             submissionUrl = json.loads(r.text)["_links"]["self"]["href"].rsplit("{")[0]
             self.submission_links[submissionUrl] = json.loads(r.text)["_links"]
             return submissionUrl
-        else:
-            self.logger.error("Error getting submission envelope:" + json.loads(r.text)["message"])
-            exit(1)
+        except requests.exceptions.RequestException as err:
+            print ("Request failed: ", err)
+            raise
 
     def finishSubmission(self, submissionUrl):
         r = requests.put(submissionUrl, headers=self.headers)
