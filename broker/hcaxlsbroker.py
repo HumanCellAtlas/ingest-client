@@ -3,7 +3,7 @@
 This script will read a spreadsheet, generate a manifest, submit all items to the ingest API, 
 assign uuid and generate a directory of bundles for the submitted data
 """
-from broker.spreadsheetUploadError import SpreadsheetUploadError
+from spreadsheetUploadError import SpreadsheetUploadError
 
 __author__ = "jupp"
 __license__ = "Apache 2.0"

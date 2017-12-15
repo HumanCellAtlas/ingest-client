@@ -7,16 +7,16 @@ __license__ = "Apache 2.0"
 from flask import Flask, Markup, flash, request, render_template, redirect, url_for
 from flask_cors import CORS, cross_origin
 from flask import json
-from broker.hcaxlsbroker import SpreadsheetSubmission
-from broker.ingestapi import IngestApi
-from broker.stagingapi import StagingApi
+from hcaxlsbroker import SpreadsheetSubmission
+from ingestapi import IngestApi
+from stagingapi import StagingApi
 from werkzeug.utils import secure_filename
 import os, sys
 import tempfile
 import threading
 import logging
 import traceback
-import broker.token_util as token_util
+import token_util as token_util
 
 STATUS_LABEL = {
     'Valid': 'label-success',
