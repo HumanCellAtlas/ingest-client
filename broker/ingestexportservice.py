@@ -16,13 +16,14 @@ import requests
 from optparse import OptionParser
 import os, sys
 from stagingapi import StagingApi
+from bundlevalidator import BundleValidator
 
 DEFAULT_INGEST_URL=os.environ.get('INGEST_API', 'http://api.ingest.dev.data.humancellatlas.org')
 DEFAULT_STAGING_URL=os.environ.get('STAGING_API', 'http://staging.dev.data.humancellatlas.org')
 DEFAULT_DSS_URL=os.environ.get('DSS_API', 'http://dss.dev.data.humancellatlas.org')
 
 BUNDLE_SCHEMA_BASE_URL=os.environ.get('BUNDLE_SCHEMA_BASE_URL', 'https://raw.githubusercontent.com/HumanCellAtlas/metadata-schema/%s/json_schema/')
-METADATA_SCHEMA_VERSION = os.environ.get('SCHEMA_VERSION', '4.4.0')
+METADATA_SCHEMA_VERSION = os.environ.get('SCHEMA_VERSION', '4.5.0')
 
 
 class IngestExporter:
@@ -45,6 +46,7 @@ class IngestExporter:
         self.staging_api = StagingApi()
         self.dss_api = DssApi()
         self.ingest_api = ingestapi.IngestApi(self.ingestUrl)
+        self.bundle_validator = BundleValidator()
 
     def writeBundleToFile(self, name, index, type, doc):
         dir = os.path.abspath("bundles/"+name)
@@ -61,11 +63,27 @@ class IngestExporter:
     def getNestedObjects(self, relation, entity, entityType):
         nestedChildren = []
         for nested in self.ingest_api.getRelatedEntities(relation, entity, entityType):
-            children = self.getNestedObjects(relation, nested, entityType)
-            if len(children) > 0:
-                nested["content"][relation] = children
-            nestedChildren.append(self.getBundleDocument(nested))
+            # children = self.getNestedObjects(relation, nested, entityType)
+            # if len(children) > 0:
+            #     nested["content"][relation] = children
+            nestedChildren.append(nested)
+            # for child in children:
+            #     nestedChildren.append(self.getBundleDocument(child))
         return nestedChildren
+
+    def buildSampleObject(self, sample, nestedSamples):
+        nestedProtocols = self.getNestedObjects("protocols", sample, "protocols")
+
+        primarySample = self.getBundleDocument(sample)
+        primarySample["derivation_protocols"] = []
+
+        for p, protocol in enumerate(nestedProtocols):
+            primarySample["derivation_protocols"].append(nestedProtocols[p]["content"])
+
+        if nestedSamples:
+            primarySample["derived_from"] = nestedSamples[0]["uuid"]["uuid"]
+
+        return primarySample
 
     def generateBundles(self, submissionEnvelopeId):
         self.logger.info('submission received '+submissionEnvelopeId)
@@ -119,6 +137,10 @@ class IngestExporter:
             analysisBundleContent = self.getBundleDocument(analysis)
             analysisFileName = "analysis_0.json" # TODO: shouldn't be hardcoded
 
+            analysisBundleContent["core"] = {"type": "analysis_bundle",
+                                            "schema_url": self.schema_url + "analysis_bundle.json",
+                                            "schema_version": self.schema_version}
+
             bundleManifest.fileAnalysisMap = { analysisDssUuid : [analysisUuid] }
 
             if not self.dryrun:
@@ -136,6 +158,18 @@ class IngestExporter:
 
                 # write bundle manifest to ingest API
                 self.ingest_api.createBundleManifest(bundleManifest)
+
+            else:
+                valid = self.bundle_validator.validate(analysisBundleContent, "analysis")
+                if valid:
+                    self.logger.info("Assay entity " + analysisDssUuid + " is valid")
+                else:
+                    self.logger.info("Assay entity " + analysisDssUuid + " is not valid")
+                    self.logger.info(valid)
+
+                self.dumpJsonToFile(analysisBundleContent, analysisBundleContent["content"]["analysis_id"], "analysis_bundle_" + str(index))
+                self.dumpJsonToFile(bundleManifest.__dict__, analysisBundleContent["content"]["analysis_id"], "bundleManifest_" + str(index))
+
 
     def primarySubmission(self, submissionEnvelopeUuid, assays):
 
@@ -178,7 +212,7 @@ class IngestExporter:
                                      "schema_version": self.schema_version}
 
             if projectUuid not in projectUuidToBundleData:
-                projectDssUuid = unicode(uuid.uuid4())
+                projectDssUuid = str(uuid.uuid4())
                 projectFileName = "project_bundle_"+str(index)+".json"
 
                 if not self.dryrun:
@@ -186,6 +220,12 @@ class IngestExporter:
                     projectUuidToBundleData[projectUuid] = {"name":projectFileName,"submittedName":"project.json", "url":fileDescription.url, "dss_uuid": projectDssUuid, "indexed": True, "content-type" : '"metadata/project"'}
                 else:
                     projectUuidToBundleData[projectUuid] = {"name":projectFileName,"submittedName":"project.json", "url":"", "dss_uuid": projectDssUuid, "indexed": True, "content-type" : '"metadata/project"'}
+                    valid = self.bundle_validator.validate(projectEntity, "project")
+                    if valid:
+                        self.logger.info("Project entity " + projectDssUuid + " is valid")
+                    else:
+                        self.logger.info("Project entity " + projectDssUuid + " is not valid")
+                        self.logger.info(valid)
                     self.dumpJsonToFile(projectEntity, projectEntity["content"]["project_id"],
                                         "project_bundle_" + str(index))
 
@@ -202,46 +242,58 @@ class IngestExporter:
             if len(samples) > 1:
                 raise ValueError("Can only be one sample per assay")
 
-            sample = samples[0]
-            nestedSample = self.getNestedObjects("derivedFromSamples", sample, "samples")
-            nestedProtocols = self.getNestedObjects("protocols", sample, "protocols")
-
             sampleBundle = {}
             sampleBundle["core"] = {"type": "sample_bundle",
                                     "schema_url": self.schema_url + "sample_bundle.json",
                                     "schema_version": self.schema_version}
             sampleBundle["samples"] = []
-            primarySample = self.getBundleDocument(sample)
-            primarySample["derivation_protocols"] = []
 
-            for p, protocol in enumerate(nestedProtocols):
-                primarySample["derivation_protocols"].append(nestedProtocols[p]["content"])
+            sample = samples[0]
 
-            primarySample["derived_from"] = nestedSample[0]["hca_ingest"]["document_id"]
+            # In v4 bundles, all samples in one derivation chain sit as equivalent objects in an array in the bundle. Starting from the assay-related sample, build up the derivation chain
+            done = False
+            sampleRelatedUuids = []
 
-            sampleBundle["samples"].append(primarySample)
-            sampleBundle["samples"].append(nestedSample[0])
-            sampleUuid = sample["document_id"]
-            sampleRelatedUuids = [sampleUuid, sampleBundle["samples"][1]["hca_ingest"]["document_id"]]
+            assaySampleUuid = sample["uuid"]["uuid"]
 
 
-            if sampleUuid not in sampleUuidToBundleData:
-                sampleDssUuid = unicode(uuid.uuid4())
+            while not done:
+                nestedSamples = self.getNestedObjects("derivedFromSamples", sample, "samples")
+                primarySample = self.buildSampleObject(sample, nestedSamples)
+
+                sampleBundle["samples"].append(primarySample)
+                sampleUuid = sample["document_id"]
+                sampleRelatedUuids.append(sampleUuid)
+
+                if nestedSamples:
+                    sample = nestedSamples[0]
+                else:
+                    done = True
+
+            # if this sample derivation chain has not been seen in relation to an existing sample
+            if assaySampleUuid not in sampleUuidToBundleData:
+                sampleDssUuid = str(uuid.uuid4())
                 sampleFileName = "sample_bundle_"+str(index)+".json"
 
                 if not self.dryrun:
                     fileDescription = self.writeMetadataToStaging(submissionEnvelopeUuid, sampleFileName, sampleBundle, '"metadata/sample"')
-                    sampleUuidToBundleData[sampleUuid] = {"name":sampleFileName, "submittedName":"sample.json", "url":fileDescription.url, "dss_uuid": sampleDssUuid, "indexed": True, "content-type" : '"metadata/sample"'}
-
+                    sampleUuidToBundleData[assaySampleUuid] = {"name":sampleFileName, "submittedName":"sample.json", "url":fileDescription.url, "dss_uuid": sampleDssUuid, "indexed": True, "content-type" : '"metadata/sample"'}
                 else:
-                    sampleUuidToBundleData[sampleUuid] = {"name":sampleFileName, "submittedName":"sample.json", "url":"", "dss_uuid": sampleDssUuid, "indexed": True, "content-type" : '"metadata/sample"'}
+                    sampleUuidToBundleData[assaySampleUuid] = {"name":sampleFileName, "submittedName":"sample.json", "url":"", "dss_uuid": sampleDssUuid, "indexed": True, "content-type" : '"metadata/sample"'}
+                    valid = self.bundle_validator.validate(sampleBundle, "sample")
+                    if valid:
+                        self.logger.info("Sample entity " + sampleDssUuid + " is valid")
+                    else:
+                        self.logger.info("Sample entity " + sampleDssUuid + " is not valid")
+                        self.logger.info(valid)
                     self.dumpJsonToFile(sampleBundle, projectEntity["content"]["project_id"], "sample_bundle_" + str(index))
 
                 bundleManifest.fileSampleMap = {sampleDssUuid: sampleRelatedUuids}
+            # else add any new sampleUuids to the related samples list
             else:
-                bundleManifest.fileSampleMap = {sampleUuidToBundleData[sampleUuid]["dss_uuid"]: sampleRelatedUuids}
+               bundleManifest.fileSampleMap = {sampleUuidToBundleData[assaySampleUuid]["dss_uuid"]: sampleRelatedUuids}
 
-            submittedFiles.append(sampleUuidToBundleData[sampleUuid])
+            submittedFiles.append(sampleUuidToBundleData[assaySampleUuid])
 
             fileToBundleData = {}
             for file in self.ingest_api.getRelatedEntities("files", assay, "files"):
@@ -260,7 +312,10 @@ class IngestExporter:
                                    "schema_url": self.schema_url + "assay_bundle.json",
                                    "schema_version": self.schema_version}
 
-            assayDssUuid = unicode(uuid.uuid4())
+            assayEntity["has_input"] = assaySampleUuid
+            assayEntity["has_output"] = fileToBundleData.keys()
+
+            assayDssUuid = str(uuid.uuid4())
             assayFileName = "assay_bundle_" + str(index) + ".json"
 
 
@@ -269,6 +324,13 @@ class IngestExporter:
                 submittedFiles.append({"name":assayFileName, "submittedName":"assay.json", "url":fileDescription.url, "dss_uuid": assayDssUuid, "indexed": True, "content-type" : '"metadata/assay"'})
             else:
                 submittedFiles.append({"name":assayFileName, "submittedName":"assay.json", "url":"", "dss_uuid": assayDssUuid, "indexed": True, "content-type" : '"metadata/assay"'})
+                valid = self.bundle_validator.validate(assayEntity, "assay")
+                if valid:
+                    self.logger.info("Assay entity " + assayDssUuid + " is valid")
+                else:
+                    self.logger.info("Assay entity " + assayDssUuid + " is not valid")
+                    self.logger.info(valid)
+
                 self.dumpJsonToFile(assayEntity, projectEntity["content"]["project_id"], "assay_bundle_" + str(index))
 
             bundleManifest.fileAssayMap = {assayDssUuid: [assayUuid]}

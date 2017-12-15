@@ -61,6 +61,9 @@ class DssApi:
                 }
                 bundleFile["files"].append(fileObject)
             else:
+                self.logger.error('Error in creating bundle')
+                self.print_response(r)
+                self.print_request(r.request)
                 raise ValueError('Can\'t create bundle file :' +url)
 
         # finally create the bundle
@@ -110,6 +113,9 @@ class DssApi:
                 }
                 bundleCreatePayload["files"].append(fileObject)
             else:
+                self.logger.error('Error in creating analysis bundle')
+                self.print_response(r)
+                self.print_request(r.request)
                 raise ValueError('Can\'t create bundle file :' +url)
 
         # merge the bundleCreatePayload.files with provenanceBundle.files
@@ -136,3 +142,17 @@ class DssApi:
         else:
             raise ValueError("Couldn't find bundle in the DSS with uuid: " + bundleUuid)
 
+    def print_response(self, res):
+        print('RESPONSE:\n{status_code}\n{headers}\n\n{text}\n\n'.format(
+            status_code=res.status_code,
+            headers='\n'.join('{}: {}'.format(k, v) for k, v in res.headers.items()),
+            text=res.text
+        ))
+
+    def print_request(self, req):
+        print('REQUEST:\n{method} {url}\n{headers}\n\n{body}\n\n'.format(
+            method=req.method,
+            url=req.url,
+            headers='\n'.join('{}: {}'.format(k, v) for k, v in req.headers.items()),
+            body=req.body,
+        ))
