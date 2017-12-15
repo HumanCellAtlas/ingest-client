@@ -5,7 +5,7 @@ RUN mkdir /app
 COPY broker /app/broker
 COPY templates /app/templates
 COPY static /app/static
-COPY broker-app.py requirements.txt /app/
+COPY broker/broker_app.py requirements.txt /app/
 WORKDIR /app
 
 RUN pip install -r /app/requirements.txt

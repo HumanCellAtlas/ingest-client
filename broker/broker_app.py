@@ -47,18 +47,14 @@ def upload_spreadsheet():
     try:
         # check token
         token = request.headers.get('Authorization')
-        print "token: " + token
+        print "token: %s" % (token)
         if token is None:
             raise SpreadsheetUploadError(401, "An authentication token must be supplied when uploading a spreadsheet",
                                          "")
 
         # save file
         try:
-            print ("Saving file..")
-            f = request.files['file']
-            filename = secure_filename(f.filename)
-            path = os.path.join(tempfile.gettempdir(), filename)
-            f.save(path)
+            path = _save_file()
         except Exception as err:
             print(traceback.format_exc())
             message = "We experienced a problem when saving your spreadsheet"
@@ -96,6 +92,15 @@ def upload_spreadsheet():
         print(traceback.format_exc())
         return create_upload_failure_response(500, "We experienced a problem while uploading your spreadsheet",
                                               str(err))
+
+
+def _save_file():
+    print ("Saving file..")
+    f = request.files['file']
+    filename = secure_filename(f.filename)
+    path = os.path.join(tempfile.gettempdir(), filename)
+    f.save(path)
+    return path
 
 
 def create_upload_success_response(submission_url):
