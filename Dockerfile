@@ -14,4 +14,4 @@ ENV INGEST_API=http://localhost:8080
 
 EXPOSE 5000
 ENTRYPOINT ["python"]
-CMD ["broker-app.py"]
+CMD ["broker/broker_app.py"]
