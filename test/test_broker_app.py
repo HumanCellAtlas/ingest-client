@@ -2,7 +2,9 @@ from unittest import TestCase
 
 from mock import patch
 
+from broker import broker_app
 from broker.broker_app import app
+from broker.hcaxlsbroker import SpreadsheetSubmission
 
 
 class BrokerAppTest(TestCase):
@@ -20,10 +22,24 @@ class BrokerAppTest(TestCase):
     @patch('broker.broker_app._save_file')
     def test_failed_save(self, save_file):
         # given:
+        assert save_file is broker_app._save_file
         save_file.side_effect = Exception("I/O error")
 
         # when:
-        response = self.client.post('/upload', headers={'Authorization': 'authorization'})
+        response = self.client.post('/upload', headers={'Authorization': 'auth'})
 
         # then:
         self.assertEqual(500, response.status_code)
+
+    def test_key_error_on_spreadsheet(self):
+        with patch('broker.broker_app._save_file') as save_file, \
+                patch('broker.hcaxlsbroker.SpreadsheetSubmission.submit') as submit_spreadsheet:
+            # given:
+            save_file.return_value = 'path/to/file.xls'
+            submit_spreadsheet.side_effect = ValueError("value error")
+
+            # when:
+            response = self.client.post('/upload', headers={'Authorization': 'auth'})
+
+            # then:
+            self.assertEqual(400, response.status_code)
