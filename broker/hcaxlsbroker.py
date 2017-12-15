@@ -8,18 +8,18 @@ from broker.spreadsheetUploadError import SpreadsheetUploadError
 __author__ = "jupp"
 __license__ = "Apache 2.0"
 
+import json
 
-import glob, json, os, urllib, requests
+import logging
+import os
+from collections import defaultdict
+from itertools import chain
+from optparse import OptionParser
+
 from openpyxl import load_workbook
 from openpyxl.utils.exceptions import InvalidFileException
 
 from ingestapi import IngestApi
-from optparse import OptionParser
-import logging
-import datetime
-
-from itertools import chain
-from collections import defaultdict
 
 # these are spreadsheet fields that can be a list
 # todo - these should be read out of the json schema at the start
@@ -56,7 +56,7 @@ v4_stringFields = {"donor" : ["age", "weight", "height"]}
 
 SCHEMA_URL = os.environ.get('SCHEMA_URL', "https://raw.githubusercontent.com/HumanCellAtlas/metadata-schema/%s/json_schema/")
 # SCHEMA_URL = os.path.expandvars(os.environ.get('SCHEMA_URL', SCHEMA_URL))
-SCHEMA_VERSION = os.environ.get('SCHEMA_VERSION', '4.4.0')
+SCHEMA_VERSION = os.environ.get('SCHEMA_VERSION', '4.5.0')
 
 
 class SpreadsheetSubmission:
@@ -73,7 +73,6 @@ class SpreadsheetSubmission:
         self.schema_url = os.path.expandvars(SCHEMA_URL % self.schema_version)
         if not self.dryrun:
             self.ingest_api = IngestApi()
-
 
     def createSubmission(self, token):
         self.logger.info("creating submission...")
