@@ -19,19 +19,19 @@ class BrokerAppTest(TestCase):
         # then:
         self.assertEqual(401, response.status_code)
 
-    @patch('broker.broker_app._save_file')
-    def test_failed_save(self, save_file):
-        # given:
-        assert save_file is broker_app._save_file
-        save_file.side_effect = Exception("I/O error")
+    def test_failed_save(self):
+        with patch.object(broker_app, '_save_file') as save_file:
+            # given:
+            assert save_file is broker_app._save_file
+            save_file.side_effect = Exception("I/O error")
 
-        # when:
-        response = self.client.post('/upload', headers={'Authorization': 'auth'})
+            # when:
+            response = self.client.post('/upload', headers={'Authorization': 'auth'})
 
-        # then:
-        self.assertEqual(500, response.status_code)
+            # then:
+            self.assertEqual(500, response.status_code)
 
-    def test_key_error_on_spreadsheet(self):
+    def test_value_error_on_spreadsheet(self):
         with patch.object(broker_app, '_save_file') as save_file, \
                 patch.object(SpreadsheetSubmission, 'submit') as submit_spreadsheet:
             # given:
