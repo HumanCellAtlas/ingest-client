@@ -69,7 +69,7 @@ class StagingApi:
 
         header = dict(self.header)
         header['Content-type'] = 'application/json; dcp-type=' + type
-        r = requests.put(fileUrl,  data=json.dumps(body), headers=header)
+        r = requests.put(fileUrl,  data=json.dumps(body, indent=4), headers=header)
         if r.status_code == requests.codes.ok or requests.codes.created:
             responseObject = json.loads(r.text)
             return FileDescription(responseObject["checksums"],type,responseObject["name"],responseObject["size"],responseObject["url"], )
