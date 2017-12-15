@@ -31,12 +31,25 @@ class BrokerAppTest(TestCase):
             # then:
             self.assertEqual(500, response.status_code)
 
-    def test_value_error_on_spreadsheet(self):
+    def test_value_error_on_spreadsheet_submission(self):
         with patch.object(broker_app, '_save_file') as save_file, \
                 patch.object(SpreadsheetSubmission, 'submit') as submit_spreadsheet:
             # given:
             save_file.return_value = 'path/to/file.xls'
             submit_spreadsheet.side_effect = ValueError("value error")
+
+            # when:
+            response = self.client.post('/upload', headers={'Authorization': 'auth'})
+
+            # then:
+            self.assertEqual(400, response.status_code)
+
+    def test_key_error_on_spreadsheet_submission(self):
+        with patch.object(broker_app, '_save_file') as save_file, \
+                patch.object(SpreadsheetSubmission, 'submit') as submit_spreadsheet:
+            # given:
+            save_file.return_value = 'path/to/file.xls'
+            submit_spreadsheet.side_effect = KeyError("key error")
 
             # when:
             response = self.client.post('/upload', headers={'Authorization': 'auth'})
