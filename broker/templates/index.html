@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block head %}
+{{ super() }}
+<link rel="stylesheet" href="{{url_for('static', filename = 'css/index.css')}}">
+<script src="{{url_for('static', filename = 'js/index.js')}}"></script>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="starter-template">
+        <h1>Submit data to the Human Cell Atlas</h1>
+        <p class="lead">Upload a spreadsheet to add your data to the HCA</p>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert {{category}}">
+                       {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <form  action="upload" method="POST" enctype="multipart/form-data">
+            <div class="form-group">
+                <label for="exampleInputFile">Please upload your spreadsheet</label>
+                <input type="file" name="file" class="form-control-file"  id="exampleInputFile" accept="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"   aria-describedby="fileHelp">
+                <small id="fileHelp" class="form-text text-muted">The spreadsheet must conform to a </small>
+                <a class="btn btn-xs btn-default" aria-label="Left Align" href="{{url_for('static', filename = 'empty-spreadsheet-v3.xlsx')}}">
+                    HCA template <span class="glyphicon glyphicon-download-alt" aria-hidden="true"> </span>
+                </a>
+            </div>
+            <button type="submit" class="btn btn-primary">Submit</button>
+        </form>
+        <hr/>
+        <div class="container">
+            <h1>Submissions</h1>
+            <table id="submissions" class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Submission UUID</th>
+                        <th>Status</th>
+                        <th>Created</th>
+                        <th>Updated</th>
+                        <th>Complete</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for sub in submissions %}
+                    <tr data-url="{{sub['_links']['self']['href'] }}" data-date="{{sub['updateDate']}}" >
+                    {% include 'submission-row.html' %}
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

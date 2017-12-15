@@ -1,0 +1,10 @@
+.right {
+    margin: auto;
+    width: 0;
+    padding: 10px;
+}
+
+.dl-horizontal dt {
+    text-align: left;
+}
+

@@ -1,0 +1,33 @@
+<td>
+    {%  if sub['uuid']['uuid'] is defined %}
+    <a class="submission-uuid" href="/submissions/{{sub['_links']['self']['href'].rsplit('/',1)[1] }}">{{sub['uuid']['uuid']}}</a>
+
+    {% else %}
+    <span class="glyphicon glyphicon-refresh glyphicon-refresh-animate"></span> <a href="{{sub['_links']['self']['href'] }}">Waiting...</a>
+    {% endif %}
+
+</td>
+<td>
+    <div class="right">
+        <h4><span style="display:inline-block; width:100px" class="submission-state label {{ helper['status_label'][sub['submissionState']] or helper['default_status_label']}} label-lg">{{ sub['submissionState']}}</span></h4>
+    </div>
+</td>
+<td>
+    <span class="submission-date date-column" data-date="{{ sub["submissionDate"] }}">
+    </span>
+</td>
+<td>
+    <span class="update-date date-column" data-date="{{ sub["updateDate"] }}">
+    </span>
+</td>
+<td>
+    <form class="submission-form complete-form" action="submit" method="POST">
+        {%  if sub['_links']['submit'] is defined %}
+            <input class="submission-url-input" type="hidden" name="submissionUrl" value="{{sub['_links']['submit']['href'] }}"/>
+            <button class="btn btn-success" onclick="return confirm('Are all data files uploaded to the staging area?');">Complete submission</button>
+        {% else %}
+            <input class="submisssion-url-input" type="hidden" name="submissionUrl" value=""/>
+            <button class="btn btn-default disabled" onclick="return false;">Complete submission</button>
+        {% endif %}
+    </form>
+</td>

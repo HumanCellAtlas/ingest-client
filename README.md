@@ -19,7 +19,7 @@ pip install -r requirements.txt
 Start the web application with 
 
 ```
-python broker-app.py
+python broker/broker_app.py
 ```
 
 Alternatively, you can build and run the app with docker. To run the web application with docker for build the docker image with 

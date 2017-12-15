@@ -1,0 +1,185 @@
+{% extends "base.html" %}
+{% block head %}
+{{ super() }}
+<link rel="stylesheet" href="{{url_for('static', filename = 'css/submission.css')}}">
+<script src="{{url_for('static', filename = 'js/submission.js')}}"></script>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div>
+            <div class="col-lg-8"><h3>Submission</h3></div>
+            <div class="col-lg-2 text-right">
+                <h3>
+                    <div >
+                        <span id="submission-status" data-status="{{ sub['submissionState']}}" class="label {{ helper['status_label'][sub['submissionState']] or helper['default_status_label']}}">{{ sub['submissionState']}}</span>
+                    </div>
+                </h3>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-10">
+            <dl class="dl-horizontal">
+                <dt>UUID</dt>
+                <dd>{{sub['uuid']['uuid']}}
+                    <a title="Ingest API" id="submission-url" href="{{sub['_links']['self']['href']}}">
+                        <span class="glyphicon glyphicon glyphicon glyphicon glyphicon-share" aria-hidden="true"></span>
+                    </a>
+                </dd>
+                <!--<dt>Ingest API</dt>-->
+                <!--<dd><a href="{{sub['_links']['self']['href'] }}">{{sub["_links"]["self"]["href"] }}</a></dd>-->
+            </dl>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-lg-10">
+            <dl class="dl-horizontal">
+                <dt>Created</dt>
+                <dd><span class="date-column" data-date="{{ sub["submissionDate"]}}"></span></dd>
+            </dl>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-lg-10">
+            <dl class="dl-horizontal">
+                <dt>Updated</dt>
+                <dd><span id="submission-update-date" class="date-column" data-date="{{ sub["updateDate"] }}"></span></dd>
+            </dl>
+        </div>
+    </div>
+
+    {% if project: %}
+    <div class="row">
+        <div class="col-lg-10">
+            <dl class="dl-horizontal">
+                <dt>Project UUID</dt>
+                <dd>{{project['uuid']['uuid']}}</dd>
+            </dl>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-10">
+            <dl class="dl-horizontal">
+                <dt>Project Title</dt>
+                <dd>{{project['content']['name']}}</dd>
+                <!--<dt>Description</dt>-->
+                <!--<dd class="text-justify">{{project['content']['description']}}</dd>-->
+            </dl>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-10">
+            <dl class="dl-horizontal">
+                <dt>Description</dt>
+                <dd class="text-justify">{{project['content']['description']}}</dd>
+            </dl>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if files: %}
+    <div class="row">
+        <div class="col-lg-10">
+            <dl class="dl-horizontal">
+                <dt>Files</dt>
+                <dd>
+                    <div id="submission-files">
+                        {% include 'submission-files-table.html' %}
+                    </div>
+                    <hr/>
+                </dd>
+            </dl>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if bundleManifestObj['list']: %}
+    <div class="row">
+        <div class="col-lg-10">
+            <dl class="dl-horizontal">
+                <dt>Bundle Manifests</dt>
+                <dd>
+                    <table class="table table-condensed">
+                        <thead>
+                        <tr>
+                            <th>UUID</th>
+                            <th class="text-right">Ingest API</th>
+                            <th class="text-right">DSS</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        {% for bundleManifest in bundleManifestObj['list'] %}
+                        <tr>
+                            <td>
+                                {{bundleManifest['bundleUuid']}}
+                            </td>
+                            <td class="text-right">
+                                <a title="Ingest API" href="{{bundleManifest['_links']['self']['href']}}">
+                                <span class="glyphicon glyphicon glyphicon glyphicon glyphicon-share" aria-hidden="true"></span></a>
+                            </td>
+                            <td class="text-right">
+                                <a class="dss-url" data-uuid="{{bundleManifest['bundleUuid']}}" title="DSS Link" href="">
+                                    <span class="glyphicon glyphicon glyphicon glyphicon glyphicon-share" aria-hidden="true"></span></a>
+
+                            </td>
+                        </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+
+                    {% if(bundleManifestObj['page']['len'] != bundleManifestObj['page']['totalElements']): %}
+                    *Showing {{bundleManifestObj['page']['len']}} of {{bundleManifestObj['page']['totalElements']}}
+                    {% endif %}
+                    <hr/>
+                </dd>
+            </dl>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if sub['stagingDetails']['stagingAreaLocation'] is defined %}
+    <div class="row">
+        <div class="col-lg-10">
+            <dl class="dl-horizontal">
+                <dt>Staging Credentials</dt>
+                <dd>
+                    <pre><code id="staging-credentials">{{sub['stagingDetails']['stagingAreaLocation']['value'] }}</code></pre>
+                    <form action="/staging/delete" method="POST">
+                        <button type="button" class="btn btn-default btn-copy js-tooltip js-copy" data-toggle="tooltip" data-placement="bottom" title="Copy to clipboard"> Copy Credentials</button>
+
+                        <input type="hidden" name="submissionUrl" value="{{sub['_links']['self']['href'] }}"/>
+                        <button class="btn btn-danger" onclick="return confirm('Are you sure you want to delete the staging area?');">Delete Staging Area</button>
+
+                    </form>
+
+                </dd>
+            </dl>
+
+        </div>
+    </div>
+    {% endif %}
+
+    <div id="submission-form" class="row">
+    {%  if sub['_links']['submit'] is defined %}
+        <div class="col-lg-10">
+            <dl class="dl-horizontal">
+                <dt></dt>
+                <dd>
+                    <form action="/submit" method="POST">
+                        <input type="hidden" name="submissionUrl" value="{{ sub['_links']['submit']['href'] }}"/>
+                        <button class="btn btn-success" onclick="return confirm('Are all data files uploaded to the staging area?');">Complete submission</button>
+                    </form>
+
+                </dd>
+            </dl>
+        </div>
+    {% endif %}
+    </div>
+
+</div>
+{% endblock %}

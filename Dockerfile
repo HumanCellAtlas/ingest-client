@@ -3,8 +3,8 @@ MAINTAINER Simon Jupp "jupp@ebi.ac.uk"
 
 RUN mkdir /app
 COPY broker /app/broker
-COPY templates /app/templates
-COPY static /app/static
+COPY broker/templates /app/templates
+COPY broker/static /app/static
 COPY broker/broker_app.py requirements.txt /app/
 WORKDIR /app
 

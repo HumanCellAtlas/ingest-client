@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-from broker.spreadsheetUploadError import SpreadsheetUploadError
+from spreadsheetUploadError import SpreadsheetUploadError
 
 __author__ = "jupp"
 __license__ = "Apache 2.0"

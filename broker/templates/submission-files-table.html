@@ -1,0 +1,72 @@
+<table id="files" class="table table-condensed">
+    <thead>
+    <tr>
+        <th>UUID</th>
+        <th>File</th>
+        <th>Status</th>
+        <!--<th>Created</th>-->
+        <!--<th>Updated</th>-->
+        <th>Ingest API</th>
+        <th>CloudUrl</th>
+
+    </tr>
+    </thead>
+    <tbody>
+    {% for file in files %}
+    <tr>
+        <td>
+            {%  if file['uuid']['uuid'] is defined %}
+            {{file['uuid']['uuid']}}
+            {% endif %}
+            <!--<a title="Ingest API Link" href="{{file['_links']['self']['href']}}">-->
+            <!--<span class="glyphicon glyphicon glyphicon glyphicon glyphicon-share" aria-hidden="true"></span>-->
+            </a>
+        </td>
+
+        <td>
+            {%  if file['fileName'] is defined %}
+            {{file['fileName']}}
+            {% endif %}
+
+        </td>
+
+        <td>
+            <div class="text-left">
+                <span class="label {{ helper['status_label'][file['validationState']] or helper['default_status_label']}} label-lg">{{ file['validationState']}}</span>
+            </div>
+        </td>
+
+
+        <!--<td>-->
+            <!--<span class="date-column" data-date="{{ file["submissionDate"]}}">-->
+            <!--</span>-->
+        <!--</td>-->
+        <!--<td>-->
+            <!--<span class="date-column" data-date="{{ file["updateDate"]}}">-->
+            <!--</span>-->
+
+        <!--</td>-->
+
+        <td class="text-right">
+            <a title="Ingest API Link" href="{{file['_links']['self']['href']}}">
+                <span class="glyphicon glyphicon glyphicon glyphicon glyphicon-share" aria-hidden="true"></span>
+            </a>
+        </td>
+
+        <td class="text-right">
+            {%  if file['cloudUrl'] %}
+
+            <a title="Cloud Url" href="{{file['cloudUrl']}}">
+                <span class="glyphicon glyphicon glyphicon glyphicon glyphicon-share" aria-hidden="true"></span>
+            </a>
+            {% endif %}
+        </td>
+
+
+    </tr>
+    {% endfor %}
+    </tbody>
+</table>
+{% if(filePage['len'] != filePage['totalElements']): %}
+*Showing {{filePage['len']}} of {{filePage['totalElements']}}
+{% endif %}

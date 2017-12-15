@@ -1,5 +1,3 @@
-import json
-
 from unittest import TestCase
 
 import broker.token_util as token_util
