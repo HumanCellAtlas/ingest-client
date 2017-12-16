@@ -128,7 +128,8 @@ class IngestExporter:
                                                            "submittedName": file_json["fileName"],
                                                            "url": file_json["cloudUrl"],
                                                            "dss_uuid": file_json["uuid"]["uuid"],
-                                                           "indexed" : False
+                                                           "indexed" : False,
+                                                           "content-type": "data"
                                                            }, files))
 
             # stage the analysis.json, add to filesToTransfer and to the bundle manifest
