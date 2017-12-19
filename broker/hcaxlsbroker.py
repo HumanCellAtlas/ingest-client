@@ -413,15 +413,30 @@ class SpreadsheetSubmission:
                 raise ValueError('Sample of type donor must have an id attribute')
             sample_id = donor["sample_id"]
 
-            if "is_living" in donor["donor"]:
-                if donor["donor"]["is_living"].lower()in ["true", "yes"]:
-                    donor["donor"]["is_living"] = True
-                elif donor["donor"]["is_living"].lower() in ["false", "no"]:
-                    donor["donor"]["is_living"] = False
+            if "donor" not in donor:
+                # Returns ValueError if there are no other donor.fields and donor.is_living is missing
+                raise ValueError('Field is_living for sample ' + sample_id + ' is a required field and must either contain one of yes, true, no, or false')
             else:
-                raise ValueError('Field is_living in sample ' + sample_id + ' must either contain one of yes, true, no or false')
+                if "is_living" in donor["donor"]:
+                    if donor["donor"]["is_living"].lower()in ["true", "yes"]:
+                        donor["donor"]["is_living"] = True
+                    elif donor["donor"]["is_living"].lower() in ["false", "no"]:
+                        donor["donor"]["is_living"] = False
+                    '''
+                    # Commented out because we shouldn't be doing content validation in the converter
+                    else:
+                        # Returns ValueError if donor.is_living isn't true,yes,false,no
+                        raise ValueError('Field is_living for sample ' + sample_id + ' is a required field and must either contain one of yes, true, no, or false')
+                    '''
+                else:
+                    # Returns ValueError if there are other donor.fields but donor.is_living is empty
+                    raise ValueError('Field is_living for sample ' + sample_id + ' is a required field and must either contain one of yes, true, no, or false')
 
-            if "ncbi_taxon_id" in donor and "genus_species" in donor:
+            if "ncbi_taxon_id" not in donor:
+                # Returns ValueError if donor.ncbi_taxon_id is empty
+                raise ValueError('Field ncbi_taxon_id for sample ' + sample_id + ' is a required field and must contain a valid NCBI Taxon ID')
+
+            if "genus_species" in donor:
                 donor["genus_species"]["ontology"] = "NCBITaxon:" + str(donor["ncbi_taxon_id"])
 
             if sample_id in deathMap.keys():
@@ -463,9 +478,15 @@ class SpreadsheetSubmission:
             if "sample_id" not in sample:
                 raise ValueError('Sample must have an id attribute')
             sampleMap[sample["sample_id"]] = sample
+            sample_id = sample["sample_id"]
 
-        if "ncbi_taxon_id" in sample and "genus_species" in sample:
-            sample["genus_species"]["ontology"] = "NCBITaxon:" + str(sample["ncbi_taxon_id"])
+            if "ncbi_taxon_id" not in sample:
+                # Returns ValueError if donor.ncbi_taxon_id is empty
+                raise ValueError(
+                    'Field ncbi_taxon_id for sample ' + sample_id + ' is a required field and must contain a valid NCBI Taxon ID')
+
+            if "genus_species" in sample:
+                sample["genus_species"]["ontology"] = "NCBITaxon:" + str(sample["ncbi_taxon_id"])
 
         # add dependent information to various sample types
         for state in specimen_state:
