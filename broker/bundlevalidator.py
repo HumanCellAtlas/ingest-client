@@ -8,7 +8,7 @@ import os
 import validationreport as validationreport
 
 BUNDLE_SCHEMA_BASE_URL = "https://raw.githubusercontent.com/HumanCellAtlas/metadata-schema/%s/json_schema/"
-BUNDLE_SCHEMA_VERSION = "4.5.0"
+BUNDLE_SCHEMA_VERSION = "4.6.1"
 BUNDLE_SCHEMA_VERSION = os.environ.get('BUNDLE_SCHEMA_VERSION', BUNDLE_SCHEMA_VERSION)
 BUNDLE_SCHEMA_BASE_URL = os.environ.get('BUNDLE_SCHEMA_BASE_URL', BUNDLE_SCHEMA_BASE_URL % BUNDLE_SCHEMA_VERSION)
 

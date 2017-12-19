@@ -23,7 +23,7 @@ DEFAULT_STAGING_URL=os.environ.get('STAGING_API', 'http://staging.dev.data.human
 DEFAULT_DSS_URL=os.environ.get('DSS_API', 'http://dss.dev.data.humancellatlas.org')
 
 BUNDLE_SCHEMA_BASE_URL=os.environ.get('BUNDLE_SCHEMA_BASE_URL', 'https://raw.githubusercontent.com/HumanCellAtlas/metadata-schema/%s/json_schema/')
-METADATA_SCHEMA_VERSION = os.environ.get('SCHEMA_VERSION', '4.5.0')
+METADATA_SCHEMA_VERSION = os.environ.get('SCHEMA_VERSION', '4.6.1')
 
 
 class IngestExporter:
