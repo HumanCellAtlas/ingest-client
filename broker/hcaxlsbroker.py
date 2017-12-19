@@ -489,7 +489,7 @@ class SpreadsheetSubmission:
                 # raise ValueError(
                 #     'Field ncbi_taxon_id for sample ' + sample_id + ' is a required field and must contain a valid NCBI Taxon ID')
 
-            if "ncbi_taxon_id" in donor and "genus_species" in donor:
+            if "ncbi_taxon_id" in sample and "genus_species" in sample:
                 sample["genus_species"]["ontology"] = "NCBITaxon:" + str(sample["ncbi_taxon_id"])
 
         # add dependent information to various sample types
