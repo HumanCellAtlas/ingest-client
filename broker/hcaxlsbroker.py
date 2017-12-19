@@ -413,10 +413,12 @@ class SpreadsheetSubmission:
                 raise ValueError('Sample of type donor must have an id attribute')
             sample_id = donor["sample_id"]
 
-            if "donor" not in donor:
+            # removing the explicit check for donor absence as this should be picked up by the validator
+            # if "donor" not in donor:
                 # Returns ValueError if there are no other donor.fields and donor.is_living is missing
-                raise ValueError('Field is_living for sample ' + sample_id + ' is a required field and must either contain one of yes, true, no, or false')
-            else:
+                # raise ValueError('Field is_living for sample ' + sample_id + ' is a required field and must either contain one of yes, true, no, or false')
+            # else:
+            if "donor" in donor:
                 if "is_living" in donor["donor"]:
                     if donor["donor"]["is_living"].lower()in ["true", "yes"]:
                         donor["donor"]["is_living"] = True
@@ -428,15 +430,17 @@ class SpreadsheetSubmission:
                         # Returns ValueError if donor.is_living isn't true,yes,false,no
                         raise ValueError('Field is_living for sample ' + sample_id + ' is a required field and must either contain one of yes, true, no, or false')
                     '''
-                else:
+                # Removing the ValueError if is_living is absent or in the wrong format as this should be flagged by the validator
+                # else:
                     # Returns ValueError if there are other donor.fields but donor.is_living is empty
-                    raise ValueError('Field is_living for sample ' + sample_id + ' is a required field and must either contain one of yes, true, no, or false')
+                    # raise ValueError('Field is_living for sample ' + sample_id + ' is a required field and must either contain one of yes, true, no, or false')
 
-            if "ncbi_taxon_id" not in donor:
+            # Removing ValueError for absence of ncbi_taxon_id as this should be caught by the validator
+            # if "ncbi_taxon_id" not in donor:
                 # Returns ValueError if donor.ncbi_taxon_id is empty
-                raise ValueError('Field ncbi_taxon_id for sample ' + sample_id + ' is a required field and must contain a valid NCBI Taxon ID')
+                # raise ValueError('Field ncbi_taxon_id for sample ' + sample_id + ' is a required field and must contain a valid NCBI Taxon ID')
 
-            if "genus_species" in donor:
+            if "ncbi_taxon_id" and "genus_species" in donor:
                 donor["genus_species"]["ontology"] = "NCBITaxon:" + str(donor["ncbi_taxon_id"])
 
             if sample_id in deathMap.keys():
@@ -480,12 +484,12 @@ class SpreadsheetSubmission:
             sampleMap[sample["sample_id"]] = sample
             sample_id = sample["sample_id"]
 
-            if "ncbi_taxon_id" not in sample:
+            # if "ncbi_taxon_id" not in sample:
                 # Returns ValueError if donor.ncbi_taxon_id is empty
-                raise ValueError(
-                    'Field ncbi_taxon_id for sample ' + sample_id + ' is a required field and must contain a valid NCBI Taxon ID')
+                # raise ValueError(
+                #     'Field ncbi_taxon_id for sample ' + sample_id + ' is a required field and must contain a valid NCBI Taxon ID')
 
-            if "genus_species" in sample:
+            if "ncbi_taxon_id" and "genus_species" in donor:
                 sample["genus_species"]["ontology"] = "NCBITaxon:" + str(sample["ncbi_taxon_id"])
 
         # add dependent information to various sample types
@@ -574,9 +578,10 @@ class SpreadsheetSubmission:
                     s["seq"]["paired_ends"] = True
                 elif val.lower() in ["false", "no"]:
                     s["seq"]["paired_ends"] = False
-                else:
-                    raise ValueError(
-                        'Field paired_ends in tab seq must either contain one of yes, true, no or false')
+                # Removing ValueError for absence or incorrectly formatted paired_ends field as this should be picked up by the validator
+                # else:
+                #     raise ValueError(
+                #         'Field paired_ends in tab seq must either contain one of yes, true, no or false')
 
             if "assay_id" in s:
                 id = s["assay_id"]
