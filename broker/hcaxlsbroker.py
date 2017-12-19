@@ -440,7 +440,7 @@ class SpreadsheetSubmission:
                 # Returns ValueError if donor.ncbi_taxon_id is empty
                 # raise ValueError('Field ncbi_taxon_id for sample ' + sample_id + ' is a required field and must contain a valid NCBI Taxon ID')
 
-            if "ncbi_taxon_id" and "genus_species" in donor:
+            if "ncbi_taxon_id" in donor and "genus_species" in donor:
                 donor["genus_species"]["ontology"] = "NCBITaxon:" + str(donor["ncbi_taxon_id"])
 
             if sample_id in deathMap.keys():
@@ -489,7 +489,7 @@ class SpreadsheetSubmission:
                 # raise ValueError(
                 #     'Field ncbi_taxon_id for sample ' + sample_id + ' is a required field and must contain a valid NCBI Taxon ID')
 
-            if "ncbi_taxon_id" and "genus_species" in donor:
+            if "ncbi_taxon_id" in donor and "genus_species" in donor:
                 sample["genus_species"]["ontology"] = "NCBITaxon:" + str(sample["ncbi_taxon_id"])
 
         # add dependent information to various sample types
