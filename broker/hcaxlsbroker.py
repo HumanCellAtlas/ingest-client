@@ -205,9 +205,9 @@ class SpreadsheetSubmission:
     def completeSubmission(self):
         self.ingest_api.finishSubmission()
 
-    def submit(self, pathToSpreadsheet, submissionUrl, token=None, projectUuid=None):
+    def submit(self, pathToSpreadsheet, submissionUrl, token=None, project_id=None):
         try:
-            self._process(pathToSpreadsheet, submissionUrl, token, projectUuid)
+            self._process(pathToSpreadsheet, submissionUrl, token, project_id)
         except ValueError as e:
             self.logger.error("Error:"+str(e))
             raise e
@@ -221,7 +221,7 @@ class SpreadsheetSubmission:
             tmpFile.write(json.dumps(object, indent=4))
             tmpFile.close()
 
-    def _process(self, pathToSpreadsheet, submissionUrl, token, projectUuid):
+    def _process(self, pathToSpreadsheet, submissionUrl, token, project_id):
 
         # parse the spreadsheet
         try:
@@ -237,7 +237,7 @@ class SpreadsheetSubmission:
         submitterSheet = wb.create_sheet()
         contributorSheet = wb.create_sheet()
 
-        if projectUuid is None:
+        if project_id is None:
             projectSheet = wb.get_sheet_by_name("project")
 
             if "project.publications" in wb.sheetnames:
@@ -347,7 +347,7 @@ class SpreadsheetSubmission:
         linksList = []
 
         # post objects to the Ingest API after some basic validation
-        if projectUuid is None:
+        if project_id is None:
             if "project_id" not in project:
                 raise ValueError('Project must have an id attribute')
             projectId = project["project_id"]
@@ -380,7 +380,7 @@ class SpreadsheetSubmission:
 
         else:
             if not self.dryrun:
-                projectIngest = self.ingest_api.getProjectById(projectUuid)
+                projectIngest = self.ingest_api.getProjectById(project_id)
             else:
                 projectIngest = {"content" :
                                      {"project_id" : "dummy_project_id"}}

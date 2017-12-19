@@ -47,7 +47,6 @@ def upload_spreadsheet():
     try:
         # check token
         token = request.headers.get('Authorization')
-        print "token: %s" % (token)
         if token is None:
             raise SpreadsheetUploadError(401, "An authentication token must be supplied when uploading a spreadsheet",
                                          "")
@@ -60,10 +59,16 @@ def upload_spreadsheet():
             message = "We experienced a problem when saving your spreadsheet"
             raise SpreadsheetUploadError(500, message, str(err))
 
+        # check for project_id
+        project_id = None
+
+        if 'project_id' in request.form:
+            project_id = request.form['project_id']
+
         # do a dry run to minimally validate spreadsheet
         try:
             submission = SpreadsheetSubmission(dry=True)
-            submission.submit(path, None)
+            submission.submit(path, None, None, project_id)
         except ValueError as err:
             print(traceback.format_exc())
             message = "There was a problem validating your spreadsheet"
@@ -77,12 +82,11 @@ def upload_spreadsheet():
         try:
             submission.dryrun = False
             submission_url = submission.createSubmission(token)
-            thread = threading.Thread(target=submission.submit, args=(path, submission_url, token, None))
-            thread.start()
+            submission.submit(path, submission_url, token, project_id)
         except Exception as err:
             print(traceback.format_exc())
-            message = "We experienced a problem when creating a submission from your spreadsheet"
-            raise SpreadsheetUploadError(500, message, str(err))
+            message = "We experienced a problem when creating a submission for your spreadsheet"
+            raise SpreadsheetUploadError(400, message, str(err))
 
         return create_upload_success_response(submission_url)
     except SpreadsheetUploadError as spreadsheetUploadError:
