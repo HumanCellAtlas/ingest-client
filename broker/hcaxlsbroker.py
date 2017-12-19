@@ -3,16 +3,18 @@
 This script will read a spreadsheet, generate a manifest, submit all items to the ingest API, 
 assign uuid and generate a directory of bundles for the submitted data
 """
+from openpyxl.utils.exceptions import InvalidFileException
+
+from spreadsheetUploadError import SpreadsheetUploadError
+
 __author__ = "jupp"
 __license__ = "Apache 2.0"
 
-
-import glob, json, os, urllib, requests
+import json, os
 from openpyxl import load_workbook
 from ingestapi import IngestApi
 from optparse import OptionParser
 import logging
-import datetime
 
 from itertools import chain
 from collections import defaultdict
@@ -70,12 +72,12 @@ class SpreadsheetSubmission:
         if not self.dryrun:
             self.ingest_api = IngestApi()
 
-    def createSubmission(self):
+    def createSubmission(self, token):
         self.logger.info("creating submission...")
         if not self.ingest_api:
             self.ingest_api = IngestApi()
 
-        submissionUrl = self.ingest_api.createSubmission()
+        submissionUrl = self.ingest_api.createSubmission(token)
         self.logger.info("new submission " + submissionUrl)
         return submissionUrl
 
@@ -201,9 +203,9 @@ class SpreadsheetSubmission:
     def completeSubmission(self):
         self.ingest_api.finishSubmission()
 
-    def submit(self, pathToSpreadsheet, submissionUrl, projectUuid=None):
+    def submit(self, pathToSpreadsheet, submissionUrl, token=None, project_id=None):
         try:
-            self._process(pathToSpreadsheet, submissionUrl, projectUuid)
+            self._process(pathToSpreadsheet, submissionUrl, token, project_id)
         except ValueError as e:
             self.logger.error("Error:"+str(e))
             raise e
@@ -217,11 +219,13 @@ class SpreadsheetSubmission:
             tmpFile.write(json.dumps(object, indent=4))
             tmpFile.close()
 
-    def _process(self, pathToSpreadsheet, submissionUrl, projectUuid):
+    def _process(self, pathToSpreadsheet, submissionUrl, token, project_id):
 
         # parse the spreadsheet
-        wb = load_workbook(filename=pathToSpreadsheet)
-
+        try:
+            wb = load_workbook(filename=pathToSpreadsheet)
+        except InvalidFileException:
+            raise SpreadsheetUploadError(400, "The uploaded file is not a valid XLSX spreadsheet", "")
         # This code section deals with cases where the project has already been submitted
         # ASSUMPTION: now additional project information (publications, contributors etc) is added via
         # the spreadsheet if the project already exists
@@ -231,7 +235,7 @@ class SpreadsheetSubmission:
         submitterSheet = wb.create_sheet()
         contributorSheet = wb.create_sheet()
 
-        if projectUuid is None:
+        if project_id is None:
             projectSheet = wb.get_sheet_by_name("project")
 
             if "project.publications" in wb.sheetnames:
@@ -336,12 +340,12 @@ class SpreadsheetSubmission:
         # creating submission
         #
         if not self.dryrun and not submissionUrl:
-            submissionUrl = self.createSubmission()
+            submissionUrl = self.createSubmission(token)
 
         linksList = []
 
         # post objects to the Ingest API after some basic validation
-        if projectUuid is None:
+        if project_id is None:
             if "project_id" not in project:
                 raise ValueError('Project must have an id attribute')
             projectId = project["project_id"]
@@ -374,7 +378,7 @@ class SpreadsheetSubmission:
 
         else:
             if not self.dryrun:
-                projectIngest = self.ingest_api.getProjectById(projectUuid)
+                projectIngest = self.ingest_api.getProjectById(project_id)
             else:
                 projectIngest = {"content" :
                                      {"project_id" : "dummy_project_id"}}
@@ -440,7 +444,11 @@ class SpreadsheetSubmission:
                 # Returns ValueError if donor.ncbi_taxon_id is empty
                 # raise ValueError('Field ncbi_taxon_id for sample ' + sample_id + ' is a required field and must contain a valid NCBI Taxon ID')
 
-            if "ncbi_taxon_id" in donor and "genus_species" in donor:
+            if "ncbi_taxon_id" not in donor:
+                # Returns ValueError if donor.ncbi_taxon_id is empty
+                raise ValueError('Field ncbi_taxon_id for sample ' + sample_id + ' is a required field and must contain a valid NCBI Taxon ID')
+
+            if "genus_species" in donor:
                 donor["genus_species"]["ontology"] = "NCBITaxon:" + str(donor["ncbi_taxon_id"])
 
             if sample_id in deathMap.keys():
@@ -784,4 +792,4 @@ if __name__ == '__main__':
         print ("You must supply path to the HCA bundles directory")
         exit(2)
     submission = SpreadsheetSubmission(options.dry, options.output, options.schema_version)
-    submission.submit(options.path, None, options.project_id)
+    submission.submit(options.path, None, None, options.project_id)
