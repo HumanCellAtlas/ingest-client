@@ -3,23 +3,19 @@
 This script will read a spreadsheet, generate a manifest, submit all items to the ingest API, 
 assign uuid and generate a directory of bundles for the submitted data
 """
-from spreadsheetUploadError import SpreadsheetUploadError
-
 __author__ = "jupp"
 __license__ = "Apache 2.0"
 
-import json
 
-import logging
-import os
-from collections import defaultdict
-from itertools import chain
-from optparse import OptionParser
-
+import glob, json, os, urllib, requests
 from openpyxl import load_workbook
-from openpyxl.utils.exceptions import InvalidFileException
-
 from ingestapi import IngestApi
+from optparse import OptionParser
+import logging
+import datetime
+
+from itertools import chain
+from collections import defaultdict
 
 # these are spreadsheet fields that can be a list
 # todo - these should be read out of the json schema at the start
@@ -56,7 +52,7 @@ v4_stringFields = {"donor" : ["age", "weight", "height"]}
 
 SCHEMA_URL = os.environ.get('SCHEMA_URL', "https://raw.githubusercontent.com/HumanCellAtlas/metadata-schema/%s/json_schema/")
 # SCHEMA_URL = os.path.expandvars(os.environ.get('SCHEMA_URL', SCHEMA_URL))
-SCHEMA_VERSION = os.environ.get('SCHEMA_VERSION', '4.5.0')
+SCHEMA_VERSION = os.environ.get('SCHEMA_VERSION', '4.6.1')
 
 
 class SpreadsheetSubmission:
@@ -419,10 +415,12 @@ class SpreadsheetSubmission:
                 raise ValueError('Sample of type donor must have an id attribute')
             sample_id = donor["sample_id"]
 
-            if "donor" not in donor:
+            # removing the explicit check for donor absence as this should be picked up by the validator
+            # if "donor" not in donor:
                 # Returns ValueError if there are no other donor.fields and donor.is_living is missing
-                raise ValueError('Field is_living for sample ' + sample_id + ' is a required field and must either contain one of yes, true, no, or false')
-            else:
+                # raise ValueError('Field is_living for sample ' + sample_id + ' is a required field and must either contain one of yes, true, no, or false')
+            # else:
+            if "donor" in donor:
                 if "is_living" in donor["donor"]:
                     if donor["donor"]["is_living"].lower()in ["true", "yes"]:
                         donor["donor"]["is_living"] = True
@@ -434,9 +432,15 @@ class SpreadsheetSubmission:
                         # Returns ValueError if donor.is_living isn't true,yes,false,no
                         raise ValueError('Field is_living for sample ' + sample_id + ' is a required field and must either contain one of yes, true, no, or false')
                     '''
-                else:
+                # Removing the ValueError if is_living is absent or in the wrong format as this should be flagged by the validator
+                # else:
                     # Returns ValueError if there are other donor.fields but donor.is_living is empty
-                    raise ValueError('Field is_living for sample ' + sample_id + ' is a required field and must either contain one of yes, true, no, or false')
+                    # raise ValueError('Field is_living for sample ' + sample_id + ' is a required field and must either contain one of yes, true, no, or false')
+
+            # Removing ValueError for absence of ncbi_taxon_id as this should be caught by the validator
+            # if "ncbi_taxon_id" not in donor:
+                # Returns ValueError if donor.ncbi_taxon_id is empty
+                # raise ValueError('Field ncbi_taxon_id for sample ' + sample_id + ' is a required field and must contain a valid NCBI Taxon ID')
 
             if "ncbi_taxon_id" not in donor:
                 # Returns ValueError if donor.ncbi_taxon_id is empty
@@ -486,12 +490,12 @@ class SpreadsheetSubmission:
             sampleMap[sample["sample_id"]] = sample
             sample_id = sample["sample_id"]
 
-            if "ncbi_taxon_id" not in sample:
+            # if "ncbi_taxon_id" not in sample:
                 # Returns ValueError if donor.ncbi_taxon_id is empty
-                raise ValueError(
-                    'Field ncbi_taxon_id for sample ' + sample_id + ' is a required field and must contain a valid NCBI Taxon ID')
+                # raise ValueError(
+                #     'Field ncbi_taxon_id for sample ' + sample_id + ' is a required field and must contain a valid NCBI Taxon ID')
 
-            if "genus_species" in sample:
+            if "ncbi_taxon_id" in sample and "genus_species" in sample:
                 sample["genus_species"]["ontology"] = "NCBITaxon:" + str(sample["ncbi_taxon_id"])
 
         # add dependent information to various sample types
@@ -580,9 +584,10 @@ class SpreadsheetSubmission:
                     s["seq"]["paired_ends"] = True
                 elif val.lower() in ["false", "no"]:
                     s["seq"]["paired_ends"] = False
-                else:
-                    raise ValueError(
-                        'Field paired_ends in tab seq must either contain one of yes, true, no or false')
+                # Removing ValueError for absence or incorrectly formatted paired_ends field as this should be picked up by the validator
+                # else:
+                #     raise ValueError(
+                #         'Field paired_ends in tab seq must either contain one of yes, true, no or false')
 
             if "assay_id" in s:
                 id = s["assay_id"]

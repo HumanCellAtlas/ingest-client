@@ -23,7 +23,7 @@ DEFAULT_STAGING_URL=os.environ.get('STAGING_API', 'http://staging.dev.data.human
 DEFAULT_DSS_URL=os.environ.get('DSS_API', 'http://dss.dev.data.humancellatlas.org')
 
 BUNDLE_SCHEMA_BASE_URL=os.environ.get('BUNDLE_SCHEMA_BASE_URL', 'https://raw.githubusercontent.com/HumanCellAtlas/metadata-schema/%s/json_schema/')
-METADATA_SCHEMA_VERSION = os.environ.get('SCHEMA_VERSION', '4.5.0')
+METADATA_SCHEMA_VERSION = os.environ.get('SCHEMA_VERSION', '4.6.1')
 
 
 class IngestExporter:
@@ -128,7 +128,8 @@ class IngestExporter:
                                                            "submittedName": file_json["fileName"],
                                                            "url": file_json["cloudUrl"],
                                                            "dss_uuid": file_json["uuid"]["uuid"],
-                                                           "indexed" : False
+                                                           "indexed" : False,
+                                                           "content-type": "data"
                                                            }, files))
 
             # stage the analysis.json, add to filesToTransfer and to the bundle manifest
