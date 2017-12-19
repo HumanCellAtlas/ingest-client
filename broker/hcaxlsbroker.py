@@ -3,16 +3,18 @@
 This script will read a spreadsheet, generate a manifest, submit all items to the ingest API, 
 assign uuid and generate a directory of bundles for the submitted data
 """
+from openpyxl.utils.exceptions import InvalidFileException
+
+from spreadsheetUploadError import SpreadsheetUploadError
+
 __author__ = "jupp"
 __license__ = "Apache 2.0"
 
-
-import glob, json, os, urllib, requests
+import json, os
 from openpyxl import load_workbook
 from ingestapi import IngestApi
 from optparse import OptionParser
 import logging
-import datetime
 
 from itertools import chain
 from collections import defaultdict
