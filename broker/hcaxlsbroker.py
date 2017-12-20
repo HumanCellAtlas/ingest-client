@@ -292,14 +292,14 @@ class SpreadsheetSubmission:
             protocolSheet = wb.get_sheet_by_name("protocols")
         if "single_cell" in wb.sheetnames:
             singleCellSheet = wb.get_sheet_by_name("single_cell")
-        if "single_cell.barcode" in wb.sheetnames:
-            singleCellBarcodeSheet = wb.get_sheet_by_name("single_cell.barcode")
+        if "single_cell.cell_barcode" in wb.sheetnames:
+            singleCellBarcodeSheet = wb.get_sheet_by_name("single_cell.cell_barcode")
         if "rna" in wb.sheetnames:
             rnaSheet = wb.get_sheet_by_name("rna")
         if "seq" in wb.sheetnames:
             seqSheet = wb.get_sheet_by_name("seq")
-        if "seq.barcode" in wb.sheetnames:
-            seqBarcodeSheet = wb.get_sheet_by_name("seq.barcode")
+        if "seq.umi_barcode" in wb.sheetnames:
+            seqBarcodeSheet = wb.get_sheet_by_name("seq.umi_barcode")
         if "file" in wb.sheetnames:
             filesSheet = wb.get_sheet_by_name("file")
 
@@ -615,9 +615,9 @@ class SpreadsheetSubmission:
             if "assay_id" in scb:
                 id = scb["assay_id"]
                 del scb["assay_id"]
-                assayMap[id]["single_cell"]["barcode"] = scb["barcode"]
+                assayMap[id]["single_cell"]["cell_barcode"] = scb["cell_barcode"]
             else:
-                scObj["barcode"] = scb["barcode"]
+                scObj["cell_barcode"] = scb["cell_barcode"]
 
         for index, r in enumerate(rna):
             if "assay_id" in r:
