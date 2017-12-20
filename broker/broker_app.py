@@ -39,46 +39,56 @@ app = Flask(__name__, static_folder='static')
 app.secret_key = 'cells'
 cors = CORS(app)
 app.config['CORS_HEADERS'] = 'Content-Type'
+logger = logging.getLogger(__name__)
 
 
 @app.route('/api_upload', methods=['POST'])
 @cross_origin()
 def upload_spreadsheet():
     try:
+        logger.info("Uploading spreadsheet")
+
         # check token
+        logger.info("Checking token")
         token = request.headers.get('Authorization')
         if token is None:
             raise SpreadsheetUploadError(401, "An authentication token must be supplied when uploading a spreadsheet", "")
 
         # save file
+        logger.info("Saving file")
         try:
             path = _save_file()
         except Exception as err:
-            print(traceback.format_exc())
+            logger.error(traceback.format_exc())
             message = "We experienced a problem when saving your spreadsheet"
             raise SpreadsheetUploadError(500, message, str(err))
 
         # check for project_id
+        logger.info("Checking for project_id")
         project_id = None
 
         if 'project_id' in request.form:
             project_id = request.form['project_id']
-            print "Found project_id: " + project_id
+            logger.info("Found project_id: " + project_id)
+        else:
+            logger.info("No existing project_id found")
 
         # do a dry run to minimally validate spreadsheet
+        logger.info("Attempting dry run to validate spreadsheet")
         try:
             submission = SpreadsheetSubmission(dry=True)
             submission.submit(path, None, None, project_id)
         except ValueError as err:
-            print(traceback.format_exc())
+            logger.error(traceback.format_exc())
             message = "There was a problem validating your spreadsheet"
             raise SpreadsheetUploadError(400, message, str(err))
         except KeyError as err:
-            print(traceback.format_exc())
+            logger.error(traceback.format_exc())
             message = "There was a problem with the content of your spreadsheet"
             raise SpreadsheetUploadError(400, message, str(err))
 
         # if we get here can go ahead and submit
+        logger.info("Attempting submission")
         try:
             submission.dryrun = False
             submission_url = submission.createSubmission(token)
@@ -88,26 +98,25 @@ def upload_spreadsheet():
             # thread.start()
 
         except Exception as err:
-            print(traceback.format_exc())
+            logger.error(traceback.format_exc())
             message = "We experienced a problem when creating a submission for your spreadsheet"
             raise SpreadsheetUploadError(400, message, str(err))
-
+        logger.info("Spreadsheet upload completed")
         return create_upload_success_response(submission_url)
     except SpreadsheetUploadError as spreadsheetUploadError:
         return create_upload_failure_response(spreadsheetUploadError.http_code, spreadsheetUploadError.message,
                                               spreadsheetUploadError.details)
     except Exception as err:
-        print(traceback.format_exc())
+        logger.error(traceback.format_exc())
         return create_upload_failure_response(500, "We experienced a problem while uploading your spreadsheet",
                                               str(err))
 
 
 def _save_file():
-    print ("Saving file..")
     f = request.files['file']
     filename = secure_filename(f.filename)
     path = os.path.join(tempfile.gettempdir(), filename)
-    print ("Saved to: " + path)
+    logger.info("Saved file to: " + path)
     f.save(path)
     return path
 
@@ -232,7 +241,7 @@ def get_submission_files(id):
 @app.route('/upload', methods=['POST'])
 def upload_file():
     if request.method == 'POST':
-        print ("saving..")
+        logger.info("saving..")
         f = request.files['file']
         filename = secure_filename(f .filename)
         path = os.path.join(tempfile.gettempdir(), filename)
@@ -254,7 +263,7 @@ def upload_file():
 
         token = "Bearer " + token_util.get_token()
 
-        print "token: " + token
+        logger.info("token: " + token)
 
         submissionUrl = submission.createSubmission(token)
         thread = threading.Thread(target=submission.submit, args=(path,submissionUrl))
