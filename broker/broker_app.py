@@ -48,8 +48,7 @@ def upload_spreadsheet():
         # check token
         token = request.headers.get('Authorization')
         if token is None:
-            raise SpreadsheetUploadError(401, "An authentication token must be supplied when uploading a spreadsheet",
-                                         "")
+            raise SpreadsheetUploadError(401, "An authentication token must be supplied when uploading a spreadsheet", "")
 
         # save file
         try:
@@ -64,6 +63,7 @@ def upload_spreadsheet():
 
         if 'project_id' in request.form:
             project_id = request.form['project_id']
+            print "Found project_id: " + project_id
 
         # do a dry run to minimally validate spreadsheet
         try:
@@ -83,6 +83,10 @@ def upload_spreadsheet():
             submission.dryrun = False
             submission_url = submission.createSubmission(token)
             submission.submit(path, submission_url, token, project_id)
+            # REMOVED THREADING AS IT IS NOT EASY TO GET AN ERROR MESSAGE BACK BUT THIS MAY BE NEEDED
+            # thread = threading.Thread(target=submission.submit, args=(path, submission_url, token, project_id))
+            # thread.start()
+
         except Exception as err:
             print(traceback.format_exc())
             message = "We experienced a problem when creating a submission for your spreadsheet"
@@ -103,6 +107,7 @@ def _save_file():
     f = request.files['file']
     filename = secure_filename(f.filename)
     path = os.path.join(tempfile.gettempdir(), filename)
+    print ("Saved to: " + path)
     f.save(path)
     return path
 
