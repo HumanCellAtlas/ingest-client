@@ -75,6 +75,14 @@ class IngestApi:
         else:
             raise ValueError("Project " + id + " could not be retrieved")
 
+    def getSubmissionEnvelope(self, submissionUrl):
+        r = requests.get(submissionUrl, headers=self.headers)
+        if r.status_code == requests.codes.ok:
+            submissionEnvelope = json.loads(r.text)
+            return submissionEnvelope
+        else:
+            raise ValueError("Submission Envelope " + submissionUrl + " could not be retrieved")
+
     def getFiles(self, id):
         submissionUrl = self.url + '/submissionEnvelopes/' + id + '/files'
         r = requests.get(submissionUrl, headers=self.headers)
