@@ -346,6 +346,7 @@ class SpreadsheetSubmission:
 
         # post objects to the Ingest API after some basic validation
         if existing_project_id is None:
+            self.logger.info("Creating a new project for the submission")
             if "project_id" not in project:
                 raise ValueError('Project must have an id attribute')
             projectId = project["project_id"]
@@ -378,7 +379,10 @@ class SpreadsheetSubmission:
 
         else:
             if not self.dryrun:
+                self.logger.info("Retreiving existing project: " + existing_project_id)
                 projectIngest = self.ingest_api.getProjectById(existing_project_id)
+                submissionEnvelope = self.ingest_api.getSubmissionEnvelope(submissionUrl)
+                self.ingest_api.linkEntity(projectIngest, submissionEnvelope, "submissionEnvelopes")
             else:
                 projectIngest = {"content" :
                                      {"project_id" : "dummy_project_id"}}
