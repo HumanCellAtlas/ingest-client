@@ -173,7 +173,8 @@ class SpreadsheetSubmission:
             obj = {}
             hasData = False
             for cell in row:
-                if not cell.value and not isinstance(cell.value, (int, float)):
+                # WARNING: remove long from the checks if using python 3!
+                if not cell.value and not isinstance(cell.value, (int, float, long)):
                     continue
                 hasData = True
                 cellCol = cell.col_idx
