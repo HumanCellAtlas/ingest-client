@@ -183,8 +183,8 @@ class IngestApi:
     def _updateStatusToPending(self, submissionUrl):
         r = requests.patch(submissionUrl, data="{\"submissionStatus\" : \"Pending\"}", headers=self.headers)
 
-    def createProject(self, submissionUrl, jsonObject):
-        return self.createEntity(submissionUrl, jsonObject, "projects")
+    def createProject(self, submissionUrl, jsonObject, token):
+        return self.createEntity(submissionUrl, jsonObject, "projects", token)
 
     def createSample(self, submissionUrl, jsonObject):
         return self.createEntity(submissionUrl, jsonObject, "samples")
@@ -214,13 +214,16 @@ class IngestApi:
             return json.loads(r.text)
         raise ValueError('Create file failed: File ' + fileName + " - " + r.text)
 
-    def createEntity(self, submissionUrl, jsonObject, entityType):
+    def createEntity(self, submissionUrl, jsonObject, entityType, token=None):
         self.logger.debug(".", )
+        auth_headers = {'Content-type': 'application/json',
+                        'Authorization': token
+                        }
         submissionUrl = self.submission_links[submissionUrl][entityType]['href'].rsplit("{")[0]
 
         self.logger.debug("posting " + submissionUrl)
         r = requests.post(submissionUrl, data=jsonObject,
-                          headers=self.headers)
+                          headers=auth_headers)
         if r.status_code == requests.codes.created or r.status_code == requests.codes.accepted:
             return json.loads(r.text)
 

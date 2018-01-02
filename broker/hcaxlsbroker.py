@@ -375,7 +375,7 @@ class SpreadsheetSubmission:
 
             projectIngest = None
             if not self.dryrun:
-                projectIngest = self.ingest_api.createProject(submissionUrl, json.dumps(project))
+                projectIngest = self.ingest_api.createProject(submissionUrl, json.dumps(project), token)
 
         else:
             if not self.dryrun:
