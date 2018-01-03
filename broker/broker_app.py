@@ -89,18 +89,11 @@ def upload_spreadsheet():
 
         # if we get here can go ahead and submit
         logger.info("Attempting submission")
-        try:
-            submission.dryrun = False
-            submission_url = submission.createSubmission(token)
-            submission.submit(path, submission_url, token, project_id)
-            # REMOVED THREADING AS IT IS NOT EASY TO GET AN ERROR MESSAGE BACK BUT THIS MAY BE NEEDED
-            # thread = threading.Thread(target=submission.submit, args=(path, submission_url, token, project_id))
-            # thread.start()
+        submission.dryrun = False
+        submission_url = submission.createSubmission(token)
+        thread = threading.Thread(target=submission.submit, args=(path, submission_url, token, project_id))
+        thread.start()
 
-        except Exception as err:
-            logger.error(traceback.format_exc())
-            message = "We experienced a problem when creating a submission for your spreadsheet"
-            raise SpreadsheetUploadError(400, message, str(err))
         logger.info("Spreadsheet upload completed")
         return create_upload_success_response(submission_url)
     except SpreadsheetUploadError as spreadsheetUploadError:
