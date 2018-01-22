@@ -50,7 +50,14 @@ v4_timeFields = {"immortalized_cell_line" : ["date_established"],
                  "death" : ["time_of_death"]
                 }
 
-v4_stringFields = {"donor" : ["age", "weight", "height"]}
+v4_stringFields = {"donor" : ["age", "weight", "height", "sample_id", "derived_from"],
+                   "specimen_from_organism": ["sample_id", "derived_from"],
+                   "cell_suspension": ["sample_id", "derived_from"],
+                   "immortalized_cell_line": ["sample_id", "derived_from"],
+                   "organoid": ["sample_id", "derived_from"],
+                   "primary_cell_line": ["sample_id", "derived_from"],
+                   "assay": ["assay_id"]
+                   }
 
 SCHEMA_URL = os.environ.get('SCHEMA_URL', "https://raw.githubusercontent.com/HumanCellAtlas/metadata-schema/%s/json_schema/")
 # SCHEMA_URL = os.path.expandvars(os.environ.get('SCHEMA_URL', SCHEMA_URL))
@@ -216,7 +223,7 @@ class SpreadsheetSubmission:
             dir = os.path.abspath(self.outputDir)
             if not os.path.exists(dir):
                 os.makedirs(dir)
-            tmpFile = open(dir + "/" + projectId+"_"+name + ".json", "w")
+            tmpFile = open(dir + "/" + str(projectId) + "_" + str(name) + ".json", "w")
             tmpFile.write(json.dumps(object, indent=4))
             tmpFile.close()
 
@@ -481,10 +488,10 @@ class SpreadsheetSubmission:
                     for sampleProtocolId in sampleProtocols:
                         self.ingest_api.linkEntity(sampleIngest, protocolMap[sampleProtocolId], "protocols")
             else:
-                linksList.append("sample_" + sample_id + "-project_" + projectId)
+                linksList.append("sample_" + str(sample_id) + "-project_" + str(projectId))
                 if sampleProtocols:
                     for sampleProtocolId in sampleProtocols:
-                        linksList.append("sample_" + sample_id + "-protocol_" + sampleProtocolId)
+                        linksList.append("sample_" + str(sample_id) + "-protocol_" + str(sampleProtocolId))
 
 
         for index, sample in enumerate(samples):
@@ -537,7 +544,7 @@ class SpreadsheetSubmission:
                 sample = sampleMap[sample_id]
                 if "derived_from" in sample:
                     if sample["derived_from"] not in sampleMap.keys():
-                        raise ValueError('Sample '+ sample_id +' references another sample '+ sample["derived_from"] +' that isn\'t in the donor worksheet')
+                        raise ValueError('Sample '+ str(sample_id) +' references another sample '+ str(sample["derived_from"]) +' that isn\'t in the donor worksheet')
                 sampleProtocols = []
                 if "protocol_ids" in sample:
                     for sampleProtocolId in sample["protocol_ids"]:
@@ -559,10 +566,10 @@ class SpreadsheetSubmission:
                         for sampleProtocolId in sampleProtocols:
                             self.ingest_api.linkEntity(sampleIngest, protocolMap[sampleProtocolId], "protocols")
                 else:
-                    linksList.append("sample_" + sample_id + "-project_" + projectId)
+                    linksList.append("sample_" + str(sample_id) + "-project_" + str(projectId))
                     if sampleProtocols:
                         for sampleProtocolId in sampleProtocols:
-                            linksList.append("sample_" + sample_id + "-protocol_" + sampleProtocolId)
+                            linksList.append("sample_" + str(sample_id) + "-protocol_" + str(sampleProtocolId))
 
         # create derived_from links between samples separately to make sure all samples are submitted
         for index, sample_id in enumerate(sampleMap.keys()):
@@ -575,7 +582,7 @@ class SpreadsheetSubmission:
             else:
                 if "derived_from" in sampleMap[sample_id]:
                     linksList.append(
-                        "sample_" + sample_id + "-derivedFromSamples_" + sampleMap[sample_id]["derived_from"])
+                        "sample_" + str(sample_id) + "-derivedFromSamples_" + str(sampleMap[sample_id]["derived_from"]))
 
         #build the assay map from the different types of assay infromation
         assayMap={}
@@ -763,13 +770,13 @@ class SpreadsheetSubmission:
                 for file in files:
                     self.ingest_api.linkEntity(assayIngest, filesMap[file], "files")
             else:
-                linksList.append("assay_" + assay["assay_id"] + "-project_" + projectId)
+                linksList.append("assay_" + str(assay["assay_id"]) + "-project_" + str(projectId))
 
                 if samples in sampleMap:
-                    linksList.append("assay_" + assay["assay_id"] + "-sample_" + samples)
+                    linksList.append("assay_" + str(assay["assay_id"]) + "-sample_" + str(samples))
 
                 for file in files:
-                    linksList.append("assay_" + assay["assay_id"] + "-file_" + file)
+                    linksList.append("assay_" + str(assay["assay_id"]) + "-file_" + str(file))
 
         self.dumpJsonToFile(linksList, projectId, "dry_run_links")
         self.logger.info("All done!")
