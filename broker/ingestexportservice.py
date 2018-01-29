@@ -171,6 +171,9 @@ class IngestExporter:
                 self.dumpJsonToFile(analysisBundleContent, analysisBundleContent["content"]["analysis_id"], "analysis_bundle_" + str(index))
                 self.dumpJsonToFile(bundleManifest.__dict__, analysisBundleContent["content"]["analysis_id"], "bundleManifest_" + str(index))
 
+        # cleanup
+        self.deleteStagingArea(submissionEnvelopeUuid)
+
 
     def primarySubmission(self, submissionEnvelopeUuid, assays):
 
@@ -354,12 +357,18 @@ class IngestExporter:
 
             self.logger.info("bundles generated! "+bundleManifest.bundleUuid)
 
+        # cleanup
+        self.deleteStagingArea(submissionEnvelopeUuid)
+
     def writeMetadataToStaging(self, submissionId, fileName, content, contentType):
         self.logger.info("writing to staging area..." + fileName)
         fileDescription = self.staging_api.stageFile(submissionId, fileName, content, contentType)
         self.logger.info("File staged at " + fileDescription.url)
         return fileDescription
 
+    def deleteStagingArea(self, stagingAreaId):
+      self.logger.info("deleting staging area...." + stagingAreaId)
+      self.staging_api.deleteStagingArea(stagingAreaId)
 
 
     def getBundleDocument(self, entity):
