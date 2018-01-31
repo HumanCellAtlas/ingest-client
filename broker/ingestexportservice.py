@@ -105,7 +105,7 @@ class IngestExporter:
             self.secondarySubmission(submissionUuid,analyses)
 
             # cleanup
-            self.deleteStagingArea(submissionEnvelopeId)
+            self.deleteStagingArea(submissionUuid)
         else:
             self.logger.error("Can\'t do export as no staging area has been created")
 
