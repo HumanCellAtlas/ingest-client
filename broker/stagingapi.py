@@ -61,7 +61,7 @@ class StagingApi:
             else:
                 return base
         except:
-            raise ValueError('Can\'t create staging area for sub id:' + submissionId)
+            raise ValueError('Can\'t delete staging area for sub id:' + submissionId)
 
     def stageFile(self,submissionId, filename, body, type):
 

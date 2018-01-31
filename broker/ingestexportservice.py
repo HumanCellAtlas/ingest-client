@@ -103,6 +103,9 @@ class IngestExporter:
 
             self.logger.info("Attempting to export secondary submissions to DSS...")
             self.secondarySubmission(submissionUuid,analyses)
+
+            # cleanup
+            self.deleteStagingArea(submissionEnvelopeId)
         else:
             self.logger.error("Can\'t do export as no staging area has been created")
 
@@ -171,8 +174,6 @@ class IngestExporter:
                 self.dumpJsonToFile(analysisBundleContent, analysisBundleContent["content"]["analysis_id"], "analysis_bundle_" + str(index))
                 self.dumpJsonToFile(bundleManifest.__dict__, analysisBundleContent["content"]["analysis_id"], "bundleManifest_" + str(index))
 
-        # cleanup
-        self.deleteStagingArea(submissionEnvelopeUuid)
 
 
     def primarySubmission(self, submissionEnvelopeUuid, assays):
@@ -357,8 +358,6 @@ class IngestExporter:
 
             self.logger.info("bundles generated! "+bundleManifest.bundleUuid)
 
-        # cleanup
-        self.deleteStagingArea(submissionEnvelopeUuid)
 
     def writeMetadataToStaging(self, submissionId, fileName, content, contentType):
         self.logger.info("writing to staging area..." + fileName)
