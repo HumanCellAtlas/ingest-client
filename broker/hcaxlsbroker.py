@@ -56,7 +56,8 @@ v4_stringFields = {"donor" : ["age", "weight", "height", "sample_id", "derived_f
                    "immortalized_cell_line": ["sample_id", "derived_from"],
                    "organoid": ["sample_id", "derived_from"],
                    "primary_cell_line": ["sample_id", "derived_from"],
-                   "assay": ["assay_id"]
+                   "assay": ["assay_id"],
+                   "well": ["plate", "row", "col"]
                    }
 
 SCHEMA_URL = os.environ.get('SCHEMA_URL', "https://raw.githubusercontent.com/HumanCellAtlas/metadata-schema/%s/json_schema/")
