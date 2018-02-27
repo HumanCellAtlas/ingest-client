@@ -318,10 +318,10 @@ class SpreadsheetSubmission:
         enrichment = self._multiRowToObjectFromSheet("enrichment", cellSuspensionEnrichmentSheet)
         well = self._multiRowToObjectFromSheet("well", cellSuspensionWellSheet)
         single_cell = self._multiRowToObjectFromSheet("single_cell", singleCellSheet)
-        single_cell_barcode = self._multiRowToObjectFromSheet("barcode", singleCellBarcodeSheet)
+        single_cell_barcode = self._multiRowToObjectFromSheet("single_cell.cell_barcode", singleCellBarcodeSheet)
         rna = self._multiRowToObjectFromSheet("rna", rnaSheet)
         seq = self._multiRowToObjectFromSheet("seq", seqSheet)
-        seq_barcode = self._multiRowToObjectFromSheet("barcode", seqBarcodeSheet)
+        seq_barcode = self._multiRowToObjectFromSheet("seq.umi_barcode", seqBarcodeSheet)
 
         protocols = self._multiRowToObjectFromSheet("protocol", protocolSheet)
         donors = self._multiRowToObjectFromSheet("donor", donorSheet)
