@@ -48,10 +48,18 @@ schema_arrayFields = {
     "publication": ["authors"]
 }
 
-schema_timeFields = {"immortalized_cell_line" : ["date_established"],
-                 "primary_cell_line" : ["date_established"],
-                 "death" : ["time_of_death"]
-                }
+schema_timeFields = {
+    "cell_line": ["date_established"],
+    "donor_organism": ["time_of_death"],
+    "specimen_from_organism": ["collection_time"],
+    "analysis_process": ["start_time", "stop_time", "timestamp_start_utc", "timestamp_stop_utc"],
+    "collection_process": ["start_time"],
+    "dissociation_process": ["start_time"],
+    "enrichment_process": ["start_time"],
+    "imaging_process": ["start_time"],
+    "library_preparation_process": ["start_time"],
+    "sequencing_process": ["start_time"]
+}
 
 schema_stringFields = {"donor" : ["age", "weight", "height", "sample_id", "derived_from"],
                    "specimen_from_organism": ["sample_id", "derived_from"],
