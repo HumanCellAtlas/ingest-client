@@ -15,6 +15,7 @@ import uuid
 import requests
 from optparse import OptionParser
 import os, sys
+import time
 from stagingapi import StagingApi
 from bundlevalidator import BundleValidator
 
@@ -408,9 +409,21 @@ class IngestExporter:
         return newBundle
 
     def completeSubmission(self, submissionEnvelopeId):
-        self.ingest_api.updateSubmissionState(submissionEnvelopeId, 'cleaning')
-        self.ingest_api.updateSubmissionState(submissionEnvelopeId, 'complete')
-        self.logger.info('Submission status is COMPLETE')
+        for i in range(1, 5):
+            try:
+                self.ingest_api.updateSubmissionState(submissionEnvelopeId, 'cleaning')
+                self.logger.info('Submission status is CLEANING')
+            except Exception:
+                self.logger.info("failed to set state of submission {0} to Cleaning, retrying...".format(submissionEnvelopeId))
+                time.sleep(0.2)
+
+        for i in range(1, 5):
+            try:
+                self.ingest_api.updateSubmissionState(submissionEnvelopeId, 'complete')
+                self.logger.info('Submission status is COMPLETE')
+            except Exception:
+                self.logger.info("failed to set state of submission {0} to Complete, retrying...".format(submissionEnvelopeId))
+                time.sleep(0.2)
 
     def processSubmission(self, submissionEnvelopeId):
         self.ingest_api.updateSubmissionState(submissionEnvelopeId, 'processing')
