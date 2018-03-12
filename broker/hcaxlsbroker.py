@@ -337,8 +337,7 @@ class SpreadsheetSubmission:
         samples.extend(specimens)
         samples.extend(cell_suspension)
         samples.extend(organoid)
-        samples.extend(immortalized_cell_line)
-        samples.extend(primary_cell_line)
+        samples.extend(cell_line)
 
         # creating submission
         #
@@ -350,9 +349,9 @@ class SpreadsheetSubmission:
         # post objects to the Ingest API after some basic validation
         if existing_project_id is None:
             self.logger.info("Creating a new project for the submission")
-            if "project_id" not in project:
+            if "project_shortname" not in project["project_core"]:
                 raise ValueError('Project must have an id attribute')
-            projectId = project["project_id"]
+            projectId = project["project_core"]["project_shortname"]
 
              # embedd contact & publication into into project for now
             pubs = []
@@ -360,19 +359,14 @@ class SpreadsheetSubmission:
                 pubs.append(publication)
             project["publications"] = pubs
 
-            subs = []
-            for index, submitter in enumerate(submitters):
-                subs.append(submitter)
-            project["submitters"] = subs
-
             cont = []
             for index, contributor in enumerate(contributors):
                 cont.append(contributor)
             project["contributors"] = cont
 
-            project["core"] = {"type": "project",
+            project.update({"schema_type": "project",
                                "schema_url": self.schema_url + "project.json",
-                               "schema_version": self.schema_version}
+                               "schema_version": self.schema_version})
 
             self.dumpJsonToFile(project, projectId, "project")
 
@@ -388,9 +382,10 @@ class SpreadsheetSubmission:
                 self.ingest_api.linkEntity(projectIngest, submissionEnvelope, "submissionEnvelopes")
             else:
                 projectIngest = {"content" :
-                                     {"project_id" : "dummy_project_id"}}
+                                     {"project_core":
+                                     {"project_shortname" : "dummy_project_id"}}}
 
-            projectId = projectIngest["content"]["project_id"]
+            projectId = projectIngest["content"]["project_core"]["project_shortname"]
 
             self.dumpJsonToFile(projectIngest, projectId, "existing_project")
 
