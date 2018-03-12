@@ -64,6 +64,44 @@ schema_booleanFields = {
 
                        }
 
+# maps sheets to the latest version of each schema
+# todo - this should be replaced by dynamic lookups against ingest-core /schemas endpoint
+# (spec for lookup: query by 'title' (sheet name in the spreadsheet, field in the schema)
+schema_sheetname_mappings = {
+    # biomaterials
+    "cell_line": "https://schema.humancellatlas.org/type/biomaterial/5.0.1/cell_line",
+    "cell_suspension": "https://schema.humancellatlas.org/type/biomaterial/5.0.0/cell_suspension",
+    "donor_organism": "https://schema.humancellatlas.org/type/biomaterial/5.0.0/donor_organism",
+    "organoid": "https://schema.humancellatlas.org/type/biomaterial/5.0.0/organoid",
+    "specimen_from_organism": "https://schema.humancellatlas.org/type/biomaterial/5.0.0/specimen_from_organism",
+    # files
+    "analysis_file": "https://schema.humancellatlas.org/type/file/5.0.0/analysis_file",
+    "sequence_file": "https://schema.humancellatlas.org/type/file/5.0.0/sequence_file",
+    # analysis processes
+    "analysis_process": "https://schema.humancellatlas.org/type/process/analysis/5.0.0/analysis_process",
+    # biomaterial processes
+    "collection_process": "https://schema.humancellatlas.org/type/process/biomaterial_collection/5.0.0/collection_process",
+    "dissociation_process": "https://schema.humancellatlas.org/type/process/biomaterial_collection/5.0.0/dissociation_process",
+    "enrichment_process": "https://schema.humancellatlas.org/type/process/biomaterial_collection/5.0.0/enrichment_process",
+    # imaging processes
+    "imaging_process": "https://schema.humancellatlas.org/type/process/imaging/5.0.0/imaging_process",
+    # sequencing processes
+    "library_preparation_process": "https://schema.humancellatlas.org/type/process/sequencing/5.0.0/library_preparation_process",
+    "sequencing_process": "https://schema.humancellatlas.org/type/process/sequencing/5.0.0/sequencing_process",
+    # projects
+    "project": "https://schema.humancellatlas.org/type/project/5.0.1/project",
+    # protocols
+    "protocol": "https://schema.humancellatlas.org/type/protocol/5.0.0/protocol",
+    "analysis_protocol": "https://schema.humancellatlas.org/type/protocol/analysis/5.0.0/analysis_protocol",
+    "biomaterial_collection_protocol": "https://schema.humancellatlas.org/type/protocol/biomaterial/5.0.0/biomaterial_collection_protocol",
+    "imaging_protocol": "https://schema.humancellatlas.org/type/protocol/imaging/5.0.0/imaging_protocol",
+    "sequencing_protocol": "https://schema.humancellatlas.org/type/protocol/sequencing/5.0.0/sequencing_protocol"
+}
+
+schema_modulefieldname_mappings = {
+
+}
+
 SCHEMA_URL = os.environ.get('SCHEMA_URL', "https://raw.githubusercontent.com/HumanCellAtlas/metadata-schema/%s/json_schema/")
 # SCHEMA_URL = os.path.expandvars(os.environ.get('SCHEMA_URL', SCHEMA_URL))
 SCHEMA_VERSION = os.environ.get('SCHEMA_VERSION', '4.6.1')
