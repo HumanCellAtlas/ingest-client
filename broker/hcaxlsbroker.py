@@ -246,7 +246,6 @@ class SpreadsheetSubmission:
 
         projectSheet = wb.create_sheet()
         projectPubsSheet = wb.create_sheet()
-        submitterSheet = wb.create_sheet()
         contributorSheet = wb.create_sheet()
 
         if existing_project_id is None:
@@ -254,93 +253,83 @@ class SpreadsheetSubmission:
 
             if "project.publications" in wb.sheetnames:
                 projectPubsSheet = wb.get_sheet_by_name("project.publications")
-            if "contact.submitter" in wb.sheetnames:
-                submitterSheet = wb.get_sheet_by_name("contact.submitter")
-            if "contact.contributors" in wb.sheetnames:
-                contributorSheet = wb.get_sheet_by_name("contact.contributors")
+            if "contact" in wb.sheetnames:
+                contributorSheet = wb.get_sheet_by_name("contact")
 
         specimenSheet = wb.create_sheet()
-        specimenStateSheet = wb.create_sheet()
         donorSheet = wb.create_sheet()
-        deathSheet = wb.create_sheet()
         cellSuspensionSheet = wb.create_sheet()
-        cellSuspensionEnrichmentSheet = wb.create_sheet()
-        cellSuspensionWellSheet = wb.create_sheet()
+        familialRelationshipSheet = wb.create_sheet()
 
-        if "sample.specimen_from_organism" in wb.sheetnames:
-            specimenSheet = wb.get_sheet_by_name("sample.specimen_from_organism")
-        if "state_of_specimen" in wb.sheetnames:
-            specimenStateSheet = wb.get_sheet_by_name("state_of_specimen")
-        if "sample.donor" in wb.sheetnames:
-            donorSheet = wb.get_sheet_by_name("sample.donor")
-        if "sample.donor.death" in wb.sheetnames:
-            deathSheet = wb.get_sheet_by_name("sample.donor.death")
-        if "sample.cell_suspension" in wb.sheetnames:
-            cellSuspensionSheet = wb.get_sheet_by_name("sample.cell_suspension")
-        if "cell_suspension.enrichment" in wb.sheetnames:
-            cellSuspensionEnrichmentSheet = wb.get_sheet_by_name("cell_suspension.enrichment")
-        if "sample.cell_suspension.well" in wb.sheetnames:
-            cellSuspensionWellSheet = wb.get_sheet_by_name("sample.cell_suspension.well")
+        if "specimen_from_organism" in wb.sheetnames:
+            specimenSheet = wb.get_sheet_by_name("specimen_from_organism")
+        if "donor_organism" in wb.sheetnames:
+            donorSheet = wb.get_sheet_by_name("donor_organism")
+        if "cell_suspension" in wb.sheetnames:
+            cellSuspensionSheet = wb.get_sheet_by_name("cell_suspension")
+        if "familial_relationship" in wb.sheetnames:
+            familialRelationshipSheet = wb.get_sheet_by_name("familial_relationship")
 
         organoidSheet = wb.create_sheet()
         if "sample.organoid" in wb.sheetnames:
-            organoidSheet = wb.get_sheet_by_name("sample.organoid")
+            organoidSheet = wb.get_sheet_by_name("organoid")
 
-        immortalizedCLSheet = wb.create_sheet()
-        if "sample.immortalized_cell_line" in wb.sheetnames:
-            immortalizedCLSheet = wb.get_sheet_by_name("sample.immortalized_cell_line")
+        clSheet = wb.create_sheet()
+        if "cell_line" in wb.sheetnames:
+            clSheet = wb.get_sheet_by_name("cell_line")
 
-        primaryCLSheet = wb.create_sheet()
-        if "sample.primary_cell_line" in wb.sheetnames:
-            primaryCLSheet = wb.get_sheet_by_name("sample.primary_cell_line")
+        clPublicationSheet = wb.create_sheet()
+        if "cell_line.publications" in wb.get_sheet_names:
+            clPublicationSheet = wb.get_sheet_by_name("cell_line.publications")
+
 
         protocolSheet = wb.create_sheet()
-        singleCellSheet = wb.create_sheet()
-        singleCellBarcodeSheet = wb.create_sheet()
-        rnaSheet = wb.create_sheet()
-        seqSheet = wb.create_sheet()
-        seqBarcodeSheet = wb.create_sheet()
+        collectionSheet = wb.create_sheet()
+        dissociationSheet = wb.create_sheet()
+        enrichmentSheet = wb.create_sheet()
+        libraryPrepSheet = wb.create_sheet()
+        sequencingSheet = wb.create_sheet()
+        reagentsSheet = wb.create_sheet()
         filesSheet = wb.create_sheet()
 
-        if "protocols" in wb.sheetnames:
-            protocolSheet = wb.get_sheet_by_name("protocols")
-        if "single_cell" in wb.sheetnames:
-            singleCellSheet = wb.get_sheet_by_name("single_cell")
-        if "single_cell.cell_barcode" in wb.sheetnames:
-            singleCellBarcodeSheet = wb.get_sheet_by_name("single_cell.cell_barcode")
-        if "rna" in wb.sheetnames:
-            rnaSheet = wb.get_sheet_by_name("rna")
-        if "seq" in wb.sheetnames:
-            seqSheet = wb.get_sheet_by_name("seq")
-        if "seq.umi_barcode" in wb.sheetnames:
-            seqBarcodeSheet = wb.get_sheet_by_name("seq.umi_barcode")
-        if "file" in wb.sheetnames:
-            filesSheet = wb.get_sheet_by_name("file")
+        if "protocol" in wb.sheetnames:
+            protocolSheet = wb.get_sheet_by_name("protocol")
+        if "enrichment_process" in wb.sheetnames:
+            enrichmentSheet = wb.get_sheet_by_name("enrichment_process")
+        if "collection_process" in wb.sheetnames:
+            collectionSheet = wb.get_sheet_by_name("collection_process")
+        if "dissociation_process" in wb.sheetnames:
+            dissociationSheet = wb.get_sheet_by_name("dissociation_process")
+        if "library_preparation_process" in wb.sheetnames:
+            libraryPrepSheet = wb.get_sheet_by_name("library_preparation_process")
+        if "sequencing_process" in wb.sheetnames:
+            sequencingSheet = wb.get_sheet_by_name("sequencing_process")
+        if "purchased_reagents" in wb.sheetnames:
+            reagentsSheet = wb.get_sheet_by_name("purchased_reagents")
+        if "sequence_file" in wb.sheetnames:
+            filesSheet = wb.get_sheet_by_name("sequence_file")
 
 
         # convert data in sheets back into dict
-        project = self._sheetToObject("project", projectSheet)
-        enrichment = self._multiRowToObjectFromSheet("enrichment", cellSuspensionEnrichmentSheet)
-        well = self._multiRowToObjectFromSheet("well", cellSuspensionWellSheet)
-        single_cell = self._multiRowToObjectFromSheet("single_cell", singleCellSheet)
-        single_cell_barcode = self._multiRowToObjectFromSheet("single_cell.cell_barcode", singleCellBarcodeSheet)
-        rna = self._multiRowToObjectFromSheet("rna", rnaSheet)
-        seq = self._multiRowToObjectFromSheet("seq", seqSheet)
-        seq_barcode = self._multiRowToObjectFromSheet("seq.umi_barcode", seqBarcodeSheet)
+        project = self._multiRowToObjectFromSheet("project", projectSheet)
+        enrichment = self._multiRowToObjectFromSheet("enrichment_process", enrichmentSheet)
+        collection = self._multiRowToObjectFromSheet("collection_process", collectionSheet)
+        dissociation = self._multiRowToObjectFromSheet("dissociation_process", dissociationSheet)
+        reagents = self._multiRowToObjectFromSheet("purchased_reagents", reagentsSheet)
+        libraryPrep = self._multiRowToObjectFromSheet("library_preparation_process", libraryPrepSheet)
+        sequencing = self._multiRowToObjectFromSheet("sequencing_process", sequencingSheet)
 
         protocols = self._multiRowToObjectFromSheet("protocol", protocolSheet)
-        donors = self._multiRowToObjectFromSheet("donor", donorSheet)
-        death = self._multiRowToObjectFromSheet("death", deathSheet)
-        publications = self._multiRowToObjectFromSheet("publication", projectPubsSheet)
-        submitters = self._multiRowToObjectFromSheet("submitter", submitterSheet)
+        donors = self._multiRowToObjectFromSheet("donor_organism", donorSheet)
+        familialRelationships = self._multiRowToObjectFromSheet("familial_relationship", familialRelationshipSheet)
+        publications = self._multiRowToObjectFromSheet("project.publications", projectPubsSheet)
         contributors = self._multiRowToObjectFromSheet("contributor", contributorSheet)
         specimens = self._multiRowToObjectFromSheet("specimen_from_organism", specimenSheet)
-        specimen_state = self._multiRowToObjectFromSheet("state_of_specimen", specimenStateSheet)
         cell_suspension = self._multiRowToObjectFromSheet("cell_suspension", cellSuspensionSheet)
         organoid = self._multiRowToObjectFromSheet("organoid", organoidSheet)
-        immortalized_cell_line = self._multiRowToObjectFromSheet("immortalized_cell_line", immortalizedCLSheet)
-        primary_cell_line = self._multiRowToObjectFromSheet("primary_cell_line", primaryCLSheet)
-        files = self._multiRowToObjectFromSheet("file", filesSheet)
+        cell_line = self._multiRowToObjectFromSheet("cell_line", clSheet)
+        cell_line_publications = self._multiRowToObjectFromSheet("cell_line.publications", clPublicationSheet)
+        files = self._multiRowToObjectFromSheet("sequence_file", filesSheet)
 
 
         samples = []
