@@ -61,20 +61,11 @@ schema_timeFields = {
     "sequencing_process": ["start_time"]
 }
 
-schema_stringFields = {"donor" : ["age", "weight", "height", "sample_id", "derived_from"],
-                   "specimen_from_organism": ["sample_id", "derived_from"],
-                   "cell_suspension": ["sample_id", "derived_from"],
-                   "immortalized_cell_line": ["sample_id", "derived_from"],
-                   "organoid": ["sample_id", "derived_from"],
-                   "primary_cell_line": ["sample_id", "derived_from"],
-                   "assay": ["assay_id"],
-                   "well": ["plate", "row", "col"]
-                   }
-
-schema_booleanFields = {"donor_organism": ["is_living"],
-                        "sequencing_process": ["paired_ends"],
-                        "death": ["cold_perfused"]
-                        }
+schema_booleanFields = {
+    "donor_organism": ["is_living"],
+    "sequencing_process": ["paired_ends"],
+    "death": ["cold_perfused"]
+}
 
 schema_integerFields = {
     "cell_line": ["ncbi_taxon_id", "passage_number"],
@@ -237,17 +228,35 @@ class SpreadsheetSubmission:
         # If the key is in the date_time field list, convert the date time into a string of format YYYY-MM-DDThh:mm:ssZ
         # so it validates
         if type in schema_timeFields.keys():
-            if key.split('.')[-1] in schema_timeFields[type]:
-                if isinstance(d, list):
-                    for i, v in enumerate(d):
-                        date_string = v.strftime("%Y-%m-%dT%H:%M:%SZ")
-                        d[i] = date_string
-                else:
-                    d = d.strftime("%Y-%m-%dT%H:%M:%SZ")
-
-        if type in schema_stringFields.keys():
-            if key.split('.')[-1] in schema_stringFields[type]:
-                d = str(d)
+            try:
+                if key.split('.')[-1] in schema_timeFields[type]:
+                    if isinstance(d, list):
+                        for i, v in enumerate(d):
+                            date_string = v.strftime("%Y-%m-%dT%H:%M:%SZ")
+                            d[i] = date_string
+                    else:
+                        d = d.strftime("%Y-%m-%dT%H:%M:%SZ")
+            except:
+                self.logger.warn('Failed to convert field %s (value %s) to date_time value'.format(type, d))
+        elif type in schema_integerFields.keys():
+            if key.split('.')[-1] in schema_integerFields[type]:
+                try:
+                    d = int(d)
+                except:
+                    self.logger.warn('Failed to convert field %s (value %s) to integer value'.format(type, d))
+                    d = str(d)
+        elif type in schema_booleanFields.keys():
+            if key.split('.')[-1] in schema_booleanFields[type]:
+                try:
+                    if d.lower() in ["true", "yes"]:
+                        d = True
+                    elif d in ["false", "no"]:
+                        d = False
+                except:
+                    self.logger.warn('Failed to convert field %s (value %s) to integer value'.format(type, d))
+                    d = str(d)
+        else:
+            d = str(d)
 
         # If the key is in the ontology field list, or contains "ontology", format it according to the ontology json schema
         # if type in schema_ontologyFields.keys():
@@ -268,13 +277,6 @@ class SpreadsheetSubmission:
         #         else:
         #             d = {"ontology": d}
         #         key = ".". join(key.split('.')[:-1])
-
-        if type in schema_booleanFields.keys():
-            if key.split('.')[-1] in schema_booleanFields[type]:
-                if d.lower() in ["true", "yes"]:
-                   d = True
-                elif d in ["false", "no"]:
-                    d = False
 
         # Build up the key-value dictionary
         for part in reversed(key.split('.')):
