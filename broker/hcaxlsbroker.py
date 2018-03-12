@@ -217,6 +217,7 @@ class SpreadsheetSubmission:
             self._process(pathToSpreadsheet, submissionUrl, token, project_id)
         except ValueError as e:
             self.logger.error("Error:"+str(e))
+            self.logger.error("Exception occurred processing spreadsheet", exc_info=e)
             raise e
 
     def dumpJsonToFile(self, object, projectId, name):
