@@ -32,18 +32,21 @@ from collections import defaultdict
 #                     "organoid" : ["model_for_organ", "genus_species"]
 #                     }
 
-
-schema_arrayFields = {"seq" : ["insdc_run"],
-                "state_of_specimen" : ["gross_image", "microscopic_image", "protocol_ids"],
-                "donor" : ["ancestry", "disease", "medication", "strain", "supplementary_files", "protocol_ids"],
-                "immortalized_cell_line" : ["supplementary_files", "protocol_ids"],
-                "primary_cell_line" : ["supplementary_files", "protocol_ids"],
-                "organoid": ["supplementary_files", "protocol_ids"],
-                "specimen_from_organism": ["supplementary_files", "protocol_ids"],
-                "cell_suspension" : ["target_cell_type", "enrichment", "supplementary_files", "protocol_ids"],
-                "publication" : ["authors"],
-                "project" : ["supplementary_files", "experimental_design", "experimental_factor_name"]
-                  }
+schema_arrayFields = {
+    "cell_line": ["genus_species", "publications", "ncbi_taxon_id", "supplementary_files", "process_ids"],
+    "cell_suspension": ["genus_species", "target_cell_type", "ncbi_taxon_id", "supplementary_files", "process_ids"],
+    "donor_organism": ["genus_species", "disease", "familial_relationship", "ancestry", "strain", "ncbi_taxon_id",
+                       "supplementary_files", "process_ids"],
+    "organoid": ["genus_species", "ncbi_taxon_id", "supplementary_files", "process_ids"],
+    "specimen_from_organism": ["genus_species", "disease", "ncbi_taxon_id", "supplementary_files", "process_ids"],
+    "sequence_file": ["insdc_run"],
+    "analysis_process": ["inputs", "tasks", "input_bundles", "outputs", "operator_identity"],
+    "collection_process": ["process_reagents", "operator_identity"],
+    "dissociation_process": ["process_reagents", "operator_identity"],
+    "imaging_process": ["field_counts", "field_microns", "field_resolution", "operator_identity"],
+    "project": ["contributors", "supplementary_files", "publications"],
+    "publication": ["authors"]
+}
 
 schema_timeFields = {"immortalized_cell_line" : ["date_established"],
                  "primary_cell_line" : ["date_established"],
