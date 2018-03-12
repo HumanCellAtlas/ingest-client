@@ -98,8 +98,57 @@ schema_sheetname_mappings = {
     "sequencing_protocol": "https://schema.humancellatlas.org/type/protocol/sequencing/5.0.0/sequencing_protocol"
 }
 
-schema_modulefieldname_mappings = {
-
+schema_fieldname_mappings = {
+    # cell_line
+    "biomaterial_core": "https://schema.humancellatlas.org/core/biomaterial/5.0.0/biomaterial_core",
+    "cell_cycle": "https://schema.humancellatlas.org/module/ontology/5.0.0/cell_cycle_ontology",
+    "cell_morphology": "https://schema.humancellatlas.org/module/biomaterial/5.0.0/cell_morphology",
+    "growth_conditions": "https://schema.humancellatlas.org/module/biomaterial/5.0.0/growth_conditions",
+    "cell_type": "https://schema.humancellatlas.org/module/ontology/5.0.0/cell_type_ontology",
+    "disease": "https://schema.humancellatlas.org/module/ontology/5.0.0/disease_ontology",
+    "genus_species": "https://schema.humancellatlas.org/module/ontology/5.0.0/species_ontology",
+    "publications": "https://schema.humancellatlas.org/module/project/5.0.1/publication",
+    # cell_suspension
+    "target_cell_type": "https://schema.humancellatlas.org/module/ontology/5.0.0/cell_type_ontology",
+    # donor_organism
+    "human_specific": "https://schema.humancellatlas.org/module/biomaterial/5.0.0/homo_sapiens_specific",
+    "mus_musculus_specific": "https://schema.humancellatlas.org/module/biomaterial/5.0.0/mus_musculus_specific",
+    "death": "https://schema.humancellatlas.org/module/biomaterial/5.0.0/death",
+    "medical_history": "https://schema.humancellatlas.org/module/biomaterial/5.0.0/medical_history",
+    "organism_age_unit": "https://schema.humancellatlas.org/module/ontology/5.0.0/time_unit_ontology",
+    "development_stage": "https://schema.humancellatlas.org/module/ontology/5.0.0/development_stage_ontology",
+    "familial_relationship": "https://schema.humancellatlas.org/module/biomaterial/5.0.0/familial_relationship",
+    "gestational_age_unit": "https://schema.humancellatlas.org/module/ontology/5.0.0/time_unit_ontology",
+    "height_unit": "https://schema.humancellatlas.org/module/ontology/5.0.0/length_unit_ontology",
+    "weight_unit": "https://schema.humancellatlas.org/module/ontology/5.0.0/mass_unit_ontology",
+    # organoid
+    "model_for_organ": "https://schema.humancellatlas.org/module/ontology/5.0.0/organ_ontology",
+    "organoid_age_unit": "https://schema.humancellatlas.org/module/ontology/5.0.0/time_unit_ontology",
+    # specimen_from_organism
+    "organ": "https://schema.humancellatlas.org/module/ontology/5.0.0/organ_ontology",
+    "organ_part": "https://schema.humancellatlas.org/module/ontology/5.0.0/organ_part_ontology",
+    "state_of_specimen": "https://schema.humancellatlas.org/module/biomaterial/5.0.0/state_of_specimen",
+    "preservation_storage": "https://schema.humancellatlas.org/module/biomaterial/5.0.0/preservation_storage",
+    # file
+    "file_core": "https://schema.humancellatlas.org/core/file/5.0.0/file_core",
+    # process
+    "process_core": "https://schema.humancellatlas.org/core/process/5.0.0/process_core",
+    "process_type": "https://schema.humancellatlas.org/module/ontology/5.0.0/process_type_ontology",
+    "outputs.items": "https://schema.humancellatlas.org/type/file/5.0.0/analysis_file",
+    # collection_process
+    "process_reagents": "https://schema.humancellatlas.org/module/process/5.0.0/purchased_reagents",
+    # library_preparation_process
+    "cell_barcode": "https://schema.humancellatlas.org/module/process/sequencing/5.0.0/barcode",
+    "input_nucleic_acid_molecule": "https://schema.humancellatlas.org/module/ontology/5.0.0/biological_macromolecule_ontology",
+    # sequencing_process
+    "instrument_manufacturer_model": "https://schema.humancellatlas.org/module/ontology/5.0.0/instrument_ontology",
+    "smartseq2": "https://schema.humancellatlas.org/module/process/sequencing/5.0.0/smartseq2",
+    # project
+    "project_core": "https://schema.humancellatlas.org/core/project/5.0.0/project_core",
+    "contributors": "https://schema.humancellatlas.org/module/project/5.0.0/contact",
+    # analysis_protocol
+    "protocol_core": "https://schema.humancellatlas.org/core/protocol/5.0.0/protocol_core",
+    "protocol_type": "https://schema.humancellatlas.org/module/ontology/5.0.0/protocol_type_ontology"
 }
 
 SCHEMA_URL = os.environ.get('SCHEMA_URL', "https://raw.githubusercontent.com/HumanCellAtlas/metadata-schema/%s/json_schema/")
