@@ -21,7 +21,7 @@ from collections import defaultdict
 
 # these are spreadsheet fields that can be a list
 # todo - these should be read out of the json schema at the start
-v4_ontologyFields = {"donor" : ["ancestry", "development_stage", "disease", "medication", "strain", "genus_species"],
+schema_ontologyFields = {"donor" : ["ancestry", "development_stage", "disease", "medication", "strain", "genus_species"],
                     "cell_suspension" : ["target_cell_type", "genus_species"],
                     "death" : ["cause_of_death"],
                     "immortalized_cell_line" : ["cell_type", "disease", "cell_cycle", "genus_species"],
@@ -33,7 +33,7 @@ v4_ontologyFields = {"donor" : ["ancestry", "development_stage", "disease", "med
                     }
 
 
-v4_arrayFields = {"seq" : ["insdc_run"],
+schema_arrayFields = {"seq" : ["insdc_run"],
                 "state_of_specimen" : ["gross_image", "microscopic_image", "protocol_ids"],
                 "donor" : ["ancestry", "disease", "medication", "strain", "supplementary_files", "protocol_ids"],
                 "immortalized_cell_line" : ["supplementary_files", "protocol_ids"],
@@ -45,12 +45,12 @@ v4_arrayFields = {"seq" : ["insdc_run"],
                 "project" : ["supplementary_files", "experimental_design", "experimental_factor_name"]
                   }
 
-v4_timeFields = {"immortalized_cell_line" : ["date_established"],
+schema_timeFields = {"immortalized_cell_line" : ["date_established"],
                  "primary_cell_line" : ["date_established"],
                  "death" : ["time_of_death"]
                 }
 
-v4_stringFields = {"donor" : ["age", "weight", "height", "sample_id", "derived_from"],
+schema_stringFields = {"donor" : ["age", "weight", "height", "sample_id", "derived_from"],
                    "specimen_from_organism": ["sample_id", "derived_from"],
                    "cell_suspension": ["sample_id", "derived_from"],
                    "immortalized_cell_line": ["sample_id", "derived_from"],
@@ -59,6 +59,10 @@ v4_stringFields = {"donor" : ["age", "weight", "height", "sample_id", "derived_f
                    "assay": ["assay_id"],
                    "well": ["plate", "row", "col"]
                    }
+
+schema_booleanFields = {
+
+                       }
 
 SCHEMA_URL = os.environ.get('SCHEMA_URL', "https://raw.githubusercontent.com/HumanCellAtlas/metadata-schema/%s/json_schema/")
 # SCHEMA_URL = os.path.expandvars(os.environ.get('SCHEMA_URL', SCHEMA_URL))
@@ -105,9 +109,9 @@ class SpreadsheetSubmission:
         # If the value contains a double pipe (||) or the key is for a field that can be a list (with or without also being
         # an ontology field), put value into an array (splitting if necessary)
         if "\"" in str(value) or "||" in str(value) \
-                or (type in v4_arrayFields.keys() and key.split('.')[-1] in v4_arrayFields[type]) \
-                or (type in v4_arrayFields.keys() and key.split('.')[-1] == "ontology"
-                    and key.split('.')[-2] in v4_arrayFields[type]):
+                or (type in schema_arrayFields.keys() and key.split('.')[-1] in schema_arrayFields[type]) \
+                or (type in schema_arrayFields.keys() and key.split('.')[-1] == "ontology"
+                    and key.split('.')[-2] in schema_arrayFields[type]):
             if "||" in str(value):
             # d = map(lambda it: it.strip(' "\''), str(value).split("||"))
                 d = str(value).split("||")
@@ -120,8 +124,8 @@ class SpreadsheetSubmission:
 
         # If the key is in the date_time field list, convert the date time into a string of format YYYY-MM-DDThh:mm:ssZ
         # so it validates
-        if type in v4_timeFields.keys():
-            if key.split('.')[-1] in v4_timeFields[type]:
+        if type in schema_timeFields.keys():
+            if key.split('.')[-1] in schema_timeFields[type]:
                 if isinstance(d, list):
                     for i, v in enumerate(d):
                         date_string = v.strftime("%Y-%m-%dT%H:%M:%SZ")
@@ -129,13 +133,13 @@ class SpreadsheetSubmission:
                 else:
                     d = d.strftime("%Y-%m-%dT%H:%M:%SZ")
 
-        if type in v4_stringFields.keys():
-            if key.split('.')[-1] in v4_stringFields[type]:
+        if type in schema_stringFields.keys():
+            if key.split('.')[-1] in schema_stringFields[type]:
                 d = str(d)
 
         # If the key is in the ontology field list, or contains "ontology", format it according to the ontology json schema
-        if type in v4_ontologyFields.keys():
-            if key.split('.')[-1] in v4_ontologyFields[type]:
+        if type in schema_ontologyFields.keys():
+            if key.split('.')[-1] in schema_ontologyFields[type]:
                 if isinstance(d, list):
                     t = []
                     for index, v in enumerate(d):
