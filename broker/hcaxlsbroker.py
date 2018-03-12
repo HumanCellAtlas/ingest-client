@@ -74,7 +74,20 @@ schema_stringFields = {"donor" : ["age", "weight", "height", "sample_id", "deriv
 schema_booleanFields = {"donor_organism": ["is_living"],
                         "sequencing_process": ["paired_ends"],
                         "death": ["cold_perfused"]
-                       }
+                        }
+
+schema_integerFields = {
+    "cell_line": ["ncbi_taxon_id", "passage_number"],
+    "cell_suspension": ["total_estimated_cells", "ncbi_taxon_id", "passage_number"],
+    "donor_organism": ["ncbi_taxon_id", "hardy_scale"],
+    "organoid": ["ncbi_taxon_id", "passage_number"],
+    "specimen_from_organism": ["ncbi_taxon_id", "ischemic_time"],
+    "sequence_file": ["lane_index", "read_length"],
+    "analysis_process": ["cpus"],
+    "imaging_process": ["field_counts", "field_microns", "field_resolution"],
+    "library_preparation_process": ["spike_in_dilution", "barcode_offset", "barcode_length"],
+    "project": ["pmid"]
+}
 
 # maps sheets to the latest version of each schema
 # todo - this should be replaced by dynamic lookups against ingest-core /schemas endpoint
