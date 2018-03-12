@@ -21,16 +21,16 @@ from collections import defaultdict
 
 # these are spreadsheet fields that can be a list
 # todo - these should be read out of the json schema at the start
-schema_ontologyFields = {"donor" : ["ancestry", "development_stage", "disease", "medication", "strain", "genus_species"],
-                    "cell_suspension" : ["target_cell_type", "genus_species"],
-                    "death" : ["cause_of_death"],
-                    "immortalized_cell_line" : ["cell_type", "disease", "cell_cycle", "genus_species"],
-                    "protocol" : ["type"],
-                    "primary_cell_line" : ["cell_type", "disease", "cell_cycle", "genus_species"],
-                    "specimen_from_organism" : ["body_part", "organ", "genus_species"],
-                    "project" : ["experimental_design"],
-                    "organoid" : ["model_for_organ", "genus_species"]
-                    }
+# schema_ontologyFields = {"donor" : ["ancestry", "development_stage", "disease", "medication", "strain", "genus_species"],
+#                     "cell_suspension" : ["target_cell_type", "genus_species"],
+#                     "death" : ["cause_of_death"],
+#                     "immortalized_cell_line" : ["cell_type", "disease", "cell_cycle", "genus_species"],
+#                     "protocol" : ["type"],
+#                     "primary_cell_line" : ["cell_type", "disease", "cell_cycle", "genus_species"],
+#                     "specimen_from_organism" : ["body_part", "organ", "genus_species"],
+#                     "project" : ["experimental_design"],
+#                     "organoid" : ["model_for_organ", "genus_species"]
+#                     }
 
 
 schema_arrayFields = {"seq" : ["insdc_run"],
@@ -167,8 +167,8 @@ class SpreadsheetSubmission:
         self.dryrun = dry
         self.outputDir = output
         self.ingest_api = None
-        self.schema_version = schema_version if schema_version else os.path.expandvars(SCHEMA_VERSION)
-        self.schema_url = os.path.expandvars(SCHEMA_URL % self.schema_version)
+        # self.schema_version = schema_version if schema_version else os.path.expandvars(SCHEMA_VERSION)
+        # self.schema_url = os.path.expandvars(SCHEMA_URL % self.schema_version)
         if not self.dryrun:
             self.ingest_api = IngestApi()
 
@@ -406,24 +406,79 @@ class SpreadsheetSubmission:
 
         # convert data in sheets back into dict
         project = self._multiRowToObjectFromSheet("project", projectSheet)
+        project.update({"type": "project",
+                  "describedBy": schema_sheetname_mappings["project"]})
+
         enrichment = self._multiRowToObjectFromSheet("enrichment_process", enrichmentSheet)
+        if enrichment:
+            for e in enrichment:
+                e.update({"type": "process",
+                          "describedBy": schema_sheetname_mappings["enrichment_process"]})
+
         collection = self._multiRowToObjectFromSheet("collection_process", collectionSheet)
+        if collection:
+            for c in collection:
+                c.update({"type": "process",
+                     "describedBy": schema_sheetname_mappings["collection_process"]})
+
         dissociation = self._multiRowToObjectFromSheet("dissociation_process", dissociationSheet)
+        if dissociation:
+            for d in dissociation:
+                d.update({"type": "process",
+                  "describedBy": schema_sheetname_mappings["dissociation_process"]})
+
         reagents = self._multiRowToObjectFromSheet("purchased_reagents", reagentsSheet)
         libraryPrep = self._multiRowToObjectFromSheet("library_preparation_process", libraryPrepSheet)
+        if libraryPrep:
+            for lp in libraryPrep:
+                lp.update({"type": "process",
+                    "describedBy": schema_sheetname_mappings["library_preparation_process"]})
         sequencing = self._multiRowToObjectFromSheet("sequencing_process", sequencingSheet)
+        if sequencing:
+            for s in sequencing:
+                s.update({"type": "process",
+                  "describedBy": schema_sheetname_mappings["sequencing_process"]})
 
         protocols = self._multiRowToObjectFromSheet("protocol", protocolSheet)
+        if protocols:
+            for prot in protocols:
+                prot.update({"type": "protocol",
+                  "describedBy": schema_sheetname_mappings["protocol"]})
         donors = self._multiRowToObjectFromSheet("donor_organism", donorSheet)
+        if donors:
+            for do in donors:
+                do.update({"type": "biomaterial",
+                  "describedBy": schema_sheetname_mappings["donor_organism"]})
         familialRelationships = self._multiRowToObjectFromSheet("familial_relationship", familialRelationshipSheet)
         publications = self._multiRowToObjectFromSheet("project.publications", projectPubsSheet)
         contributors = self._multiRowToObjectFromSheet("contributor", contributorSheet)
+
         specimens = self._multiRowToObjectFromSheet("specimen_from_organism", specimenSheet)
+        if specimens:
+            for spec in specimens:
+                spec.update({"type": "biomaterial",
+                  "describedBy": schema_sheetname_mappings["specimen_from_organism"]})
         cell_suspension = self._multiRowToObjectFromSheet("cell_suspension", cellSuspensionSheet)
+        if cell_suspension:
+            for cs in cell_suspension:
+                cs.update({"type": "biomaterial",
+                     "describedBy": schema_sheetname_mappings["cell_suspension"]})
         organoid = self._multiRowToObjectFromSheet("organoid", organoidSheet)
+        if organoid:
+            for org in organoid:
+                org.update({"type": "biomaterial",
+                  "describedBy": schema_sheetname_mappings["organoid"]})
         cell_line = self._multiRowToObjectFromSheet("cell_line", clSheet)
+        if cell_line:
+            for cl in cell_line:
+                cl.update({"type": "biomaterial",
+                  "describedBy": schema_sheetname_mappings["cell_line"]})
         cell_line_publications = self._multiRowToObjectFromSheet("cell_line.publications", clPublicationSheet)
         files = self._multiRowToObjectFromSheet("sequence_file", filesSheet)
+        if files:
+            for f in files:
+                f.update({"type": "file",
+                 "describedBy": schema_sheetname_mappings["sequence_file"]})
 
 
         biomaterials = []
@@ -439,9 +494,6 @@ class SpreadsheetSubmission:
         processes.extend(enrichment)
         processes.extend(libraryPrep)
         processes.extend(sequencing)
-
-
-
 
         # creating submission
         #
@@ -468,10 +520,6 @@ class SpreadsheetSubmission:
                 cont.append(contributor)
             project["contributors"] = cont
 
-            project.update({"schema_type": "project",
-                               "describedBy": self.schema_url + "project.json",
-                               "schema_version": self.schema_version})
-
             self.dumpJsonToFile(project, projectId, "project")
 
             projectIngest = None
@@ -497,10 +545,6 @@ class SpreadsheetSubmission:
         for index, protocol in enumerate(protocols):
             if "protocol_id" not in protocol["protocol_core"]:
                 raise ValueError('Protocol must have an id attribute')
-
-            protocol.update({"type": "protocol",
-                                "describedBy": self.schema_url + "protocol.json",
-                               "schema_version": self.schema_version})
             self.dumpJsonToFile(protocol, projectId, "protocol_" + str(index))
             protocolMap[protocol["protocol_core"]["protocol_id"]] = protocol
             if not self.dryrun:
@@ -614,19 +658,39 @@ class SpreadsheetSubmission:
                     biomaterialMap[bio_id]["familial_relationship"] = []
                 biomaterialMap[bio_id]["familial_relationship"].append(familialRel)
 
+                # build the process map from the different types of assay infromation
+                processMap = {}
+
+        for index, process in enumerate(processes):
+            if "process_id" not in process["process_core"]:
+                raise ValueError('Process must have an id attribute')
+            processMap[process["process_core"]["process_id"]] = process
+
+        for reagent in reagents:
+            if "process_id" in reagent["process_core"]:
+                process_id = reagent["process_core"]["process_id"]
+                del reagent["process_core"]
+
+                if "process_reagents" not in processMap[process_id]:
+                    processMap[process_id]["process_reagents"] = []
+                processMap[process_id]["process_reagents"].append(reagents)
 
         # submit samples to ingest and link to project and protocols
         for index, biomaterial_id in enumerate(biomaterialMap.keys()):
             biomaterial = biomaterialMap[biomaterial_id]
-            if "has_input_biomaterial" in biomaterial:
-                if biomaterial["has_input_biomaterial"] not in biomaterialMap.keys():
-                    raise ValueError('Sample '+ str(biomaterial_id) +' references another sample '+ str(biomaterial["has_input_biomaterial"]) +' that isn\'t in the spraedsheet')
-            sampleProtocols = []
-          
+            if "has_input_biomaterial" in biomaterial["biomaterial_core"]:
+                if biomaterial["biomaterial_core"]["has_input_biomaterial"] not in biomaterialMap.keys():
+                    raise ValueError('Sample '+ str(biomaterial_id) +' references another sample '+ str(biomaterial["biomaterial_core"]["has_input_biomaterial"]) +' that isn\'t in the spraedsheet')
 
-            biomaterial.update({"type" : "biomaterial",
-                              "describedBy": self.schema_url + "sample.json",
-                            "schema_version": self.schema_version})
+
+            if "process_ids" in biomaterial:
+                for process_id in biomaterial["process_ids"]:
+                    if process_id not in processMap.keys():
+                        raise ValueError(
+                         'A biomaterial references a process ' + process_id + ' that isn\'t in the biomaterials worksheet')
+                processes = biomaterial["process_ids"]
+                del biomaterial["process_ids"]
+
 
             self.dumpJsonToFile(biomaterial, projectId, "biomaterial_" + str(index))
             if not self.dryrun:
@@ -655,48 +719,22 @@ class SpreadsheetSubmission:
                     linksList.append(
                         "sample_" + str(biomaterial_id) + "-derivedFromSamples_" + str(biomaterialMap[biomaterial_id]["biomaterial_core"]["has_input_biomaterial"]))
 
-        #build the process map from the different types of assay infromation
-        processMap={}
-
-        for index, process in enumerate(processes):
-            if "process_id" not in process["process_core"]:
-                raise ValueError('Process must have an id attribute')
-            process.update({"type" : "process",
-                              "describedBy": self.schema_url + "process.json",
-                            "schema_version": self.schema_version})
-            processMap[process["process_core"]["process_id"]] = process
-
 
 
         filesMap={}
         for index, file in enumerate(files):
             if "filename" not in file:
                 raise ValueError('Files must have a name')
-            if "assay_id" not in file:
-                raise ValueError('Files must be linked to an assay')
-            assay = file["assay_id"]
-            seqFile = file["seq"]
-            biomaterial = file["sample_id"]
-            del file["assay_id"]
-            del file["seq"]
-            del file["sample_id"]
-            # self.dumpJsonToFile({"fileName" : file["filename"], "content" : file}, projectId, "files_" + str(index))
+            if "process_id" not in file:
+                raise ValueError('Files must be linked to a process')
+            process = file["process_id"]
+            biomaterial = file["biomaterial_id"]
+            del file["process_id"]
+            del file["biomaterial_id"]
             filesMap[file["filename"]] = file
 
-
-
-
-
-            processMap[assay]["files"].append(file["filename"])
-
-
-
-
-       
-
-            file["core"] = {"type" : "file",
-                            "schema_url": self.schema_url + "file.json",
-                           "schema_version": self.schema_version}
+            # ????do we need this????
+            processMap[process]["files"].append(file["filename"])
 
             self.dumpJsonToFile(file, projectId, "files_" + str(index))
             if not self.dryrun:
@@ -709,47 +747,44 @@ class SpreadsheetSubmission:
             #     if sample in sampleMap:
             #         linksList.append("file_" + file["filename"] + "-sample_" + sample)
 
-        for index, assay in enumerate(processMap.values()):
-            if "assay_id" not in assay:
-                raise ValueError('Each assay must have an id attribute' + str(assay))
-            if "files" not in assay:
+        for index, process in enumerate(processMap.values()):
+            if "process_id" not in process["process_core"]:
+                raise ValueError('Each process must have an id attribute' + str(process))
+            if "files" not in process:
                 raise ValueError('Each assay must list associated files using the files attribute')
             else:
-                for file in assay["files"]:
+                for file in process["files"]:
                     if file not in filesMap:
-                        raise ValueError('Assay references file '+file+' that isn\'t defined in the files sheet')
-            files = assay["files"]
-            del assay["files"]
+                        raise ValueError('Process references file '+file+' that isn\'t defined in the files sheet')
+            files = process["files"]
+            del process["files"]
 
-            if "sample_id" not in assay:
+            if "sample_id" not in process:
                 raise ValueError("Every assay must reference a sample using the sample_id attribute")
-            elif assay["sample_id"] not in biomaterialMap:
-                raise ValueError('An assay references a sample '+assay["sample_id"]+' that isn\'t in the samples worksheet')
-            biomaterials = assay["sample_id"]
-            del assay["sample_id"]
+            elif process["sample_id"] not in biomaterialMap:
+                raise ValueError('An assay references a sample '+process["sample_id"]+' that isn\'t in the samples worksheet')
+            biomaterials = process["sample_id"]
+            del process["sample_id"]
 
-            assay["core"] = {"type" : "assay",
-                             "schema_url": self.schema_url + "assay.json",
-                             "schema_version": self.schema_version}
-            self.dumpJsonToFile(assay, projectId, "assay_" + str(index))
-
+            self.dumpJsonToFile(process, projectId, "assay_" + str(index))
+            # ???this is the bit we still need to figure out????
             if not self.dryrun:
-                assayIngest = self.ingest_api.createAssay(submissionUrl, json.dumps(assay))
-                self.ingest_api.linkEntity(assayIngest, projectIngest, "projects")
+                processIngest = self.ingest_api.createAssay(submissionUrl, json.dumps(process))
+                self.ingest_api.linkEntity(processIngest, projectIngest, "projects")
 
                 if biomaterials in biomaterialMap:
-                    self.ingest_api.linkEntity(assayIngest, biomaterialMap[biomaterials], "samples")
+                    self.ingest_api.linkEntity(processIngest, biomaterialMap[biomaterials], "samples")
 
                 for file in files:
-                    self.ingest_api.linkEntity(assayIngest, filesMap[file], "files")
+                    self.ingest_api.linkEntity(processIngest, filesMap[file], "files")
             else:
-                linksList.append("assay_" + str(assay["assay_id"]) + "-project_" + str(projectId))
+                linksList.append("assay_" + str(process["assay_id"]) + "-project_" + str(projectId))
 
                 if biomaterials in biomaterialMap:
-                    linksList.append("assay_" + str(assay["assay_id"]) + "-sample_" + str(biomaterials))
+                    linksList.append("assay_" + str(process["assay_id"]) + "-sample_" + str(biomaterials))
 
                 for file in files:
-                    linksList.append("assay_" + str(assay["assay_id"]) + "-file_" + str(file))
+                    linksList.append("assay_" + str(process["assay_id"]) + "-file_" + str(file))
 
         self.dumpJsonToFile(linksList, projectId, "dry_run_links")
         self.logger.info("All done!")
