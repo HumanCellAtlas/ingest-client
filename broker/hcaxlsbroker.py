@@ -106,7 +106,6 @@ schema_sheetname_mappings = {
 }
 
 
-
 class SpreadsheetSubmission:
 
     def __init__(self, dry=False, output=None, schema_version=None):
@@ -118,8 +117,6 @@ class SpreadsheetSubmission:
         self.dryrun = dry
         self.outputDir = output
         self.ingest_api = None
-        # self.schema_version = schema_version if schema_version else os.path.expandvars(SCHEMA_VERSION)
-        # self.schema_url = os.path.expandvars(SCHEMA_URL % self.schema_version)
         if not self.dryrun:
             self.ingest_api = IngestApi()
 
@@ -152,7 +149,6 @@ class SpreadsheetSubmission:
                 or (type in schema_arrayFields.keys() and (key.split('.')[-1] == "ontology" or key.split('.')[-1] == "text")
                     and key.split('.')[-2] in schema_arrayFields[type]):
             if "||" in str(value):
-            # d = map(lambda it: it.strip(' "\''), str(value).split("||"))
                 d = str(value).split("||")
             else:
                 d = [value]
@@ -608,22 +604,16 @@ class SpreadsheetSubmission:
                 biomaterialIngest = self.ingest_api.createBiomaterial(submissionUrl, json.dumps(biomaterial))
                 self.ingest_api.linkEntity(biomaterialIngest, projectIngest, "projects") # correct
                 biomaterialMap[biomaterial["biomaterial_core"]["biomaterial_id"]] = biomaterialIngest
-                # if biomaterialProtocols:
-                #     for biomaterialProtocolId in biomaterialProtocols:
-                #         self.ingest_api.linkEntity(biomaterialIngest, protocolMap[biomaterialProtocolId], "protocols")
             else:
                 linksList.append("biomaterial_" + str(biomaterial_id) + "-project_" + str(projectId))
-                # if biomaterialProtocols:
-                #     for biomaterialProtocolId in biomaterialProtocols:
-                #         linksList.append("biomaterial_" + str(biomaterial_id) + "-protocol_" + str(biomaterialProtocolId))
 
         # create has_input_biomaterial links between biomaterials separately to make sure all biomaterials are submitted
         for index, biomaterial_id in enumerate(biomaterialMap.keys()):
             if not self.dryrun:
                 if "has_input_biomaterial" in biomaterialMap[biomaterial_id]['content']["biomaterial_core"]:
-                    self.ingest_api.linkEntity(biomaterialMap[biomaterial_id],
-                                               biomaterialMap[biomaterialMap[biomaterial_id]['content']["biomaterial_core"]["has_input_biomaterial"]],
-                                               "hasInputBiomaterial")
+                    # self.ingest_api.linkEntity(biomaterialMap[biomaterial_id],
+                    #                            biomaterialMap[biomaterialMap[biomaterial_id]['content']["biomaterial_core"]["has_input_biomaterial"]],
+                    #                            "hasInputBiomaterial")
 
                     # retrieve biomaterials from map
                     output_biomaterial = biomaterialMap[biomaterial_id]
