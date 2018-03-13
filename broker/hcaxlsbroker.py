@@ -96,6 +96,7 @@ schema_sheetname_mappings = {
     # analysis processes
     "analysis_process": "https://schema.humancellatlas.org/type/process/analysis/5.1.0/analysis_process",
     # biomaterial processes
+    "process": "https://schema.humancellatlas.org/type/process/1.0.0/process",
     "collection_process": "https://schema.humancellatlas.org/type/process/biomaterial_collection/5.1.0/collection_process",
     "dissociation_process": "https://schema.humancellatlas.org/type/process/biomaterial_collection/5.1.0/dissociation_process",
     "enrichment_process": "https://schema.humancellatlas.org/type/process/biomaterial_collection/5.1.0/enrichment_process",
@@ -170,7 +171,6 @@ schema_fieldname_mappings = {
 # SCHEMA_URL = os.environ.get('SCHEMA_URL', "https://raw.githubusercontent.com/HumanCellAtlas/metadata-schema/%s/json_schema/")
 # SCHEMA_URL = os.path.expandvars(os.environ.get('SCHEMA_URL', SCHEMA_URL))
 # SCHEMA_VERSION = os.environ.get('SCHEMA_VERSION', '4.6.1')
-
 
 class SpreadsheetSubmission:
 
@@ -360,6 +360,16 @@ class SpreadsheetSubmission:
         self.logger.debug(json.dumps(obj))
         return obj
 
+    def _emptyProcessObject(self, empty_process_id):
+        obj = {}
+        process_core = {"process_id", empty_process_id}
+        schema_type = "process"
+        describedBy = schema_sheetname_mappings["process"]
+        obj["process_core"] = process_core
+        obj["schema_type"] = schema_type
+        obj["describedBy"] = describedBy
+        return obj
+
     def completeSubmission(self):
         self.ingest_api.finishSubmission()
 
@@ -394,6 +404,7 @@ class SpreadsheetSubmission:
         projectSheet = wb.create_sheet()
         projectPubsSheet = wb.create_sheet()
         contributorSheet = wb.create_sheet()
+        empty_process_id = 1
 
         if existing_project_id is None:
             projectSheet = wb.get_sheet_by_name("project")
@@ -699,17 +710,27 @@ class SpreadsheetSubmission:
         for index, biomaterial_id in enumerate(biomaterialMap.keys()):
             if not self.dryrun:
                 if "has_input_biomaterial" in biomaterialMap[biomaterial_id]['content']["biomaterial_core"]:
-                    self.ingest_api.linkEntity(biomaterialMap[biomaterial_id],
-                                               biomaterialMap[biomaterialMap[biomaterial_id]['content']["biomaterial_core"]["has_input_biomaterial"]],
-                                               "hasInputBiomaterial")
-                    # todo - link biomaterials via intermediate process.  In this scenario, create an empty process that bridges
+                    # self.ingest_api.linkEntity(biomaterialMap[biomaterial_id],
+                    #                            biomaterialMap[biomaterialMap[biomaterial_id]['content']["biomaterial_core"]["has_input_biomaterial"]],
+                    #                            "hasInputBiomaterial")
 
+                    # retrieve biomaterials from map
+                    output_biomaterial = biomaterialMap[biomaterial_id]
+                    input_biomaterial = biomaterialMap[biomaterialMap[biomaterial_id]['content']["biomaterial_core"]["has_input_biomaterial"]]
+
+                    # create sampling process to link biomaterials
+                    sampling_process = self._emptyProcessObject(empty_process_id)
+                    empty_process_id += 1
+                    sampling_process_ingest = self.ingest_api.createProcess(submissionUrl, json.dumps(sampling_process))
+
+                    # link process to input biomaterials
+                    self.ingest_api.linkEntity(sampling_process_ingest, input_biomaterial, "inputBiomaterials")
+                    # link process to output biomaterials
+                    self.ingest_api.linkEntity(sampling_process_ingest, output_biomaterial, "derivedBiomaterials")
             else:
                 if "has_input_biomaterial" in biomaterialMap[biomaterial_id]:
                     linksList.append(
                         "biomaterial_" + str(biomaterial_id) + "-hasInputBiomaterial_" + str(biomaterialMap[biomaterial_id]["biomaterial_core"]["has_input_biomaterial"]))
-
-
 
         filesMap={}
         for index, file in enumerate(files):
