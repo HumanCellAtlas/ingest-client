@@ -32,38 +32,53 @@ from collections import defaultdict
 #                     "organoid" : ["model_for_organ", "genus_species"]
 #                     }
 
+schema_arrayFields = {
+    "cell_line": ["genus_species", "publications", "ncbi_taxon_id", "supplementary_files", "process_ids"],
+    "cell_suspension": ["genus_species", "target_cell_type", "ncbi_taxon_id", "supplementary_files", "process_ids"],
+    "donor_organism": ["genus_species", "disease", "familial_relationship", "ancestry", "strain", "ncbi_taxon_id",
+                       "supplementary_files", "process_ids"],
+    "organoid": ["genus_species", "ncbi_taxon_id", "supplementary_files", "process_ids"],
+    "specimen_from_organism": ["genus_species", "disease", "ncbi_taxon_id", "supplementary_files", "process_ids"],
+    "sequence_file": ["insdc_run"],
+    "analysis_process": ["inputs", "tasks", "input_bundles", "outputs", "operator_identity"],
+    "collection_process": ["process_reagents", "operator_identity"],
+    "dissociation_process": ["process_reagents", "operator_identity"],
+    "imaging_process": ["field_counts", "field_microns", "field_resolution", "operator_identity"],
+    "project": ["contributors", "supplementary_files", "publications"],
+    "publication": ["authors"]
+}
 
-schema_arrayFields = {"seq" : ["insdc_run"],
-                "state_of_specimen" : ["gross_image", "microscopic_image", "protocol_ids"],
-                "donor_organism" : ["ancestry", "disease", "medication", "strain", "supplementary_files", "protocol_ids"],
-                "immortalized_cell_line" : ["supplementary_files", "protocol_ids"],
-                "primary_cell_line" : ["supplementary_files", "protocol_ids"],
-                "organoid": ["supplementary_files", "protocol_ids"],
-                "specimen_from_organism": ["supplementary_files", "protocol_ids"],
-                "cell_suspension" : ["target_cell_type", "enrichment", "supplementary_files", "protocol_ids"],
-                "publication" : ["authors"],
-                "project" : ["supplementary_files", "experimental_design", "experimental_factor_name"]
-                  }
+schema_timeFields = {
+    "cell_line": ["date_established"],
+    "donor_organism": ["time_of_death"],
+    "specimen_from_organism": ["collection_time"],
+    "analysis_process": ["start_time", "stop_time", "timestamp_start_utc", "timestamp_stop_utc"],
+    "collection_process": ["start_time"],
+    "dissociation_process": ["start_time"],
+    "enrichment_process": ["start_time"],
+    "imaging_process": ["start_time"],
+    "library_preparation_process": ["start_time"],
+    "sequencing_process": ["start_time"]
+}
 
-schema_timeFields = {"immortalized_cell_line" : ["date_established"],
-                 "primary_cell_line" : ["date_established"],
-                 "death" : ["time_of_death"]
-                }
+schema_booleanFields = {
+    "donor_organism": ["is_living"],
+    "sequencing_process": ["paired_ends"],
+    "death": ["cold_perfused"]
+}
 
-schema_stringFields = {"donor" : ["age", "weight", "height", "biomaterial_id", "derived_from"],
-                   "specimen_from_organism": ["biomaterial_id", "derived_from"],
-                   "cell_suspension": ["biomaterial_id", "derived_from"],
-                   "immortalized_cell_line": ["biomaterial_id", "derived_from"],
-                   "organoid": ["biomaterial_id", "derived_from"],
-                   "primary_cell_line": ["biomaterial_id", "derived_from"],
-                   "assay": ["assay_id"],
-                   "well": ["plate", "row", "col"]
-                   }
-
-schema_booleanFields = {"donor_organism": ["is_living"],
-                        "sequencing_process": ["paired_ends"],
-                        "death": ["cold_perfused"]
-                       }
+schema_integerFields = {
+    "cell_line": ["ncbi_taxon_id", "passage_number"],
+    "cell_suspension": ["total_estimated_cells", "ncbi_taxon_id", "passage_number"],
+    "donor_organism": ["ncbi_taxon_id", "hardy_scale"],
+    "organoid": ["ncbi_taxon_id", "passage_number"],
+    "specimen_from_organism": ["ncbi_taxon_id", "ischemic_time"],
+    "sequence_file": ["lane_index", "read_length"],
+    "analysis_process": ["cpus"],
+    "imaging_process": ["field_counts", "field_microns", "field_resolution"],
+    "library_preparation_process": ["spike_in_dilution", "barcode_offset", "barcode_length"],
+    "project": ["pmid"]
+}
 
 # maps sheets to the latest version of each schema
 # todo - this should be replaced by dynamic lookups against ingest-core /schemas endpoint
@@ -213,18 +228,35 @@ class SpreadsheetSubmission:
         # If the key is in the date_time field list, convert the date time into a string of format YYYY-MM-DDThh:mm:ssZ
         # so it validates
         if type in schema_timeFields.keys():
-            if key.split('.')[-1] in schema_timeFields[type]:
-                if isinstance(d, list):
-                    for i, v in enumerate(d):
-                        date_string = v.strftime("%Y-%m-%dT%H:%M:%SZ")
-                        d[i] = date_string
-                else:
-                    d = d.strftime("%Y-%m-%dT%H:%M:%SZ")
-
-        # change this round to number fields and turn strings back into numbers
-        if type in schema_stringFields.keys():
-            if key.split('.')[-1] in schema_stringFields[type]:
-                d = str(d)
+            try:
+                if key.split('.')[-1] in schema_timeFields[type]:
+                    if isinstance(d, list):
+                        for i, v in enumerate(d):
+                            date_string = v.strftime("%Y-%m-%dT%H:%M:%SZ")
+                            d[i] = date_string
+                    else:
+                        d = d.strftime("%Y-%m-%dT%H:%M:%SZ")
+            except:
+                self.logger.warn('Failed to convert field %s (value %s) to date_time value'.format(type, d))
+        elif type in schema_integerFields.keys():
+            if key.split('.')[-1] in schema_integerFields[type]:
+                try:
+                    d = int(d)
+                except:
+                    self.logger.warn('Failed to convert field %s (value %s) to integer value'.format(type, d))
+                    d = str(d)
+        elif type in schema_booleanFields.keys():
+            if key.split('.')[-1] in schema_booleanFields[type]:
+                try:
+                    if d.lower() in ["true", "yes"]:
+                        d = True
+                    elif d in ["false", "no"]:
+                        d = False
+                except:
+                    self.logger.warn('Failed to convert field %s (value %s) to integer value'.format(type, d))
+                    d = str(d)
+        else:
+            d = str(d)
 
         # If the key is in the ontology field list, or contains "ontology", format it according to the ontology json schema
         # if type in schema_ontologyFields.keys():
@@ -246,12 +278,7 @@ class SpreadsheetSubmission:
         #             d = {"ontology": d}
         #         key = ".". join(key.split('.')[:-1])
 
-        if type in schema_booleanFields.keys():
-            if key.split('.')[-1] in schema_booleanFields[type]:
-                if d.lower() in ["true", "yes"]:
-                   d = True
-                elif d in ["false", "no"]:
-                    d = False
+
 
         # Build up the key-value dictionary
         for part in reversed(key.split('.')):
@@ -662,7 +689,7 @@ class SpreadsheetSubmission:
                     biomaterialMap[bio_id]["familial_relationship"] = []
                 biomaterialMap[bio_id]["familial_relationship"].append(familialRel)
 
-        # build the process map from the different types of assay infromation
+        # build the process map from the different types of process infromation
         processMap = {}
 
         for index, process in enumerate(processes):
@@ -692,7 +719,9 @@ class SpreadsheetSubmission:
                     if process_id not in processMap.keys():
                         raise ValueError(
                          'A biomaterial references a process ' + process_id + ' that isn\'t in the biomaterials worksheet')
-                processes = biomaterial["process_ids"]
+                    if "biomaterial_ids" not in processMap[process_id]:
+                        processMap[process_id]["biomaterial_ids"] = []
+                    processMap[process_id]["biomaterial_ids"].append(biomaterial["biomaterial_core"]["biomaterial_id"])
                 del biomaterial["process_ids"]
 
 
@@ -727,7 +756,7 @@ class SpreadsheetSubmission:
 
         filesMap={}
         for index, file in enumerate(files):
-            if "filename" not in file:
+            if "file_name" not in file["file_core"]:
                 raise ValueError('Files must have a name')
             if "process_id" not in file:
                 raise ValueError('Files must be linked to a process')
@@ -735,42 +764,48 @@ class SpreadsheetSubmission:
             biomaterial = file["biomaterial_id"]
             del file["process_id"]
             del file["biomaterial_id"]
-            filesMap[file["filename"]] = file
+            filesMap[file["file_core"]["file_name"]] = file
+
+            if "files" not in processMap[process]:
+                processMap[process]["files"] = []
 
             # ????do we need this????
-            processMap[process]["files"].append(file["filename"])
+            processMap[process]["files"].append(file["file_core"]["file_name"])
 
             self.dumpJsonToFile(file, projectId, "files_" + str(index))
             if not self.dryrun:
-                fileIngest = self.ingest_api.createFile(submissionUrl, file["filename"], json.dumps(file))
-                filesMap[file["filename"]] = fileIngest
+                fileIngest = self.ingest_api.createFile(submissionUrl, file["file_core"]["file_name"], json.dumps(file))
+                filesMap[file["file_core"]["file_name"]] = fileIngest
 
             #     if biomaterial in biomaterialMap:
             #         self.ingest_api.linkEntity(fileIngest, biomaterialMap[biomaterial], "biomaterials")
             # else:
             #     if biomaterial in biomaterialMap:
-            #         linksList.append("file_" + file["filename"] + "-biomaterial_" + biomaterial)
+            #         linksList.append("file_" + file["file_name"] + "-biomaterial_" + biomaterial)
 
         for index, process in enumerate(processMap.values()):
             if "process_id" not in process["process_core"]:
                 raise ValueError('Each process must have an id attribute' + str(process))
-            if "files" not in process:
-                raise ValueError('Each assay must list associated files using the files attribute')
-            else:
+            # if "files" not in process:
+                # raise ValueError('Each process must list associated files using the files attribute')
+            # else:
+            if "files" in process:
                 for file in process["files"]:
                     if file not in filesMap:
                         raise ValueError('Process references file '+file+' that isn\'t defined in the files sheet')
-            files = process["files"]
-            del process["files"]
+                files = process["files"]
+                del process["files"]
 
-            if "biomaterial_id" not in process:
-                raise ValueError("Every assay must reference a biomaterial using the biomaterial_id attribute")
-            elif process["biomaterial_id"] not in biomaterialMap:
-                raise ValueError('An assay references a biomaterial '+process["biomaterial_id"]+' that isn\'t in the biomaterials worksheet')
-            biomaterials = process["biomaterial_id"]
-            del process["biomaterial_id"]
+            if "biomaterial_ids" not in process:
+                raise ValueError("Every process must reference a biomaterial using the biomaterial_id attribute")
+            else:
+                for biomaterial_id in process["biomaterial_ids"]:
+                    if biomaterial_id not in biomaterialMap:
+                        raise ValueError('An process references a biomaterial '+biomaterial_id+' that isn\'t in one of the biomaterials worksheets')
+            biomaterials = process["biomaterial_ids"]
+            del process["biomaterial_ids"]
 
-            self.dumpJsonToFile(process, projectId, "assay_" + str(index))
+            self.dumpJsonToFile(process, projectId, "process_" + str(index))
             # ???this is the bit we still need to figure out????
             if not self.dryrun:
                 processIngest = self.ingest_api.createAssay(submissionUrl, json.dumps(process))
@@ -782,13 +817,13 @@ class SpreadsheetSubmission:
                 for file in files:
                     self.ingest_api.linkEntity(processIngest, filesMap[file], "files")
             else:
-                linksList.append("assay_" + str(process["assay_id"]) + "-project_" + str(projectId))
+                linksList.append("process_" + str(process["process_core"]["process_id"]) + "-project_" + str(projectId))
 
-                if biomaterials in biomaterialMap:
-                    linksList.append("assay_" + str(process["assay_id"]) + "-biomaterial_" + str(biomaterials))
+                for biomaterial in biomaterials:
+                    linksList.append("process_" + str(process["process_core"]["process_id"]) + "-biomaterial_" + str(biomaterial))
 
                 for file in files:
-                    linksList.append("assay_" + str(process["assay_id"]) + "-file_" + str(file))
+                    linksList.append("process_" + str(process["process_core"]["process_id"]) + "-file_" + str(file))
 
         self.dumpJsonToFile(linksList, projectId, "dry_run_links")
         self.logger.info("All done!")
