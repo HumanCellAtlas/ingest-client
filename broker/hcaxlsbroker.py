@@ -574,7 +574,7 @@ class SpreadsheetSubmission:
                 self.logger.info("Retreiving existing project: " + existing_project_id)
                 projectIngest = self.ingest_api.getProjectById(existing_project_id)
                 submissionEnvelope = self.ingest_api.getSubmissionEnvelope(submissionUrl)
-                self.ingest_api.linkEntity(projectIngest, submissionEnvelope, "submissionEnvelopes")
+                self.ingest_api.linkEntity(projectIngest, submissionEnvelope, "submissionEnvelopes") # correct
             else:
                 projectIngest = {"content" :
                                      {"project_core":
@@ -738,7 +738,7 @@ class SpreadsheetSubmission:
             self.dumpJsonToFile(biomaterial, projectId, "biomaterial_" + str(index))
             if not self.dryrun:
                 biomaterialIngest = self.ingest_api.createSample(submissionUrl, json.dumps(biomaterial))
-                self.ingest_api.linkEntity(biomaterialIngest, projectIngest, "projects")
+                self.ingest_api.linkEntity(biomaterialIngest, projectIngest, "projects") # correct
                 biomaterialMap[biomaterial["biomaterial_core"]["biomaterial_id"]] = biomaterialIngest
                 # if biomaterialProtocols:
                 #     for biomaterialProtocolId in biomaterialProtocols:
@@ -756,6 +756,7 @@ class SpreadsheetSubmission:
                     self.ingest_api.linkEntity(biomaterialMap[biomaterial_id],
                                                biomaterialMap[biomaterialMap[biomaterial_id]['content']["biomaterial_core"]["has_input_biomaterial"]],
                                                "hasInputBiomaterial")
+                    # todo - link biomaterials via intermediate process.  In this scenario, create an empty process that bridges
 
             else:
                 if "has_input_biomaterial" in biomaterialMap[biomaterial_id]:
@@ -813,13 +814,13 @@ class SpreadsheetSubmission:
             # ???this is the bit we still need to figure out????
             if not self.dryrun:
                 processIngest = self.ingest_api.createAssay(submissionUrl, json.dumps(process))
-                self.ingest_api.linkEntity(processIngest, projectIngest, "projects")
+                self.ingest_api.linkEntity(processIngest, projectIngest, "projects") # correct
 
                 if biomaterials in biomaterialMap:
-                    self.ingest_api.linkEntity(processIngest, biomaterialMap[biomaterials], "biomaterials")
+                    self.ingest_api.linkEntity(processIngest, biomaterialMap[biomaterials], "biomaterials") # correct
 
                 for file in files:
-                    self.ingest_api.linkEntity(processIngest, filesMap[file], "files")
+                    self.ingest_api.linkEntity(processIngest, filesMap[file], "files") # correct
             else:
                 linksList.append("assay_" + str(process["assay_id"]) + "-project_" + str(projectId))
 
