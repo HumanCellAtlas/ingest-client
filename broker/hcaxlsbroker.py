@@ -21,16 +21,6 @@ from collections import defaultdict
 
 # these are spreadsheet fields that can be a list
 # todo - these should be read out of the json schema at the start
-# schema_ontologyFields = {"donor" : ["ancestry", "development_stage", "disease", "medication", "strain", "genus_species"],
-#                     "cell_suspension" : ["target_cell_type", "genus_species"],
-#                     "death" : ["cause_of_death"],
-#                     "immortalized_cell_line" : ["cell_type", "disease", "cell_cycle", "genus_species"],
-#                     "protocol" : ["type"],
-#                     "primary_cell_line" : ["cell_type", "disease", "cell_cycle", "genus_species"],
-#                     "specimen_from_organism" : ["body_part", "organ", "genus_species"],
-#                     "project" : ["experimental_design"],
-#                     "organoid" : ["model_for_organ", "genus_species"]
-#                     }
 
 schema_arrayFields = {
     "cell_line": ["genus_species", "publications", "ncbi_taxon_id", "supplementary_files", "process_ids"],
@@ -115,62 +105,7 @@ schema_sheetname_mappings = {
     "sequencing_protocol": "https://schema.humancellatlas.org/type/protocol/sequencing/5.1.0/sequencing_protocol"
 }
 
-schema_fieldname_mappings = {
-    # cell_line
-    "biomaterial_core": "https://schema.humancellatlas.org/core/biomaterial/5.0.0/biomaterial_core",
-    "cell_cycle": "https://schema.humancellatlas.org/module/ontology/5.0.0/cell_cycle_ontology",
-    "cell_morphology": "https://schema.humancellatlas.org/module/biomaterial/5.0.0/cell_morphology",
-    "growth_conditions": "https://schema.humancellatlas.org/module/biomaterial/5.0.0/growth_conditions",
-    "cell_type": "https://schema.humancellatlas.org/module/ontology/5.0.0/cell_type_ontology",
-    "disease": "https://schema.humancellatlas.org/module/ontology/5.0.0/disease_ontology",
-    "genus_species": "https://schema.humancellatlas.org/module/ontology/5.0.0/species_ontology",
-    "publications": "https://schema.humancellatlas.org/module/project/5.0.1/publication",
-    # cell_suspension
-    "target_cell_type": "https://schema.humancellatlas.org/module/ontology/5.0.0/cell_type_ontology",
-    # donor_organism
-    "human_specific": "https://schema.humancellatlas.org/module/biomaterial/5.0.0/homo_sapiens_specific",
-    "mus_musculus_specific": "https://schema.humancellatlas.org/module/biomaterial/5.0.0/mus_musculus_specific",
-    "death": "https://schema.humancellatlas.org/module/biomaterial/5.0.0/death",
-    "medical_history": "https://schema.humancellatlas.org/module/biomaterial/5.0.0/medical_history",
-    "organism_age_unit": "https://schema.humancellatlas.org/module/ontology/5.0.0/time_unit_ontology",
-    "development_stage": "https://schema.humancellatlas.org/module/ontology/5.0.0/development_stage_ontology",
-    "familial_relationship": "https://schema.humancellatlas.org/module/biomaterial/5.0.0/familial_relationship",
-    "gestational_age_unit": "https://schema.humancellatlas.org/module/ontology/5.0.0/time_unit_ontology",
-    "height_unit": "https://schema.humancellatlas.org/module/ontology/5.0.0/length_unit_ontology",
-    "weight_unit": "https://schema.humancellatlas.org/module/ontology/5.0.0/mass_unit_ontology",
-    # organoid
-    "model_for_organ": "https://schema.humancellatlas.org/module/ontology/5.0.0/organ_ontology",
-    "organoid_age_unit": "https://schema.humancellatlas.org/module/ontology/5.0.0/time_unit_ontology",
-    # specimen_from_organism
-    "organ": "https://schema.humancellatlas.org/module/ontology/5.0.0/organ_ontology",
-    "organ_part": "https://schema.humancellatlas.org/module/ontology/5.0.0/organ_part_ontology",
-    "state_of_specimen": "https://schema.humancellatlas.org/module/biomaterial/5.0.0/state_of_specimen",
-    "preservation_storage": "https://schema.humancellatlas.org/module/biomaterial/5.0.0/preservation_storage",
-    # file
-    "file_core": "https://schema.humancellatlas.org/core/file/5.0.0/file_core",
-    # process
-    "process_core": "https://schema.humancellatlas.org/core/process/5.0.0/process_core",
-    "process_type": "https://schema.humancellatlas.org/module/ontology/5.0.0/process_type_ontology",
-    "outputs.items": "https://schema.humancellatlas.org/type/file/5.0.0/analysis_file",
-    # collection_process
-    "process_reagents": "https://schema.humancellatlas.org/module/process/5.0.0/purchased_reagents",
-    # library_preparation_process
-    "cell_barcode": "https://schema.humancellatlas.org/module/process/sequencing/5.0.0/barcode",
-    "input_nucleic_acid_molecule": "https://schema.humancellatlas.org/module/ontology/5.0.0/biological_macromolecule_ontology",
-    # sequencing_process
-    "instrument_manufacturer_model": "https://schema.humancellatlas.org/module/ontology/5.0.0/instrument_ontology",
-    "smartseq2": "https://schema.humancellatlas.org/module/process/sequencing/5.0.0/smartseq2",
-    # project
-    "project_core": "https://schema.humancellatlas.org/core/project/5.0.0/project_core",
-    "contributors": "https://schema.humancellatlas.org/module/project/5.0.0/contact",
-    # analysis_protocol
-    "protocol_core": "https://schema.humancellatlas.org/core/protocol/5.0.0/protocol_core",
-    "protocol_type": "https://schema.humancellatlas.org/module/ontology/5.0.0/protocol_type_ontology"
-}
 
-# SCHEMA_URL = os.environ.get('SCHEMA_URL', "https://raw.githubusercontent.com/HumanCellAtlas/metadata-schema/%s/json_schema/")
-# SCHEMA_URL = os.path.expandvars(os.environ.get('SCHEMA_URL', SCHEMA_URL))
-# SCHEMA_VERSION = os.environ.get('SCHEMA_VERSION', '4.6.1')
 
 class SpreadsheetSubmission:
 
@@ -233,14 +168,12 @@ class SpreadsheetSubmission:
                     d = {key.split('.')[-1] : d}
                 key = ".".join(key.split('.')[:-1])
 
-
-
         # Raise an error if the key is too nested
         if len(key.split('.')) > 3:
             raise ValueError('We don\'t support keys nested greater than 3 levels, found:'+key)
 
         # If the key is in the date_time field list, convert the date time into a string of format YYYY-MM-DDThh:mm:ssZ
-        # so it validates
+        # so it validates. Same principle for integers and boolean types
         if type in schema_timeFields.keys():
             try:
                 if key.split('.')[-1] in schema_timeFields[type]:
@@ -253,7 +186,7 @@ class SpreadsheetSubmission:
             except:
                 self.logger.warn('Failed to convert field {0} in sheet {1} (value {2}) to date_time value'.format(key, type, d))
                 d = str(d)
-        elif type in schema_integerFields.keys():
+        if type in schema_integerFields.keys():
             try:
                 if key.split('.')[-1] in schema_integerFields[type]:
                     if isinstance(d, list):
@@ -264,7 +197,7 @@ class SpreadsheetSubmission:
             except:
                 self.logger.warn('Failed to convert field {0} in sheet {1} (value {2}) to integer value'.format(key, type, d))
                 d = str(d)
-        elif type in schema_booleanFields.keys():
+        if type in schema_booleanFields.keys():
             try:
                 if key.split('.')[-1] in schema_booleanFields[type]:
                     if isinstance(d, list):
@@ -281,28 +214,6 @@ class SpreadsheetSubmission:
             except:
                 self.logger.warn('Failed to convert field {0} in sheet {1} (value {2}) to boolean value'.format(key, type, d))
                 d = str(d)
-        else:
-            d = str(d)
-
-        # If the key is in the ontology field list, or contains "ontology", format it according to the ontology json schema
-        # if type in schema_ontologyFields.keys():
-        #     if key.split('.')[-1] in schema_ontologyFields[type]:
-        #         if isinstance(d, list):
-        #             t = []
-        #             for index, v in enumerate(d):
-        #                 t.append({"text" : d[index]})
-        #             d = t
-        #         else:
-        #             d = {"text" : d}
-        #     elif key.split('.')[-1] == "ontology":
-        #         if isinstance(d, list):
-        #             t = []
-        #             for index, v in enumerate(d):
-        #                 t.append({"ontology": d[index]})
-        #             d = t
-        #         else:
-        #             d = {"ontology": d}
-        #         key = ".". join(key.split('.')[:-1])
 
         # Build up the key-value dictionary
         for part in reversed(key.split('.')):
@@ -468,53 +379,53 @@ class SpreadsheetSubmission:
             filesSheet = wb.get_sheet_by_name("sequence_file")
 
 
-        # convert data in sheets back into dict
+        # convert data in sheets back into dict + add the schema_type/describedBy boilerplate
         project = self._multiRowToObjectFromSheet("project", projectSheet)
         if project:
             if len(project) == 1:
                 project = project[0]
-                project.update({"type": "project",
+                project.update({"schema_type": "project",
                   "describedBy": schema_sheetname_mappings["project"]})
 
         enrichment = self._multiRowToObjectFromSheet("enrichment_process", enrichmentSheet)
         if enrichment:
             for e in enrichment:
-                e.update({"type": "process",
+                e.update({"schema_type": "process",
                           "describedBy": schema_sheetname_mappings["enrichment_process"]})
 
         collection = self._multiRowToObjectFromSheet("collection_process", collectionSheet)
         if collection:
             for c in collection:
-                c.update({"type": "process",
+                c.update({"schema_type": "process",
                      "describedBy": schema_sheetname_mappings["collection_process"]})
 
         dissociation = self._multiRowToObjectFromSheet("dissociation_process", dissociationSheet)
         if dissociation:
             for d in dissociation:
-                d.update({"type": "process",
+                d.update({"schema_type": "process",
                   "describedBy": schema_sheetname_mappings["dissociation_process"]})
 
         reagents = self._multiRowToObjectFromSheet("purchased_reagents", reagentsSheet)
         libraryPrep = self._multiRowToObjectFromSheet("library_preparation_process", libraryPrepSheet)
         if libraryPrep:
             for lp in libraryPrep:
-                lp.update({"type": "process",
+                lp.update({"schema_type": "process",
                     "describedBy": schema_sheetname_mappings["library_preparation_process"]})
         sequencing = self._multiRowToObjectFromSheet("sequencing_process", sequencingSheet)
         if sequencing:
             for s in sequencing:
-                s.update({"type": "process",
+                s.update({"schema_type": "process",
                   "describedBy": schema_sheetname_mappings["sequencing_process"]})
 
         protocols = self._multiRowToObjectFromSheet("protocol", protocolSheet)
         if protocols:
             for prot in protocols:
-                prot.update({"type": "protocol",
+                prot.update({"schema_type": "protocol",
                   "describedBy": schema_sheetname_mappings["protocol"]})
         donors = self._multiRowToObjectFromSheet("donor_organism", donorSheet)
         if donors:
             for do in donors:
-                do.update({"type": "biomaterial",
+                do.update({"schema_type": "biomaterial",
                   "describedBy": schema_sheetname_mappings["donor_organism"]})
         familialRelationships = self._multiRowToObjectFromSheet("familial_relationship", familialRelationshipSheet)
         publications = self._multiRowToObjectFromSheet("project.publications", projectPubsSheet)
@@ -523,28 +434,28 @@ class SpreadsheetSubmission:
         specimens = self._multiRowToObjectFromSheet("specimen_from_organism", specimenSheet)
         if specimens:
             for spec in specimens:
-                spec.update({"type": "biomaterial",
+                spec.update({"schema_type": "biomaterial",
                   "describedBy": schema_sheetname_mappings["specimen_from_organism"]})
         cell_suspension = self._multiRowToObjectFromSheet("cell_suspension", cellSuspensionSheet)
         if cell_suspension:
             for cs in cell_suspension:
-                cs.update({"type": "biomaterial",
+                cs.update({"schema_type": "biomaterial",
                      "describedBy": schema_sheetname_mappings["cell_suspension"]})
         organoid = self._multiRowToObjectFromSheet("organoid", organoidSheet)
         if organoid:
             for org in organoid:
-                org.update({"type": "biomaterial",
+                org.update({"schema_type": "biomaterial",
                   "describedBy": schema_sheetname_mappings["organoid"]})
         cell_line = self._multiRowToObjectFromSheet("cell_line", clSheet)
         if cell_line:
             for cl in cell_line:
-                cl.update({"type": "biomaterial",
+                cl.update({"schema_type": "biomaterial",
                   "describedBy": schema_sheetname_mappings["cell_line"]})
         cell_line_publications = self._multiRowToObjectFromSheet("cell_line.publications", clPublicationSheet)
         files = self._multiRowToObjectFromSheet("sequence_file", filesSheet)
         if files:
             for f in files:
-                f.update({"type": "file",
+                f.update({"schema_type": "file",
                  "describedBy": schema_sheetname_mappings["sequence_file"]})
 
 
@@ -710,9 +621,9 @@ class SpreadsheetSubmission:
         for index, biomaterial_id in enumerate(biomaterialMap.keys()):
             if not self.dryrun:
                 if "has_input_biomaterial" in biomaterialMap[biomaterial_id]['content']["biomaterial_core"]:
-                    # self.ingest_api.linkEntity(biomaterialMap[biomaterial_id],
-                    #                            biomaterialMap[biomaterialMap[biomaterial_id]['content']["biomaterial_core"]["has_input_biomaterial"]],
-                    #                            "hasInputBiomaterial")
+                    self.ingest_api.linkEntity(biomaterialMap[biomaterial_id],
+                                               biomaterialMap[biomaterialMap[biomaterial_id]['content']["biomaterial_core"]["has_input_biomaterial"]],
+                                               "hasInputBiomaterial")
 
                     # retrieve biomaterials from map
                     output_biomaterial = biomaterialMap[biomaterial_id]
@@ -742,60 +653,58 @@ class SpreadsheetSubmission:
             biomaterial = file["biomaterial_id"]
             del file["process_id"]
             del file["biomaterial_id"]
-            filesMap[file["filename"]] = file
+            filesMap[file["file_core"]["file_name"]] = file
 
-            # ????do we need this????
-            processMap[process]["files"].append(file["filename"])
+            if "files" not in processMap[process]:
+                processMap[process]["files"] = []
+
+            processMap[process]["files"].append(file["file_core"]["file_name"])
 
             self.dumpJsonToFile(file, projectId, "files_" + str(index))
             if not self.dryrun:
-                fileIngest = self.ingest_api.createFile(submissionUrl, file["filename"], json.dumps(file))
-                filesMap[file["filename"]] = fileIngest
+                fileIngest = self.ingest_api.createFile(submissionUrl, file["file_core"]["file_name"], json.dumps(file))
+                filesMap[file["file_core"]["file_name"]] = fileIngest
 
-            #     if biomaterial in biomaterialMap:
-            #         self.ingest_api.linkEntity(fileIngest, biomaterialMap[biomaterial], "biomaterials")
-            # else:
-            #     if biomaterial in biomaterialMap:
-            #         linksList.append("file_" + file["filename"] + "-biomaterial_" + biomaterial)
 
         for index, process in enumerate(processMap.values()):
             if "process_id" not in process["process_core"]:
                 raise ValueError('Each process must have an id attribute' + str(process))
-            if "files" not in process:
-                raise ValueError('Each assay must list associated files using the files attribute')
-            else:
+
+            proc_files=[]
+            if "files" in process:
                 for file in process["files"]:
                     if file not in filesMap:
                         raise ValueError('Process references file '+file+' that isn\'t defined in the files sheet')
-            files = process["files"]
-            del process["files"]
+                proc_files = process["files"]
+                del process["files"]
 
-            if "biomaterial_id" not in process:
-                raise ValueError("Every assay must reference a biomaterial using the biomaterial_id attribute")
-            elif process["biomaterial_id"] not in biomaterialMap:
-                raise ValueError('An assay references a biomaterial '+process["biomaterial_id"]+' that isn\'t in the biomaterials worksheet')
-            biomaterials = process["biomaterial_id"]
-            del process["biomaterial_id"]
+            if "biomaterial_ids" not in process:
+                raise ValueError("Every process must reference a biomaterial using the biomaterial_id attribute")
+            else:
+                for biomaterial_id in process["biomaterial_ids"]:
+                    if biomaterial_id not in biomaterialMap:
+                        raise ValueError('An process references a biomaterial '+biomaterial_id+' that isn\'t in one of the biomaterials worksheets')
+                proc_biomaterials = process["biomaterial_ids"]
+                del process["biomaterial_ids"]
 
-            self.dumpJsonToFile(process, projectId, "assay_" + str(index))
-            # ???this is the bit we still need to figure out????
+            self.dumpJsonToFile(process, projectId, "process_" + str(index))
             if not self.dryrun:
                 processIngest = self.ingest_api.createProcess(submissionUrl, json.dumps(process))
                 self.ingest_api.linkEntity(processIngest, projectIngest, "projects") # correct
 
-                if biomaterials in biomaterialMap:
-                    self.ingest_api.linkEntity(processIngest, biomaterialMap[biomaterials], "biomaterials") # correct
+                for biomaterial in proc_biomaterials:
+                    self.ingest_api.linkEntity(processIngest, biomaterialMap[biomaterial], "biomaterials") # correct
 
-                for file in files:
+                for file in proc_files:
                     self.ingest_api.linkEntity(processIngest, filesMap[file], "files") # correct
             else:
-                linksList.append("assay_" + str(process["assay_id"]) + "-project_" + str(projectId))
+                linksList.append("process_" + str(process["process_core"]["process_id"]) + "-project_" + str(projectId))
 
-                if biomaterials in biomaterialMap:
-                    linksList.append("assay_" + str(process["assay_id"]) + "-biomaterial_" + str(biomaterials))
+                for biomaterial in proc_biomaterials:
+                    linksList.append("process_" + str(process["process_core"]["process_id"]) + "-biomaterial_" + str(biomaterial))
 
-                for file in files:
-                    linksList.append("assay_" + str(process["assay_id"]) + "-file_" + str(file))
+                for file in proc_files:
+                    linksList.append("process_" + str(process["process_core"]["process_id"]) + "-file_" + str(file))
 
         self.dumpJsonToFile(linksList, projectId, "dry_run_links")
         self.logger.info("All done!")
