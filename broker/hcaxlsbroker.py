@@ -523,84 +523,11 @@ class SpreadsheetSubmission:
 
         biomaterialMap = {}
 
-        # for index, donor in enumerate(donors):
-        #     if "sample_id" not in donor:
-        #         raise ValueError('Sample of type donor must have an id attribute')
-        #     sample_id = donor["sample_id"]
-        #
-        #     # removing the explicit check for donor absence as this should be picked up by the validator
-        #     # if "donor" not in donor:
-        #         # Returns ValueError if there are no other donor.fields and donor.is_living is missing
-        #         # raise ValueError('Field is_living for sample ' + sample_id + ' is a required field and must either contain one of yes, true, no, or false')
-        #     # else:
-        #     if "donor" in donor:
-        #         if "is_living" in donor["donor"]:
-        #             if donor["donor"]["is_living"].lower()in ["true", "yes"]:
-        #                 donor["donor"]["is_living"] = True
-        #             elif donor["donor"]["is_living"].lower() in ["false", "no"]:
-        #                 donor["donor"]["is_living"] = False
-        #             '''
-        #             # Commented out because we shouldn't be doing content validation in the converter
-        #             else:
-        #                 # Returns ValueError if donor.is_living isn't true,yes,false,no
-        #                 raise ValueError('Field is_living for sample ' + sample_id + ' is a required field and must either contain one of yes, true, no, or false')
-        #             '''
-        #         # Removing the ValueError if is_living is absent or in the wrong format as this should be flagged by the validator
-        #         # else:
-        #             # Returns ValueError if there are other donor.fields but donor.is_living is empty
-        #             # raise ValueError('Field is_living for sample ' + sample_id + ' is a required field and must either contain one of yes, true, no, or false')
-        #
-        #     # Removing ValueError for absence of ncbi_taxon_id as this should be caught by the validator
-        #     # if "ncbi_taxon_id" not in donor:
-        #         # Returns ValueError if donor.ncbi_taxon_id is empty
-        #         # raise ValueError('Field ncbi_taxon_id for sample ' + sample_id + ' is a required field and must contain a valid NCBI Taxon ID')
-        #
-        #     if "ncbi_taxon_id" in donor and  "genus_species" in donor:
-        #         donor["genus_species"]["ontology"] = "NCBITaxon:" + str(donor["ncbi_taxon_id"])
-        #
-        #
-        #     sampleMap[sample_id] = donor
-        #     donorIds.append(sample_id)
-        #
-        #     sampleProtocols = []
-        #     if "protocol_ids" in donor:
-        #         for sampleProtocolId in donor["protocol_ids"]:
-        #             if sampleProtocolId not in protocolMap:
-        #                 raise ValueError('Sample ' + sample_id
-        #                                  + ' references a protocol ' + sampleProtocolId + ' that isn\'t in the protocol worksheet')
-        #         sampleProtocols = donor["protocol_ids"]
-        #         del donor["protocol_ids"]
-        #
-        #     donor["core"] = {"type" : "sample",
-        #                      "describedBy": self.schema_url + "biomaterial.json",
-        #                     "schema_version": self.schema_version}
-        #
-        #     self.dumpJsonToFile(donor, projectId, "donor_" + str(index))
-        #     if not self.dryrun:
-        #         biomaterialIngest = self.ingest_api.createBiomaterial(submissionUrl, json.dumps(donor))
-        #         self.ingest_api.linkEntity(biomaterialIngest, projectIngest, "projects")
-        #         biomaterialMap[biomaterial_id] = biomaterialIngest
-        #
-        #         if biomaterialProtocols:
-        #             for biomaterialProtocolId in biomaterialProtocols:
-        #                 self.ingest_api.linkEntity(biomaterialIngest, protocolMap[biomaterialProtocolId], "protocols")
-        #     else:
-        #         linksList.append("biomaterial_" + str(biomaterial_id) + "-project_" + str(projectId))
-        #         if biomaterialProtocols:
-        #             for biomaterialProtocolId in biomaterialProtocols:
-        #                 linksList.append("biomaterial_" + str(biomaterial_id) + "-protocol_" + str(biomaterialProtocolId))
-
 
         for index, biomaterial in enumerate(biomaterials):
             if "biomaterial_id" not in biomaterial["biomaterial_core"]:
                 raise ValueError('Biomaterial must have an id attribute')
             biomaterialMap[biomaterial["biomaterial_core"]["biomaterial_id"]] = biomaterial
-            biomaterial_id = biomaterial["biomaterial_core"]["biomaterial_id"]
-
-            # if "ncbi_taxon_id" not in biomaterial:
-                # Returns ValueError if donor.ncbi_taxon_id is empty
-                # raise ValueError(
-                #     'Field ncbi_taxon_id for biomaterial ' + biomaterial_id + ' is a required field and must contain a valid NCBI Taxon ID')
 
             if "ncbi_taxon_id" in biomaterial["biomaterial_core"] and "genus_species" in biomaterial:
                 if not isinstance(biomaterial["genus_species"],list):
@@ -667,7 +594,7 @@ class SpreadsheetSubmission:
 
             self.dumpJsonToFile(biomaterial, projectId, "biomaterial_" + str(index))
             if not self.dryrun:
-                biomaterialIngest = self.ingest_api.createSample(submissionUrl, json.dumps(biomaterial))
+                biomaterialIngest = self.ingest_api.createBiomaterial(submissionUrl, json.dumps(biomaterial))
                 self.ingest_api.linkEntity(biomaterialIngest, projectIngest, "projects") # correct
                 biomaterialMap[biomaterial["biomaterial_core"]["biomaterial_id"]] = biomaterialIngest
                 # if biomaterialProtocols:
@@ -750,7 +677,7 @@ class SpreadsheetSubmission:
             self.dumpJsonToFile(process, projectId, "process_" + str(index))
             # ???this is the bit we still need to figure out????
             if not self.dryrun:
-                processIngest = self.ingest_api.createAssay(submissionUrl, json.dumps(process))
+                processIngest = self.ingest_api.createProcess(submissionUrl, json.dumps(process))
                 self.ingest_api.linkEntity(processIngest, projectIngest, "projects") # correct
 
                 for biomaterial in proc_biomaterials:

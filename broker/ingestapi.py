@@ -187,20 +187,20 @@ class IngestApi:
     def createProject(self, submissionUrl, jsonObject, token):
         return self.createEntity(submissionUrl, jsonObject, "projects", token)
 
-    def createSample(self, submissionUrl, jsonObject):
-        return self.createEntity(submissionUrl, jsonObject, "samples")
+    def createBiomaterial(self, submissionUrl, jsonObject):
+        return self.createEntity(submissionUrl, jsonObject, "biomaterials")
 
-    def createAssay(self, submissionUrl, jsonObject):
-        return self.createEntity(submissionUrl, jsonObject, "assays")
+    def createProcess(self, submissionUrl, jsonObject):
+        return self.createEntity(submissionUrl, jsonObject, "processes")
 
-    def createDonor(self, submissionUrl, jsonObject):
-        return self.createSample(submissionUrl, jsonObject)
+    # def createDonor(self, submissionUrl, jsonObject):
+    #     return self.createBiomaterial(submissionUrl, jsonObject)
 
     def createProtocol(self, submissionUrl, jsonObject):
         return self.createEntity(submissionUrl, jsonObject, "protocols")
 
-    def createAnalysis(self, submissionUrl, jsonObject):
-        return self.createEntity(submissionUrl, jsonObject, "analyses")
+    # def createAnalysis(self, submissionUrl, jsonObject):
+    #     return self.createEntity(submissionUrl, jsonObject, "analyses")
 
     def createFile(self, submissionUrl, fileName, jsonObject):
         submissionUrl = self.submission_links[submissionUrl]["files"]['href'].rsplit("{")[0]
