@@ -21,16 +21,6 @@ from collections import defaultdict
 
 # these are spreadsheet fields that can be a list
 # todo - these should be read out of the json schema at the start
-# schema_ontologyFields = {"donor" : ["ancestry", "development_stage", "disease", "medication", "strain", "genus_species"],
-#                     "cell_suspension" : ["target_cell_type", "genus_species"],
-#                     "death" : ["cause_of_death"],
-#                     "immortalized_cell_line" : ["cell_type", "disease", "cell_cycle", "genus_species"],
-#                     "protocol" : ["type"],
-#                     "primary_cell_line" : ["cell_type", "disease", "cell_cycle", "genus_species"],
-#                     "specimen_from_organism" : ["body_part", "organ", "genus_species"],
-#                     "project" : ["experimental_design"],
-#                     "organoid" : ["model_for_organ", "genus_species"]
-#                     }
 
 schema_arrayFields = {
     "cell_line": ["genus_species", "publications", "ncbi_taxon_id", "supplementary_files", "process_ids"],
@@ -197,7 +187,7 @@ class SpreadsheetSubmission:
             except:
                 self.logger.warn('Failed to convert field {0} in sheet {1} (value {2}) to date_time value'.format(key, type, d))
                 d = str(d)
-        elif type in schema_integerFields.keys():
+        if type in schema_integerFields.keys():
             try:
                 if key.split('.')[-1] in schema_integerFields[type]:
                     if isinstance(d, list):
@@ -208,7 +198,7 @@ class SpreadsheetSubmission:
             except:
                 self.logger.warn('Failed to convert field {0} in sheet {1} (value {2}) to integer value'.format(key, type, d))
                 d = str(d)
-        elif type in schema_booleanFields.keys():
+        if type in schema_booleanFields.keys():
             try:
                 if key.split('.')[-1] in schema_booleanFields[type]:
                     if isinstance(d, list):
@@ -225,30 +215,6 @@ class SpreadsheetSubmission:
             except:
                 self.logger.warn('Failed to convert field {0} in sheet {1} (value {2}) to boolean value'.format(key, type, d))
                 d = str(d)
-        else:
-            d = str(d)
-
-        # If the key is in the ontology field list, or contains "ontology", format it according to the ontology json schema
-        # if type in schema_ontologyFields.keys():
-        #     if key.split('.')[-1] in schema_ontologyFields[type]:
-        #         if isinstance(d, list):
-        #             t = []
-        #             for index, v in enumerate(d):
-        #                 t.append({"text" : d[index]})
-        #             d = t
-        #         else:
-        #             d = {"text" : d}
-        #     elif key.split('.')[-1] == "ontology":
-        #         if isinstance(d, list):
-        #             t = []
-        #             for index, v in enumerate(d):
-        #                 t.append({"ontology": d[index]})
-        #             d = t
-        #         else:
-        #             d = {"ontology": d}
-        #         key = ".". join(key.split('.')[:-1])
-
-
 
         # Build up the key-value dictionary
         for part in reversed(key.split('.')):
@@ -407,48 +373,48 @@ class SpreadsheetSubmission:
         if project:
             if len(project) == 1:
                 project = project[0]
-                project.update({"type": "project",
+                project.update({"schema_type": "project",
                   "describedBy": schema_sheetname_mappings["project"]})
 
         enrichment = self._multiRowToObjectFromSheet("enrichment_process", enrichmentSheet)
         if enrichment:
             for e in enrichment:
-                e.update({"type": "process",
+                e.update({"schema_type": "process",
                           "describedBy": schema_sheetname_mappings["enrichment_process"]})
 
         collection = self._multiRowToObjectFromSheet("collection_process", collectionSheet)
         if collection:
             for c in collection:
-                c.update({"type": "process",
+                c.update({"schema_type": "process",
                      "describedBy": schema_sheetname_mappings["collection_process"]})
 
         dissociation = self._multiRowToObjectFromSheet("dissociation_process", dissociationSheet)
         if dissociation:
             for d in dissociation:
-                d.update({"type": "process",
+                d.update({"schema_type": "process",
                   "describedBy": schema_sheetname_mappings["dissociation_process"]})
 
         reagents = self._multiRowToObjectFromSheet("purchased_reagents", reagentsSheet)
         libraryPrep = self._multiRowToObjectFromSheet("library_preparation_process", libraryPrepSheet)
         if libraryPrep:
             for lp in libraryPrep:
-                lp.update({"type": "process",
+                lp.update({"schema_type": "process",
                     "describedBy": schema_sheetname_mappings["library_preparation_process"]})
         sequencing = self._multiRowToObjectFromSheet("sequencing_process", sequencingSheet)
         if sequencing:
             for s in sequencing:
-                s.update({"type": "process",
+                s.update({"schema_type": "process",
                   "describedBy": schema_sheetname_mappings["sequencing_process"]})
 
         protocols = self._multiRowToObjectFromSheet("protocol", protocolSheet)
         if protocols:
             for prot in protocols:
-                prot.update({"type": "protocol",
+                prot.update({"schema_type": "protocol",
                   "describedBy": schema_sheetname_mappings["protocol"]})
         donors = self._multiRowToObjectFromSheet("donor_organism", donorSheet)
         if donors:
             for do in donors:
-                do.update({"type": "biomaterial",
+                do.update({"schema_type": "biomaterial",
                   "describedBy": schema_sheetname_mappings["donor_organism"]})
         familialRelationships = self._multiRowToObjectFromSheet("familial_relationship", familialRelationshipSheet)
         publications = self._multiRowToObjectFromSheet("project.publications", projectPubsSheet)
@@ -457,28 +423,28 @@ class SpreadsheetSubmission:
         specimens = self._multiRowToObjectFromSheet("specimen_from_organism", specimenSheet)
         if specimens:
             for spec in specimens:
-                spec.update({"type": "biomaterial",
+                spec.update({"schema_type": "biomaterial",
                   "describedBy": schema_sheetname_mappings["specimen_from_organism"]})
         cell_suspension = self._multiRowToObjectFromSheet("cell_suspension", cellSuspensionSheet)
         if cell_suspension:
             for cs in cell_suspension:
-                cs.update({"type": "biomaterial",
+                cs.update({"schema_type": "biomaterial",
                      "describedBy": schema_sheetname_mappings["cell_suspension"]})
         organoid = self._multiRowToObjectFromSheet("organoid", organoidSheet)
         if organoid:
             for org in organoid:
-                org.update({"type": "biomaterial",
+                org.update({"schema_type": "biomaterial",
                   "describedBy": schema_sheetname_mappings["organoid"]})
         cell_line = self._multiRowToObjectFromSheet("cell_line", clSheet)
         if cell_line:
             for cl in cell_line:
-                cl.update({"type": "biomaterial",
+                cl.update({"schema_type": "biomaterial",
                   "describedBy": schema_sheetname_mappings["cell_line"]})
         cell_line_publications = self._multiRowToObjectFromSheet("cell_line.publications", clPublicationSheet)
         files = self._multiRowToObjectFromSheet("sequence_file", filesSheet)
         if files:
             for f in files:
-                f.update({"type": "file",
+                f.update({"schema_type": "file",
                  "describedBy": schema_sheetname_mappings["sequence_file"]})
 
 
@@ -723,7 +689,7 @@ class SpreadsheetSubmission:
                     # todo - link biomaterials via intermediate process.  In this scenario, create an empty process that bridges
 
             else:
-                if "has_input_biomaterial" in biomaterialMap[biomaterial_id]:
+                if "has_input_biomaterial" in biomaterialMap[biomaterial_id]["biomaterial_core"]:
                     linksList.append(
                         "biomaterial_" + str(biomaterial_id) + "-hasInputBiomaterial_" + str(biomaterialMap[biomaterial_id]["biomaterial_core"]["has_input_biomaterial"]))
 
@@ -736,7 +702,6 @@ class SpreadsheetSubmission:
             if "process_id" not in file:
                 raise ValueError('Files must be linked to a process')
             process = file["process_id"]
-            biomaterial = file["biomaterial_id"]
             del file["process_id"]
             del file["biomaterial_id"]
             filesMap[file["file_core"]["file_name"]] = file
@@ -764,21 +729,23 @@ class SpreadsheetSubmission:
             # if "files" not in process:
                 # raise ValueError('Each process must list associated files using the files attribute')
             # else:
+            proc_files=[]
             if "files" in process:
                 for file in process["files"]:
                     if file not in filesMap:
                         raise ValueError('Process references file '+file+' that isn\'t defined in the files sheet')
-                files = process["files"]
+                proc_files = process["files"]
                 del process["files"]
 
+            proc_biomaterials = []
             if "biomaterial_ids" not in process:
                 raise ValueError("Every process must reference a biomaterial using the biomaterial_id attribute")
             else:
                 for biomaterial_id in process["biomaterial_ids"]:
                     if biomaterial_id not in biomaterialMap:
                         raise ValueError('An process references a biomaterial '+biomaterial_id+' that isn\'t in one of the biomaterials worksheets')
-            biomaterials = process["biomaterial_ids"]
-            del process["biomaterial_ids"]
+                proc_biomaterials = process["biomaterial_ids"]
+                del process["biomaterial_ids"]
 
             self.dumpJsonToFile(process, projectId, "process_" + str(index))
             # ???this is the bit we still need to figure out????
@@ -786,18 +753,18 @@ class SpreadsheetSubmission:
                 processIngest = self.ingest_api.createAssay(submissionUrl, json.dumps(process))
                 self.ingest_api.linkEntity(processIngest, projectIngest, "projects") # correct
 
-                if biomaterials in biomaterialMap:
-                    self.ingest_api.linkEntity(processIngest, biomaterialMap[biomaterials], "biomaterials") # correct
+                for biomaterial in proc_biomaterials:
+                    self.ingest_api.linkEntity(processIngest, biomaterialMap[biomaterial], "biomaterials") # correct
 
-                for file in files:
+                for file in proc_files:
                     self.ingest_api.linkEntity(processIngest, filesMap[file], "files") # correct
             else:
                 linksList.append("process_" + str(process["process_core"]["process_id"]) + "-project_" + str(projectId))
 
-                for biomaterial in biomaterials:
+                for biomaterial in proc_biomaterials:
                     linksList.append("process_" + str(process["process_core"]["process_id"]) + "-biomaterial_" + str(biomaterial))
 
-                for file in files:
+                for file in proc_files:
                     linksList.append("process_" + str(process["process_core"]["process_id"]) + "-file_" + str(file))
 
         self.dumpJsonToFile(linksList, projectId, "dry_run_links")
