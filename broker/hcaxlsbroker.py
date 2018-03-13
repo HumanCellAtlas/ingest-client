@@ -85,99 +85,43 @@ schema_integerFields = {
 # (spec for lookup: query by 'title' (sheet name in the spreadsheet, field in the schema)
 schema_sheetname_mappings = {
     # biomaterials
-    "cell_line": "https://schema.humancellatlas.org/type/biomaterial/5.0.1/cell_line",
-    "cell_suspension": "https://schema.humancellatlas.org/type/biomaterial/5.0.0/cell_suspension",
-    "donor_organism": "https://schema.humancellatlas.org/type/biomaterial/5.0.0/donor_organism",
-    "organoid": "https://schema.humancellatlas.org/type/biomaterial/5.0.0/organoid",
-    "specimen_from_organism": "https://schema.humancellatlas.org/type/biomaterial/5.0.0/specimen_from_organism",
+    "cell_line": "https://schema.humancellatlas.org/type/biomaterial/5.1.0/cell_line",
+    "cell_suspension": "https://schema.humancellatlas.org/type/biomaterial/5.1.0/cell_suspension",
+    "donor_organism": "https://schema.humancellatlas.org/type/biomaterial/5.1.0/donor_organism",
+    "organoid": "https://schema.humancellatlas.org/type/biomaterial/5.1.0/organoid",
+    "specimen_from_organism": "https://schema.humancellatlas.org/type/biomaterial/5.1.0/specimen_from_organism",
     # files
-    "analysis_file": "https://schema.humancellatlas.org/type/file/5.0.0/analysis_file",
-    "sequence_file": "https://schema.humancellatlas.org/type/file/5.0.0/sequence_file",
+    "analysis_file": "https://schema.humancellatlas.org/type/file/5.1.0/analysis_file",
+    "sequence_file": "https://schema.humancellatlas.org/type/file/5.1.0/sequence_file",
     # analysis processes
-    "analysis_process": "https://schema.humancellatlas.org/type/process/analysis/5.0.0/analysis_process",
+    "analysis_process": "https://schema.humancellatlas.org/type/process/analysis/5.1.0/analysis_process",
     # biomaterial processes
-    "collection_process": "https://schema.humancellatlas.org/type/process/biomaterial_collection/5.0.0/collection_process",
-    "dissociation_process": "https://schema.humancellatlas.org/type/process/biomaterial_collection/5.0.0/dissociation_process",
-    "enrichment_process": "https://schema.humancellatlas.org/type/process/biomaterial_collection/5.0.0/enrichment_process",
+    "collection_process": "https://schema.humancellatlas.org/type/process/biomaterial_collection/5.1.0/collection_process",
+    "dissociation_process": "https://schema.humancellatlas.org/type/process/biomaterial_collection/5.1.0/dissociation_process",
+    "enrichment_process": "https://schema.humancellatlas.org/type/process/biomaterial_collection/5.1.0/enrichment_process",
     # imaging processes
-    "imaging_process": "https://schema.humancellatlas.org/type/process/imaging/5.0.0/imaging_process",
+    "imaging_process": "https://schema.humancellatlas.org/type/process/imaging/5.1.0/imaging_process",
     # sequencing processes
-    "library_preparation_process": "https://schema.humancellatlas.org/type/process/sequencing/5.0.0/library_preparation_process",
-    "sequencing_process": "https://schema.humancellatlas.org/type/process/sequencing/5.0.0/sequencing_process",
+    "library_preparation_process": "https://schema.humancellatlas.org/type/process/sequencing/5.1.0/library_preparation_process",
+    "sequencing_process": "https://schema.humancellatlas.org/type/process/sequencing/5.1.0/sequencing_process",
     # projects
-    "project": "https://schema.humancellatlas.org/type/project/5.0.1/project",
+    "project": "https://schema.humancellatlas.org/type/project/5.1.0/project",
     # protocols
-    "protocol": "https://schema.humancellatlas.org/type/protocol/5.0.0/protocol",
-    "analysis_protocol": "https://schema.humancellatlas.org/type/protocol/analysis/5.0.0/analysis_protocol",
-    "biomaterial_collection_protocol": "https://schema.humancellatlas.org/type/protocol/biomaterial/5.0.0/biomaterial_collection_protocol",
-    "imaging_protocol": "https://schema.humancellatlas.org/type/protocol/imaging/5.0.0/imaging_protocol",
-    "sequencing_protocol": "https://schema.humancellatlas.org/type/protocol/sequencing/5.0.0/sequencing_protocol"
+    "protocol": "https://schema.humancellatlas.org/type/protocol/5.1.0/protocol",
+    "analysis_protocol": "https://schema.humancellatlas.org/type/protocol/analysis/5.1.0/analysis_protocol",
+    "biomaterial_collection_protocol": "https://schema.humancellatlas.org/type/protocol/biomaterial/5.1.0/biomaterial_collection_protocol",
+    "imaging_protocol": "https://schema.humancellatlas.org/type/protocol/imaging/5.1.0/imaging_protocol",
+    "sequencing_protocol": "https://schema.humancellatlas.org/type/protocol/sequencing/5.1.0/sequencing_protocol"
 }
 
-# schema_fieldname_mappings = {
-#     # cell_line
-#     "biomaterial_core": "https://schema.humancellatlas.org/core/biomaterial/5.0.0/biomaterial_core",
-#     "cell_cycle": "https://schema.humancellatlas.org/module/ontology/5.0.0/cell_cycle_ontology",
-#     "cell_morphology": "https://schema.humancellatlas.org/module/biomaterial/5.0.0/cell_morphology",
-#     "growth_conditions": "https://schema.humancellatlas.org/module/biomaterial/5.0.0/growth_conditions",
-#     "cell_type": "https://schema.humancellatlas.org/module/ontology/5.0.0/cell_type_ontology",
-#     "disease": "https://schema.humancellatlas.org/module/ontology/5.0.0/disease_ontology",
-#     "genus_species": "https://schema.humancellatlas.org/module/ontology/5.0.0/species_ontology",
-#     "publications": "https://schema.humancellatlas.org/module/project/5.0.1/publication",
-#     # cell_suspension
-#     "target_cell_type": "https://schema.humancellatlas.org/module/ontology/5.0.0/cell_type_ontology",
-#     # donor_organism
-#     "human_specific": "https://schema.humancellatlas.org/module/biomaterial/5.0.0/homo_sapiens_specific",
-#     "mus_musculus_specific": "https://schema.humancellatlas.org/module/biomaterial/5.0.0/mus_musculus_specific",
-#     "death": "https://schema.humancellatlas.org/module/biomaterial/5.0.0/death",
-#     "medical_history": "https://schema.humancellatlas.org/module/biomaterial/5.0.0/medical_history",
-#     "organism_age_unit": "https://schema.humancellatlas.org/module/ontology/5.0.0/time_unit_ontology",
-#     "development_stage": "https://schema.humancellatlas.org/module/ontology/5.0.0/development_stage_ontology",
-#     "familial_relationship": "https://schema.humancellatlas.org/module/biomaterial/5.0.0/familial_relationship",
-#     "gestational_age_unit": "https://schema.humancellatlas.org/module/ontology/5.0.0/time_unit_ontology",
-#     "height_unit": "https://schema.humancellatlas.org/module/ontology/5.0.0/length_unit_ontology",
-#     "weight_unit": "https://schema.humancellatlas.org/module/ontology/5.0.0/mass_unit_ontology",
-#     # organoid
-#     "model_for_organ": "https://schema.humancellatlas.org/module/ontology/5.0.0/organ_ontology",
-#     "organoid_age_unit": "https://schema.humancellatlas.org/module/ontology/5.0.0/time_unit_ontology",
-#     # specimen_from_organism
-#     "organ": "https://schema.humancellatlas.org/module/ontology/5.0.0/organ_ontology",
-#     "organ_part": "https://schema.humancellatlas.org/module/ontology/5.0.0/organ_part_ontology",
-#     "state_of_specimen": "https://schema.humancellatlas.org/module/biomaterial/5.0.0/state_of_specimen",
-#     "preservation_storage": "https://schema.humancellatlas.org/module/biomaterial/5.0.0/preservation_storage",
-#     # file
-#     "file_core": "https://schema.humancellatlas.org/core/file/5.0.0/file_core",
-#     # process
-#     "process_core": "https://schema.humancellatlas.org/core/process/5.0.0/process_core",
-#     "process_type": "https://schema.humancellatlas.org/module/ontology/5.0.0/process_type_ontology",
-#     "outputs.items": "https://schema.humancellatlas.org/type/file/5.0.0/analysis_file",
-#     # collection_process
-#     "process_reagents": "https://schema.humancellatlas.org/module/process/5.0.0/purchased_reagents",
-#     # library_preparation_process
-#     "cell_barcode": "https://schema.humancellatlas.org/module/process/sequencing/5.0.0/barcode",
-#     "input_nucleic_acid_molecule": "https://schema.humancellatlas.org/module/ontology/5.0.0/biological_macromolecule_ontology",
-#     # sequencing_process
-#     "instrument_manufacturer_model": "https://schema.humancellatlas.org/module/ontology/5.0.0/instrument_ontology",
-#     "smartseq2": "https://schema.humancellatlas.org/module/process/sequencing/5.0.0/smartseq2",
-#     # project
-#     "project_core": "https://schema.humancellatlas.org/core/project/5.0.0/project_core",
-#     "contributors": "https://schema.humancellatlas.org/module/project/5.0.0/contact",
-#     # analysis_protocol
-#     "protocol_core": "https://schema.humancellatlas.org/core/protocol/5.0.0/protocol_core",
-#     "protocol_type": "https://schema.humancellatlas.org/module/ontology/5.0.0/protocol_type_ontology"
-# }
-
-# SCHEMA_URL = os.environ.get('SCHEMA_URL', "https://raw.githubusercontent.com/HumanCellAtlas/metadata-schema/%s/json_schema/")
-# SCHEMA_URL = os.path.expandvars(os.environ.get('SCHEMA_URL', SCHEMA_URL))
-# SCHEMA_VERSION = os.environ.get('SCHEMA_VERSION', '4.6.1')
 
 
 class SpreadsheetSubmission:
 
     def __init__(self, dry=False, output=None, schema_version=None):
-        formatter = logging.Formatter(
-            '[%(filename)s:%(lineno)s - %(funcName)20s() ] %(asctime)s - %(name)s - %(levelname)s - %(message)s')
-        logging.basicConfig(formatter=formatter, level=logging.INFO)
+        # formatter = logging.Formatter(
+        #     '[%(filename)s:%(lineno)s - %(funcName)20s() ] %(asctime)s - %(name)s - %(levelname)s - %(message)s')
+        # logging.basicConfig(formatter=formatter, level=logging.INFO)
         self.logger = logging.getLogger(__name__)
 
         self.dryrun = dry
@@ -214,13 +158,26 @@ class SpreadsheetSubmission:
         # an ontology field), put value into an array (splitting if necessary)
         if "\"" in str(value) or "||" in str(value) \
                 or (type in schema_arrayFields.keys() and key.split('.')[-1] in schema_arrayFields[type]) \
-                or (type in schema_arrayFields.keys() and key.split('.')[-1] == "ontology"
+                or (type in schema_arrayFields.keys() and (key.split('.')[-1] == "ontology" or key.split('.')[-1] == "text")
                     and key.split('.')[-2] in schema_arrayFields[type]):
             if "||" in str(value):
             # d = map(lambda it: it.strip(' "\''), str(value).split("||"))
                 d = str(value).split("||")
             else:
                 d = [value]
+
+            if key.split('.')[-1] in ["text", "ontology"]:
+
+                if isinstance(d, list):
+                    t = []
+                    for index, v in enumerate(d):
+                        t.append({key.split('.')[-1] : d[index]})
+                    d = t
+                else:
+                    d = {key.split('.')[-1] : d}
+                key = ".".join(key.split('.')[:-1])
+
+
 
         # Raise an error if the key is too nested
         if len(key.split('.')) > 3:
@@ -322,7 +279,7 @@ class SpreadsheetSubmission:
             hasData = False
             for cell in row:
                 # WARNING: remove long from the checks if using python 3!
-                if not cell.value and not isinstance(cell.value, (int, float, long)):
+                if not cell.value and not isinstance(cell.value, (int, float)):
                     continue
                 hasData = True
                 cellCol = cell.col_idx
@@ -679,8 +636,12 @@ class SpreadsheetSubmission:
                 # raise ValueError(
                 #     'Field ncbi_taxon_id for biomaterial ' + biomaterial_id + ' is a required field and must contain a valid NCBI Taxon ID')
 
-            if "ncbi_taxon_id" in biomaterial and "genus_species" in biomaterial:
-                biomaterial["genus_species"]["ontology"] = "NCBITaxon:" + str(biomaterial["ncbi_taxon_id"])
+            if "ncbi_taxon_id" in biomaterial["biomaterial_core"] and "genus_species" in biomaterial:
+                if not isinstance(biomaterial["genus_species"],list):
+                    biomaterial["genus_species"]["ontology"] = "NCBITaxon:" + str(biomaterial["biomaterial_core"]["ncbi_taxon_id"])
+                elif isinstance(biomaterial["genus_species"],list) and len(biomaterial["genus_species"])==1:
+                    biomaterial["genus_species"][0]["ontology"] = "NCBITaxon:" + str(biomaterial["biomaterial_core"]["ncbi_taxon_id"][0])
+
 
         # add dependent information to various biomaterial types
 
