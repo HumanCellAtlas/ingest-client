@@ -604,7 +604,7 @@ class SpreadsheetSubmission:
                 biomaterialIngest = self.ingest_api.createBiomaterial(submissionUrl, json.dumps(biomaterial))
                 self.ingest_api.linkEntity(biomaterialIngest, projectIngest, "projects") # correct
                 biomaterialMap[biomaterial["biomaterial_core"]["biomaterial_id"]] = biomaterialIngest
-             else:
+            else:
                 linksList.append("biomaterial_" + str(biomaterial_id) + "-project_" + str(projectId))
 
         # create has_input_biomaterial links between biomaterials separately to make sure all biomaterials are submitted
