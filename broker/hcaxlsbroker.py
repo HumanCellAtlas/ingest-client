@@ -584,12 +584,16 @@ class SpreadsheetSubmission:
                 processMap[process_id]["process_reagents"].append(reagents)
 
         # submit biomaterials to ingest and link to project and protocols
+        biomaterials_with_procs = []
+        proc_input_biomaterials = {}
+        biomaterial_proc_inputs = {}
+        proc_output_biomaterials = {}
+        biomaterial_proc_outputs = {}
         for index, biomaterial_id in enumerate(biomaterialMap.keys()):
             biomaterial = biomaterialMap[biomaterial_id]
             if "has_input_biomaterial" in biomaterial["biomaterial_core"]:
                 if biomaterial["biomaterial_core"]["has_input_biomaterial"] not in biomaterialMap.keys():
                     raise ValueError('Biomaterial '+ str(biomaterial_id) +' references another biomaterial '+ str(biomaterial["biomaterial_core"]["has_input_biomaterial"]) +' that isn\'t in the spraedsheet')
-
 
             if "process_ids" in biomaterial:
                 for process_id in biomaterial["process_ids"]:
@@ -599,8 +603,14 @@ class SpreadsheetSubmission:
                     if "biomaterial_ids" not in processMap[process_id]:
                         processMap[process_id]["biomaterial_ids"] = []
                     processMap[process_id]["biomaterial_ids"].append(biomaterial["biomaterial_core"]["biomaterial_id"])
+                    biomaterials_with_procs.append(biomaterial_id)
+                    if process_id not in proc_input_biomaterials:
+                        proc_input_biomaterials[process_id] = []
+                    proc_input_biomaterials[process_id].append(biomaterial_id)
+                    if biomaterial_id not in biomaterial_proc_inputs:
+                        biomaterial_proc_inputs[biomaterial_id] = []
+                    biomaterial_proc_inputs[biomaterial_id].append(process_id)
                 del biomaterial["process_ids"]
-
 
             self.dumpJsonToFile(biomaterial, projectId, "biomaterial_" + str(index))
             if not self.dryrun:
@@ -614,23 +624,24 @@ class SpreadsheetSubmission:
         for index, biomaterial_id in enumerate(biomaterialMap.keys()):
             if not self.dryrun:
                 if "has_input_biomaterial" in biomaterialMap[biomaterial_id]['content']["biomaterial_core"]:
-                    # self.ingest_api.linkEntity(biomaterialMap[biomaterial_id],
-                    #                            biomaterialMap[biomaterialMap[biomaterial_id]['content']["biomaterial_core"]["has_input_biomaterial"]],
-                    #                            "hasInputBiomaterial")
-
                     # retrieve biomaterials from map
                     output_biomaterial = biomaterialMap[biomaterial_id]
                     input_biomaterial = biomaterialMap[biomaterialMap[biomaterial_id]['content']["biomaterial_core"]["has_input_biomaterial"]]
 
-                    # create sampling process to link biomaterials
-                    sampling_process = self._emptyProcessObject(empty_process_id)
-                    empty_process_id += 1
-                    sampling_process_ingest = self.ingest_api.createProcess(submissionUrl, json.dumps(sampling_process))
+                    # if the input biomaterial declares the process, we will link later
+                    if input_biomaterial['content']['biomaterial_core']['biomaterial_id'] not in biomaterials_with_procs:
+                        # else create sampling process to link biomaterials
+                        sampling_process = self._emptyProcessObject(empty_process_id)
+                        empty_process_id += 1
+                        sampling_process_ingest = self.ingest_api.createProcess(submissionUrl, json.dumps(sampling_process))
 
-                    # link process to input biomaterials
-                    self.ingest_api.linkEntity(sampling_process_ingest, input_biomaterial, "inputBiomaterials")
-                    # link process to output biomaterials
-                    self.ingest_api.linkEntity(sampling_process_ingest, output_biomaterial, "derivedBiomaterials")
+                        # link process to input biomaterials
+                        self.ingest_api.linkEntity(sampling_process_ingest, input_biomaterial, "inputBiomaterials")
+                        # link process to output biomaterials
+                        self.ingest_api.linkEntity(sampling_process_ingest, output_biomaterial, "derivedBiomaterials")
+                    else:
+                        for process_id in biomaterial_proc_inputs[input_biomaterial['content']['biomaterial_core']['biomaterial_id']]:
+                            proc_output_biomaterials[process_id] = output_biomaterial
             else:
                 if "has_input_biomaterial" in biomaterialMap[biomaterial_id]["biomaterial_core"]:
                     linksList.append(
@@ -657,17 +668,16 @@ class SpreadsheetSubmission:
                 fileIngest = self.ingest_api.createFile(submissionUrl, file["file_core"]["file_name"], json.dumps(file))
                 filesMap[file["file_core"]["file_name"]] = fileIngest
 
-
         for index, process in enumerate(processMap.values()):
             if "process_id" not in process["process_core"]:
                 raise ValueError('Each process must have an id attribute' + str(process))
 
-            proc_files=[]
+            output_files=[]
             if "files" in process:
                 for file in process["files"]:
                     if file not in filesMap:
                         raise ValueError('Process references file '+file+' that isn\'t defined in the files sheet')
-                proc_files = process["files"]
+                output_files = process["files"]
                 del process["files"]
 
             if "biomaterial_ids" not in process:
@@ -676,7 +686,7 @@ class SpreadsheetSubmission:
                 for biomaterial_id in process["biomaterial_ids"]:
                     if biomaterial_id not in biomaterialMap:
                         raise ValueError('An process references a biomaterial '+biomaterial_id+' that isn\'t in one of the biomaterials worksheets')
-                proc_biomaterials = process["biomaterial_ids"]
+                output_biomaterials = process["biomaterial_ids"]
                 del process["biomaterial_ids"]
 
             self.dumpJsonToFile(process, projectId, "process_" + str(index))
@@ -684,18 +694,27 @@ class SpreadsheetSubmission:
                 processIngest = self.ingest_api.createProcess(submissionUrl, json.dumps(process))
                 self.ingest_api.linkEntity(processIngest, projectIngest, "projects") # correct
 
-                for biomaterial in proc_biomaterials:
+                if process["process_core"]["process_id"] in proc_input_biomaterials:
+                    for biomaterial in proc_input_biomaterials[process["process_core"]["process_id"]]:
+                        self.ingest_api.linkEntity(processIngest, biomaterialMap[biomaterial], "inputBiomaterials")
+
+                if process["process_core"]["process_id"] in proc_output_biomaterials:
+                    for biomaterial in proc_output_biomaterials[process["process_core"]["process_id"]]:
+                        self.ingest_api.linkEntity(processIngest, biomaterialMap[biomaterial], "derivedBiomaterials")
+
+                # seems to not be used for biomaterials
+                for biomaterial in output_biomaterials:
                     self.ingest_api.linkEntity(processIngest, biomaterialMap[biomaterial], "inputBiomaterials") # correct
 
-                for file in proc_files:
+                for file in output_files:
                     self.ingest_api.linkEntity(processIngest, filesMap[file], "derivedFiles") # correct
             else:
                 linksList.append("process_" + str(process["process_core"]["process_id"]) + "-project_" + str(projectId))
 
-                for biomaterial in proc_biomaterials:
+                for biomaterial in proc_input_biomaterials:
                     linksList.append("process_" + str(process["process_core"]["process_id"]) + "-biomaterial_" + str(biomaterial))
 
-                for file in proc_files:
+                for file in output_files:
                     linksList.append("process_" + str(process["process_core"]["process_id"]) + "-file_" + str(file))
 
         self.dumpJsonToFile(linksList, projectId, "dry_run_links")
