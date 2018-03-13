@@ -242,6 +242,28 @@ class IngestApi:
             return json.loads(r.text)["uuid"]["uuid"]
 
     def linkEntity(self, fromEntity, toEntity, relationship):
+        if not fromEntity:
+            raise ValueError("Error: fromEntity is None")
+
+        if not toEntity:
+            raise ValueError("Error: toEntity is None")
+
+        if not relationship:
+            raise ValueError("Error: relationship is None")
+
+        # check each dict in turn for non-None-ness
+
+        fromEntityLinks = fromEntity["_links"] if "_links" in fromEntity else None
+        if not fromEntityLinks:
+            raise ValueError("Error: fromEntity has no _links")
+
+        fromEntityLinksRelationship = fromEntityLinks[relationship] if relationship in fromEntityLinks else None
+        if not fromEntityLinksRelationship:
+            raise ValueError("Error: fromEntityLinks has no {0} relationship".format(relationship))
+
+        fromEntityLinksRelationshipHref = fromEntityLinksRelationship["href"] if "href" in fromEntityLinksRelationship else None
+        if not fromEntityLinksRelationshipHref:
+            raise ValueError("Error: fromEntityLinksRelationship for relationship {0} has no href".format(relationship))
 
         fromUri = fromEntity["_links"][relationship]["href"]
         toUri = self.getObjectId(toEntity)
