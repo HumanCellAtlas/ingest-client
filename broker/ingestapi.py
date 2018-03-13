@@ -12,7 +12,8 @@ import json, os, urllib, requests, logging, uuid
 
 class IngestApi:
     def __init__(self, url=None):
-        formatter = logging.Formatter(' %(asctime)s  - %(name)s - %(levelname)s in %(filename)s:%(lineno)s %(funcName)s(): %(message)s')
+        formatter = logging.Formatter(
+            ' %(asctime)s  - %(name)s - %(levelname)s in %(filename)s:%(lineno)s %(funcName)s(): %(message)s')
         logging.basicConfig(formatter=formatter)
         logging.getLogger("requests").setLevel(logging.WARNING)
         self.logger = logging.getLogger(__name__)
@@ -248,7 +249,8 @@ class IngestApi:
         r = requests.post(fromUri.rsplit("{")[0],
                           data=toUri.rsplit("{")[0], headers=headers)
         if r.status_code != requests.codes.no_content:
-            raise ValueError("Error creating relationship between entity: " + fromUri + " -> " + toUri)
+            raise ValueError("Error creating relationship between entity: " + fromUri + " -> " + toUri + "." +
+                             "\nResponse was: " + r.status_code + " (" + r.text + ")")
         self.logger.debug("Asserted relationship between " + fromUri + " -> " + toUri)
 
     def createBundleManifest(self, bundleManifest):
