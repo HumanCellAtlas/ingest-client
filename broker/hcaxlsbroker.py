@@ -215,7 +215,7 @@ class SpreadsheetSubmission:
     def submit(self, pathToSpreadsheet, submissionUrl, token=None, project_id=None):
         try:
             self._process(pathToSpreadsheet, submissionUrl, token, project_id)
-        except ValueError as e:
+        except Exception as e:
             self.logger.error("Error:"+str(e))
             self.logger.error("Exception occurred processing spreadsheet", exc_info=e)
             raise e
