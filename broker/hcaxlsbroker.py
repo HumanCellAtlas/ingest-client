@@ -175,8 +175,9 @@ schema_sheetname_mappings = {
 class SpreadsheetSubmission:
 
     def __init__(self, dry=False, output=None, schema_version=None):
-        # formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-        # logging.basicConfig(formatter=formatter, level=logging.INFO)
+        formatter = logging.Formatter(
+            '[%(filename)s:%(lineno)s - %(funcName)20s() ] %(asctime)s - %(name)s - %(levelname)s - %(message)s')
+        logging.basicConfig(formatter=formatter, level=logging.INFO)
         self.logger = logging.getLogger(__name__)
 
         self.dryrun = dry
@@ -237,24 +238,36 @@ class SpreadsheetSubmission:
                     else:
                         d = d.strftime("%Y-%m-%dT%H:%M:%SZ")
             except:
-                self.logger.warn('Failed to convert field %s (value %s) to date_time value'.format(type, d))
+                self.logger.warn('Failed to convert field {0} in sheet {1} (value {2}) to date_time value'.format(key, type, d))
+                d = str(d)
         elif type in schema_integerFields.keys():
-            if key.split('.')[-1] in schema_integerFields[type]:
-                try:
-                    d = int(d)
-                except:
-                    self.logger.warn('Failed to convert field %s (value %s) to integer value'.format(type, d))
-                    d = str(d)
+            try:
+                if key.split('.')[-1] in schema_integerFields[type]:
+                    if isinstance(d, list):
+                        for i, v in enumerate(d):
+                            d[i] = int(v)
+                    else:
+                        d = int(d)
+            except:
+                self.logger.warn('Failed to convert field {0} in sheet {1} (value {2}) to integer value'.format(key, type, d))
+                d = str(d)
         elif type in schema_booleanFields.keys():
-            if key.split('.')[-1] in schema_booleanFields[type]:
-                try:
-                    if d.lower() in ["true", "yes"]:
-                        d = True
-                    elif d in ["false", "no"]:
-                        d = False
-                except:
-                    self.logger.warn('Failed to convert field %s (value %s) to integer value'.format(type, d))
-                    d = str(d)
+            try:
+                if key.split('.')[-1] in schema_booleanFields[type]:
+                    if isinstance(d, list):
+                        for i, v in enumerate(d):
+                            if v.lower() in ["true", "yes"]:
+                                d[i] = True
+                            elif v.lower() in ["false", "no"]:
+                                d[i] = False
+                    else:
+                        if d.lower() in ["true", "yes"]:
+                            d = True
+                        elif d.lower() in ["false", "no"]:
+                            d = False
+            except:
+                self.logger.warn('Failed to convert field {0} in sheet {1} (value {2}) to boolean value'.format(key, type, d))
+                d = str(d)
         else:
             d = str(d)
 
