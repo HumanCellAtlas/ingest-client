@@ -19,6 +19,8 @@ import logging
 from itertools import chain
 from collections import defaultdict
 
+import token_util as token_util
+
 # these are spreadsheet fields that can be a list
 # todo - these should be read out of the json schema at the start
 
@@ -269,7 +271,7 @@ class SpreadsheetSubmission:
 
     def _emptyProcessObject(self, empty_process_id):
         obj = {}
-        process_core = {"process_id", empty_process_id}
+        process_core = {"process_id": empty_process_id}
         schema_type = "process"
         describedBy = schema_sheetname_mappings["process"]
         obj["process_core"] = process_core
@@ -472,6 +474,7 @@ class SpreadsheetSubmission:
         # creating submission
         #
         if not self.dryrun and not submissionUrl:
+            token = "Bearer " + token_util.get_token()
             submissionUrl = self.createSubmission(token)
 
         linksList = []
@@ -683,10 +686,10 @@ class SpreadsheetSubmission:
                 self.ingest_api.linkEntity(processIngest, projectIngest, "projects") # correct
 
                 for biomaterial in proc_biomaterials:
-                    self.ingest_api.linkEntity(processIngest, biomaterialMap[biomaterial], "biomaterials") # correct
+                    self.ingest_api.linkEntity(processIngest, biomaterialMap[biomaterial], "inputBiomaterials") # correct
 
                 for file in proc_files:
-                    self.ingest_api.linkEntity(processIngest, filesMap[file], "files") # correct
+                    self.ingest_api.linkEntity(processIngest, filesMap[file], "derivedFiles") # correct
             else:
                 linksList.append("process_" + str(process["process_core"]["process_id"]) + "-project_" + str(projectId))
 
