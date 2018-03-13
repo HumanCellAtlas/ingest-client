@@ -250,7 +250,7 @@ class IngestApi:
                           data=toUri.rsplit("{")[0], headers=headers)
         if r.status_code != requests.codes.no_content:
             raise ValueError("Error creating relationship between entity: " + fromUri + " -> " + toUri + "." +
-                             "\nResponse was: " + r.status_code + " (" + r.text + ")")
+                             "\nResponse was: " + str(r.status_code) + " (" + r.text + ")")
         self.logger.debug("Asserted relationship between " + fromUri + " -> " + toUri)
 
     def createBundleManifest(self, bundleManifest):
