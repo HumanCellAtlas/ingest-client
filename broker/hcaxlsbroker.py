@@ -109,6 +109,7 @@ schema_sheetname_mappings = {
 class SpreadsheetSubmission:
 
     def __init__(self, dry=False, output=None, schema_version=None):
+        # todo - the logging code below doesn't work in python 3 - we should upgrade this
         # formatter = logging.Formatter(
         #     '[%(filename)s:%(lineno)s - %(funcName)20s() ] %(asctime)s - %(name)s - %(levelname)s - %(message)s')
         # logging.basicConfig(formatter=formatter, level=logging.INFO)
@@ -117,8 +118,6 @@ class SpreadsheetSubmission:
         self.dryrun = dry
         self.outputDir = output
         self.ingest_api = None
-        # self.schema_version = schema_version if schema_version else os.path.expandvars(SCHEMA_VERSION)
-        # self.schema_url = os.path.expandvars(SCHEMA_URL % self.schema_version)
         if not self.dryrun:
             self.ingest_api = IngestApi()
 
@@ -151,7 +150,6 @@ class SpreadsheetSubmission:
                 or (type in schema_arrayFields.keys() and (key.split('.')[-1] == "ontology" or key.split('.')[-1] == "text")
                     and key.split('.')[-2] in schema_arrayFields[type]):
             if "||" in str(value):
-            # d = map(lambda it: it.strip(' "\''), str(value).split("||"))
                 d = str(value).split("||")
             else:
                 d = [value]
@@ -167,14 +165,12 @@ class SpreadsheetSubmission:
                     d = {key.split('.')[-1] : d}
                 key = ".".join(key.split('.')[:-1])
 
-
-
         # Raise an error if the key is too nested
         if len(key.split('.')) > 3:
             raise ValueError('We don\'t support keys nested greater than 3 levels, found:'+key)
 
         # If the key is in the date_time field list, convert the date time into a string of format YYYY-MM-DDThh:mm:ssZ
-        # so it validates
+        # so it validates. Same principle for integers and boolean types
         if type in schema_timeFields.keys():
             try:
                 if key.split('.')[-1] in schema_timeFields[type]:
@@ -379,7 +375,7 @@ class SpreadsheetSubmission:
             filesSheet = wb.get_sheet_by_name("sequence_file")
 
 
-        # convert data in sheets back into dict
+        # convert data in sheets back into dict + add the schema_type/describedBy boilerplate
         project = self._multiRowToObjectFromSheet("project", projectSheet)
         if project:
             if len(project) == 1:
@@ -506,7 +502,7 @@ class SpreadsheetSubmission:
 
         else:
             if not self.dryrun:
-                self.logger.info("Retreiving existing project: " + existing_project_id)
+                self.logger.info("Retriefving existing project: " + existing_project_id)
                 projectIngest = self.ingest_api.getProjectById(existing_project_id)
                 submissionEnvelope = self.ingest_api.getSubmissionEnvelope(submissionUrl)
                 self.ingest_api.linkEntity(projectIngest, submissionEnvelope, "submissionEnvelopes") # correct
@@ -608,14 +604,8 @@ class SpreadsheetSubmission:
                 biomaterialIngest = self.ingest_api.createBiomaterial(submissionUrl, json.dumps(biomaterial))
                 self.ingest_api.linkEntity(biomaterialIngest, projectIngest, "projects") # correct
                 biomaterialMap[biomaterial["biomaterial_core"]["biomaterial_id"]] = biomaterialIngest
-                # if biomaterialProtocols:
-                #     for biomaterialProtocolId in biomaterialProtocols:
-                #         self.ingest_api.linkEntity(biomaterialIngest, protocolMap[biomaterialProtocolId], "protocols")
-            else:
+             else:
                 linksList.append("biomaterial_" + str(biomaterial_id) + "-project_" + str(projectId))
-                # if biomaterialProtocols:
-                #     for biomaterialProtocolId in biomaterialProtocols:
-                #         linksList.append("biomaterial_" + str(biomaterial_id) + "-protocol_" + str(biomaterialProtocolId))
 
         # create has_input_biomaterial links between biomaterials separately to make sure all biomaterials are submitted
         for index, biomaterial_id in enumerate(biomaterialMap.keys()):
@@ -657,7 +647,6 @@ class SpreadsheetSubmission:
             if "files" not in processMap[process]:
                 processMap[process]["files"] = []
 
-            # ????do we need this????
             processMap[process]["files"].append(file["file_core"]["file_name"])
 
             self.dumpJsonToFile(file, projectId, "files_" + str(index))
@@ -665,18 +654,11 @@ class SpreadsheetSubmission:
                 fileIngest = self.ingest_api.createFile(submissionUrl, file["file_core"]["file_name"], json.dumps(file))
                 filesMap[file["file_core"]["file_name"]] = fileIngest
 
-            #     if biomaterial in biomaterialMap:
-            #         self.ingest_api.linkEntity(fileIngest, biomaterialMap[biomaterial], "biomaterials")
-            # else:
-            #     if biomaterial in biomaterialMap:
-            #         linksList.append("file_" + file["file_name"] + "-biomaterial_" + biomaterial)
 
         for index, process in enumerate(processMap.values()):
             if "process_id" not in process["process_core"]:
                 raise ValueError('Each process must have an id attribute' + str(process))
-            # if "files" not in process:
-                # raise ValueError('Each process must list associated files using the files attribute')
-            # else:
+
             proc_files=[]
             if "files" in process:
                 for file in process["files"]:
@@ -685,7 +667,6 @@ class SpreadsheetSubmission:
                 proc_files = process["files"]
                 del process["files"]
 
-            proc_biomaterials = []
             if "biomaterial_ids" not in process:
                 raise ValueError("Every process must reference a biomaterial using the biomaterial_id attribute")
             else:
@@ -696,7 +677,6 @@ class SpreadsheetSubmission:
                 del process["biomaterial_ids"]
 
             self.dumpJsonToFile(process, projectId, "process_" + str(index))
-            # ???this is the bit we still need to figure out????
             if not self.dryrun:
                 processIngest = self.ingest_api.createProcess(submissionUrl, json.dumps(process))
                 self.ingest_api.linkEntity(processIngest, projectIngest, "projects") # correct
