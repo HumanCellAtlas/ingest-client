@@ -85,33 +85,33 @@ schema_integerFields = {
 # (spec for lookup: query by 'title' (sheet name in the spreadsheet, field in the schema)
 schema_sheetname_mappings = {
     # biomaterials
-    "cell_line": "https://schema.humancellatlas.org/type/biomaterial/5.0.1/cell_line",
-    "cell_suspension": "https://schema.humancellatlas.org/type/biomaterial/5.0.0/cell_suspension",
-    "donor_organism": "https://schema.humancellatlas.org/type/biomaterial/5.0.0/donor_organism",
-    "organoid": "https://schema.humancellatlas.org/type/biomaterial/5.0.0/organoid",
-    "specimen_from_organism": "https://schema.humancellatlas.org/type/biomaterial/5.0.0/specimen_from_organism",
+    "cell_line": "https://schema.humancellatlas.org/type/biomaterial/5.1.0/cell_line",
+    "cell_suspension": "https://schema.humancellatlas.org/type/biomaterial/5.1.0/cell_suspension",
+    "donor_organism": "https://schema.humancellatlas.org/type/biomaterial/5.1.0/donor_organism",
+    "organoid": "https://schema.humancellatlas.org/type/biomaterial/5.1.0/organoid",
+    "specimen_from_organism": "https://schema.humancellatlas.org/type/biomaterial/5.1.0/specimen_from_organism",
     # files
-    "analysis_file": "https://schema.humancellatlas.org/type/file/5.0.0/analysis_file",
-    "sequence_file": "https://schema.humancellatlas.org/type/file/5.0.0/sequence_file",
+    "analysis_file": "https://schema.humancellatlas.org/type/file/5.1.0/analysis_file",
+    "sequence_file": "https://schema.humancellatlas.org/type/file/5.1.0/sequence_file",
     # analysis processes
-    "analysis_process": "https://schema.humancellatlas.org/type/process/analysis/5.0.0/analysis_process",
+    "analysis_process": "https://schema.humancellatlas.org/type/process/analysis/5.1.0/analysis_process",
     # biomaterial processes
-    "collection_process": "https://schema.humancellatlas.org/type/process/biomaterial_collection/5.0.0/collection_process",
-    "dissociation_process": "https://schema.humancellatlas.org/type/process/biomaterial_collection/5.0.0/dissociation_process",
-    "enrichment_process": "https://schema.humancellatlas.org/type/process/biomaterial_collection/5.0.0/enrichment_process",
+    "collection_process": "https://schema.humancellatlas.org/type/process/biomaterial_collection/5.1.0/collection_process",
+    "dissociation_process": "https://schema.humancellatlas.org/type/process/biomaterial_collection/5.1.0/dissociation_process",
+    "enrichment_process": "https://schema.humancellatlas.org/type/process/biomaterial_collection/5.1.0/enrichment_process",
     # imaging processes
-    "imaging_process": "https://schema.humancellatlas.org/type/process/imaging/5.0.0/imaging_process",
+    "imaging_process": "https://schema.humancellatlas.org/type/process/imaging/5.1.0/imaging_process",
     # sequencing processes
-    "library_preparation_process": "https://schema.humancellatlas.org/type/process/sequencing/5.0.0/library_preparation_process",
-    "sequencing_process": "https://schema.humancellatlas.org/type/process/sequencing/5.0.0/sequencing_process",
+    "library_preparation_process": "https://schema.humancellatlas.org/type/process/sequencing/5.1.0/library_preparation_process",
+    "sequencing_process": "https://schema.humancellatlas.org/type/process/sequencing/5.1.0/sequencing_process",
     # projects
-    "project": "https://schema.humancellatlas.org/type/project/5.0.1/project",
+    "project": "https://schema.humancellatlas.org/type/project/5.1.0/project",
     # protocols
-    "protocol": "https://schema.humancellatlas.org/type/protocol/5.0.0/protocol",
-    "analysis_protocol": "https://schema.humancellatlas.org/type/protocol/analysis/5.0.0/analysis_protocol",
-    "biomaterial_collection_protocol": "https://schema.humancellatlas.org/type/protocol/biomaterial/5.0.0/biomaterial_collection_protocol",
-    "imaging_protocol": "https://schema.humancellatlas.org/type/protocol/imaging/5.0.0/imaging_protocol",
-    "sequencing_protocol": "https://schema.humancellatlas.org/type/protocol/sequencing/5.0.0/sequencing_protocol"
+    "protocol": "https://schema.humancellatlas.org/type/protocol/5.1.0/protocol",
+    "analysis_protocol": "https://schema.humancellatlas.org/type/protocol/analysis/5.1.0/analysis_protocol",
+    "biomaterial_collection_protocol": "https://schema.humancellatlas.org/type/protocol/biomaterial/5.1.0/biomaterial_collection_protocol",
+    "imaging_protocol": "https://schema.humancellatlas.org/type/protocol/imaging/5.1.0/imaging_protocol",
+    "sequencing_protocol": "https://schema.humancellatlas.org/type/protocol/sequencing/5.1.0/sequencing_protocol"
 }
 
 schema_fieldname_mappings = {
@@ -214,13 +214,26 @@ class SpreadsheetSubmission:
         # an ontology field), put value into an array (splitting if necessary)
         if "\"" in str(value) or "||" in str(value) \
                 or (type in schema_arrayFields.keys() and key.split('.')[-1] in schema_arrayFields[type]) \
-                or (type in schema_arrayFields.keys() and key.split('.')[-1] == "ontology"
+                or (type in schema_arrayFields.keys() and (key.split('.')[-1] == "ontology" or key.split('.')[-1] == "text")
                     and key.split('.')[-2] in schema_arrayFields[type]):
             if "||" in str(value):
             # d = map(lambda it: it.strip(' "\''), str(value).split("||"))
                 d = str(value).split("||")
             else:
                 d = [value]
+
+            if key.split('.')[-1] in ["text", "ontology"]:
+
+                if isinstance(d, list):
+                    t = []
+                    for index, v in enumerate(d):
+                        t.append({key.split('.')[-1] : d[index]})
+                    d = t
+                else:
+                    d = {key.split('.')[-1] : d}
+                key = ".".join(key.split('.')[:-1])
+
+
 
         # Raise an error if the key is too nested
         if len(key.split('.')) > 3:
@@ -405,7 +418,7 @@ class SpreadsheetSubmission:
             familialRelationshipSheet = wb.get_sheet_by_name("familial_relationship")
 
         organoidSheet = wb.create_sheet()
-        if "sample.organoid" in wb.sheetnames:
+        if "organoid" in wb.sheetnames:
             organoidSheet = wb.get_sheet_by_name("organoid")
 
         clSheet = wb.create_sheet()
@@ -413,7 +426,7 @@ class SpreadsheetSubmission:
             clSheet = wb.get_sheet_by_name("cell_line")
 
         clPublicationSheet = wb.create_sheet()
-        if "cell_line.publications" in wb.get_sheet_names:
+        if "cell_line.publications" in wb.sheetnames:
             clPublicationSheet = wb.get_sheet_by_name("cell_line.publications")
 
 
@@ -648,18 +661,18 @@ class SpreadsheetSubmission:
         #         del donor["protocol_ids"]
         #
         #     donor["core"] = {"type" : "sample",
-        #                      "describedBy": self.schema_url + "sample.json",
+        #                      "describedBy": self.schema_url + "biomaterial.json",
         #                     "schema_version": self.schema_version}
         #
         #     self.dumpJsonToFile(donor, projectId, "donor_" + str(index))
         #     if not self.dryrun:
-        #         sampleIngest = self.ingest_api.createSample(submissionUrl, json.dumps(donor))
-        #         self.ingest_api.linkEntity(sampleIngest, projectIngest, "projects")
-        #         sampleMap[sample_id] = sampleIngest
+        #         biomaterialIngest = self.ingest_api.createBiomaterial(submissionUrl, json.dumps(donor))
+        #         self.ingest_api.linkEntity(biomaterialIngest, projectIngest, "projects")
+        #         biomaterialMap[biomaterial_id] = biomaterialIngest
         #
-        #         if sampleProtocols:
-        #             for sampleProtocolId in sampleProtocols:
-        #                 self.ingest_api.linkEntity(sampleIngest, protocolMap[sampleProtocolId], "protocols")
+        #         if biomaterialProtocols:
+        #             for biomaterialProtocolId in biomaterialProtocols:
+        #                 self.ingest_api.linkEntity(biomaterialIngest, protocolMap[biomaterialProtocolId], "protocols")
         #     else:
         #         linksList.append("biomaterial_" + str(biomaterial_id) + "-project_" + str(projectId))
         #         if biomaterialProtocols:
@@ -678,8 +691,12 @@ class SpreadsheetSubmission:
                 # raise ValueError(
                 #     'Field ncbi_taxon_id for biomaterial ' + biomaterial_id + ' is a required field and must contain a valid NCBI Taxon ID')
 
-            if "ncbi_taxon_id" in biomaterial and "genus_species" in biomaterial:
-                biomaterial["genus_species"]["ontology"] = "NCBITaxon:" + str(biomaterial["ncbi_taxon_id"])
+            if "ncbi_taxon_id" in biomaterial["biomaterial_core"] and "genus_species" in biomaterial:
+                if not isinstance(biomaterial["genus_species"],list):
+                    biomaterial["genus_species"]["ontology"] = "NCBITaxon:" + str(biomaterial["biomaterial_core"]["ncbi_taxon_id"])
+                elif isinstance(biomaterial["genus_species"],list) and len(biomaterial["genus_species"])==1:
+                    biomaterial["genus_species"][0]["ontology"] = "NCBITaxon:" + str(biomaterial["biomaterial_core"]["ncbi_taxon_id"][0])
+
 
         # add dependent information to various biomaterial types
 
@@ -701,8 +718,8 @@ class SpreadsheetSubmission:
                     biomaterialMap[bio_id]["familial_relationship"] = []
                 biomaterialMap[bio_id]["familial_relationship"].append(familialRel)
 
-                # build the process map from the different types of assay infromation
-                processMap = {}
+        # build the process map from the different types of process infromation
+        processMap = {}
 
         for index, process in enumerate(processes):
             if "process_id" not in process["process_core"]:
@@ -731,7 +748,9 @@ class SpreadsheetSubmission:
                     if process_id not in processMap.keys():
                         raise ValueError(
                          'A biomaterial references a process ' + process_id + ' that isn\'t in the biomaterials worksheet')
-                processes = biomaterial["process_ids"]
+                    if "biomaterial_ids" not in processMap[process_id]:
+                        processMap[process_id]["biomaterial_ids"] = []
+                    processMap[process_id]["biomaterial_ids"].append(biomaterial["biomaterial_core"]["biomaterial_id"])
                 del biomaterial["process_ids"]
 
 
@@ -767,7 +786,7 @@ class SpreadsheetSubmission:
 
         filesMap={}
         for index, file in enumerate(files):
-            if "filename" not in file:
+            if "file_name" not in file["file_core"]:
                 raise ValueError('Files must have a name')
             if "process_id" not in file:
                 raise ValueError('Files must be linked to a process')
