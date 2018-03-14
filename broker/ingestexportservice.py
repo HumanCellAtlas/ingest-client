@@ -214,9 +214,7 @@ class IngestExporter:
 
             projectEntity = self.createProjectBundle(project)
             # add bundle schema reference
-            projectEntity['describedBy'] = self.schema_url + "project.json"
-            projectEntity['schema_version'] = self.schema_version
-            projectEntity['schema_type'] = 'project_bundle'
+
 
             if projectUuid not in projectUuidToBundleData:
                 projectDssUuid = str(uuid.uuid4())
@@ -374,17 +372,20 @@ class IngestExporter:
 
     def createProjectBundle(self, project_entity):
         project_copy = self._copyAndTrim(project_entity)
-        content = {
+        bundle = {
+            'describedBy': self.schema_url + "project.json",
+            'schema_version': self.schema_version,
+            'schema_type': 'project_bundle',
             'content': project_copy.pop('content', None),
             'hca_ingest': project_copy
         }
 
-        content["hca_ingest"]["document_id"] = content["hca_ingest"]["uuid"]["uuid"]
-        del content["hca_ingest"]["uuid"]
+        bundle["hca_ingest"]["document_id"] = bundle["hca_ingest"]["uuid"]["uuid"]
+        del bundle["hca_ingest"]["uuid"]
 
-        if content["hca_ingest"]["accession"] is None:
-            content["hca_ingest"]["accession"] = ""
-        return content
+        if bundle["hca_ingest"]["accession"] is None:
+            bundle["hca_ingest"]["accession"] = ""
+        return bundle
 
     def _copyAndTrim(self, project_entity):
         copy = project_entity.copy()
