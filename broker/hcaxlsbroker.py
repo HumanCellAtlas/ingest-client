@@ -70,7 +70,8 @@ schema_integerFields = {
     "analysis_process": ["cpus"],
     "imaging_process": ["field_counts", "field_microns", "field_resolution"],
     "library_preparation_process": ["spike_in_dilution", "barcode_offset", "barcode_length"],
-    "project": ["pmid"]
+    "project": ["pmid"],
+    "project.publications": ["pmid"]
 }
 
 # maps sheets to the latest version of each schema
