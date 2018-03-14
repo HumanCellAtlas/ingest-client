@@ -694,6 +694,16 @@ class SpreadsheetSubmission:
                 output_biomaterials = process["biomaterial_ids"]
                 del process["biomaterial_ids"]
 
+            process_protocols = []
+            if "protocol_ids" not in process:
+                raise ValueError("Every process must reference a protocol using the protocol_ids attribute")
+            else:
+                for protocol_id in process["protocol_ids"]:
+                    if protocol_id not in protocolMap:
+                        raise ValueError('An process references a process '+protocol_id+' that isn\'t in one of the protocol worksheets')
+                process_protocols = process["protocol_ids"]
+                del process["protocol_ids"]
+
             self.dumpJsonToFile(process, projectId, "process_" + str(index))
             if not self.dryrun:
                 processIngest = self.ingest_api.createProcess(submissionUrl, json.dumps(process))
@@ -713,6 +723,9 @@ class SpreadsheetSubmission:
 
                 for file in output_files:
                     self.ingest_api.linkEntity(processIngest, filesMap[file], "derivedFiles") # correct
+
+                for protocol_id in process_protocols:
+                    self.ingest_api.linkEntity(processIngest, protocolMap[protocol_id], "protocols")
             else:
                 linksList.append("process_" + str(process["process_core"]["process_id"]) + "-project_" + str(projectId))
 
