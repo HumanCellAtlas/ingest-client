@@ -58,7 +58,7 @@ class IngestExporter:
         if not os.path.exists(bundleDir):
             os.makedirs(bundleDir)
         tmpFile = open(bundleDir + "/"+type+".json", "w")
-        tmpFile.write(json.dumps(self.processProjectBundle(doc), indent=4))
+        tmpFile.write(json.dumps(self.createProjectBundle(doc), indent=4))
         tmpFile.close()
 
 
@@ -76,7 +76,7 @@ class IngestExporter:
     def buildSampleObject(self, sample, nestedSamples):
         nestedProtocols = self.getNestedObjects("protocols", sample, "protocols")
 
-        primarySample = self.processProjectBundle(sample)
+        primarySample = self.createProjectBundle(sample)
         primarySample["derivation_protocols"] = []
 
         for p, protocol in enumerate(nestedProtocols):
@@ -140,7 +140,7 @@ class IngestExporter:
             # stage the analysis.json, add to filesToTransfer and to the bundle manifest
             analysisUuid = analysis["uuid"]["uuid"]
             analysisDssUuid = unicode(uuid.uuid4())
-            analysisBundleContent = self.processProjectBundle(analysis)
+            analysisBundleContent = self.createProjectBundle(analysis)
             analysisFileName = "analysis_0.json" # TODO: shouldn't be hardcoded
 
             analysisBundleContent["core"] = {"type": "analysis_bundle",
@@ -212,7 +212,7 @@ class IngestExporter:
             projectUuid = project["uuid"]["uuid"]
 
 
-            projectEntity = self.processProjectBundle(project)
+            projectEntity = self.createProjectBundle(project)
             # add bundle schema reference
             projectEntity['describedBy'] = self.schema_url + "project.json"
             projectEntity['schema_version'] = self.schema_version
@@ -314,7 +314,7 @@ class IngestExporter:
             assayUuid = assay["uuid"]["uuid"]
 
             #TO DO: this is hack in v4 because the bundle schema is specified as an array rather than an object! this should be corrected in v5
-            assayEntity = self.processProjectBundle(assay)
+            assayEntity = self.createProjectBundle(assay)
             assayEntity["core"] = {"type": "assay_bundle",
                                    "schema_url": self.schema_url + "assay_bundle.json",
                                    "schema_version": self.schema_version}
@@ -372,7 +372,7 @@ class IngestExporter:
       self.staging_api.deleteStagingArea(stagingAreaId)
 
 
-    def processProjectBundle(self, project_entity):
+    def createProjectBundle(self, project_entity):
         project_copy = project_entity.copy()
         content = {
             'content': project_copy.pop('content', None)
