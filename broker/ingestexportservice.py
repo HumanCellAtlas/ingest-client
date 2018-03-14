@@ -371,26 +371,24 @@ class IngestExporter:
 
 
     def createProjectBundle(self, project_entity):
-        project_copy = project_entity.copy()
+        project_copy = self._copyAndTrim(project_entity)
         content = {
-            'content': project_copy.pop('content', None)
+            'content': project_copy.pop('content', None),
+            'hca_ingest': project_copy
         }
 
-        del project_copy["_links"]
-        del project_copy["events"]
-        del project_copy["validationState"]
-        del project_copy["validationErrors"]
-
-        content["hca_ingest"] = project_copy
-        # need to clean the uuid from the ingest json
-        uuid =  content["hca_ingest"]["uuid"]["uuid"]
-
+        content["hca_ingest"]["document_id"] = content["hca_ingest"]["uuid"]["uuid"]
         del content["hca_ingest"]["uuid"]
 
-        content["hca_ingest"]["document_id"] = uuid
         if content["hca_ingest"]["accession"] is None:
             content["hca_ingest"]["accession"] = ""
         return content
+
+    def _copyAndTrim(self, project_entity):
+        copy = project_entity.copy()
+        for property in ["_links", "events", "validationState", "validationErrors"]:
+            del copy[property]
+        return copy
 
     # returns a copy of a bundle manifest JSON, but with a new bundleUuid
     def makeCopyBundle(self, bundleToCopy):
