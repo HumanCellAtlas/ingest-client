@@ -51,7 +51,9 @@ class TestExporter(TestCase):
 
         # then:
         hca_ingest = file_bundle['hca_ingest']
+        self.assertEqual(hca_ingest['document_id'], file_entity['uuid']['uuid'])
         self.assertEqual(hca_ingest['submissionDate'], file_entity['submissionDate'])
+        #TODO is describedBy required?
 
     def _create_entity_template(self):
         return {

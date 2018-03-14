@@ -389,6 +389,7 @@ class IngestExporter:
     def bundleFileIngest(self, file_entity):
         file_ingest = {
             'hca_ingest': {
+                'document_id': file_entity['uuid']['uuid'],
                 'submissionDate': file_entity['submissionDate']
             }
         }
