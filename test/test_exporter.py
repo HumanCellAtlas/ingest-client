@@ -58,6 +58,24 @@ class TestExporter(TestCase):
         self.assertEqual(hca_ingest['submissionDate'], file_entity['submissionDate'])
         #TODO is describedBy required?
 
+    def test_bundleProtocolIngest(self):
+        # given:
+        exporter = IngestExporter()
+
+        # and:
+        protocol_entity = self._create_entity_template()
+
+        # when:
+        protocol_ingest = exporter.bundleProtocolIngest(protocol_entity)
+
+        # then:
+        self.assertEqual(protocol_ingest['content'], protocol_entity['content'])
+
+        # and:
+        hca_ingest = protocol_ingest['hca_ingest']
+        self.assertEqual(hca_ingest['document_id'], protocol_entity['uuid']['uuid'])
+        self.assertEqual(hca_ingest['submissionDate'], protocol_entity['submissionDate'])
+
     def _create_entity_template(self):
         return {
             'submissionDate': '2018-03-14T09:53:02Z',
