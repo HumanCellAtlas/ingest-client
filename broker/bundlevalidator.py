@@ -7,19 +7,20 @@ import os
 
 import validationreport as validationreport
 
-BUNDLE_SCHEMA_BASE_URL = "https://raw.githubusercontent.com/HumanCellAtlas/metadata-schema/%s/json_schema/"
-BUNDLE_SCHEMA_VERSION = "4.6.1"
+BUNDLE_SCHEMA_BASE_URL = "https://schema.humancellatlas.org/bundle/%s/"
+BUNDLE_SCHEMA_VERSION = "5.1.0"
 BUNDLE_SCHEMA_VERSION = os.environ.get('BUNDLE_SCHEMA_VERSION', BUNDLE_SCHEMA_VERSION)
 BUNDLE_SCHEMA_BASE_URL = os.environ.get('BUNDLE_SCHEMA_BASE_URL', BUNDLE_SCHEMA_BASE_URL % BUNDLE_SCHEMA_VERSION)
 
 class BundleValidator:
 
-    def validate(self, metadata, schema_type):
+    def validate(self, metadata, schema_type, version=BUNDLE_SCHEMA_VERSION):
+
         """
         given a json document(metadata) and a json-schema(schema), validates the
         schema and returns a ValidationReport
         """
-        schema = self.load_bundle_schema(schema_type)
+        schema = self.load_bundle_schema(schema_type, version)
 
         validator = jsonschema.Draft4Validator(schema=schema)
         if validator.is_valid(instance=metadata):
@@ -57,9 +58,11 @@ class BundleValidator:
         return requests.get(schema_url).json()
 
 
-    def load_bundle_schema(self, schema_type):
+    def load_bundle_schema(self, schema_type, version):
 
-        url = BUNDLE_SCHEMA_BASE_URL + schema_type + "_bundle.json"
+        url = BUNDLE_SCHEMA_BASE_URL + schema_type
+        if version:
+            url = "https://schema.humancellatlas.org/bundle/"+version+"/"+ schema_type
         schema = self.get_schema_from_url(url)
 
         return schema

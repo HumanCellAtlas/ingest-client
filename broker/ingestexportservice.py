@@ -24,8 +24,8 @@ DEFAULT_INGEST_URL=os.environ.get('INGEST_API', 'http://api.ingest.dev.data.huma
 DEFAULT_STAGING_URL=os.environ.get('STAGING_API', 'http://staging.dev.data.humancellatlas.org')
 DEFAULT_DSS_URL=os.environ.get('DSS_API', 'http://dss.dev.data.humancellatlas.org')
 
-BUNDLE_SCHEMA_BASE_URL=os.environ.get('BUNDLE_SCHEMA_BASE_URL', 'https://raw.githubusercontent.com/HumanCellAtlas/metadata-schema/%s/json_schema/')
-METADATA_SCHEMA_VERSION = os.environ.get('SCHEMA_VERSION', '4.6.1')
+BUNDLE_SCHEMA_BASE_URL=os.environ.get('BUNDLE_SCHEMA_BASE_URL', 'https://schema.humancellatlas.org/bundle/%s/')
+METADATA_SCHEMA_VERSION = os.environ.get('SCHEMA_VERSION', '5.1.0')
 
 
 class IngestExporter:
@@ -227,7 +227,7 @@ class IngestExporter:
                     else:
                         self.logger.info("Project entity " + projectDssUuid + " is not valid")
                         self.logger.info(valid)
-                    self.dumpJsonToFile(project_bundle, project_bundle["content"]["project_id"],
+                    self.dumpJsonToFile(project_bundle, project_bundle["content"]["project_core"]["project_shortname"],
                                         "project_bundle_" + str(index))
 
                 bundleManifest.fileProjectMap = {projectDssUuid: [projectUuid]}
@@ -247,7 +247,7 @@ class IngestExporter:
                 'describedBy': self.schema_url + 'biomaterial',
                 'schema_version': self.schema_version,
                 'schema_type': 'biomaterial_bundle',
-                'samples': []
+                'biomaterials': []
             }
 
             biomaterial = biomaterials[0]
@@ -282,13 +282,13 @@ class IngestExporter:
                     sampleUuidToBundleData[assaySampleUuid] = {"name":sampleFileName, "submittedName":"sample.json", "url":fileDescription.url, "dss_uuid": sampleDssUuid, "indexed": True, "content-type" : '"metadata/sample"'}
                 else:
                     sampleUuidToBundleData[assaySampleUuid] = {"name":sampleFileName, "submittedName":"biomaterial.json", "url":"", "dss_uuid": sampleDssUuid, "indexed": True, "content-type" : '"metadata/sample"'}
-                    valid = self.bundle_validator.validate(biomaterialBundle, "sample")
+                    valid = self.bundle_validator.validate(biomaterialBundle, "biomaterial")
                     if valid:
                         self.logger.info("Sample entity " + sampleDssUuid + " is valid")
                     else:
                         self.logger.info("Sample entity " + sampleDssUuid + " is not valid")
                         self.logger.info(valid)
-                    self.dumpJsonToFile(biomaterialBundle, project_bundle["content"]["project_id"], "sample_bundle_" + str(index))
+                    self.dumpJsonToFile(biomaterialBundle, project_bundle["content"]["project_core"]["project_shortname"], "sample_bundle_" + str(index))
 
                 bundleManifest.fileBiomaterialMap = {sampleDssUuid: sampleRelatedUuids}
             # else add any new sampleUuids to the related samples list
@@ -326,7 +326,7 @@ class IngestExporter:
                 submittedFiles.append({"name":fileBundleFileName, "submittedName":"file.json", "url":bundlefileDescription.url, "dss_uuid": fileDssUuid, "indexed": True, "content-type" : '"metadata/file"'})
             else:
                 submittedFiles.append({"name":fileBundleFileName, "submittedName":"file.json", "url":"", "dss_uuid": fileDssUuid, "indexed": True, "content-type" : '"metadata/file"'})
-                valid = self.bundle_validator.validate(fileBundle, "file")
+                valid = self.bundle_validator.validate(fileBundle, "file", "1.0.0")
                 if valid:
                     self.logger.info("File entity " + fileDssUuid + " is valid")
                 else:
@@ -414,6 +414,22 @@ class IngestExporter:
       self.logger.info("deleting staging area...." + stagingAreaId)
       self.staging_api.deleteStagingArea(stagingAreaId)
 
+    def bundleSample(self, sample_entity):
+        sample_copy = self._copyAndTrim(sample_entity)
+        bundle = {
+            'describedBy': self.schema_url + "biomaterial.json",
+            'schema_version': self.schema_version,
+            'schema_type': 'biomaterial_bundle',
+            'content': sample_copy.pop('content', None),
+            'hca_ingest': sample_copy
+        }
+
+        bundle["hca_ingest"]["document_id"] = bundle["hca_ingest"]["uuid"]["uuid"]
+        del bundle["hca_ingest"]["uuid"]
+
+        if bundle["hca_ingest"]["accession"] is None:
+            bundle["hca_ingest"]["accession"] = ""
+        return bundle
 
     def bundleProject(self, project_entity):
         project_copy = self._copyAndTrim(project_entity)
