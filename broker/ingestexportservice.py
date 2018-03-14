@@ -104,8 +104,9 @@ class IngestExporter:
             self.logger.info("Attempting to export secondary submissions to DSS...")
             self.secondarySubmission(submissionUuid,analyses)
 
-            # cleanup
-            self.deleteStagingArea(submissionUuid)
+            if (not self.dryrun):
+                # cleanup
+                self.deleteStagingArea(submissionUuid)
         else:
             self.logger.error("Can\'t do export as no staging area has been created")
 
@@ -301,7 +302,7 @@ class IngestExporter:
 
             fileBundle = {
                     'describedBy': self.schema_url + 'file',
-                    'schema_version': self.schema_version,
+                    'schema_version': "1.0.0",
                     'schema_type': 'file_bundle',
                     'files': []
                 }
@@ -334,7 +335,7 @@ class IngestExporter:
                     self.logger.info("File entity " + fileDssUuid + " is not valid")
                     self.logger.info(valid)
 
-                self.dumpJsonToFile(fileBundle, project_bundle["content"]["project_id"], "file_bundle_" + str(index))
+                self.dumpJsonToFile(fileBundle, project_bundle["content"]["project_core"]["project_shortname"], "file_bundle_" + str(index))
 
             bundleManifest.fileFilesMap = {fileDssUuid: fileUuidsCollected}
 
@@ -344,7 +345,7 @@ class IngestExporter:
             #TO DO: this is hack in v4 because the bundle schema is specified as an array rather than an object! this should be corrected in v5
             assayEntity = self.bundleProject(assay)
             assayEntity["core"] = {"type": "assay_bundle",
-                                   "schema_url": self.schema_url + "assay_bundle.json",
+                                   "schema_url": self.schema_url + "assay",
                                    "schema_version": self.schema_version}
 
             # todo this is linking information
@@ -360,14 +361,14 @@ class IngestExporter:
                 submittedFiles.append({"name":assayFileName, "submittedName":"assay.json", "url":fileDescription.url, "dss_uuid": assayDssUuid, "indexed": True, "content-type" : '"metadata/assay"'})
             else:
                 submittedFiles.append({"name":assayFileName, "submittedName":"assay.json", "url":"", "dss_uuid": assayDssUuid, "indexed": True, "content-type" : '"metadata/assay"'})
-                valid = self.bundle_validator.validate(assayEntity, "assay")
+                valid = self.bundle_validator.validate(assayEntity, "process")
                 if valid:
-                    self.logger.info("Assay entity " + assayDssUuid + " is valid")
+                    self.logger.info("Process entity " + assayDssUuid + " is valid")
                 else:
-                    self.logger.info("Assay entity " + assayDssUuid + " is not valid")
+                    self.logger.info("Process entity " + assayDssUuid + " is not valid")
                     self.logger.info(valid)
 
-                self.dumpJsonToFile(assayEntity, project_bundle["content"]["project_id"], "assay_bundle_" + str(index))
+                self.dumpJsonToFile(assayEntity, project_bundle["content"]["project_core"]["project_shortname"], "assay_bundle_" + str(index))
 
             bundleManifest.fileProcessMap = {assayDssUuid: [assayUuid]}
 
@@ -384,7 +385,7 @@ class IngestExporter:
                 self.ingest_api.createBundleManifest(bundleManifest)
 
             else:
-                self.dumpJsonToFile(bundleManifest.__dict__, project_bundle["content"]["project_id"], "bundleManifest_" + str(index))
+                self.dumpJsonToFile(bundleManifest.__dict__, project_bundle["content"]["project_core"]["project_shortname"], "bundleManifest_" + str(index))
 
             self.logger.info("bundles generated! "+bundleManifest.bundleUuid)
 
@@ -419,7 +420,7 @@ class IngestExporter:
     def bundleSample(self, sample_entity):
         sample_copy = self._copyAndTrim(sample_entity)
         bundle = {
-            'describedBy': self.schema_url + "biomaterial.json",
+            'describedBy': self.schema_url + "biomaterial",
             'schema_version': self.schema_version,
             'schema_type': 'biomaterial_bundle',
             'content': sample_copy.pop('content', None),
@@ -436,7 +437,7 @@ class IngestExporter:
     def bundleProject(self, project_entity):
         project_copy = self._copyAndTrim(project_entity)
         bundle = {
-            'describedBy': self.schema_url + "project.json",
+            'describedBy': self.schema_url + "project",
             'schema_version': self.schema_version,
             'schema_type': 'project_bundle',
             'content': project_copy.pop('content', None),
@@ -452,7 +453,7 @@ class IngestExporter:
 
     def _copyAndTrim(self, project_entity):
         copy = project_entity.copy()
-        for property in ["_links", "events", "validationState", "validationErrors"]:
+        for property in ["_links", "events", "validationState", "validationErrors", "user", "lastModifiedUser"]:
             del copy[property]
         return copy
 
