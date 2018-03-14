@@ -404,7 +404,7 @@ class IngestExporter:
 
             if not self.dryrun:
                 bundlefileDescription = self.writeMetadataToStaging(submissionEnvelopeUuid,
-                    protocolBundleFileName, protocolBundle, '"metadata/file"')
+                    protocolBundleFileName, protocolBundle, '"metadata/protocol"')
                 submittedFiles.append({
                     "name": protocolBundleFileName,
                     "submittedName": "protocol.json",
