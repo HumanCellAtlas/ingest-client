@@ -390,20 +390,17 @@ class IngestExporter:
             self.logger.info("bundles generated! "+bundleManifest.bundleUuid)
 
     def bundleFileIngest(self, file_entity):
-        return {
-            'content': file_entity['content'],
-            'hca_ingest': {
-                'document_id': file_entity['uuid']['uuid'],
-                'submissionDate': file_entity['submissionDate']
-            }
-        }
+        return self._bundleEntityIngest(file_entity)
 
     def bundleProtocolIngest(self, protocol_entity):
+        return self._bundleEntityIngest(protocol_entity)
+
+    def _bundleEntityIngest(self, entity):
         return {
-            'content': protocol_entity['content'],
+            'content': entity['content'],
             'hca_ingest': {
-                'document_id': protocol_entity['uuid']['uuid'],
-                'submissionDate': protocol_entity['submissionDate']
+                'document_id': entity['uuid']['uuid'],
+                'submissionDate': entity['submissionDate']
             }
         }
 
