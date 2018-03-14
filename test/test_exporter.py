@@ -47,10 +47,13 @@ class TestExporter(TestCase):
         file_entity.update(file_specific_details)
 
         # when:
-        file_bundle = exporter.bundleFileIngest(file_entity)
+        file_ingest = exporter.bundleFileIngest(file_entity)
 
         # then:
-        hca_ingest = file_bundle['hca_ingest']
+        self.assertEqual(file_ingest['content'], file_entity['content'])
+
+        # and:
+        hca_ingest = file_ingest['hca_ingest']
         self.assertEqual(hca_ingest['document_id'], file_entity['uuid']['uuid'])
         self.assertEqual(hca_ingest['submissionDate'], file_entity['submissionDate'])
         #TODO is describedBy required?
