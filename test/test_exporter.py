@@ -29,6 +29,13 @@ class TestExporter(TestCase):
 
         # then:
         self.assertEqual(project_bundle['content'], project_entity['content'])
+        self.assertEqual(project_bundle['schema_version'], exporter.schema_version)
+        self.assertEqual(project_bundle['schema_type'], 'project_bundle')
+
+        # and:
+        schema_ref = project_bundle['describedBy']
+        self.assertTrue(schema_ref.endswith('/project.json'))
+        self.assertTrue(schema_ref.startswith(exporter.schema_url))
 
         # and:
         hca_ingest = project_bundle['hca_ingest']
