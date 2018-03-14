@@ -188,6 +188,7 @@ class IngestExporter:
         # except ValueError, e:
         #     self.logger.error("Can't create staging area " + str(e))
 
+        links = {}
 
         for index, assay in enumerate(assays):
 
@@ -240,10 +241,10 @@ class IngestExporter:
 
             submittedFiles.append(projectUuidToBundleData[projectUuid])
 
-            samples = list(self.ingest_api.getRelatedEntities("samples", assay, "samples"))
-            # does this still apply? we could have more than one sample per assay, and certainly more than one sample type
-            if len(samples) > 1:
-                raise ValueError("Can only be one sample per assay")
+            input_samples = list(self.ingest_api.getRelatedEntities("inputBiomaterials", assay, "biomaterials"))
+            output_files = list(self.ingest_api.getRelatedEntities("derivedFiles", assay, "files"))
+            protocols = list(self.ingest_api.getRelatedEntities("protocols", assay, "protocols"))
+
 
             sampleBundle = {}
             sampleBundle["core"] = {"type": "sample_bundle",
@@ -251,7 +252,7 @@ class IngestExporter:
                                     "schema_version": self.schema_version}
             sampleBundle["samples"] = []
 
-            sample = samples[0]
+            sample = input_samples[0]
 
             # In v4 bundles, all samples in one derivation chain sit as equivalent objects in an array in the bundle. Starting from the assay-related sample, build up the derivation chain
             done = False
@@ -261,15 +262,17 @@ class IngestExporter:
 
 
             while not done:
-                nestedSamples = self.getNestedObjects("derivedFromSamples", sample, "samples")
-                primarySample = self.buildSampleObject(sample, nestedSamples)
+                nestedProcesses = self.getNestedObjects("inputToProcess", sample, "processes")
+
+
+                primarySample = self.buildSampleObject(sample, nestedProcesses)
 
                 sampleBundle["samples"].append(primarySample)
                 sampleUuid = sample["document_id"]
                 sampleRelatedUuids.append(sampleUuid)
 
-                if nestedSamples:
-                    sample = nestedSamples[0]
+                if nestedProcesses:
+                    sample = nestedProcesses[0]
                 else:
                     done = True
 
