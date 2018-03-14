@@ -35,6 +35,7 @@ schema_arrayFields = {
     "analysis_process": ["inputs", "tasks", "input_bundles", "outputs", "operator_identity", "protocol_ids"],
     "collection_process": ["process_reagents", "operator_identity", "protocol_ids"],
     "dissociation_process": ["process_reagents", "operator_identity", "protocol_ids"],
+    "library_preparation_process" : ["process_reagents", "operator_identity", "protocol_ids"],
     "imaging_process": ["field_counts", "field_microns", "field_resolution", "operator_identity", "protocol_ids"],
     "project": ["contributors", "supplementary_files", "publications"],
     "publication": ["authors"]
