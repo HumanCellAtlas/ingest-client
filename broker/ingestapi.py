@@ -299,8 +299,9 @@ class BundleManifest:
     def __init__(self):
         self.bundleUuid = unicode(uuid.uuid4())
         self.envelopeUuid = {}
-        self.files = []
-        self.fileSampleMap = {}
-        self.fileAssayMap = {}
+        self.dataFiles = []
+        self.fileBiomaterialMap = {}
+        self.fileProcessMap = {}
+        self.fileFilesMap = {}
         self.fileProjectMap = {}
         self.fileProtocolMap = {}
