@@ -190,6 +190,7 @@ class IngestExporter:
         # except ValueError, e:
         #     self.logger.error("Can't create staging area " + str(e))
 
+        links = {}
 
         for index, assay in enumerate(assays):
 
