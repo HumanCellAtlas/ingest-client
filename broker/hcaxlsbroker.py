@@ -271,7 +271,7 @@ class SpreadsheetSubmission:
 
     def _emptyProcessObject(self, empty_process_id):
         obj = {}
-        process_core = {"process_id": empty_process_id}
+        process_core = {"process_id": "sampling_process_" + str(empty_process_id)}
         schema_type = "process"
         describedBy = schema_sheetname_mappings["process"]
         obj["process_core"] = process_core
