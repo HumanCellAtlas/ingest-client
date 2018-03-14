@@ -212,9 +212,9 @@ class IngestExporter:
 
             projectEntity = self.getBundleDocument(project)
             # add bundle schema reference
-            projectEntity["core"] = {"type" : "project_bundle",
-                                     "schema_url": self.schema_url + "project_bundle.json",
-                                     "schema_version": self.schema_version}
+            projectEntity['describedBy'] = self.schema_url + "project.json"
+            projectEntity['schema_version'] = self.schema_version
+            projectEntity['schema_type'] = 'project_bundle'
 
             if projectUuid not in projectUuidToBundleData:
                 projectDssUuid = str(uuid.uuid4())
