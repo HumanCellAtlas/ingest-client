@@ -490,11 +490,19 @@ class SpreadsheetSubmission:
              # embedd contact & publication into into project for now
             pubs = []
             for index, publication in enumerate(publications):
+                if "project_core" in publication and "project_shortname" in publication["project_core"] and publication["project_core"]["project_shortname"] == projectId:
+                    del publication["project_core"]
+                else:
+                    raise ValueError('Publication must reference the correct project shortname')
                 pubs.append(publication)
             project["publications"] = pubs
 
             cont = []
             for index, contributor in enumerate(contributors):
+                if "project_core" in contributor and "project_shortname" in contributor["project_core"] and contributor["project_core"]["project_shortname"] == projectId:
+                    del contributor["project_core"]
+                else:
+                    raise ValueError('Contributor must reference the correct project shortname')
                 cont.append(contributor)
             project["contributors"] = cont
 
