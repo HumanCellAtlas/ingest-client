@@ -308,8 +308,7 @@ class IngestExporter:
                 }
             for file in self.ingest_api.getRelatedEntities("derivedFiles", assay, "files"):
                 fileIngest = self.bundleFileIngest(file)
-
-                fileBundle["files"].append(file)
+                fileBundle["files"].append(fileIngest)
                 fileUuid = file["uuid"]["uuid"]
                 fileUuidsCollected.append(fileUuid)
                 fileName = file["fileName"]
