@@ -394,6 +394,13 @@ class IngestExporter:
             }
         }
 
+    def bundleProtocolIngest(self, protocol_entity):
+        return {
+            'hca_ingest': {
+                'document_id': protocol_entity['uuid']['uuid']
+            }
+        }
+
     def writeMetadataToStaging(self, submissionId, fileName, content, contentType):
         self.logger.info("writing to staging area..." + fileName)
         fileDescription = self.staging_api.stageFile(submissionId, fileName, content, contentType)
