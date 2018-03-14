@@ -151,7 +151,13 @@ class IngestApi:
         return self.ingest_api["submissionEnvelopes"]["href"].rsplit("{")[0] + "/" + submissionId
 
     def getAssays(self, submissionUrl):
-        return self.getEntities(submissionUrl, "assays")
+        r = requests.get(submissionUrl, headers=self.headers)
+        if r.status_code == requests.codes.ok:
+            if "assays" in json.loads(r.text)["_links"]:
+                # r2 = requests.get(, headers=self.headers)
+                for entity in self._getAllObjectsFromSet(json.loads(r.text)["_links"]["assays"]["href"], "processes"):
+                    yield entity
+
 
     def getAnalyses(self, submissionUrl):
         return self.getEntities(submissionUrl, "analyses")
