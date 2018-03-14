@@ -255,7 +255,7 @@ class IngestExporter:
             sampleRelatedUuids = []
 
             assaySampleUuid = biomaterial["uuid"]["uuid"]
-
+            sampleRelatedUuids.append(assaySampleUuid)
             # This section here is where we find all the related processes
             # todo get working
             # while not done:
@@ -301,8 +301,8 @@ class IngestExporter:
             fileUuidsCollected = []
 
             fileBundle = {
-                    'describedBy': self.schema_url + 'file',
-                    'schema_version': "1.0.0",
+                    'describedBy': 'https://schema.humancellatlas.org/bundle/1.0.0/file',
+                    'schema_version': '1.0.0',
                     'schema_type': 'file_bundle',
                     'files': []
                 }
@@ -344,7 +344,7 @@ class IngestExporter:
             assayUuid = assay["uuid"]["uuid"]
 
             #TO DO: this is hack in v4 because the bundle schema is specified as an array rather than an object! this should be corrected in v5
-            assayEntity = self.bundleProject(assay)
+            assayEntity = self.bundleProcess(assay)
             assayEntity["core"] = {"type": "process_bundle",
                                    "schema_url": self.schema_url + "process",
                                    "schema_version": self.schema_version}
@@ -469,6 +469,23 @@ class IngestExporter:
             'schema_type': 'biomaterial_bundle',
             'content': sample_copy.pop('content', None),
             'hca_ingest': sample_copy
+        }
+
+        bundle["hca_ingest"]["document_id"] = bundle["hca_ingest"]["uuid"]["uuid"]
+        del bundle["hca_ingest"]["uuid"]
+
+        if bundle["hca_ingest"]["accession"] is None:
+            bundle["hca_ingest"]["accession"] = ""
+        return bundle
+
+    def bundleProcess(self, process_entity):
+        process_copy = self._copyAndTrim(process_entity)
+        bundle = {
+            'describedBy': self.schema_url + "process",
+            'schema_version': self.schema_version,
+            'schema_type': 'process_bundle',
+            'content': process_copy.pop('content', None),
+            'hca_ingest': process_copy
         }
 
         bundle["hca_ingest"]["document_id"] = bundle["hca_ingest"]["uuid"]["uuid"]
