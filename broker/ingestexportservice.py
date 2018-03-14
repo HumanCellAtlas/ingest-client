@@ -396,6 +396,7 @@ class IngestExporter:
 
     def bundleProtocolIngest(self, protocol_entity):
         return {
+            'content': protocol_entity['content'],
             'hca_ingest': {
                 'document_id': protocol_entity['uuid']['uuid'],
                 'submissionDate': protocol_entity['submissionDate']

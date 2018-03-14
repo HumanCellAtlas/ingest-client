@@ -69,6 +69,9 @@ class TestExporter(TestCase):
         protocol_ingest = exporter.bundleProtocolIngest(protocol_entity)
 
         # then:
+        self.assertEqual(protocol_ingest['content'], protocol_entity['content'])
+
+        # and:
         hca_ingest = protocol_ingest['hca_ingest']
         self.assertEqual(hca_ingest['document_id'], protocol_entity['uuid']['uuid'])
         self.assertEqual(hca_ingest['submissionDate'], protocol_entity['submissionDate'])
