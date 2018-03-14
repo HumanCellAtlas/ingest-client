@@ -2,27 +2,12 @@ from unittest import TestCase
 
 from broker.ingestexportservice import IngestExporter
 
-
 class TestExporter(TestCase):
 
     def test_bundleProject(self):
         # given:
         exporter = IngestExporter()
-
-        # and:
-        project_entity = {
-            'submissionDate': '2018-03-14T09:53:02Z',
-            'updateDate': '2018-03-14T09:53:02Z',
-            'content': {},
-            '_links': [],
-            'events': [],
-            'validationState': 'valid',
-            'validationErrors': [],
-            'uuid': {
-                'uuid': '4674424e-3ab1-491c-8295-a68c7bb04b61'
-            },
-            'accession': 'accession123'
-        }
+        project_entity = self._create_entity_template()
 
         # when:
         project_bundle = exporter.bundleProject(project_entity)
@@ -46,3 +31,39 @@ class TestExporter(TestCase):
 
         # and:
         self.assertFalse('content' in hca_ingest.keys())
+
+    def test_bundleFileIngest(self):
+        # given:
+        exporter = IngestExporter()
+        file_entity = self._create_entity_template()
+
+        # and:
+        file_specific_details = {
+            'fileName': 'SRR3934351_1.fastq.gz',
+            'cloudUrl': 'https://sample.com/path/to/file',
+            'checksums': [],
+            'validationId': '62d900'
+        }
+        file_entity.update(file_specific_details)
+
+        # when:
+        file_bundle = exporter.bundleFileIngest(file_entity)
+
+        # then:
+        hca_ingest = file_bundle['hca_ingest']
+        self.assertEqual(hca_ingest['submissionDate'], file_entity['submissionDate'])
+
+    def _create_entity_template(self):
+        return {
+            'submissionDate': '2018-03-14T09:53:02Z',
+            'updateDate': '2018-03-14T09:53:02Z',
+            'content': {},
+            '_links': [],
+            'events': [],
+            'validationState': 'valid',
+            'validationErrors': [],
+            'uuid': {
+                'uuid': '4674424e-3ab1-491c-8295-a68c7bb04b61'
+            },
+            'accession': 'accession123'
+        }
