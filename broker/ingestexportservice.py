@@ -297,17 +297,19 @@ class IngestExporter:
             submittedFiles.append(sampleUuidToBundleData[assaySampleUuid])
 
             fileToBundleData = {}
-            fileBundle = {
-                'describedBy': self.schema_url + 'file',
-                'schema_version': self.schema_version,
-                'schema_type': 'file_bundle',
-                'files': []
-            }
             fileUuidsCollected = []
+
+            fileBundle = {
+                    'describedBy': self.schema_url + 'file',
+                    'schema_version': self.schema_version,
+                    'schema_type': 'file_bundle',
+                    'files': []
+                }
             for file in self.ingest_api.getRelatedEntities("derivedFiles", assay, "files"):
 
-                fileBundle["files"].append(file)
 
+                fileIngest = self.bundleFileIngest(file)
+                fileBundle["files"].append(fileIngest)
                 fileUuid = file["uuid"]["uuid"]
                 fileUuidsCollected.append(fileUuid)
                 fileName = file["fileName"]
@@ -386,6 +388,14 @@ class IngestExporter:
 
             self.logger.info("bundles generated! "+bundleManifest.bundleUuid)
 
+    def bundleFileIngest(self, file_entity):
+        return {
+            'content': file_entity['content'],
+            'hca_ingest': {
+                'document_id': file_entity['uuid']['uuid'],
+                'submissionDate': file_entity['submissionDate']
+            }
+        }
 
     def writeMetadataToStaging(self, submissionId, fileName, content, contentType):
         self.logger.info("writing to staging area..." + fileName)
