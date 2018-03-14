@@ -311,6 +311,7 @@ class IngestExporter:
 
                 fileIngest = self.bundleFileIngest(file)
                 fileBundle["files"].append(fileIngest)
+
                 fileUuid = file["uuid"]["uuid"]
                 fileUuidsCollected.append(fileUuid)
                 fileName = file["fileName"]
@@ -374,9 +375,60 @@ class IngestExporter:
 
             self.logger.info("All files staged...")
 
-            protocols = list(self.ingest_api.getRelatedEntities("protocols", assay, "protocols"))
+            protocolBundle = {
+                'describedBy': 'https://schema.humancellatlas.org/bundle/5.1.0/protocol',
+                'schema_type': 'protocol_bundle',
+                'schema_version': '5.1.0',
+                'protocols': []
+            }
 
-            # todo create the process bundle
+            protocolUuids = []
+            protocolBundleData = {}
+
+            for protocol in list(self.ingest_api.getRelatedEntities("protocols", assay, "protocols")):
+                protocol_ingest = self.bundleProtocolIngest(protocol)
+                project_bundle['protocols'].append(protocol_ingest)
+
+                protocolUuid = protocol["uuid"]["uuid"]
+                protocolUuids.append(protocolUuid)
+                protocolBundleData[protocolUuid] = {
+                    "dss_uuid": protocolUuid,
+                    "indexed": False,
+                    "content-type": "data"
+                }
+                submittedFiles.append(protocolBundleData[protocolUuid])
+                bundleManifest.dataFiles.append(protocolUuid)
+
+            protocolDssUuid = str(uuid.uuid4())
+            protocolBundleFileName = "protocol_bundle_" + str(index) + ".json"
+
+            if not self.dryrun:
+                bundlefileDescription = self.writeMetadataToStaging(submissionEnvelopeUuid,
+                    protocolBundleFileName, protocolBundle, '"metadata/file"')
+                submittedFiles.append({
+                    "name": protocolBundleFileName,
+                    "submittedName": "protocol.json",
+                    "url": bundlefileDescription.url,
+                    "dss_uuid": protocolDssUuid,
+                    "indexed": True,
+                    "content-type": '"metadata/file"'
+                })
+            else:
+                submittedFiles.append({
+                    "name": protocolBundleFileName,
+                    "submittedName": "protocol.json",
+                    "url": "",
+                    "dss_uuid": protocolDssUuid,
+                    "indexed": True,
+                    "content-type": '"metadata/file"'})
+                valid = self.bundle_validator.validate(protocolBundle, "protocol")
+                if valid:
+                    self.logger.info("Protocol entity " + protocolDssUuid + " is valid")
+                else:
+                    self.logger.info("Protocol entity " + protocolDssUuid + " is not valid")
+                    self.logger.info(valid)
+                self.dumpJsonToFile(protocolBundle, project_bundle["content"]["project_id"],
+                    "protocol_bundle_" + str(index))
 
             if not self.dryrun:
                 # write to DSS
