@@ -5,7 +5,7 @@ from broker.ingestexportservice import IngestExporter
 
 class TestExporter(TestCase):
 
-    def test_createProjectBundle(self):
+    def test_bundleProject(self):
         # given:
         exporter = IngestExporter()
 
@@ -25,7 +25,7 @@ class TestExporter(TestCase):
         }
 
         # when:
-        project_bundle = exporter.createProjectBundle(project_entity)
+        project_bundle = exporter.bundleProject(project_entity)
 
         # then:
         self.assertEqual(project_bundle['content'], project_entity['content'])
