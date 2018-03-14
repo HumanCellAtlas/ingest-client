@@ -389,13 +389,13 @@ class IngestExporter:
             self.logger.info("bundles generated! "+bundleManifest.bundleUuid)
 
     def bundleFileIngest(self, file_entity):
-        file_ingest = {
+        return {
+            'content': file_entity['content'],
             'hca_ingest': {
                 'document_id': file_entity['uuid']['uuid'],
                 'submissionDate': file_entity['submissionDate']
             }
         }
-        return file_ingest
 
     def writeMetadataToStaging(self, submissionId, fileName, content, contentType):
         self.logger.info("writing to staging area..." + fileName)
