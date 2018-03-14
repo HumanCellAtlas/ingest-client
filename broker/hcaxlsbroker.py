@@ -641,7 +641,12 @@ class SpreadsheetSubmission:
                         self.ingest_api.linkEntity(sampling_process_ingest, output_biomaterial, "derivedBiomaterials")
                     else:
                         for process_id in biomaterial_proc_inputs[input_biomaterial['content']['biomaterial_core']['biomaterial_id']]:
-                            proc_output_biomaterials[process_id] = output_biomaterial
+                            if process_id not in proc_output_biomaterials:
+                                proc_output_biomaterials[process_id] = []
+                            proc_output_biomaterials[process_id].append(biomaterial_id)
+                            if biomaterial_id not in biomaterial_proc_outputs:
+                                biomaterial_proc_outputs[biomaterial_id] = []
+                            biomaterial_proc_inputs[biomaterial_id].append(process_id)
             else:
                 if "has_input_biomaterial" in biomaterialMap[biomaterial_id]:
                     linksList.append(
@@ -696,12 +701,12 @@ class SpreadsheetSubmission:
                 self.ingest_api.linkEntity(processIngest, projectIngest, "projects") # correct
 
                 if process["process_core"]["process_id"] in proc_input_biomaterials:
-                    for biomaterial in proc_input_biomaterials[process["process_core"]["process_id"]]:
-                        self.ingest_api.linkEntity(processIngest, biomaterialMap[biomaterial], "inputBiomaterials")
+                    for biomaterial_id in proc_input_biomaterials[process["process_core"]["process_id"]]:
+                        self.ingest_api.linkEntity(processIngest, biomaterialMap[biomaterial_id], "inputBiomaterials")
 
                 if process["process_core"]["process_id"] in proc_output_biomaterials:
-                    for biomaterial in proc_output_biomaterials[process["process_core"]["process_id"]]:
-                        self.ingest_api.linkEntity(processIngest, biomaterialMap[biomaterial], "derivedBiomaterials")
+                    for biomaterial_id in proc_output_biomaterials[process["process_core"]["process_id"]]:
+                        self.ingest_api.linkEntity(processIngest, biomaterialMap[biomaterial_id], "derivedBiomaterials")
 
                 # seems to not be used for biomaterials
                 for biomaterial in output_biomaterials:
