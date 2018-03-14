@@ -32,10 +32,10 @@ schema_arrayFields = {
     "organoid": ["genus_species", "ncbi_taxon_id", "supplementary_files", "process_ids"],
     "specimen_from_organism": ["genus_species", "disease", "ncbi_taxon_id", "supplementary_files", "process_ids"],
     "sequence_file": ["insdc_run"],
-    "analysis_process": ["inputs", "tasks", "input_bundles", "outputs", "operator_identity"],
-    "collection_process": ["process_reagents", "operator_identity"],
-    "dissociation_process": ["process_reagents", "operator_identity"],
-    "imaging_process": ["field_counts", "field_microns", "field_resolution", "operator_identity"],
+    "analysis_process": ["inputs", "tasks", "input_bundles", "outputs", "operator_identity", "protocol_ids"],
+    "collection_process": ["process_reagents", "operator_identity", "protocol_ids"],
+    "dissociation_process": ["process_reagents", "operator_identity", "protocol_ids"],
+    "imaging_process": ["field_counts", "field_microns", "field_resolution", "operator_identity", "protocol_ids"],
     "project": ["contributors", "supplementary_files", "publications"],
     "publication": ["authors"]
 }
@@ -704,12 +704,10 @@ class SpreadsheetSubmission:
                 del process["biomaterial_ids"]
 
             process_protocols = []
-            if "protocol_ids" not in process:
-                raise ValueError("Every process must reference a protocol using the protocol_ids attribute")
-            else:
+            if "protocol_ids" in process:
                 for protocol_id in process["protocol_ids"]:
                     if protocol_id not in protocolMap:
-                        raise ValueError('An process references a process '+protocol_id+' that isn\'t in one of the protocol worksheets')
+                        raise ValueError('An process references a protocol '+protocol_id+' that isn\'t in one of the protocol worksheets')
                 process_protocols = process["protocol_ids"]
                 del process["protocol_ids"]
 
