@@ -205,32 +205,27 @@ class IngestExporter:
                 raise ValueError("Can only be one project in bundle")
 
             project = projectEntities[0]
+            project_bundle = self.bundleProject(project)
 
             # track the file names we have uploaded to staging based on uuid
             # this avoids duplicating files on staging
             projectUuid = project["uuid"]["uuid"]
-
-
-            projectEntity = self.bundleProject(project)
-            # add bundle schema reference
-
-
             if projectUuid not in projectUuidToBundleData:
                 projectDssUuid = str(uuid.uuid4())
                 projectFileName = "project_bundle_"+str(index)+".json"
 
                 if not self.dryrun:
-                    fileDescription = self.writeMetadataToStaging(submissionEnvelopeUuid, projectFileName, projectEntity, '"metadata/project"')
+                    fileDescription = self.writeMetadataToStaging(submissionEnvelopeUuid, projectFileName, project_bundle, '"metadata/project"')
                     projectUuidToBundleData[projectUuid] = {"name":projectFileName,"submittedName":"project.json", "url":fileDescription.url, "dss_uuid": projectDssUuid, "indexed": True, "content-type" : '"metadata/project"'}
                 else:
                     projectUuidToBundleData[projectUuid] = {"name":projectFileName,"submittedName":"project.json", "url":"", "dss_uuid": projectDssUuid, "indexed": True, "content-type" : '"metadata/project"'}
-                    valid = self.bundle_validator.validate(projectEntity, "project")
+                    valid = self.bundle_validator.validate(project_bundle, "project")
                     if valid:
                         self.logger.info("Project entity " + projectDssUuid + " is valid")
                     else:
                         self.logger.info("Project entity " + projectDssUuid + " is not valid")
                         self.logger.info(valid)
-                    self.dumpJsonToFile(projectEntity, projectEntity["content"]["project_id"],
+                    self.dumpJsonToFile(project_bundle, project_bundle["content"]["project_id"],
                                         "project_bundle_" + str(index))
 
                 bundleManifest.fileProjectMap = {projectDssUuid: [projectUuid]}
@@ -246,33 +241,33 @@ class IngestExporter:
             protocols = list(self.ingest_api.getRelatedEntities("protocols", assay, "protocols"))
 
 
-            sampleBundle = {}
-            sampleBundle["core"] = {"type": "sample_bundle",
-                                    "schema_url": self.schema_url + "sample_bundle.json",
-                                    "schema_version": self.schema_version}
-            sampleBundle["samples"] = []
+            biomaterialBundle = {
+                'describedBy': self.schema_url + 'biomaterial',
+                'schema_version': self.schema_version,
+                'schema_type': 'biomaterial_bundle',
+                'samples': []
+            }
 
-            sample = input_samples[0]
+            biomaterial = input_samples[0]
 
             # In v4 bundles, all samples in one derivation chain sit as equivalent objects in an array in the bundle. Starting from the assay-related sample, build up the derivation chain
             done = False
             sampleRelatedUuids = []
 
-            assaySampleUuid = sample["uuid"]["uuid"]
+            assaySampleUuid = biomaterial["uuid"]["uuid"]
 
 
             while not done:
                 nestedProcesses = self.getNestedObjects("inputToProcess", sample, "processes")
-
-
                 primarySample = self.buildSampleObject(sample, nestedProcesses)
 
-                sampleBundle["samples"].append(primarySample)
-                sampleUuid = sample["document_id"]
+                biomaterialBundle["samples"].append(primarySample)
+                sampleUuid = biomaterial["document_id"]
                 sampleRelatedUuids.append(sampleUuid)
 
                 if nestedProcesses:
                     sample = nestedProcesses[0]
+
                 else:
                     done = True
 
@@ -282,17 +277,17 @@ class IngestExporter:
                 sampleFileName = "sample_bundle_"+str(index)+".json"
 
                 if not self.dryrun:
-                    fileDescription = self.writeMetadataToStaging(submissionEnvelopeUuid, sampleFileName, sampleBundle, '"metadata/sample"')
+                    fileDescription = self.writeMetadataToStaging(submissionEnvelopeUuid, sampleFileName, biomaterialBundle, '"metadata/sample"')
                     sampleUuidToBundleData[assaySampleUuid] = {"name":sampleFileName, "submittedName":"sample.json", "url":fileDescription.url, "dss_uuid": sampleDssUuid, "indexed": True, "content-type" : '"metadata/sample"'}
                 else:
                     sampleUuidToBundleData[assaySampleUuid] = {"name":sampleFileName, "submittedName":"sample.json", "url":"", "dss_uuid": sampleDssUuid, "indexed": True, "content-type" : '"metadata/sample"'}
-                    valid = self.bundle_validator.validate(sampleBundle, "sample")
+                    valid = self.bundle_validator.validate(biomaterialBundle, "sample")
                     if valid:
                         self.logger.info("Sample entity " + sampleDssUuid + " is valid")
                     else:
                         self.logger.info("Sample entity " + sampleDssUuid + " is not valid")
                         self.logger.info(valid)
-                    self.dumpJsonToFile(sampleBundle, projectEntity["content"]["project_id"], "sample_bundle_" + str(index))
+                    self.dumpJsonToFile(biomaterialBundle, project_bundle["content"]["project_id"], "sample_bundle_" + str(index))
 
                 bundleManifest.fileSampleMap = {sampleDssUuid: sampleRelatedUuids}
             # else add any new sampleUuids to the related samples list
@@ -337,7 +332,7 @@ class IngestExporter:
                     self.logger.info("Assay entity " + assayDssUuid + " is not valid")
                     self.logger.info(valid)
 
-                self.dumpJsonToFile(assayEntity, projectEntity["content"]["project_id"], "assay_bundle_" + str(index))
+                self.dumpJsonToFile(assayEntity, project_bundle["content"]["project_id"], "assay_bundle_" + str(index))
 
             bundleManifest.fileAssayMap = {assayDssUuid: [assayUuid]}
 
@@ -355,7 +350,7 @@ class IngestExporter:
                 self.ingest_api.createBundleManifest(bundleManifest)
 
             else:
-                self.dumpJsonToFile(bundleManifest.__dict__, projectEntity["content"]["project_id"], "bundleManifest_" + str(index))
+                self.dumpJsonToFile(bundleManifest.__dict__, project_bundle["content"]["project_id"], "bundleManifest_" + str(index))
 
             self.logger.info("bundles generated! "+bundleManifest.bundleUuid)
 
