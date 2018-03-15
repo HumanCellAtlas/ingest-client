@@ -579,7 +579,7 @@ class SpreadsheetSubmission:
 
         # build the process map from the different types of process infromation
         processMap = {}
-
+        chainedProcessMap = {}
         for index, process in enumerate(processes):
             if "process_id" not in process["process_core"]:
                 raise ValueError('Process must have an id attribute')
@@ -728,8 +728,18 @@ class SpreadsheetSubmission:
                 for biomaterial_id in process["biomaterial_ids"]:
                     if biomaterial_id not in biomaterialMap:
                         raise ValueError('An process references a biomaterial '+biomaterial_id+' that isn\'t in one of the biomaterials worksheets')
-                output_biomaterials = process["biomaterial_ids"]
                 del process["biomaterial_ids"]
+
+            chained_processes=[]
+            if "chained_process_ids" not in process:
+                raise ValueError("Every process must reference a chained_process using the chained_process_ids attribute")
+            else:
+                for chained_process_id in process["chained_process_ids"]:
+                    if chained_process_id not in processMap:
+                        raise ValueError(
+                            'A process references a chained_process ' + chained_process_id + ' that isn\'t in one of the process worksheets')
+                chained_processes = process["chained_process_ids"]
+                del process["chained_process_ids"]
 
             process_protocols = []
             if "protocol_ids" in process:
@@ -758,6 +768,9 @@ class SpreadsheetSubmission:
 
                 for file in output_files:
                     self.ingest_api.linkEntity(processIngest, filesMap[file], "derivedFiles") # correct
+
+                for chained_process in chained_processes:
+                    self.ingest_api.linkEntity(processIngest, filesMap[file], "derivedFiles")  # correct
 
                 for protocol_id in process_protocols:
                     self.ingest_api.linkEntity(processIngest, protocolMap[protocol_id], "protocols")
