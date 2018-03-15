@@ -384,15 +384,13 @@ class IngestExporter:
 
             allBundleFilesToSubmit.append(sampleUuidToBundleData[assaySampleUuid])
 
-
-
             assayUuid = assay["uuid"]["uuid"]
             allProcessUuids.append(assayUuid)
 
             # link the sample to the assay
             process_type = self.getSchemaNameForEntity(assay)
             links.append(
-                self.getLinks(process_type, assayUuid, "biomaterial", assaySampleUuid ))
+                self.getLinks("biomaterial", assaySampleUuid, process_type, assayUuid))
 
 
             # push the data file metadata and create a file bundle
