@@ -27,19 +27,17 @@ import token_util as token_util
 schema_arrayFields = {
     "cell_line": ["genus_species", "publications", "ncbi_taxon_id", "supplementary_files", "process_ids"],
     "cell_suspension": ["genus_species", "target_cell_type", "ncbi_taxon_id", "supplementary_files", "process_ids"],
-    "donor_organism": ["genus_species", "disease", "familial_relationship", "ancestry", "strain", "ncbi_taxon_id",
+    "donor_organism": ["genus_species", "disease", "familial_relationship", "ethnicity", "strain", "ncbi_taxon_id",
                        "supplementary_files", "process_ids"],
     "organoid": ["genus_species", "ncbi_taxon_id", "supplementary_files", "process_ids"],
-    "specimen_from_organism": ["genus_species", "disease", "ncbi_taxon_id", "supplementary_files", "process_ids"],
+    "specimen_from_organism": ["genus_species", "disease", "ncbi_taxon_id", "supplementary_files", "process_ids",
+                               "gross_image", "microscopic_image"],
     "sequence_file": ["insdc_run"],
-    "analysis_process": ["inputs", "tasks", "input_bundles", "outputs", "operator_identity", "protocol_ids"],
-    "collection_process": ["process_reagents", "operator_identity", "protocol_ids"],
-    "dissociation_process": ["process_reagents", "operator_identity", "protocol_ids"],
-    "enrichment_process": ["process_reagents", "operator_identity", "protocol_ids"],
-    "library_preparation_process": ["process_reagents", "operator_identity", "protocol_ids"],
-    "sequencing_process": ["process_reagents", "operator_identity", "protocol_ids"],
-    "imaging_process": ["field_counts", "field_microns", "field_resolution", "operator_identity", "protocol_ids"],
-    "project": ["contributors", "supplementary_files", "publications"],
+    "analysis_process": ["inputs", "tasks", "input_bundles", "outputs", "operator_identity"],
+    "collection_process": ["process_reagents", "operator_identity"],
+    "dissociation_process": ["process_reagents", "operator_identity"],
+    "imaging_process": ["field_counts", "field_microns", "field_resolution", "operator_identity"],
+    "project": ["contributors", "supplementary_files", "publications", "authors"],
     "publication": ["authors"]
 }
 
@@ -67,13 +65,12 @@ schema_integerFields = {
     "cell_suspension": ["total_estimated_cells", "ncbi_taxon_id", "passage_number"],
     "donor_organism": ["ncbi_taxon_id", "hardy_scale"],
     "organoid": ["ncbi_taxon_id", "passage_number"],
-    "specimen_from_organism": ["ncbi_taxon_id", "ischemic_time"],
+    "specimen_from_organism": ["ncbi_taxon_id", "ischemic_time", "postmortem_interval"],
     "sequence_file": ["lane_index", "read_length"],
     "analysis_process": ["cpus"],
     "imaging_process": ["field_counts", "field_microns", "field_resolution"],
     "library_preparation_process": ["spike_in_dilution", "barcode_offset", "barcode_length"],
-    "project": ["pmid"],
-    "project.publications": ["pmid"]
+    "project": ["pmid"]
 }
 
 # maps sheets to the latest version of each schema
