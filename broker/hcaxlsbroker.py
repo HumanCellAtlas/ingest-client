@@ -33,10 +33,13 @@ schema_arrayFields = {
     "specimen_from_organism": ["genus_species", "disease", "ncbi_taxon_id", "supplementary_files", "process_ids",
                                "gross_image", "microscopic_image"],
     "sequence_file": ["insdc_run"],
-    "analysis_process": ["inputs", "tasks", "input_bundles", "outputs", "operator_identity"],
-    "collection_process": ["process_reagents", "operator_identity"],
-    "dissociation_process": ["process_reagents", "operator_identity"],
-    "imaging_process": ["field_counts", "field_microns", "field_resolution", "operator_identity"],
+    "analysis_process": ["inputs", "tasks", "input_bundles", "outputs", "operator_identity", "protocol_ids"],
+    "collection_process": ["process_reagents", "operator_identity", "protocol_ids"],
+    "dissociation_process": ["process_reagents", "operator_identity", "protocol_ids"],
+    "imaging_process": ["field_counts", "field_microns", "field_resolution", "operator_identity", "protocol_ids"],
+    "enrichment_process": ["process_reagents", "operator_identity", "protocol_ids"],
+    "library_preparation_process": ["process_reagents", "operator_identity", "protocol_ids"],
+    "sequencing_process": ["process_reagents", "operator_identity", "protocol_ids"],
     "project": ["contributors", "supplementary_files", "publications", "authors"],
     "publication": ["authors"]
 }
