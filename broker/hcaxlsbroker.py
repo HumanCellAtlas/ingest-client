@@ -273,9 +273,9 @@ class SpreadsheetSubmission:
         self.logger.debug(json.dumps(obj))
         return obj
 
-    def _emptyProcessObject(self, empty_process_id):
+    def _emptyProcessObject(self, type, empty_process_id):
         obj = {}
-        process_core = {"process_id": "sampling_process_" + str(empty_process_id)}
+        process_core = {"process_id": str(type) + "_process_" + str(empty_process_id)}
         schema_type = "process"
         describedBy = schema_sheetname_mappings["process"]
         obj["process_core"] = process_core
@@ -606,28 +606,47 @@ class SpreadsheetSubmission:
                 if biomaterial["biomaterial_core"]["has_input_biomaterial"] not in biomaterialMap.keys():
                     raise ValueError('Biomaterial '+ str(biomaterial_id) +' references another biomaterial '+ str(biomaterial["biomaterial_core"]["has_input_biomaterial"]) +' that isn\'t in the spraedsheet')
 
-            # do we have multiple chained protocols? If so, create a 'wrapper'
-            wrapper_process_ingest = {}
             if "process_ids" in biomaterial:
+                # do we have multiple chained protocols? If so, create a 'wrapper'
+                wrapper_process = {}
+
                 if len(biomaterial["process_ids"]) > 1:
-                    wrapper_process = self._emptyProcessObject(empty_process_id)
+                    wrapper_process = self._emptyProcessObject("wrapper", empty_process_id)
                     empty_process_id += 1
-                    wrapper_process_ingest = self.ingest_api.createProcess(submissionUrl, json.dumps(wrapper_process))
+                    processMap[wrapper_process["process_core"]["process_id"]] = wrapper_process
 
                 for process_id in biomaterial["process_ids"]:
                     if process_id not in processMap.keys():
                         raise ValueError(
                          'A biomaterial references a process ' + process_id + ' that isn\'t in the biomaterials worksheet')
+
                     if "biomaterial_ids" not in processMap[process_id]:
                         processMap[process_id]["biomaterial_ids"] = []
-                    processMap[process_id]["biomaterial_ids"].append(biomaterial["biomaterial_core"]["biomaterial_id"])
-                    biomaterials_with_procs.append(biomaterial_id)
-                    if process_id not in proc_input_biomaterials:
-                        proc_input_biomaterials[process_id] = []
-                    proc_input_biomaterials[process_id].append(biomaterial_id)
-                    if biomaterial_id not in biomaterial_proc_inputs:
-                        biomaterial_proc_inputs[biomaterial_id] = []
-                    biomaterial_proc_inputs[biomaterial_id].append(process_id)
+
+                    # do we have a wrapper process?
+                    if wrapper_process:
+                        # link this process to the wrapper
+                        wrapper_id = wrapper_process["process_core"]["process_id"]
+                        processMap[wrapper_id]["chained_process_ids"].append(process_id)
+                        # link input or output biomaterials to the wrapper (i.e. indirectly)
+                        processMap[wrapper_id]["biomaterial_ids"].append(biomaterial["biomaterial_core"]["biomaterial_id"])
+                        biomaterials_with_procs.append(biomaterial_id)
+                        if wrapper_id not in proc_input_biomaterials:
+                            proc_input_biomaterials[wrapper_id] = []
+                        proc_input_biomaterials[wrapper_id].append(biomaterial_id)
+                        if biomaterial_id not in biomaterial_proc_inputs:
+                            biomaterial_proc_inputs[biomaterial_id] = []
+                        biomaterial_proc_inputs[biomaterial_id].append(wrapper_id)
+                    else:
+                        # link processes to input and output directly
+                        processMap[process_id]["biomaterial_ids"].append(biomaterial["biomaterial_core"]["biomaterial_id"])
+                        biomaterials_with_procs.append(biomaterial_id)
+                        if process_id not in proc_input_biomaterials:
+                            proc_input_biomaterials[process_id] = []
+                        proc_input_biomaterials[process_id].append(biomaterial_id)
+                        if biomaterial_id not in biomaterial_proc_inputs:
+                            biomaterial_proc_inputs[biomaterial_id] = []
+                        biomaterial_proc_inputs[biomaterial_id].append(process_id)
                 del biomaterial["process_ids"]
 
             self.dumpJsonToFile(biomaterial, projectId, "biomaterial_" + str(index))
@@ -649,7 +668,7 @@ class SpreadsheetSubmission:
                     # if the input biomaterial declares the process, we will link later
                     if input_biomaterial['content']['biomaterial_core']['biomaterial_id'] not in biomaterials_with_procs:
                         # else create sampling process to link biomaterials
-                        sampling_process = self._emptyProcessObject(empty_process_id)
+                        sampling_process = self._emptyProcessObject("sampling", empty_process_id)
                         empty_process_id += 1
                         sampling_process_ingest = self.ingest_api.createProcess(submissionUrl, json.dumps(sampling_process))
 
