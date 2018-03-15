@@ -85,6 +85,15 @@ class IngestExporter:
 
         return primarySample
 
+    def getLinks(self, source_type, source_id, destination_type, destination_id):
+        return {
+            'source_type' : source_type,
+            'source_id' : source_id,
+            'destination_type' : destination_type,
+            'destination_id' : destination_id
+        }
+
+
     def generateBundles(self, submissionEnvelopeId):
         self.logger.info('submission received '+submissionEnvelopeId)
         # given a sub envelope, generate bundles
@@ -183,24 +192,31 @@ class IngestExporter:
 
         projectUuidToBundleData = {}
         sampleUuidToBundleData = {}
+        processUuidToBundleData = {}
+        protocolUuidToBundleData = {}
+        fileUuidToBundleData = {}
+        dataUuidToBundleData = {}
 
-        # try:
-        #     # self.staging_api.createStagingArea(submissionEnvelopeId)
-        # except ValueError, e:
-        #     self.logger.error("Can't create staging area " + str(e))
-
-        links = {}
+        # create a bundle per assay
 
         for index, assay in enumerate(assays):
 
-            # collect all submitted files for creation of the submission.json
-            submittedFiles = []
+            # catch links for this bundle
+            links = []
+
+            # collect all protocol, biomaterial, file and process ids, these will go in to bundle manifest
+            allBiomaterialUuids = []
+            allProcessUuids = []
+            allFileUuids = []
+            allProtocolUuids = []
+
+            allBundleFilesToSubmit = []
 
             # create the bundle manifest to track file uuid to object uuid maps for this bundle
-
             bundleManifest = ingestapi.BundleManifest()
             bundleManifest.envelopeUuid = submissionEnvelopeUuid
 
+            # get the project and create the project bundle
             projectEntities = list(self.ingest_api.getRelatedEntities("projects", assay, "projects"))
             if len(projectEntities) != 1:
                 raise ValueError("Can only be one project in bundle")
@@ -234,12 +250,10 @@ class IngestExporter:
             else:
                 bundleManifest.fileProjectMap = {projectUuidToBundleData[projectUuid]["dss_uuid"]: [projectUuid]}
 
-
-            submittedFiles.append(projectUuidToBundleData[projectUuid])
-
-            input_samples = list(self.ingest_api.getRelatedEntities("inputBiomaterials", assay, "biomaterials"))
+            allBundleFilesToSubmit.append(projectUuidToBundleData[projectUuid])
 
 
+            # create a stub for the biomaterial bundle
             biomaterialBundle = {
                 'describedBy': self.schema_url + 'biomaterial',
                 'schema_version': self.schema_version,
@@ -247,32 +261,94 @@ class IngestExporter:
                 'biomaterials': []
             }
 
-            biomaterial = input_samples[0]
+            # create a stub for the process bundle
+            processesBundle = {
+                'describedBy': self.schema_url + 'process',
+                'schema_version': self.schema_version,
+                'schema_type': 'process_bundle',
+                'processes': []
+            }
 
-            biomaterialBundle["biomaterials"].append(self.bundleSample(biomaterial))
-            # In v4 bundles, all samples in one derivation chain sit as equivalent objects in an array in the bundle. Starting from the assay-related sample, build up the derivation chain
-            done = False
-            sampleRelatedUuids = []
+            # create a stub for the file bundle
+            fileBundle = {
+                    'describedBy': 'https://schema.humancellatlas.org/bundle/1.0.0/file',
+                    'schema_version': '1.0.0',
+                    'schema_type': 'file_bundle',
+                    'files': []
+            }
 
-            assaySampleUuid = biomaterial["uuid"]["uuid"]
-            sampleRelatedUuids.append(assaySampleUuid)
-            # This section here is where we find all the related processes
-            # todo get working
-            # while not done:
-            #     nestedProcesses = self.getNestedObjects("inputToProcess", sample, "processes")
-            #     primarySample = self.buildSampleObject(sample, nestedProcesses)
-            #
-            #     biomaterialBundle["samples"].append(primarySample)
-            #     sampleUuid = biomaterial["document_id"]
-            #     sampleRelatedUuids.append(sampleUuid)
-            #
-            #     if nestedProcesses:
-            #         sample = nestedProcesses[0]
-            #
-            #     else:
-            #         done = True
+            # create a stub for the protocol bundle
+            protocolBundle = {
+                'describedBy': 'https://schema.humancellatlas.org/bundle/5.1.0/protocol',
+                'schema_type': 'protocol_bundle',
+                'schema_version': '5.1.0',
+                'protocols': []
+            }
 
-            # if this sample derivation chain has not been seen in relation to an existing sample
+            # create a stub for the links bundle
+            linksBundle = {
+                'describedBy': 'https://schema.humancellatlas.org/bundle/1.0.0/links',
+                'schema_type': 'links_bundle',
+                'schema_version': '1.0.0',
+                'links': []
+            }
+
+
+            # get the primary sample for this assay
+            # assume just one input sample todo this is not a safe assumption
+            input_sample = list(self.ingest_api.getRelatedEntities("inputBiomaterials", assay, "biomaterials"))[0]
+            biomaterialBundle["biomaterials"].append(self.bundleSample(input_sample))
+            assaySampleUuid = input_sample["uuid"]["uuid"]
+            allBiomaterialUuids.append(assaySampleUuid)
+
+            # This section here is where we find all the related samples
+            sampleProcesses = self.getNestedObjects("derivedByProcesses", input_sample, "processes")
+
+            for sampleProcess in sampleProcesses:
+
+                # collect this process uuid and add the process to the bundle
+                if (sampleProcess["uuid"]["uuid"] not in allProcessUuids):
+                    allProcessUuids.append(sampleProcess["uuid"]["uuid"])
+                    processesBundle["processes"].append(self.bundleProcess(sampleProcess))
+
+                # get the sample input to this porcess, this will be the specimen
+                specimenSamples = self.getNestedObjects("inputBiomaterials", sampleProcess, "biomaterials")
+                for specimen in specimenSamples:
+
+
+                    # collect the sample uuid and add it to the sample bundle
+                    if (specimen["uuid"]["uuid"] not in allBiomaterialUuids):
+                        allBiomaterialUuids.append(specimen["uuid"]["uuid"])
+                        biomaterialBundle["biomaterials"].append(self.bundleSample(specimen))
+
+                        # link the samples
+                        links.append(self.getLinks("biomaterial",specimen["uuid"]["uuid"] , "biomaterial",assaySampleUuid ))
+
+
+
+                    # get the process that generated the specimen
+                    specimenProcesses = self.getNestedObjects("derivedByProcesses", specimen, "processes")
+                    for specimenProcess in specimenProcesses:
+
+                        # collect the process and create add it to the process bundle
+                        if (specimenProcess["uuid"]["uuid"] not in allProcessUuids):
+                            allProcessUuids.append(specimenProcess["uuid"]["uuid"])
+                            processesBundle["processes"].append(self.bundleProcess(specimenProcess))
+
+                        # finally get the donor and add the sample bundle
+                        donorSamples = self.getNestedObjects("inputBiomaterials", specimenProcess, "biomaterials")
+
+                        for donor in donorSamples:
+                            if (donor["uuid"]["uuid"] not in allBiomaterialUuids):
+                                allBiomaterialUuids.append(donor["uuid"]["uuid"])
+                                biomaterialBundle["biomaterials"].append(self.bundleSample(donor))
+                                # link the samples
+                                links.append(
+                                self.getLinks("biomaterial", donor["uuid"]["uuid"], "biomaterial",
+                                              specimenProcess["uuid"]["uuid"]))
+
+
+            # now submit the samples to the DSS
             if assaySampleUuid not in sampleUuidToBundleData:
                 sampleDssUuid = str(uuid.uuid4())
                 sampleFileName = "biomaterial_bundle_"+str(index)+".json"
@@ -290,45 +366,44 @@ class IngestExporter:
                         self.logger.info(valid)
                     self.dumpJsonToFile(biomaterialBundle, project_bundle["content"]["project_core"]["project_shortname"], "biomaterial_bundle_" + str(index))
 
-                bundleManifest.fileBiomaterialMap = {sampleDssUuid: sampleRelatedUuids}
+                bundleManifest.fileBiomaterialMap = {sampleDssUuid: allBiomaterialUuids}
             # else add any new sampleUuids to the related samples list
             else:
-               bundleManifest.fileBiomaterialMap = {sampleUuidToBundleData[assaySampleUuid]["dss_uuid"]: sampleRelatedUuids}
+               bundleManifest.fileBiomaterialMap = {sampleUuidToBundleData[assaySampleUuid]["dss_uuid"]: allBiomaterialUuids}
 
-            submittedFiles.append(sampleUuidToBundleData[assaySampleUuid])
+            allBundleFilesToSubmit.append(sampleUuidToBundleData[assaySampleUuid])
 
-            fileToBundleData = {}
-            fileUuidsCollected = []
+            # push the data file metadata and create a file bundle
+            fileDssUuid = str(uuid.uuid4())
+            fileBundleFileName = "file_bundle_" + str(index) + ".json"
 
-            fileBundle = {
-                    'describedBy': 'https://schema.humancellatlas.org/bundle/1.0.0/file',
-                    'schema_version': '1.0.0',
-                    'schema_type': 'file_bundle',
-                    'files': []
-                }
             for file in self.ingest_api.getRelatedEntities("derivedFiles", assay, "files"):
 
-
+                # add the file to the file bundle
                 fileIngest = self.bundleFileIngest(file)
                 fileBundle["files"].append(fileIngest)
 
                 fileUuid = file["uuid"]["uuid"]
-                fileUuidsCollected.append(fileUuid)
+                allFileUuids.append(fileUuid)
+
                 fileName = file["fileName"]
                 cloudUrl = file["cloudUrl"]
-                fileToBundleData[fileUuid] = {"name":fileName, "submittedName":fileName, "url":cloudUrl, "dss_uuid": fileUuid, "indexed": False, "content-type" : "data"}
-                submittedFiles.append(fileToBundleData[fileUuid])
+
+                dataUuidToBundleData[fileUuid] = {"name":fileName, "submittedName":fileName, "url":cloudUrl, "dss_uuid": fileUuid, "indexed": False, "content-type" : "data"}
+                allBundleFilesToSubmit.append(dataUuidToBundleData[fileUuid])
                 bundleManifest.dataFiles.append(fileUuid)
 
-            fileDssUuid = str(uuid.uuid4())
-            fileBundleFileName = "file_bundle_" + str(index) + ".json"
+                # link the samples
+                links.append(
+                self.getLinks("biomaterial", assaySampleUuid, "file",
+                              fileUuid))
 
-            # write the file bundle
+            # write the file bundle to the datastore
             if not self.dryrun:
                 bundlefileDescription = self.writeMetadataToStaging(submissionEnvelopeUuid, fileBundleFileName, fileBundle, '"metadata/file"')
-                submittedFiles.append({"name":fileBundleFileName, "submittedName":"file.json", "url":bundlefileDescription.url, "dss_uuid": fileDssUuid, "indexed": True, "content-type" : '"metadata/file"'})
+                allBundleFilesToSubmit.append({"name":fileBundleFileName, "submittedName":"file.json", "url":bundlefileDescription.url, "dss_uuid": fileDssUuid, "indexed": True, "content-type" : '"metadata/file"'})
             else:
-                submittedFiles.append({"name":fileBundleFileName, "submittedName":"file.json", "url":"", "dss_uuid": fileDssUuid, "indexed": True, "content-type" : '"metadata/file"'})
+                allBundleFilesToSubmit.append({"name":fileBundleFileName, "submittedName":"file.json", "url":"", "dss_uuid": fileDssUuid, "indexed": True, "content-type" : '"metadata/file"'})
                 valid = self.bundle_validator.validate(fileBundle, "file", "1.0.0")
                 if valid:
                     self.logger.info("File entity " + fileDssUuid + " is valid")
@@ -338,57 +413,41 @@ class IngestExporter:
 
                 self.dumpJsonToFile(fileBundle, project_bundle["content"]["project_core"]["project_shortname"], "file_bundle_" + str(index))
 
-            bundleManifest.fileFilesMap = {fileDssUuid: fileUuidsCollected}
+            bundleManifest.fileFilesMap = {fileDssUuid: allFileUuids}
 
 
             assayUuid = assay["uuid"]["uuid"]
+            allProcessUuids.append(assayUuid)
 
             #TO DO: this is hack in v4 because the bundle schema is specified as an array rather than an object! this should be corrected in v5
-            assayEntity = self.bundleProcess(assay)
-            assayEntity["core"] = {"type": "process_bundle",
-                                   "schema_url": self.schema_url + "process",
-                                   "schema_version": self.schema_version}
-
-            # todo this is linking information
-            assayEntity["has_input"] = assaySampleUuid
-            assayEntity["has_output"] = fileToBundleData.keys()
+            processesBundle["processes"].append(self.bundleProcess(assay))
 
             assayDssUuid = str(uuid.uuid4())
             assayFileName = "process_bundle_" + str(index) + ".json"
 
-
             if not self.dryrun:
-                fileDescription = self.writeMetadataToStaging(submissionEnvelopeUuid, assayFileName, assayEntity, '"metadata/process"')
-                submittedFiles.append({"name":assayFileName, "submittedName":"process.json", "url":fileDescription.url, "dss_uuid": assayDssUuid, "indexed": True, "content-type" : '"metadata/assay"'})
+                fileDescription = self.writeMetadataToStaging(submissionEnvelopeUuid, assayFileName, processesBundle, '"metadata/process"')
+                allBundleFilesToSubmit.append({"name":assayFileName, "submittedName":"process.json", "url":fileDescription.url, "dss_uuid": assayDssUuid, "indexed": True, "content-type" : '"metadata/process"'})
             else:
-                submittedFiles.append({"name":assayFileName, "submittedName":"process.json", "url":"", "dss_uuid": assayDssUuid, "indexed": True, "content-type" : '"metadata/assay"'})
-                valid = self.bundle_validator.validate(assayEntity, "process")
+                allBundleFilesToSubmit.append({"name":assayFileName, "submittedName":"process.json", "url":"", "dss_uuid": assayDssUuid, "indexed": True, "content-type" : '"metadata/process"'})
+                valid = self.bundle_validator.validate(processesBundle, "process")
                 if valid:
                     self.logger.info("Process entity " + assayDssUuid + " is valid")
                 else:
                     self.logger.info("Process entity " + assayDssUuid + " is not valid")
                     self.logger.info(valid)
 
-                self.dumpJsonToFile(assayEntity, project_bundle["content"]["project_core"]["project_shortname"], "process_bundle_" + str(index))
+                self.dumpJsonToFile(processesBundle, project_bundle["content"]["project_core"]["project_shortname"], "process_bundle_" + str(index))
 
-            bundleManifest.fileProcessMap = {assayDssUuid: [assayUuid]}
+            bundleManifest.fileProcessMap = {assayDssUuid: allProcessUuids}
 
-            self.logger.info("All files staged...")
-
-            protocolBundle = {
-                'describedBy': 'https://schema.humancellatlas.org/bundle/5.1.0/protocol',
-                'schema_type': 'protocol_bundle',
-                'schema_version': '5.1.0',
-                'protocols': []
-            }
-
-            protocolUuids = []
+            # push protocols to dss
 
             for protocol in list(self.ingest_api.getRelatedEntities("protocols", assay, "protocols")):
-                protocol_ingest = self.bundleProtocolIngest(protocol)
-                project_bundle['protocols'].append(protocol_ingest)
+                protocol_ingest = self.bundleProtocol(protocol)
+                protocolBundle['protocols'].append(protocol_ingest)
 
-                protocolUuids.append(protocol["uuid"]["uuid"])
+                allProtocolUuids.append(protocol["uuid"]["uuid"])
 
 
             protocolDssUuid = str(uuid.uuid4())
@@ -397,7 +456,7 @@ class IngestExporter:
             if not self.dryrun:
                 bundlefileDescription = self.writeMetadataToStaging(submissionEnvelopeUuid,
                     protocolBundleFileName, protocolBundle, '"metadata/protocol"')
-                submittedFiles.append({
+                allBundleFilesToSubmit.append({
                     "name": protocolBundleFileName,
                     "submittedName": "protocol.json",
                     "url": bundlefileDescription.url,
@@ -406,7 +465,7 @@ class IngestExporter:
                     "content-type": '"metadata/file"'
                 })
             else:
-                submittedFiles.append({
+                allBundleFilesToSubmit.append({
                     "name": protocolBundleFileName,
                     "submittedName": "protocol.json",
                     "url": "",
@@ -422,12 +481,47 @@ class IngestExporter:
                 self.dumpJsonToFile(protocolBundle, project_bundle["content"]["project_core"]["project_shortname"],
                     "protocol_bundle_" + str(index))
 
-            bundleManifest.fileProjectMap = {protocolDssUuid: [protocolUuids]}
+            bundleManifest.fileProjectMap = {protocolDssUuid: [allProtocolUuids]}
+
+            # push links to dss
+            linksBundleFileName = "links_bundle_" + str(index) + ".json"
+            linksDssUuid = str(uuid.uuid4())
+
+            linksBundle["links"] = links
+            if not self.dryrun:
+                bundlefileDescription = self.writeMetadataToStaging(submissionEnvelopeUuid,
+                                                                    linksBundleFileName, linksBundle, '"metadata/links"')
+                allBundleFilesToSubmit.append({
+                    "name": linksBundleFileName,
+                    "submittedName": "links.json",
+                    "url": bundlefileDescription.url,
+                    "dss_uuid": linksDssUuid,
+                    "indexed": True,
+                    "content-type": '"metadata/links"'
+                })
+            else:
+                allBundleFilesToSubmit.append({
+                    "name": linksBundleFileName,
+                    "submittedName": "links.json",
+                    "url": "",
+                    "dss_uuid": linksDssUuid,
+                    "indexed": True,
+                    "content-type": '"metadata/links"'})
+                valid = self.bundle_validator.validate(linksBundle, "links", "1.0.0")
+                if valid:
+                    self.logger.info("Link entity " + linksDssUuid + " is valid")
+                else:
+                    self.logger.info("Link entity " + linksDssUuid + " is not valid")
+                    self.logger.info(valid)
+                self.dumpJsonToFile(linksBundle, project_bundle["content"]["project_core"]["project_shortname"],
+                    "links_bundle_" + str(index))
+
+            self.logger.info("All files staged...")
 
 
             if not self.dryrun:
                 # write to DSS
-                self.dss_api.createBundle(bundleManifest.bundleUuid, submittedFiles)
+                self.dss_api.createBundle(bundleManifest.bundleUuid, allBundleFilesToSubmit)
                 # write bundle manifest to ingest API
                 self.ingest_api.createBundleManifest(bundleManifest)
 
@@ -464,9 +558,6 @@ class IngestExporter:
     def bundleSample(self, sample_entity):
         sample_copy = self._copyAndTrim(sample_entity)
         bundle = {
-            'describedBy': self.schema_url + "biomaterial",
-            'schema_version': self.schema_version,
-            'schema_type': 'biomaterial_bundle',
             'content': sample_copy.pop('content', None),
             'hca_ingest': sample_copy
         }
@@ -481,9 +572,6 @@ class IngestExporter:
     def bundleProcess(self, process_entity):
         process_copy = self._copyAndTrim(process_entity)
         bundle = {
-            'describedBy': self.schema_url + "process",
-            'schema_version': self.schema_version,
-            'schema_type': 'process_bundle',
             'content': process_copy.pop('content', None),
             'hca_ingest': process_copy
         }
@@ -503,6 +591,20 @@ class IngestExporter:
             'schema_type': 'project_bundle',
             'content': project_copy.pop('content', None),
             'hca_ingest': project_copy
+        }
+
+        bundle["hca_ingest"]["document_id"] = bundle["hca_ingest"]["uuid"]["uuid"]
+        del bundle["hca_ingest"]["uuid"]
+
+        if bundle["hca_ingest"]["accession"] is None:
+            bundle["hca_ingest"]["accession"] = ""
+        return bundle
+
+    def bundleProtocol(self, protocol_entity):
+        protocol_copy = self._copyAndTrim(protocol_entity)
+        bundle = {
+            'content': protocol_copy.pop('content', None),
+            'hca_ingest': protocol_copy
         }
 
         bundle["hca_ingest"]["document_id"] = bundle["hca_ingest"]["uuid"]["uuid"]
