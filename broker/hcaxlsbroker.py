@@ -606,7 +606,14 @@ class SpreadsheetSubmission:
                 if biomaterial["biomaterial_core"]["has_input_biomaterial"] not in biomaterialMap.keys():
                     raise ValueError('Biomaterial '+ str(biomaterial_id) +' references another biomaterial '+ str(biomaterial["biomaterial_core"]["has_input_biomaterial"]) +' that isn\'t in the spraedsheet')
 
+            # do we have multiple chained protocols? If so, create a 'wrapper'
+            wrapper_process_ingest = {}
             if "process_ids" in biomaterial:
+                if len(biomaterial["process_ids"]) > 1:
+                    wrapper_process = self._emptyProcessObject(empty_process_id)
+                    empty_process_id += 1
+                    wrapper_process_ingest = self.ingest_api.createProcess(submissionUrl, json.dumps(wrapper_process))
+
                 for process_id in biomaterial["process_ids"]:
                     if process_id not in processMap.keys():
                         raise ValueError(
