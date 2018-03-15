@@ -9,7 +9,7 @@ from flask_cors import CORS, cross_origin
 from flask import json
 from hcaxlsbroker import SpreadsheetSubmission
 from ingestapi import IngestApi
-from stagingapi import StagingApi
+# from stagingapi import StagingApi
 from werkzeug.utils import secure_filename
 import os, sys
 import tempfile
@@ -148,7 +148,7 @@ def create_upload_failure_response(status_code, message, details):
         status=status_code,
         mimetype='application/json'
     )
-    print failure_response
+    print(failure_response)
     return failure_response
 
 @app.route('/')
