@@ -12,6 +12,7 @@ import logging
 import ingestapi
 import json
 import uuid
+import time
 import requests
 from optparse import OptionParser
 import os, sys
@@ -632,9 +633,21 @@ class IngestExporter:
         return newBundle
 
     def completeSubmission(self, submissionEnvelopeId):
-        self.ingest_api.updateSubmissionState(submissionEnvelopeId, 'cleaning')
-        self.ingest_api.updateSubmissionState(submissionEnvelopeId, 'complete')
-        self.logger.info('Submission status is COMPLETE')
+        for i in range(1, 5):
+            try:
+                self.ingest_api.updateSubmissionState(submissionEnvelopeId, 'cleaning')
+                self.logger.info('Submission status is CLEANING')
+            except Exception:
+                self.logger.info("failed to set state of submission {0} to Cleaning, retrying...".format(submissionEnvelopeId))
+                time.sleep(1)
+
+        for i in range(1, 5):
+            try:
+                self.ingest_api.updateSubmissionState(submissionEnvelopeId, 'complete')
+                self.logger.info('Submission status is COMPLETE')
+            except Exception:
+                self.logger.info("failed to set state of submission {0} to Complete, retrying...".format(submissionEnvelopeId))
+                time.sleep(1)
 
     def processSubmission(self, submissionEnvelopeId):
         self.ingest_api.updateSubmissionState(submissionEnvelopeId, 'processing')
