@@ -33,8 +33,8 @@ class IngestApi:
 
     def load_root(self):
         if not self.ingest_api:
-            reply = urllib.urlopen(self.url)
-            self.ingest_api = json.load(reply)["_links"]
+            reply = requests.get(self.url, headers=self.headers)
+            self.ingest_api = reply.json()["_links"]
 
     def getSubmissions(self):
         params = {'sort': 'submissionDate,desc'}
