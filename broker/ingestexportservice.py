@@ -12,6 +12,7 @@ import logging
 import ingestapi
 import json
 import uuid
+import time
 import requests
 from optparse import OptionParser
 import os, sys
