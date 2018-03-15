@@ -719,10 +719,16 @@ class SpreadsheetSubmission:
             del file["biomaterial_id"]
             filesMap[file["file_core"]["file_name"]] = file
 
-            if "files" not in processMap[process]:
-                processMap[process]["files"] = []
-
-            processMap[process]["files"].append(file["file_core"]["file_name"])
+            # is the process referred to from this file wrapped by another process?
+            if process in chainedProcessMap:
+                for wrapper_process in chainedProcessMap[process]:
+                    if "files" not in processMap[wrapper_process]:
+                        processMap[wrapper_process]["files"] = []
+                    processMap[wrapper_process]["files"].append(file["file_core"]["file_name"])
+            else:
+                if "files" not in processMap[process]:
+                    processMap[process]["files"] = []
+                processMap[process]["files"].append(file["file_core"]["file_name"])
 
             self.dumpJsonToFile(file, projectId, "files_" + str(index))
             if not self.dryrun:
