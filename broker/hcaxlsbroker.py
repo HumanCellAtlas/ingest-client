@@ -317,7 +317,8 @@ class SpreadsheetSubmission:
         projectSheet = wb.create_sheet()
         projectPubsSheet = wb.create_sheet()
         contributorSheet = wb.create_sheet()
-        empty_process_id = 1
+        empty_wrapper_id = 1
+        empty_sampling_id = 1
 
         if existing_project_id is None:
             projectSheet = wb.get_sheet_by_name("project")
@@ -619,8 +620,8 @@ class SpreadsheetSubmission:
                     if process_ids_field in procs_wrapped_by:
                         wrapper_process = procs_wrapped_by[biomaterials["process_ids"]]
                     else:
-                        wrapper_process = self._emptyProcessObject("wrapper", empty_process_id)
-                        empty_process_id += 1
+                        wrapper_process = self._emptyProcessObject("wrapper", empty_wrapper_id)
+                        empty_wrapper_id += 1
                         procs_wrapped_by[process_ids_field] = wrapper_process
                         processMap[wrapper_process["process_core"]["process_id"]] = wrapper_process
                         processMap[wrapper_process["process_core"]["process_id"]]["chained_process_ids"] = []
@@ -688,8 +689,8 @@ class SpreadsheetSubmission:
                     # if the input biomaterial declares the process, we will link later
                     if input_biomaterial['content']['biomaterial_core']['biomaterial_id'] not in biomaterials_with_procs:
                         # else create sampling process to link biomaterials
-                        sampling_process = self._emptyProcessObject("sampling", empty_process_id)
-                        empty_process_id += 1
+                        sampling_process = self._emptyProcessObject("sampling", empty_sampling_id)
+                        empty_sampling_id += 1
                         sampling_process_ingest = self.ingest_api.createProcess(submissionUrl, json.dumps(sampling_process))
 
                         # link process to input biomaterials
