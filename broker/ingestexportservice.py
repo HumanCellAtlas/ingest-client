@@ -255,16 +255,16 @@ class IngestExporter:
 
             # create a stub for the biomaterial bundle
             biomaterialBundle = {
-                'describedBy': self.schema_url + 'biomaterial',
-                'schema_version': self.schema_version,
+                'describedBy': 'https://schema.humancellatlas.org/bundle/5.1.0/biomaterial',
+                'schema_version': '5.1.0',
                 'schema_type': 'biomaterial_bundle',
                 'biomaterials': []
             }
 
             # create a stub for the process bundle
             processesBundle = {
-                'describedBy': self.schema_url + 'process',
-                'schema_version': self.schema_version,
+                'describedBy': 'https://schema.humancellatlas.org/bundle/5.2.1/process',
+                'schema_version': '5.2.1',
                 'schema_type': 'process_bundle',
                 'processes': []
             }
@@ -288,7 +288,7 @@ class IngestExporter:
             # create a stub for the links bundle
             linksBundle = {
                 'describedBy': 'https://schema.humancellatlas.org/bundle/1.0.0/links',
-                'schema_type': 'links_bundle',
+                'schema_type': 'link_bundle',
                 'schema_version': '1.0.0',
                 'links': []
             }
@@ -484,7 +484,7 @@ class IngestExporter:
             bundleManifest.fileProjectMap = {protocolDssUuid: [allProtocolUuids]}
 
             # push links to dss
-            linksBundleFileName = "links_bundle_" + str(index) + ".json"
+            linksBundleFileName = "link_bundle_" + str(index) + ".json"
             linksDssUuid = str(uuid.uuid4())
 
             linksBundle["links"] = links
@@ -514,7 +514,7 @@ class IngestExporter:
                     self.logger.info("Link entity " + linksDssUuid + " is not valid")
                     self.logger.info(valid)
                 self.dumpJsonToFile(linksBundle, project_bundle["content"]["project_core"]["project_shortname"],
-                    "links_bundle_" + str(index))
+                    "link_bundle_" + str(index))
 
             self.logger.info("All files staged...")
 
