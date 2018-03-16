@@ -757,15 +757,18 @@ class SpreadsheetSubmission:
             if chained_process not in processMap:
                 raise ValueError('A chained process was not found in the process sheet - ' + str(chained_process))
             if not self.dryrun:
-                chained_process_ingest = self.ingest_api.createProcess(submissionUrl, json.dumps(processMap[chained_process]))
-                chained_process_ingest_map[chained_process] = chained_process_ingest
-
+                chained_process_protocols = []
                 if "protocol_ids" in processMap[chained_process]:
                     for protocol_id in processMap[chained_process]["protocol_ids"]:
                         if protocol_id not in protocolMap:
                             raise ValueError('An process references a protocol '+protocol_id+' that isn\'t in one of the protocol worksheets')
-                        self.ingest_api.linkEntity(chained_process_ingest, protocolMap[protocol_id], "protocols")
+                        chained_process_protocols.append(protocolMap[protocol_id])
                     del processMap[chained_process]["protocol_ids"]
+
+                chained_process_ingest = self.ingest_api.createProcess(submissionUrl, json.dumps(processMap[chained_process]))
+                chained_process_ingest_map[chained_process] = chained_process_ingest
+                for protocol in chained_process_protocols:
+                    self.ingest_api.linkEntity(chained_process_ingest, protocol, "protocols")
 
         for index, process in enumerate(processMap.values()):
             if "process_id" not in process["process_core"]:
