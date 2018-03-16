@@ -757,7 +757,7 @@ class SpreadsheetSubmission:
             if chained_process not in processMap:
                 raise ValueError('A chained process was not found in the process sheet - ' + str(chained_process))
             if not self.dryrun:
-                chained_process_ingest = self.ingest_api.createProcess(submissionUrl, json.dumps(chained_process))
+                chained_process_ingest = self.ingest_api.createProcess(submissionUrl, json.dumps(process_map[chained_process]))
                 chained_process_ingest_map[chained_process] = chained_process_ingest
 
                 if "protocol_ids" in processMap[chained_process]:
