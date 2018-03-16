@@ -127,6 +127,7 @@ schema_sheetname_mappings = {
 class SpreadsheetSubmission:
 
     def __init__(self, dry=False, output=None, schema_version=None):
+        # todo - the logging code below doesn't work in python 3 - we should upgrade this
         formatter = logging.Formatter(
             '[%(filename)s:%(lineno)s - %(funcName)20s() ] %(asctime)s - %(name)s - %(levelname)s - %(message)s')
         logging.basicConfig(formatter=formatter, level=logging.INFO)
@@ -565,8 +566,6 @@ class SpreadsheetSubmission:
                 protocolIngest = self.ingest_api.createProtocol(submissionUrl, json.dumps(protocol))
                 # self.ingest_api.linkEntity(protocolIngest, projectIngest, "projects")
                 protocolMap[protocol["protocol_core"]["protocol_id"]] = protocolIngest
-            # else:
-            #     linksList.append("protocol_"+protocol["protocol_id"]+"-project_"+projectId)
 
         biomaterialMap = {}
 
@@ -814,9 +813,8 @@ class SpreadsheetSubmission:
                     for biomaterial_id in proc_output_biomaterials[process["process_core"]["process_id"]]:
                         self.ingest_api.linkEntity(processIngest, biomaterialMap[biomaterial_id], "derivedBiomaterials")
 
-                # seems to not be used for biomaterials
                 for biomaterial in output_biomaterials:
-                    self.ingest_api.linkEntity(processIngest, biomaterialMap[biomaterial], "inputBiomaterials") # correct
+                    self.ingest_api.linkEntity(processIngest, biomaterialMap[biomaterial], "outputBiomaterials") # correct
 
                 for file in output_files:
                     self.ingest_api.linkEntity(processIngest, filesMap[file], "derivedFiles") # correct
