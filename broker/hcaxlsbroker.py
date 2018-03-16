@@ -60,6 +60,7 @@ schema_timeFields = {
 schema_booleanFields = {
     "donor_organism": ["is_living"],
     "sequencing_process": ["paired_ends"],
+    "donor_organism": ["cold_perfused"],
     "death": ["cold_perfused"]
 }
 
@@ -75,6 +76,17 @@ schema_integerFields = {
     "library_preparation_process": ["spike_in_dilution", "barcode_offset", "barcode_length"],
     "project": ["pmid"],
     "project.publications": ["pmid"]}
+
+schema_numberFields = {
+    "cell_morphology": ["cell_size", "cell_viability", "percent_necrosis"],
+    "imaging_process": ["exposure_time"],
+    "enrichment_process": ["min_size_selected", "max_size_selected"],
+    "organoid": ["organoid_age", "cell_size", "cell_viability", "percent_necrosis"],
+    "cell_line": ["cell_size", "cell_viability", "percent_necrosis"],
+    "cell_suspension": ["cell_size", "cell_viability", "percent_necrosis"],
+    "donor_organism": ["days_on_ventilator", "body_mass_index"],
+    "specimen_from_organism": ["storage_time"]
+}
 
 # maps sheets to the latest version of each schema
 # todo - this should be replaced by dynamic lookups against ingest-core /schemas endpoint
@@ -198,6 +210,18 @@ class SpreadsheetSubmission:
                         d = int(d)
             except:
                 self.logger.warn('Failed to convert field {0} in sheet {1} (value {2}) to integer value'.format(key, type, d))
+                d = str(d)
+        if type in schema_numberFields.keys():
+            try:
+                if key.split('.')[-1] in schema_numberFields[type]:
+                    if isinstance(d, list):
+                        for i, v in enumerate(d):
+                            d[i] = float(v)
+                    else:
+                        d = float(d)
+            except:
+                self.logger.warn(
+                    'Failed to convert field {0} in sheet {1} (value {2}) to float value'.format(key, type, d))
                 d = str(d)
         if type in schema_booleanFields.keys():
             try:
