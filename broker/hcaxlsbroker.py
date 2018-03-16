@@ -756,14 +756,15 @@ class SpreadsheetSubmission:
         for index, chained_process in enumerate(chainedProcessMap.keys()):
             if chained_process not in processMap:
                 raise ValueError('A chained process was not found in the process sheet - ' + str(chained_process))
-            chained_process_ingest = self.ingest_api.createProcess(submissionUrl, json.dumps(chained_process))
-            chained_process_ingest_map[chained_process] = chained_process_ingest
+            if not self.dryrun:
+                chained_process_ingest = self.ingest_api.createProcess(submissionUrl, json.dumps(chained_process))
+                chained_process_ingest_map[chained_process] = chained_process_ingest
 
-            if "protocol_ids" in processMap[chained_process]:
-                for protocol_id in processMap[chained_process]["protocol_ids"]:
-                    if protocol_id not in protocolMap:
-                        raise ValueError('An process references a protocol '+protocol_id+' that isn\'t in one of the protocol worksheets')
-                    self.ingest_api.linkEntity(chained_process_ingest, protocolMap[protocol_id], "protocols")
+                if "protocol_ids" in processMap[chained_process]:
+                    for protocol_id in processMap[chained_process]["protocol_ids"]:
+                        if protocol_id not in protocolMap:
+                            raise ValueError('An process references a protocol '+protocol_id+' that isn\'t in one of the protocol worksheets')
+                        self.ingest_api.linkEntity(chained_process_ingest, protocolMap[protocol_id], "protocols")
 
         for index, process in enumerate(processMap.values()):
             if "process_id" not in process["process_core"]:
@@ -792,7 +793,8 @@ class SpreadsheetSubmission:
             chained_processes=[]
             if "chained_process_ids" in process:
                 for chained_process_id in process["chained_process_ids"]:
-                    chained_processes.append(chained_process_ingest_map[chained_process_id])
+                    if not self.dryrun:
+                        chained_processes.append(chained_process_ingest_map[chained_process_id])
                 del process["chained_process_ids"]
 
             process_protocols = []
