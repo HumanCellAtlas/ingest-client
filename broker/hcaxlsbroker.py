@@ -666,9 +666,9 @@ class SpreadsheetSubmission:
                         sampling_process_ingest = self.ingest_api.createProcess(submissionUrl, json.dumps(sampling_process))
 
                         # link process to input biomaterials
-                        self.ingest_api.linkEntity(sampling_process_ingest, input_biomaterial, "inputBiomaterials")
+                        self.ingest_api.linkEntity(input_biomaterial, sampling_process_ingest, "inputToProcesses")
                         # link process to output biomaterials
-                        self.ingest_api.linkEntity(sampling_process_ingest, output_biomaterial, "derivedBiomaterials")
+                        self.ingest_api.linkEntity(output_biomaterial, sampling_process_ingest, "derivedByProcesses")
                     else:
                         for process_id in biomaterial_proc_inputs[input_biomaterial['content']['biomaterial_core']['biomaterial_id']]:
                             if process_id not in proc_output_biomaterials:
