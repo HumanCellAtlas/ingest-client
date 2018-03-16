@@ -505,8 +505,6 @@ class SpreadsheetSubmission:
             token = "Bearer " + token_util.get_token()
             submissionUrl = self.createSubmission(token)
 
-        linksList = []
-
         # post objects to the Ingest API after some basic validation
         if existing_project_id is None:
             self.logger.info("Creating a new project for the submission")
@@ -564,8 +562,6 @@ class SpreadsheetSubmission:
                 protocolIngest = self.ingest_api.createProtocol(submissionUrl, json.dumps(protocol))
                 # self.ingest_api.linkEntity(protocolIngest, projectIngest, "projects")
                 protocolMap[protocol["protocol_core"]["protocol_id"]] = protocolIngest
-            # else:
-            #     linksList.append("protocol_"+protocol["protocol_id"]+"-project_"+projectId)
 
         biomaterialMap = {}
 
@@ -653,8 +649,6 @@ class SpreadsheetSubmission:
                 biomaterialIngest = self.ingest_api.createBiomaterial(submissionUrl, json.dumps(biomaterial))
                 self.ingest_api.linkEntity(biomaterialIngest, projectIngest, "projects") # correct
                 biomaterialMap[biomaterial["biomaterial_core"]["biomaterial_id"]] = biomaterialIngest
-            else:
-                linksList.append("biomaterial_" + str(biomaterial_id) + "-project_" + str(projectId))
 
         # create has_input_biomaterial links between biomaterials separately to make sure all biomaterials are submitted
         for index, biomaterial_id in enumerate(biomaterialMap.keys()):
@@ -683,10 +677,6 @@ class SpreadsheetSubmission:
                             if biomaterial_id not in biomaterial_proc_outputs:
                                 biomaterial_proc_outputs[biomaterial_id] = []
                             biomaterial_proc_inputs[biomaterial_id].append(process_id)
-            else:
-                if "has_input_biomaterial" in biomaterialMap[biomaterial_id]["biomaterial_core"]:
-                    linksList.append(
-                        "biomaterial_" + str(biomaterial_id) + "-hasInputBiomaterial_" + str(biomaterialMap[biomaterial_id]["biomaterial_core"]["has_input_biomaterial"]))
 
         filesMap={}
         for index, file in enumerate(files):
@@ -760,16 +750,7 @@ class SpreadsheetSubmission:
 
                 for protocol_id in process_protocols:
                     self.ingest_api.linkEntity(processIngest, protocolMap[protocol_id], "protocols")
-            else:
-                linksList.append("process_" + str(process["process_core"]["process_id"]) + "-project_" + str(projectId))
 
-                for biomaterial in proc_input_biomaterials:
-                    linksList.append("process_" + str(process["process_core"]["process_id"]) + "-biomaterial_" + str(biomaterial))
-
-                for file in output_files:
-                    linksList.append("process_" + str(process["process_core"]["process_id"]) + "-file_" + str(file))
-
-        self.dumpJsonToFile(linksList, projectId, "dry_run_links")
         self.logger.info("All done!")
         wb.close()
         return submissionUrl
