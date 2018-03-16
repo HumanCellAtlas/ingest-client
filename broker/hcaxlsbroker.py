@@ -812,10 +812,7 @@ class SpreadsheetSubmission:
 
                 if process["process_core"]["process_id"] in proc_output_biomaterials:
                     for biomaterial_id in proc_output_biomaterials[process["process_core"]["process_id"]]:
-                        self.ingest_api.linkEntity(processIngest, biomaterialMap[biomaterial_id], "derivedBiomaterials")
-
-                for biomaterial in output_biomaterials:
-                    self.ingest_api.linkEntity(processIngest, biomaterialMap[biomaterial], "outputBiomaterials") # correct
+                        self.ingest_api.linkEntity(biomaterialMap[biomaterial_id], processIngest, "derivedByProcesses")
 
                 for file in output_files:
                     self.ingest_api.linkEntity(filesMap[file], processIngest, "derivedByProcesses") # correct
