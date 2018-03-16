@@ -770,6 +770,7 @@ class SpreadsheetSubmission:
                         if protocol_id not in protocolMap:
                             raise ValueError('An process references a protocol '+protocol_id+' that isn\'t in one of the protocol worksheets')
                         self.ingest_api.linkEntity(chained_process_ingest, protocolMap[protocol_id], "protocols")
+                    del processMap[chained_process]["protocol_ids"]
 
         for index, process in enumerate(processMap.values()):
             if "process_id" not in process["process_core"]:
