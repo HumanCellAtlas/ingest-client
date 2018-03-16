@@ -354,6 +354,18 @@ class IngestExporter:
                         links.append(self.getLinks("biomaterial", specimen["uuid"]["uuid"],process_name , sampleProcess["uuid"]["uuid"]))
                         links.append(self.getLinks(process_name, sampleProcess["uuid"]["uuid"], "biomaterial", assaySampleUuid ))
 
+                        # get and relevant protocols
+                        for protocol in list(
+                                self.ingest_api.getRelatedEntities("protocols", sampleProcess, "protocols")):
+                            protocolUuid = protocol["uuid"]["uuid"]
+                            if protocolUuid not in allProtocolUuids:
+                                protocol_ingest = self.bundleProtocol(protocol)
+                                protocolBundle['protocols'].append(protocol_ingest)
+                                allProtocolUuids.append(protocol["uuid"]["uuid"])
+                            # link assay to protocol
+                            links.append(
+                                self.getLinks(process_name, sampleProcess["uuid"]["uuid"], "protocol", protocolUuid))
+
                     # get the process that generated the specimen
                     specimenProcesses = self.getNestedObjects("derivedByProcesses", specimen, "processes")
                     for specimenProcess in specimenProcesses:
@@ -380,6 +392,20 @@ class IngestExporter:
 
                                     links.append(self.getLinks("biomaterial", donor["uuid"]["uuid"], process_name,
                                                   specimenProcess["uuid"]["uuid"]))
+
+                                    # get and relevant protocols
+                                    for protocol in list(
+                                            self.ingest_api.getRelatedEntities("protocols", specimenProcess,
+                                                                               "protocols")):
+                                        protocolUuid = protocol["uuid"]["uuid"]
+                                        if protocolUuid not in allProtocolUuids:
+                                            protocol_ingest = self.bundleProtocol(protocol)
+                                            protocolBundle['protocols'].append(protocol_ingest)
+                                            allProtocolUuids.append(protocol["uuid"]["uuid"])
+                                        # link assay to protocol
+                                        links.append(
+                                            self.getLinks(process_name, specimenProcess["uuid"]["uuid"], "protocol",
+                                                          protocolUuid))
 
 
 
@@ -531,7 +557,8 @@ class IngestExporter:
                 self.dumpJsonToFile(protocolBundle, project_bundle["content"]["project_core"]["project_shortname"],
                     "protocol_bundle_" + str(index))
 
-            bundleManifest.fileProjectMap = {protocolDssUuid: [allProtocolUuids]}
+            bundleManifest.fileProtocolMap = {protocolDssUuid: [allProtocolUuids]}
+
 
             # push links to dss
             linksBundleFileName = "link_bundle_" + str(index) + ".json"
