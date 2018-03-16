@@ -58,9 +58,8 @@ schema_timeFields = {
 }
 
 schema_booleanFields = {
-    "donor_organism": ["is_living"],
+    "donor_organism": ["is_living", "cold_perfused"],
     "sequencing_process": ["paired_ends"],
-    "donor_organism": ["cold_perfused"],
     "death": ["cold_perfused"]
 }
 
@@ -75,7 +74,8 @@ schema_integerFields = {
     "imaging_process": ["field_counts", "field_microns", "field_resolution"],
     "library_preparation_process": ["spike_in_dilution", "barcode_offset", "barcode_length"],
     "project": ["pmid"],
-    "project.publications": ["pmid"]}
+    "project.publications": ["pmid"]
+}
 
 schema_numberFields = {
     "cell_morphology": ["cell_size", "cell_viability", "percent_necrosis"],
