@@ -759,7 +759,7 @@ class SpreadsheetSubmission:
         for index, chained_process in enumerate(chainedProcessMap.keys()):
             if chained_process not in processMap:
                 raise ValueError('A chained process was not found in the process sheet - ' + str(chained_process))
-            chained_process_ingest = self.ingest_api.createProcess(submissionUrl, json.dumps(processMap[chained_process]))
+            chained_process_ingest = self.ingest_api.createProcess(submissionUrl, json.dumps(chained_process))
             chained_process_ingest_map[chained_process] = chained_process_ingest
             del processMap[chained_process]
 
