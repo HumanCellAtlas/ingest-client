@@ -298,9 +298,9 @@ class SpreadsheetSubmission:
         self.logger.debug(json.dumps(obj))
         return obj
 
-    def _emptyProcessObject(self, empty_process_id):
+    def _emptyProcessObject(self, type, empty_process_id):
         obj = {}
-        process_core = {"process_id": "sampling_process_" + str(empty_process_id)}
+        process_core = {"process_id": str(type) + "_process_" + str(empty_process_id)}
         schema_type = "process"
         describedBy = schema_sheetname_mappings["process"]
         obj["process_core"] = process_core
@@ -341,7 +341,8 @@ class SpreadsheetSubmission:
         projectSheet = wb.create_sheet()
         projectPubsSheet = wb.create_sheet()
         contributorSheet = wb.create_sheet()
-        empty_process_id = 1
+        empty_wrapper_id = 1
+        empty_sampling_id = 1
 
         if existing_project_id is None:
             projectSheet = wb.get_sheet_by_name("project")
@@ -499,6 +500,8 @@ class SpreadsheetSubmission:
         processes.extend(libraryPrep)
         processes.extend(sequencing)
 
+        chained_processes = []
+
         # creating submission
         #
         if not self.dryrun and not submissionUrl:
@@ -539,7 +542,7 @@ class SpreadsheetSubmission:
 
         else:
             if not self.dryrun:
-                self.logger.info("Retriefving existing project: " + existing_project_id)
+                self.logger.info("Retrieving existing project: " + existing_project_id)
                 projectIngest = self.ingest_api.getProjectById(existing_project_id)
                 submissionEnvelope = self.ingest_api.getSubmissionEnvelope(submissionUrl)
                 self.ingest_api.linkEntity(projectIngest, submissionEnvelope, "submissionEnvelopes") # correct
@@ -600,7 +603,7 @@ class SpreadsheetSubmission:
 
         # build the process map from the different types of process infromation
         processMap = {}
-
+        chainedProcessMap = {}
         for index, process in enumerate(processes):
             if "process_id" not in process["process_core"]:
                 raise ValueError('Process must have an id attribute')
@@ -621,6 +624,7 @@ class SpreadsheetSubmission:
         biomaterial_proc_inputs = {}
         proc_output_biomaterials = {}
         biomaterial_proc_outputs = {}
+        procs_wrapped_by = {}
         for index, biomaterial_id in enumerate(biomaterialMap.keys()):
             biomaterial = biomaterialMap[biomaterial_id]
             if "has_input_biomaterial" in biomaterial["biomaterial_core"]:
@@ -628,20 +632,62 @@ class SpreadsheetSubmission:
                     raise ValueError('Biomaterial '+ str(biomaterial_id) +' references another biomaterial '+ str(biomaterial["biomaterial_core"]["has_input_biomaterial"]) +' that isn\'t in the spraedsheet')
 
             if "process_ids" in biomaterial:
+                biomaterials_with_procs.append(biomaterial_id)
+                # do we have multiple chained protocols? If so, create or reuse a 'wrapper'
+                wrapper_process = {}
+                if len(biomaterial["process_ids"]) > 1:
+                    process_ids_field = str(biomaterial["process_ids"])
+                    if process_ids_field in procs_wrapped_by:
+                        wrapper_process = procs_wrapped_by[biomaterials["process_ids"]]
+                    else:
+                        wrapper_process = self._emptyProcessObject("wrapper", empty_wrapper_id)
+                        empty_wrapper_id += 1
+                        procs_wrapped_by[process_ids_field] = wrapper_process
+                        processMap[wrapper_process["process_core"]["process_id"]] = wrapper_process
+                        processMap[wrapper_process["process_core"]["process_id"]]["chained_process_ids"] = []
+
                 for process_id in biomaterial["process_ids"]:
                     if process_id not in processMap.keys():
                         raise ValueError(
                          'A biomaterial references a process ' + process_id + ' that isn\'t in the biomaterials worksheet')
-                    if "biomaterial_ids" not in processMap[process_id]:
-                        processMap[process_id]["biomaterial_ids"] = []
-                    processMap[process_id]["biomaterial_ids"].append(biomaterial["biomaterial_core"]["biomaterial_id"])
-                    biomaterials_with_procs.append(biomaterial_id)
-                    if process_id not in proc_input_biomaterials:
-                        proc_input_biomaterials[process_id] = []
-                    proc_input_biomaterials[process_id].append(biomaterial_id)
+
                     if biomaterial_id not in biomaterial_proc_inputs:
                         biomaterial_proc_inputs[biomaterial_id] = []
-                    biomaterial_proc_inputs[biomaterial_id].append(process_id)
+
+                    # do we have a wrapper process?
+                    if wrapper_process:
+                        # link this process to the wrapper
+                        wrapper_id = wrapper_process["process_core"]["process_id"]
+                        if "biomaterial_ids" not in processMap[wrapper_id]:
+                            processMap[wrapper_id]["biomaterial_ids"] = []
+
+                        processMap[wrapper_id]["chained_process_ids"].append(process_id)
+                        if process_id not in chainedProcessMap:
+                            chainedProcessMap[process_id] = []
+                        if wrapper_id not in chainedProcessMap[process_id]:
+                            chainedProcessMap[process_id].append(wrapper_id)
+
+                        # link input or output biomaterials to the wrapper (i.e. indirectly)
+                        if biomaterial_id not in processMap[wrapper_id]["biomaterial_ids"]:
+                            processMap[wrapper_id]["biomaterial_ids"].append(biomaterial_id)
+                        if wrapper_id not in proc_input_biomaterials:
+                            proc_input_biomaterials[wrapper_id] = []
+                        if biomaterial_id not in proc_input_biomaterials[wrapper_id]:
+                            proc_input_biomaterials[wrapper_id].append(biomaterial_id)
+                        if wrapper_id not in biomaterial_proc_inputs[biomaterial_id]:
+                            biomaterial_proc_inputs[biomaterial_id].append(wrapper_id)
+                    else:
+                        # link processes to input and output directly
+                        if "biomaterial_ids" not in processMap[process_id]:
+                            processMap[process_id]["biomaterial_ids"] = []
+
+                        processMap[process_id]["biomaterial_ids"].append(biomaterial["biomaterial_core"]["biomaterial_id"])
+                        if process_id not in proc_input_biomaterials:
+                            proc_input_biomaterials[process_id] = []
+                        if biomaterial_id not in proc_input_biomaterials[process_id]:
+                            proc_input_biomaterials[process_id].append(biomaterial_id)
+                        if process_id not in biomaterial_proc_inputs[biomaterial_id]:
+                            biomaterial_proc_inputs[biomaterial_id].append(process_id)
                 del biomaterial["process_ids"]
 
             self.dumpJsonToFile(biomaterial, projectId, "biomaterial_" + str(index))
@@ -661,8 +707,8 @@ class SpreadsheetSubmission:
                     # if the input biomaterial declares the process, we will link later
                     if input_biomaterial['content']['biomaterial_core']['biomaterial_id'] not in biomaterials_with_procs:
                         # else create sampling process to link biomaterials
-                        sampling_process = self._emptyProcessObject(empty_process_id)
-                        empty_process_id += 1
+                        sampling_process = self._emptyProcessObject("sampling", empty_sampling_id)
+                        empty_sampling_id += 1
                         sampling_process_ingest = self.ingest_api.createProcess(submissionUrl, json.dumps(sampling_process))
 
                         # link process to input biomaterials
@@ -689,15 +735,35 @@ class SpreadsheetSubmission:
             del file["biomaterial_id"]
             filesMap[file["file_core"]["file_name"]] = file
 
-            if "files" not in processMap[process]:
-                processMap[process]["files"] = []
-
-            processMap[process]["files"].append(file["file_core"]["file_name"])
+            # is the process referred to from this file wrapped by another process?
+            if process in chainedProcessMap:
+                for wrapper_process in chainedProcessMap[process]:
+                    if "files" not in processMap[wrapper_process]:
+                        processMap[wrapper_process]["files"] = []
+                    processMap[wrapper_process]["files"].append(file["file_core"]["file_name"])
+            else:
+                if "files" not in processMap[process]:
+                    processMap[process]["files"] = []
+                processMap[process]["files"].append(file["file_core"]["file_name"])
 
             self.dumpJsonToFile(file, projectId, "files_" + str(index))
             if not self.dryrun:
                 fileIngest = self.ingest_api.createFile(submissionUrl, file["file_core"]["file_name"], json.dumps(file))
                 filesMap[file["file_core"]["file_name"]] = fileIngest
+
+        # create all the chained processes first, these will be referred to by wrapper processes
+        chained_process_ingest_map = {}
+        for index, chained_process in enumerate(chainedProcessMap.keys()):
+            if chained_process not in processMap:
+                raise ValueError('A chained process was not found in the process sheet - ' + str(chained_process))
+            chained_process_ingest = self.ingest_api.createProcess(submissionUrl, json.dumps(processMap[chained_process]))
+            chained_process_ingest_map[chained_process] = chained_process_ingest
+
+            if "protocol_ids" in processMap[chained_process]:
+                for protocol_id in processMap[chained_process]["protocol_ids"]:
+                    if protocol_id not in protocolMap:
+                        raise ValueError('An process references a protocol '+protocol_id+' that isn\'t in one of the protocol worksheets')
+                    self.ingest_api.linkEntity(chained_process_ingest, protocolMap[protocol_id], "protocols")
 
         for index, process in enumerate(processMap.values()):
             if "process_id" not in process["process_core"]:
@@ -711,14 +777,23 @@ class SpreadsheetSubmission:
                 output_files = process["files"]
                 del process["files"]
 
+            output_biomaterials = []
             if "biomaterial_ids" not in process:
-                raise ValueError("Every process must reference a biomaterial using the biomaterial_id attribute")
+                # this is allowed if this is a chained process
+                if process["process_core"]["process_id"] not in chainedProcessMap:
+                    raise ValueError("Every process must reference a biomaterial using the biomaterial_id attribute")
             else:
                 for biomaterial_id in process["biomaterial_ids"]:
                     if biomaterial_id not in biomaterialMap:
                         raise ValueError('An process references a biomaterial '+biomaterial_id+' that isn\'t in one of the biomaterials worksheets')
                 output_biomaterials = process["biomaterial_ids"]
                 del process["biomaterial_ids"]
+
+            chained_processes=[]
+            if "chained_process_ids" in process:
+                for chained_process_id in process["chained_process_ids"]:
+                    chained_processes.append(chained_process_ingest_map[chained_process_id])
+                del process["chained_process_ids"]
 
             process_protocols = []
             if "protocol_ids" in process:
@@ -743,6 +818,9 @@ class SpreadsheetSubmission:
 
                 for file in output_files:
                     self.ingest_api.linkEntity(filesMap[file], processIngest, "derivedByProcesses") # correct
+
+                for chained_process in chained_processes:
+                    self.ingest_api.linkEntity(processIngest, chained_process, "chainedProcesses")  # correct
 
                 for protocol_id in process_protocols:
                     self.ingest_api.linkEntity(processIngest, protocolMap[protocol_id], "protocols")
