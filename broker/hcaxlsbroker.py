@@ -41,7 +41,7 @@ schema_arrayFields = {
     "library_preparation_process": ["process_reagents", "operator_identity", "protocol_ids"],
     "sequencing_process": ["process_reagents", "operator_identity", "protocol_ids"],
     "imaging_process": ["field_counts", "field_microns", "field_resolution", "operator_identity", "protocol_ids"],
-    "project": ["contributors", "supplementary_files", "publications"],
+    "project": ["contributors", "supplementary_files", "publications", "authors"],
     "publication": ["authors"]
 }
 
@@ -758,9 +758,6 @@ class SpreadsheetSubmission:
         for index, chained_process in enumerate(chainedProcessMap.keys()):
             if chained_process not in processMap:
                 raise ValueError('A chained process was not found in the process sheet - ' + str(chained_process))
-            chained_process_ingest = self.ingest_api.createProcess(submissionUrl, json.dumps(chained_process))
-            chained_process_ingest_map[chained_process] = chained_process_ingest
-            del processMap[chained_process]
             if not self.dryrun:
                 chained_process_protocols = []
                 if "protocol_ids" in processMap[chained_process]:
