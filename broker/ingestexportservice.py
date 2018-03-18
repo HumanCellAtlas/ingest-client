@@ -16,7 +16,6 @@ import time
 import requests
 from optparse import OptionParser
 import os, sys
-import time
 from stagingapi import StagingApi
 from bundlevalidator import BundleValidator
 
@@ -157,7 +156,7 @@ class IngestExporter:
 
             # add the referenced files to the bundle manifest and to the files to transfer
             files = list(self.ingest_api.getRelatedEntities("files", analysis, "files"))
-            bundleManifest.files += list(map(lambda file_json : file_json["uuid"]["uuid"], files))
+            bundleManifest.dataFiles += list(map(lambda file_json : file_json["uuid"]["uuid"], files))
             filesToTransfer += list(map(lambda file_json: {"name": file_json["fileName"],
                                                            "submittedName": file_json["fileName"],
                                                            "url": file_json["cloudUrl"],
