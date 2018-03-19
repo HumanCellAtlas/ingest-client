@@ -285,6 +285,13 @@ class IngestApi:
         r = requests.post(self.ingest_api["bundleManifests"]["href"].rsplit("{")[0],
                           data=json.dumps(bundleManifest.__dict__),
                           headers=self.headers)
+        if not (200 <= r.status_code < 300):
+            self.logger.error("Failed to create bundle manifest at URL {0} with request payload: {1}".format(self.ingest_api["bundleManifests"]["href"].rsplit("{")[0],
+                                                                                                             json.dumps(bundleManifest.__dict__)))
+        else:
+            self.logger.info("successfully created bundle manifest")
+
+
 
     def updateSubmissionWithStagingCredentials(self, subUrl, uuid, submissionCredentials):
         stagingDetails = \
