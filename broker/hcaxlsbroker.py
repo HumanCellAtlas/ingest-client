@@ -639,7 +639,7 @@ class SpreadsheetSubmission:
                 if len(biomaterial["process_ids"]) > 1:
                     process_ids_field = str(biomaterial["process_ids"])
                     if process_ids_field in procs_wrapped_by:
-                        wrapper_process = procs_wrapped_by[biomaterials["process_ids"]]
+                        wrapper_process = procs_wrapped_by[process_ids_field]
                     else:
                         wrapper_process = self._emptyProcessObject("wrapper", empty_wrapper_id)
                         empty_wrapper_id += 1
