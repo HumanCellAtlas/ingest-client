@@ -812,7 +812,12 @@ class SpreadsheetSubmission:
 
             self.dumpJsonToFile(process, projectId, "process_" + str(index))
             if not self.dryrun:
-                processIngest = self.ingest_api.createProcess(submissionUrl, json.dumps(process))
+
+                if process in chained_process_ingest_map[process]:
+                    processIngest = chained_process_ingest_map[process]
+                else:
+                    processIngest = self.ingest_api.createProcess(submissionUrl, json.dumps(process))
+
                 self.ingest_api.linkEntity(processIngest, projectIngest, "projects") # correct
 
                 if process["process_core"]["process_id"] in proc_input_biomaterials:
