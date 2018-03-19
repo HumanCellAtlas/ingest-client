@@ -40,7 +40,6 @@ schema_arrayFields = {
     "enrichment_process": ["process_reagents", "operator_identity", "protocol_ids"],
     "library_preparation_process": ["process_reagents", "operator_identity", "protocol_ids"],
     "sequencing_process": ["process_reagents", "operator_identity", "protocol_ids"],
-    "imaging_process": ["field_counts", "field_microns", "field_resolution", "operator_identity", "protocol_ids"],
     "project": ["contributors", "supplementary_files", "publications", "authors"],
     "publication": ["authors"]
 }
