@@ -1,4 +1,4 @@
-FROM frolvlad/alpine-python3
+FROM frolvlad/alpine-python2
 MAINTAINER Simon Jupp "jupp@ebi.ac.uk"
 
 RUN mkdir /app
