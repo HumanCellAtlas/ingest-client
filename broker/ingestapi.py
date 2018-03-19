@@ -273,13 +273,37 @@ class IngestApi:
 
         fromUri = fromEntity["_links"][relationship]["href"]
         toUri = self.getObjectId(toEntity)
+
+        self._retry_when_http_error(0, self._post_link_entity, fromUri, toUri)
+
+    def _post_link_entity(self, fromUri, toUri):
+        self.logger.debug('fromUri ' + fromUri + ' toUri:' + toUri);
+
         headers = {'Content-type': 'text/uri-list'}
+
         r = requests.post(fromUri.rsplit("{")[0],
                           data=toUri.rsplit("{")[0], headers=headers)
-        if r.status_code != requests.codes.no_content:
-            raise ValueError("Error creating relationship between entity: " + fromUri + " -> " + toUri + "." +
-                             "\nResponse was: " + str(r.status_code) + " (" + r.text + ")")
-        self.logger.debug("Asserted relationship between " + fromUri + " -> " + toUri)
+
+        return r
+
+    def _retry_when_http_error(self, tries, func, *args):
+        max_retries = 5
+
+        if tries < max_retries:
+            self.logger.debug("no of tries: " + str(tries + 1))
+            r = func(*args)
+
+            try:
+                r.raise_for_status()
+
+            except HTTPError:
+                self.logger.error("\nResponse was: " + str(r.status_code) + " (" + r.text + ")")
+                tries += 1
+                self._retry_when_http_error(tries, func, *args)
+        else:
+            error_message = "Maximum no of tries reached: " + str(max_retries)
+            self.logger.error(error_message)
+            raise ValueError(error_message)
 
     def createBundleManifest(self, bundleManifest):
         r = requests.post(self.ingest_api["bundleManifests"]["href"].rsplit("{")[0],
@@ -290,8 +314,6 @@ class IngestApi:
                                                                                                              json.dumps(bundleManifest.__dict__)))
         else:
             self.logger.info("successfully created bundle manifest")
-
-
 
     def updateSubmissionWithStagingCredentials(self, subUrl, uuid, submissionCredentials):
         stagingDetails = \
@@ -329,6 +351,7 @@ class IngestApi:
                     self.retrySubmissionUpdateWithStagingDetails(subUrl, stagingDetails, tries)
         else:
             return False
+
 
 
 class BundleManifest:
