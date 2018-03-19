@@ -662,8 +662,8 @@ class IngestExporter:
     def bundleProject(self, project_entity):
         project_copy = self._copyAndTrim(project_entity)
         bundle = {
-            'describedBy': self.schema_url + "project",
-            'schema_version': self.schema_version,
+            'describedBy': "https://schema.humancellatlas.org/bundle/5.1.0/project",
+            'schema_version': "5.1.0",
             'schema_type': 'project_bundle',
             'content': project_copy.pop('content', None),
             'hca_ingest': project_copy
