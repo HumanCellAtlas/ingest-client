@@ -271,7 +271,7 @@ class SpreadsheetSubmission:
             hasData = False
             for cell in row:
                 # WARNING: remove long from the checks if using python 3!
-                if not cell.value and not isinstance(cell.value, (int, float, long)):
+                if not cell.value and not isinstance(cell.value, (int, float)):
                     continue
                 hasData = True
                 cellCol = cell.col_idx
