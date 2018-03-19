@@ -556,7 +556,7 @@ class IngestExporter:
                 self.dumpJsonToFile(protocolBundle, project_bundle["content"]["project_core"]["project_shortname"],
                     "protocol_bundle_" + str(index))
 
-            bundleManifest.fileProtocolMap = {protocolDssUuid: [allProtocolUuids]}
+            bundleManifest.fileProtocolMap = {protocolDssUuid: allProtocolUuids}
 
 
             # push links to dss
