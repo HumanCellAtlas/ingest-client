@@ -2,6 +2,7 @@
 """
 desc goes here
 """
+import time
 from requests import HTTPError
 
 __author__ = "jupp"
@@ -299,6 +300,7 @@ class IngestApi:
             except HTTPError:
                 self.logger.error("\nResponse was: " + str(r.status_code) + " (" + r.text + ")")
                 tries += 1
+                time.sleep(1)
                 self._retry_when_http_error(tries, func, *args)
         else:
             error_message = "Maximum no of tries reached: " + str(max_retries)
