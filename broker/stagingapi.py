@@ -76,9 +76,9 @@ class StagingApi:
         raise ValueError('Can\'t create staging area for sub id:' +submissionId)
 
     def hasStagingArea(self, submissionId):
-        base = urlparse.urljoin( self.url, self.apiversion+'/area/'+submissionId)
+        base = urlparse.urljoin( self.url, self.apiversion+'/area/'+submissionId + '/files_info')
 
-        r = requests.get(base, headers=self.header)
+        r = requests.put(base, headers=self.header)
         return r.status_code == requests.codes.ok
 
 
