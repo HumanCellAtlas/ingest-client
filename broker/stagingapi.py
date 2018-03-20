@@ -78,7 +78,7 @@ class StagingApi:
     def hasStagingArea(self, submissionId):
         base = urlparse.urljoin( self.url, self.apiversion+'/area/'+submissionId + '/files_info')
 
-        r = requests.put(base, headers=self.header)
+        r = requests.put(base, data="{}", headers=self.header)
         return r.status_code == requests.codes.ok
 
 
