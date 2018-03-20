@@ -156,7 +156,7 @@ class IngestApi:
         if r.status_code == requests.codes.ok:
             if "assays" in json.loads(r.text)["_links"]:
                 # r2 = requests.get(, headers=self.headers)
-                for entity in self._getAllObjectsFromSet(json.loads(r.text)["_links"]["assays"]["href"], "processes"):
+                for entity in self._getAllObjectsFromSet(json.loads(r.text)["_links"]["assays"]["href"], "processes", 10000):
                     yield entity
 
 
