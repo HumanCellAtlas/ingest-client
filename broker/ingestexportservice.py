@@ -546,7 +546,7 @@ class IngestExporter:
                 self.logger.info("Protocol entity " + protocolDssUuid + " is not valid")
                 self.logger.info(valid)
             self.dumpJsonToFile(protocolBundle, project_bundle["content"]["project_core"]["project_shortname"],
-                "protocol_bundle_" + str(index))
+                "protocol_bundle")
 
         bundleManifest.fileProtocolMap = {protocolDssUuid: allProtocolUuids}
 
