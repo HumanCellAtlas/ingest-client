@@ -247,7 +247,7 @@ class IngestExporter:
         projectUuid = project["uuid"]["uuid"]
         if projectUuid not in projectUuidToBundleData:
             projectDssUuid = str(uuid.uuid4())
-            projectFileName = "project_bundle.json"
+            projectFileName = "project_bundle_" + projectDssUuid + ".json"
 
             if not self.dryrun:
                 fileDescription = self.writeMetadataToStaging(submissionEnvelopeUuid, projectFileName, project_bundle, '"metadata/project"')
@@ -403,7 +403,7 @@ class IngestExporter:
         # now submit the samples to the DSS
         if assaySampleUuid not in sampleUuidToBundleData:
             sampleDssUuid = str(uuid.uuid4())
-            sampleFileName = "biomaterial_bundle.json"
+            sampleFileName = "biomaterial_bundle_" + sampleDssUuid + ".json"
 
             if not self.dryrun:
                 fileDescription = self.writeMetadataToStaging(submissionEnvelopeUuid, sampleFileName, biomaterialBundle, '"metadata/biomaterial"')
@@ -427,13 +427,13 @@ class IngestExporter:
 
         # push the data file metadata and create a file bundle
         fileDssUuid = str(uuid.uuid4())
-        fileBundleFileName = "file_bundle.json"
+        fileBundleFileName = "file_bundle_" + fileDssUuid + ".json"
 
         assayDssUuid = str(uuid.uuid4())
-        assayFileName = "process_bundle.json"
+        assayFileName = "process_bundle_" + assayDssUuid + ".json"
 
         protocolDssUuid = str(uuid.uuid4())
-        protocolBundleFileName = "protocol_bundle.json"
+        protocolBundleFileName = "protocol_bundle_" + protocolDssUuid + ".json"
 
         for subAssayProcess in chainedAssays:
 
@@ -552,8 +552,8 @@ class IngestExporter:
 
 
         # push links to dss
-        linksBundleFileName = "link_bundle.json"
         linksDssUuid = str(uuid.uuid4())
+        linksBundleFileName = "link_bundle_" + linksDssUuid + ".json"
 
         linksBundle["links"] = links
         if not self.dryrun:
