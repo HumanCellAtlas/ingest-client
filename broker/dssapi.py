@@ -199,8 +199,8 @@ class DssApi:
             self.logger.error(error_message)
             return None
 
-    def _request_post(self, *args, **kwargs):
+    def _request_post(*args, **kwargs):
         requests.post(*args, **kwargs)
 
-    def _request_put(self, *args, **kwargs):
+    def _request_put(*args, **kwargs):
         requests.put(*args, **kwargs)
