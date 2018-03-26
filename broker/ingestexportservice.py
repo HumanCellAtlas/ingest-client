@@ -116,7 +116,9 @@ class IngestExporter:
         assayCallbackLink = newAssayMessage["callbackLink"]
 
         self.logger.info('assay received '+ assayCallbackLink)
-        # given an assay, generate a bundle
+        self.logger.info('assay index: '+ str(newAssayMessage["assayIndex"]) + ', total assays: ' + str(newAssayMessage["totalAssays"]))
+
+    # given an assay, generate a bundle
 
         assayUrl = self.ingest_api.getAssayUrl(assayCallbackLink)
         assayUuid = newAssayMessage["documentUuid"]
