@@ -112,6 +112,18 @@ class IngestExporter:
         }
 
 
+    def generateTestAssayBundle(self, envelopeUuidForAssay, assayUrl):
+
+        # check staging area is available
+        if self.dryrun or self.staging_api.hasStagingArea(envelopeUuidForAssay):
+            assay = self.ingest_api.getAssay(assayUrl)
+
+            self.logger.info("Attempting to export primary assay bundle to DSS...")
+            self.primarySubmission(envelopeUuidForAssay, assay)
+
+        else:
+            self.logger.error("Can\'t do export as no staging area has been created")
+
     def generateAssayBundle(self, newAssayMessage):
         assayCallbackLink = newAssayMessage["callbackLink"]
 
@@ -316,31 +328,33 @@ class IngestExporter:
 
         # get the primary sample for this assay
         # assume just one input sample todo this is not a safe assumption
-        input_sample = list(self.ingest_api.getRelatedEntities("inputBiomaterials", assay, "biomaterials"))[0]
-        biomaterialBundle["biomaterials"].append(self.bundleSample(input_sample))
-        assaySampleUuid = input_sample["uuid"]["uuid"]
-        allBiomaterialUuids.append(assaySampleUuid)
+        all_direct_assay_input_biomaterials = []
 
-        # This section here is where we find all the related samples
-        # sampleProcesses = self.getNestedObjects("derivedByProcesses", input_sample, "processes")
-        sampleProcesses = self.getNestedProcessObjects("derivedByProcesses", input_sample, "processes")
+        for input_sample in list(self.ingest_api.getRelatedEntities("inputBiomaterials", assay, "biomaterials")):
+            biomaterialBundle["biomaterials"].append(self.bundleSample(input_sample))
+            assaySampleUuid = input_sample["uuid"]["uuid"]
+            all_direct_assay_input_biomaterials.append(assaySampleUuid)
+            allBiomaterialUuids.append(assaySampleUuid)
 
-        for sampleProcess in sampleProcesses:
+            # This section here is where we find all the related samples
+            # sampleProcesses = self.getNestedObjects("derivedByProcesses", input_sample, "processes")
+            sampleProcesses = self.getNestedProcessObjects("derivedByProcesses", input_sample, "processes")
 
-            # collect this process uuid and add the process to the bundle
-            if (sampleProcess["uuid"]["uuid"] not in allProcessUuids):
-                allProcessUuids.append(sampleProcess["uuid"]["uuid"])
-                processesBundle["processes"].append(self.bundleProcess(sampleProcess))
+            for sampleProcess in sampleProcesses:
 
-            # get the sample input to this porcess, this will be the specimen
-            specimenSamples = self.getNestedObjects("inputBiomaterials", sampleProcess, "biomaterials")
-            for specimen in specimenSamples:
+                # collect this process uuid and add the process to the bundle
+                if (sampleProcess["uuid"]["uuid"] not in allProcessUuids):
+                    allProcessUuids.append(sampleProcess["uuid"]["uuid"])
+                    processesBundle["processes"].append(self.bundleProcess(sampleProcess))
 
+                # get the sample input to this process, this will be the specimen
+                specimenSamples = self.getNestedObjects("inputBiomaterials", sampleProcess, "biomaterials")
+                for specimen in specimenSamples:
 
-                # collect the sample uuid and add it to the sample bundle
-                if (specimen["uuid"]["uuid"] not in allBiomaterialUuids):
-                    allBiomaterialUuids.append(specimen["uuid"]["uuid"])
-                    biomaterialBundle["biomaterials"].append(self.bundleSample(specimen))
+                    # collect the sample uuid and add it to the sample bundle
+                    if (specimen["uuid"]["uuid"] not in allBiomaterialUuids):
+                        allBiomaterialUuids.append(specimen["uuid"]["uuid"])
+                        biomaterialBundle["biomaterials"].append(self.bundleSample(specimen))
 
                     # link the process to the samples
                     process_name = self.getSchemaNameForEntity(sampleProcess)
@@ -359,17 +373,15 @@ class IngestExporter:
                         links.append(
                             self.getLinks(process_name, sampleProcess["uuid"]["uuid"], "protocol", protocolUuid))
 
-                # get the process that generated the specimen
-                specimenProcesses = self.getNestedObjects("derivedByProcesses", specimen, "processes")
-                for specimenProcess in specimenProcesses:
+                    # get the process that generated the specimen
+                    specimenProcesses = self.getNestedObjects("derivedByProcesses", specimen, "processes")
+                    for specimenProcess in specimenProcesses:
 
-                    # collect the process and create add it to the process bundle
-                    if (specimenProcess["uuid"]["uuid"] not in allProcessUuids):
-
+                        # collect the process and add it to the process bundle
                         process_name = self.getSchemaNameForEntity(specimenProcess)
-
-                        allProcessUuids.append(specimenProcess["uuid"]["uuid"])
-                        processesBundle["processes"].append(self.bundleProcess(specimenProcess))
+                        if (specimenProcess["uuid"]["uuid"] not in allProcessUuids):
+                            allProcessUuids.append(specimenProcess["uuid"]["uuid"])
+                            processesBundle["processes"].append(self.bundleProcess(specimenProcess))
 
                         # finally get the donor and add the sample bundle
                         donorSamples = self.getNestedObjects("inputBiomaterials", specimenProcess, "biomaterials")
@@ -383,49 +395,49 @@ class IngestExporter:
                                 biomaterialBundle["biomaterials"].append(self.bundleSample(donor))
                                 # link the samples
 
-                                links.append(self.getLinks("biomaterial", donor["uuid"]["uuid"], process_name,
-                                              specimenProcess["uuid"]["uuid"]))
+                            links.append(self.getLinks("biomaterial", donor["uuid"]["uuid"], process_name,
+                                          specimenProcess["uuid"]["uuid"]))
 
-                                # get and relevant protocols
-                                for protocol in list(
-                                        self.ingest_api.getRelatedEntities("protocols", specimenProcess,
-                                                                           "protocols")):
-                                    protocolUuid = protocol["uuid"]["uuid"]
-                                    if protocolUuid not in allProtocolUuids:
-                                        protocol_ingest = self.bundleProtocol(protocol)
-                                        protocolBundle['protocols'].append(protocol_ingest)
-                                        allProtocolUuids.append(protocol["uuid"]["uuid"])
-                                    # link assay to protocol
-                                    links.append(
-                                        self.getLinks(process_name, specimenProcess["uuid"]["uuid"], "protocol",
-                                                      protocolUuid))
+                            # get and relevant protocols
+                            for protocol in list(
+                                    self.ingest_api.getRelatedEntities("protocols", specimenProcess,
+                                                                       "protocols")):
+                                protocolUuid = protocol["uuid"]["uuid"]
+                                if protocolUuid not in allProtocolUuids:
+                                    protocol_ingest = self.bundleProtocol(protocol)
+                                    protocolBundle['protocols'].append(protocol_ingest)
+                                    allProtocolUuids.append(protocol["uuid"]["uuid"])
+                                # link assay to protocol
+                                links.append(
+                                    self.getLinks(process_name, specimenProcess["uuid"]["uuid"], "protocol",
+                                                  protocolUuid))
 
 
 
         # now submit the samples to the DSS
-        if assaySampleUuid not in sampleUuidToBundleData:
-            sampleDssUuid = str(uuid.uuid4())
-            sampleFileName = "biomaterial_bundle_" + sampleDssUuid + ".json"
+        # if assaySampleUuid not in sampleUuidToBundleData:
+        sampleDssUuid = str(uuid.uuid4())
+        sampleFileName = "biomaterial_bundle_" + sampleDssUuid + ".json"
 
-            if not self.dryrun:
-                fileDescription = self.writeMetadataToStaging(submissionEnvelopeUuid, sampleFileName, biomaterialBundle, '"metadata/biomaterial"')
-                sampleUuidToBundleData[assaySampleUuid] = {"name":sampleFileName, "submittedName":"biomaterial.json", "url":fileDescription.url, "dss_uuid": sampleDssUuid, "indexed": True, "content-type" : '"metadata/sample"'}
-            else:
-                sampleUuidToBundleData[assaySampleUuid] = {"name":sampleFileName, "submittedName":"biomaterial.json", "url":"", "dss_uuid": sampleDssUuid, "indexed": True, "content-type" : '"metadata/sample"'}
-                valid = self.bundle_validator.validate(biomaterialBundle, "biomaterial")
-                if valid:
-                    self.logger.info("Biomaterial entity " + sampleDssUuid + " is valid")
-                else:
-                    self.logger.info("Biomaterial entity " + sampleDssUuid + " is not valid")
-                    self.logger.info(valid)
-                self.dumpJsonToFile(biomaterialBundle, project_bundle["content"]["project_core"]["project_shortname"], "biomaterial_bundle")
-
-            bundleManifest.fileBiomaterialMap = {sampleDssUuid: allBiomaterialUuids}
-        # else add any new sampleUuids to the related samples list
+        if not self.dryrun:
+            fileDescription = self.writeMetadataToStaging(submissionEnvelopeUuid, sampleFileName, biomaterialBundle, '"metadata/biomaterial"')
+            sampleUuidToBundleData[sampleDssUuid] = {"name":sampleFileName, "submittedName":"biomaterial.json", "url":fileDescription.url, "dss_uuid": sampleDssUuid, "indexed": True, "content-type" : '"metadata/sample"'}
         else:
-           bundleManifest.fileBiomaterialMap = {sampleUuidToBundleData[assaySampleUuid]["dss_uuid"]: allBiomaterialUuids}
+            sampleUuidToBundleData[sampleDssUuid] = {"name":sampleFileName, "submittedName":"biomaterial.json", "url":"", "dss_uuid": sampleDssUuid, "indexed": True, "content-type" : '"metadata/sample"'}
+            valid = self.bundle_validator.validate(biomaterialBundle, "biomaterial")
+            if valid:
+                self.logger.info("Biomaterial entity " + sampleDssUuid + " is valid")
+            else:
+                self.logger.info("Biomaterial entity " + sampleDssUuid + " is not valid")
+                self.logger.info(valid)
+            self.dumpJsonToFile(biomaterialBundle, project_bundle["content"]["project_core"]["project_shortname"], "biomaterial_bundle")
 
-        allBundleFilesToSubmit.append(sampleUuidToBundleData[assaySampleUuid])
+        bundleManifest.fileBiomaterialMap = {sampleDssUuid: allBiomaterialUuids}
+        # else add any new sampleUuids to the related samples list
+        # else:
+        #    bundleManifest.fileBiomaterialMap = {sampleUuidToBundleData[assaySampleUuid]["dss_uuid"]: allBiomaterialUuids}
+
+        allBundleFilesToSubmit.append(sampleUuidToBundleData[sampleDssUuid])
 
         # push the data file metadata and create a file bundle
         fileDssUuid = str(uuid.uuid4())
@@ -446,8 +458,9 @@ class IngestExporter:
 
             # link the sample to the assay
             process_type = self.getSchemaNameForEntity(subAssayProcess)
-            links.append(
-                self.getLinks("biomaterial", assaySampleUuid, process_type, assayUuid))
+            for assaySampleUuid in all_direct_assay_input_biomaterials:
+                links.append(
+                    self.getLinks("biomaterial", assaySampleUuid, process_type, assayUuid))
 
 
             for file in self.ingest_api.getRelatedEntities("derivedFiles", assay, "files"):
@@ -755,4 +768,6 @@ if __name__ == '__main__':
         exit(2)
 
     ex = IngestExporter(options)
-    ex.generateBundles(options.submissionsEnvelopeId)
+    # ex.generateBundles(options.submissionsEnvelopeId)
+
+    ex.generateTestAssayBundle("5ab389d5f7f0310006d4b56b", "http://api.ingest.integration.data.humancellatlas.org/processes/5ab389d5f7f0310006d4b578")
