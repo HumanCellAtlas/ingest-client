@@ -55,7 +55,7 @@ class DssApi:
                         }
 
             fileUrl = self.url +"/v1/files/"+uuid
-            r = self._retry_when_http_error(0, self._put_bundle_file, fileUrl, uuid, requestBody)
+            r = self._retry_when_http_error(0, self._put_bundle_file, fileUrl, requestBody)
 
             if r and (r.status_code == requests.codes.ok or r.status_code ==  requests.codes.created or r.status_code == requests.codes.accepted):
                 self.logger.debug("Bundle file submited "+url)
