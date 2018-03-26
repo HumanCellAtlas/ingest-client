@@ -14,7 +14,12 @@ __author__ = "jupp"
 __license__ = "Apache 2.0"
 __date__ = "12/09/2017"
 
-import glob, json, os, urllib, requests, logging
+import json
+import logging
+import os
+import requests
+import time
+
 class DssApi:
     def __init__(self, url=None):
         formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -30,7 +35,7 @@ class DssApi:
 
         self.headers = {'Content-type': 'application/json'}
 
-    def createBundle(self,bundleUuid, submittedFiles):
+    def createBundle(self, bundleUuid, submittedFiles):
 
         bundleFile = {"creator_uid": 8008, "files" : []}
         for file in submittedFiles:
@@ -42,14 +47,19 @@ class DssApi:
             if not url:
                 self.logger.warn("can't create bundle for "+submittedName+" as no cloud URL is provided")
                 continue
+
+
             requestBody = {
                           "bundle_uuid": bundleUuid,
                           "creator_uid": 8008,
                           "source_url": url
                         }
+
             fileUrl = self.url +"/v1/files/"+uuid
-            r = requests.put(fileUrl, data=json.dumps(requestBody), headers=self.headers)
-            if r.status_code == requests.codes.ok or r.status_code ==  requests.codes.created or r.status_code ==  requests.codes.accepted :
+
+            r = self._retry_when_http_error(0, self._put_bundle_file, fileUrl, uuid, requestBody)
+
+            if r and (r.status_code == requests.codes.ok or r.status_code ==  requests.codes.created or r.status_code == requests.codes.accepted):
                 self.logger.debug("Bundle file submited "+url)
                 version = json.loads(r.text)["version"]
                 fileObject = {
@@ -57,20 +67,33 @@ class DssApi:
                     "name": submittedName,
                     "uuid": uuid,
                     "version": version,
-                    "content-type": contentType 
+                    "content-type": contentType
                 }
                 bundleFile["files"].append(fileObject)
             else:
                 self.logger.error('Error in creating bundle')
-                self.print_response(r)
-                self.print_request(r.request)
                 raise ValueError('Can\'t create bundle file :' +url)
 
         # finally create the bundle
         bundleUrl = self.url +"/v1/bundles/"+bundleUuid
+
+        r = self._retry_when_http_error(0, self._put_bundle, bundleUrl, bundleFile)
+
+        if r and (r.status_code == requests.codes.ok or r.status_code == requests.codes.created or r.status_code == requests.codes.accepted):
+            print("bundle stored to dss! " + bundleUuid)
+        else:
+            print("bundle not stored to dss! " + bundleUuid)
+
+    def _put_bundle_file(self, fileUrl, uuid, requestBody):
+        fileUrl = self.url +"/v1/files/"+uuid
+        r = requests.put(fileUrl, data=json.dumps(requestBody), headers=self.headers)
+        r.raise_for_status()
+        return r
+
+    def _put_bundle(self, bundleUrl, bundleFile):
         r = requests.put(bundleUrl, data=json.dumps(bundleFile), params={"replica":"aws"}, headers=self.headers)
-        if r.status_code == requests.codes.ok or r.status_code == requests.codes.created or r.status_code == requests.codes.accepted:
-            print ("bundle stored to dss! "+ bundleUuid)
+        r.raise_for_status()
+        return r
 
 
     # analysis bundle === provenanceBundle.files (union) filesToTransfer
@@ -156,3 +179,28 @@ class DssApi:
             headers='\n'.join('{}: {}'.format(k, v) for k, v in req.headers.items()),
             body=req.body,
         ))
+
+    """
+        func should return http response r and should r.raise_for_status
+    """
+    def _retry_when_http_error(self, tries, func, *args):
+        max_retries = 5
+
+        if tries < max_retries:
+            self.logger.debug("no of tries: " + str(tries + 1))
+            r = func(*args)
+
+            try:
+                r.raise_for_status()
+            except requests.HTTPError:
+                self.logger.error("\nResponse was: " + str(r.status_code) + " (" + r.text + ")")
+                tries += 1
+                time.sleep(1)
+                self._retry_when_http_error(tries, func, *args)
+
+            return r
+        else:
+            error_message = "Maximum no of tries reached: " + str(max_retries)
+            self.logger.error(error_message)
+            return None
+
