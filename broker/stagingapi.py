@@ -79,6 +79,7 @@ class StagingApi:
 
     def _put_file(self, fileUrl, body, header):
         r = requests.put(fileUrl,  data=json.dumps(body, indent=4), headers=header)
+        return r
 
     def hasStagingArea(self, submissionId):
         base = urlparse.urljoin( self.url, self.apiversion+'/area/'+submissionId + '/files_info')
