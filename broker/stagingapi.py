@@ -69,17 +69,49 @@ class StagingApi:
 
         header = dict(self.header)
         header['Content-type'] = 'application/json; dcp-type=' + type
-        r = requests.put(fileUrl,  data=json.dumps(body, indent=4), headers=header)
-        if r.status_code == requests.codes.ok or requests.codes.created:
+
+        r = self._retry_when_http_error(0, self._put_file, fileUrl, body, header)
+
+        if r and (r.status_code == requests.codes.ok or requests.codes.created):
             responseObject = json.loads(r.text)
             return FileDescription(responseObject["checksums"],type,responseObject["name"],responseObject["size"],responseObject["url"], )
         raise ValueError('Can\'t create staging area for sub id:' +submissionId)
+
+    def _put_file(self, fileUrl, body, header):
+        r = requests.put(fileUrl,  data=json.dumps(body, indent=4), headers=header)
+        return r
 
     def hasStagingArea(self, submissionId):
         base = urlparse.urljoin( self.url, self.apiversion+'/area/'+submissionId + '/files_info')
 
         r = requests.put(base, data="{}", headers=self.header)
         return r.status_code == requests.codes.ok
+
+    """
+        func should return http response r
+    """
+    def _retry_when_http_error(self, tries, func, *args):
+        max_retries = 5
+
+        if tries < max_retries:
+            self.logger.debug("no of tries: " + str(tries + 1))
+            r = func(*args)
+
+            try:
+                r.raise_for_status()
+            except requests.HTTPError:
+                self.logger.error("\nResponse was: " + str(r.status_code) + " (" + r.text + ")")
+                tries += 1
+                sleep(1)
+                self._retry_when_http_error(tries, func, *args)
+
+            return r
+        else:
+            error_message = "Maximum no of tries reached: " + str(max_retries)
+            self.logger.error(error_message)
+            return None
+
+
 
 
 class FileDescription:

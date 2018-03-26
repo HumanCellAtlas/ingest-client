@@ -307,20 +307,36 @@ class IngestApi:
                 tries += 1
                 time.sleep(1)
                 self._retry_when_http_error(tries, func, *args)
+
+            return r
         else:
             error_message = "Maximum no of tries reached: " + str(max_retries)
             self.logger.error(error_message)
-            raise ValueError(error_message)
+            return None
+
+    def _request_post(self, url, data, params, headers):
+        if params:
+            return requests.post(url, data=data, params=params, headers=headers)
+
+        return requests.post(url, data=data, headers=headers)
+
+    def _request_put(self, url, data, params, headers):
+        if params:
+            return requests.put(url, data=data, params=params, headers=headers)
+
+        return requests.put(url, data=data, headers=headers)
 
     def createBundleManifest(self, bundleManifest):
-        r = requests.post(self.ingest_api["bundleManifests"]["href"].rsplit("{")[0],
-                          data=json.dumps(bundleManifest.__dict__),
-                          headers=self.headers)
+        r = self._retry_when_http_error(0, self._post_bundle_manifest, bundleManifest, self.ingest_api["bundleManifests"]["href"].rsplit("{")[0])
+
         if not (200 <= r.status_code < 300):
             self.logger.error("Failed to create bundle manifest at URL {0} with request payload: {1}".format(self.ingest_api["bundleManifests"]["href"].rsplit("{")[0],
                                                                                                              json.dumps(bundleManifest.__dict__)))
         else:
             self.logger.info("successfully created bundle manifest")
+
+    def _post_bundle_manifest(self, bundleManifest, url):
+        return requests.post(url, data=json.dumps(bundleManifest.__dict__), headers=self.headers)
 
     def updateSubmissionWithStagingCredentials(self, subUrl, uuid, submissionCredentials):
         stagingDetails = \
