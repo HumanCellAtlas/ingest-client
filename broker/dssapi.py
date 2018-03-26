@@ -36,7 +36,6 @@ class DssApi:
         self.headers = {'Content-type': 'application/json'}
 
     def createBundle(self, bundleUuid, submittedFiles):
-
         bundleFile = {"creator_uid": 8008, "files" : []}
         for file in submittedFiles:
             submittedName = file["submittedName"]
@@ -83,14 +82,13 @@ class DssApi:
         else:
             print("bundle not stored to dss! " + bundleUuid)
 
-    def _put_bundle_file(self, fileUrl, uuid, requestBody):
-        r = requests.put(fileUrl, data=json.dumps(requestBody), headers=self.headers)
+    def _put_bundle_file(self, fileUrl, requestBody):
+        r = self._request_put(fileUrl, data=json.dumps(requestBody), headers=self.headers)
         return r
 
     def _put_bundle(self, bundleUrl, bundleFile):
-        r = requests.put(bundleUrl, data=json.dumps(bundleFile), params={"replica":"aws"}, headers=self.headers)
+        r = self._request_put(bundleUrl, data=json.dumps(bundleFile), params={"replica":"aws"}, headers=self.headers)
         return r
-
 
     # analysis bundle === provenanceBundle.files (union) filesToTransfer
     #
@@ -176,15 +174,16 @@ class DssApi:
             body=req.body,
         ))
 
+
     """
         func should return http response r
     """
-    def _retry_when_http_error(self, tries, func, *args):
+    def _retry_when_http_error(self, tries, func, *args, **kwargs):
         max_retries = 5
 
         if tries < max_retries:
             self.logger.debug("no of tries: " + str(tries + 1))
-            r = func(*args)
+            r = func(*args, **kwargs)
 
             try:
                 r.raise_for_status()
@@ -192,7 +191,7 @@ class DssApi:
                 self.logger.error("\nResponse was: " + str(r.status_code) + " (" + r.text + ")")
                 tries += 1
                 time.sleep(1)
-                self._retry_when_http_error(tries, func, *args)
+                self._retry_when_http_error(tries, func, *args, **kwargs)
 
             return r
         else:
@@ -200,3 +199,8 @@ class DssApi:
             self.logger.error(error_message)
             return None
 
+    def _request_post(self, *args, **kwargs):
+        requests.post(*args, **kwargs)
+
+    def _request_put(self, *args, **kwargs):
+        requests.put(*args, **kwargs)
