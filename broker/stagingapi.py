@@ -103,7 +103,7 @@ class StagingApi:
                 self.logger.error("\nResponse was: " + str(r.status_code) + " (" + r.text + ")")
                 tries += 1
                 sleep(1)
-                self._retry_when_http_error(tries, func, *args)
+                r = self._retry_when_http_error(tries, func, *args)
 
             return r
         else:
