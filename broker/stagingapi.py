@@ -88,7 +88,7 @@ class StagingApi:
         return r.status_code == requests.codes.ok
 
     """
-        func should return http response r and should r.raise_for_status
+        func should return http response r
     """
     def _retry_when_http_error(self, tries, func, *args):
         max_retries = 5

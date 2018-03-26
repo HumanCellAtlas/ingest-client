@@ -56,7 +56,6 @@ class DssApi:
                         }
 
             fileUrl = self.url +"/v1/files/"+uuid
-
             r = self._retry_when_http_error(0, self._put_bundle_file, fileUrl, uuid, requestBody)
 
             if r and (r.status_code == requests.codes.ok or r.status_code ==  requests.codes.created or r.status_code == requests.codes.accepted):
@@ -85,14 +84,11 @@ class DssApi:
             print("bundle not stored to dss! " + bundleUuid)
 
     def _put_bundle_file(self, fileUrl, uuid, requestBody):
-        fileUrl = self.url +"/v1/files/"+uuid
         r = requests.put(fileUrl, data=json.dumps(requestBody), headers=self.headers)
-        r.raise_for_status()
         return r
 
     def _put_bundle(self, bundleUrl, bundleFile):
         r = requests.put(bundleUrl, data=json.dumps(bundleFile), params={"replica":"aws"}, headers=self.headers)
-        r.raise_for_status()
         return r
 
 
@@ -181,7 +177,7 @@ class DssApi:
         ))
 
     """
-        func should return http response r and should r.raise_for_status
+        func should return http response r
     """
     def _retry_when_http_error(self, tries, func, *args):
         max_retries = 5
