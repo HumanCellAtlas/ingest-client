@@ -151,13 +151,14 @@ class IngestApi:
     def getSubmissionUri(self, submissionId):
         return self.ingest_api["submissionEnvelopes"]["href"].rsplit("{")[0] + "/" + submissionId
 
-    def getAssays(self, submissionUrl):
-        r = requests.get(submissionUrl, headers=self.headers)
+    def getAssayUrl(self, assayCallbackLink):
+        # TODO check if callback link already has a leading slash
+        return self.url + "/" + assayCallbackLink
+
+    def getAssay(self, assayUrl):
+        r = requests.get(assayUrl, headers=self.headers)
         if r.status_code == requests.codes.ok:
-            if "assays" in json.loads(r.text)["_links"]:
-                # r2 = requests.get(, headers=self.headers)
-                for entity in self._getAllObjectsFromSet(json.loads(r.text)["_links"]["assays"]["href"], "processes", 10000):
-                    yield entity
+            return r.json()
 
 
     def getAnalyses(self, submissionUrl):
