@@ -81,6 +81,8 @@ class DssApi:
             print("bundle stored to dss! " + bundleUuid)
         else:
             print("bundle not stored to dss! " + bundleUuid)
+            raise ValueError("bundle not stored to dss! " + bundleUuid)
+
 
     def _put_bundle_file(self, fileUrl, requestBody):
         r = requests.put(fileUrl, data=json.dumps(requestBody), headers=self.headers)

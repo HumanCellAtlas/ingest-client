@@ -330,8 +330,10 @@ class IngestApi:
         r = self._retry_when_http_error(0, self._post_bundle_manifest, bundleManifest, self.ingest_api["bundleManifests"]["href"].rsplit("{")[0])
 
         if not (200 <= r.status_code < 300):
-            self.logger.error("Failed to create bundle manifest at URL {0} with request payload: {1}".format(self.ingest_api["bundleManifests"]["href"].rsplit("{")[0],
-                                                                                                             json.dumps(bundleManifest.__dict__)))
+            error_message = "Failed to create bundle manifest at URL {0} with request payload: {1}".format(self.ingest_api["bundleManifests"]["href"].rsplit("{")[0],
+                                                                                                           json.dumps(bundleManifest.__dict__))
+            self.logger.error(error_message)
+            raise ValueError(error_message)
         else:
             self.logger.info("successfully created bundle manifest")
 

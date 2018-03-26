@@ -125,6 +125,7 @@ class IngestExporter:
             self.logger.error("Can\'t do export as no staging area has been created")
 
     def generateAssayBundle(self, newAssayMessage):
+        success = False
         assayCallbackLink = newAssayMessage["callbackLink"]
 
         self.logger.info('assay received '+ assayCallbackLink)
@@ -141,10 +142,14 @@ class IngestExporter:
             assay = self.ingest_api.getAssay(assayUrl)
 
             self.logger.info("Attempting to export primary assay bundle to DSS...")
-            self.primarySubmission(envelopeUuidForAssay, assay)
-
+            success = self.primarySubmission(envelopeUuidForAssay, assay)
         else:
-            self.logger.error("Can\'t do export as no staging area has been created")
+            error_message = "Can\'t do export as no staging area has been created"
+            self.logger.error(error_message)
+            raise ValueError(error_message)
+
+        if not success:
+            raise ValueError("An error occured in primary submission. Failed to export to dss: "+newAssayMessage["callbackLink"])
 
     def secondarySubmission(self, submissionEnvelopeUuid, analyses):
         # list of FileDescriptors for files we need to transfer to the DSS before creating the bundle
@@ -214,7 +219,7 @@ class IngestExporter:
 
 
     def primarySubmission(self, submissionEnvelopeUuid, assay):
-
+        success = False
         # we only want to upload one version of each file so must track through each bundle files that are the same e.g. project and possibly protocols or samples
 
         projectUuidToBundleData = {}
@@ -607,11 +612,15 @@ class IngestExporter:
             self.dss_api.createBundle(bundleManifest.bundleUuid, allBundleFilesToSubmit)
             # write bundle manifest to ingest API
             self.ingest_api.createBundleManifest(bundleManifest)
-
+            success = True
         else:
             self.dumpJsonToFile(bundleManifest.__dict__, project_bundle["content"]["project_core"]["project_shortname"], "bundleManifest" )
+            success = True
 
         self.logger.info("bundles generated! "+bundleManifest.bundleUuid)
+
+        return success
+
 
 
     def bundleFileIngest(self, file_entity):
