@@ -297,9 +297,10 @@ class IngestApi:
 
         if tries < max_retries:
             self.logger.info("no of tries: " + str(tries + 1))
-            r = func(*args)
-
+            r = None
+            
             try:
+                r = func(*args)
                 r.raise_for_status()
 
             except HTTPError:
