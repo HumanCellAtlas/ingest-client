@@ -296,7 +296,7 @@ class IngestApi:
         max_retries = 5
 
         if tries < max_retries:
-            self.logger.debug("no of tries: " + str(tries + 1))
+            self.logger.info("no of tries: " + str(tries + 1))
             r = func(*args)
 
             try:
@@ -388,7 +388,6 @@ class IngestApi:
                     self.retrySubmissionUpdateWithStagingDetails(subUrl, stagingDetails, tries)
         else:
             return False
-
 
 
 class BundleManifest:
