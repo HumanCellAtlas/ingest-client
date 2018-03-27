@@ -308,6 +308,18 @@ class IngestApi:
                 time.sleep(1)
                 r = self._retry_when_http_error(tries, func, *args)
 
+            except requests.ConnectionError, e:
+                self.logger.exception(str(e))
+                tries += 1
+                time.sleep(1)
+                r = self._retry_when_http_error(tries, func, *args)
+
+            except Exception, e:
+                self.logger.exception(str(e))
+                tries += 1
+                time.sleep(1)
+                r = self._retry_when_http_error(tries, func, *args)
+
             return r
         else:
             error_message = "Maximum no of tries reached: " + str(max_retries)
