@@ -65,7 +65,7 @@ class IngestExporter:
         for nested in self.ingest_api.getRelatedEntities(relation, entity, entityType):
             # check if process is chained
 
-            chainedProcesses = self.ingest_api.getRelatedEntities("chainedProcesses", entity, "processes")
+            chainedProcesses = self.ingest_api.getRelatedEntities("chainedProcesses", nested, "processes")
             hasChained = False
             for chainedProcess in chainedProcesses:
                 nestedChildren.append(chainedProcess)
@@ -217,6 +217,14 @@ class IngestExporter:
                 self.dumpJsonToFile(bundleManifest.__dict__, analysisBundleContent["content"]["analysis_id"], "bundleManifest_" + str(index))
 
 
+    def getChainedProcess(self, entity):
+        processes = self.ingest_api.getRelatedEntities("derivedByProcesses", entity, "processes")
+        for process in processes:
+            chainedProcesses = self.getNestedObjects("chainedProcesses", process, "processes")
+            if len(chainedProcesses) > 0:
+                return process
+        return None
+
 
     def primarySubmission(self, submissionEnvelopeUuid, assay):
         success = False
@@ -330,9 +338,8 @@ class IngestExporter:
             'links': []
         }
 
-
-        # get the primary sample for this assay
-        # assume just one input sample todo this is not a safe assumption
+        # collect the biomaterials that are input to the assay, these will be linked to
+        # the processes later
         all_direct_assay_input_biomaterials = []
 
         for input_sample in list(self.ingest_api.getRelatedEntities("inputBiomaterials", assay, "biomaterials")):
@@ -341,8 +348,10 @@ class IngestExporter:
             all_direct_assay_input_biomaterials.append(assaySampleUuid)
             allBiomaterialUuids.append(assaySampleUuid)
 
-            # This section here is where we find all the related samples
-            # sampleProcesses = self.getNestedObjects("derivedByProcesses", input_sample, "processes")
+            # need to work out if input samples are chained or there is just one
+            chainedSampleProcess = self.getChainedProcess(input_sample)
+
+            # this will get any nested sample and deals with the chaining
             sampleProcesses = self.getNestedProcessObjects("derivedByProcesses", input_sample, "processes")
 
             for sampleProcess in sampleProcesses:
@@ -353,7 +362,11 @@ class IngestExporter:
                     processesBundle["processes"].append(self.bundleProcess(sampleProcess))
 
                 # get the sample input to this process, this will be the specimen
-                specimenSamples = self.getNestedObjects("inputBiomaterials", sampleProcess, "biomaterials")
+                specimenSamples = []
+                if chainedSampleProcess:
+                    specimenSamples = self.getNestedObjects("inputBiomaterials", chainedSampleProcess, "biomaterials")
+                else:
+                    specimenSamples = self.getNestedObjects("inputBiomaterials", sampleProcess, "biomaterials")
                 for specimen in specimenSamples:
 
                     # collect the sample uuid and add it to the sample bundle
@@ -378,8 +391,11 @@ class IngestExporter:
                         links.append(
                             self.getLinks(process_name, sampleProcess["uuid"]["uuid"], "protocol", protocolUuid))
 
+                    # need to work out if input samples are chained or there is just one
+                    chainedSpecimenProcess = self.getChainedProcess(specimen)
+
                     # get the process that generated the specimen
-                    specimenProcesses = self.getNestedObjects("derivedByProcesses", specimen, "processes")
+                    specimenProcesses = self.getNestedProcessObjects("derivedByProcesses", specimen, "processes")
                     for specimenProcess in specimenProcesses:
 
                         # collect the process and add it to the process bundle
@@ -389,7 +405,11 @@ class IngestExporter:
                             processesBundle["processes"].append(self.bundleProcess(specimenProcess))
 
                         # finally get the donor and add the sample bundle
-                        donorSamples = self.getNestedObjects("inputBiomaterials", specimenProcess, "biomaterials")
+                        donor_samples = []
+                        if chainedSpecimenProcess:
+                            donorSamples = self.getNestedObjects("inputBiomaterials", chainedSpecimenProcess, "biomaterials")
+                        else:
+                            donorSamples = self.getNestedObjects("inputBiomaterials", specimenProcess, "biomaterials")
 
                         links.append(self.getLinks(process_name, specimenProcess["uuid"]["uuid"], "biomaterial",
                                                    specimen["uuid"]["uuid"]))
@@ -779,4 +799,4 @@ if __name__ == '__main__':
     ex = IngestExporter(options)
     # ex.generateBundles(options.submissionsEnvelopeId)
 
-    ex.generateTestAssayBundle("5ab389d5f7f0310006d4b56b", "http://api.ingest.integration.data.humancellatlas.org/processes/5ab389d5f7f0310006d4b578")
+    ex.generateTestAssayBundle("5abbaadd8dcbb50007afe19b", "http://api.ingest.data.humancellatlas.org/processes/5abbaadd8dcbb50007afe19b")
