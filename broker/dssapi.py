@@ -23,7 +23,7 @@ import time
 class DssApi:
     def __init__(self, url=None):
         formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-        logging.basicConfig(formatter=formatter)
+        # logging.basicConfig(formatter=formatter)
         logging.getLogger("requests").setLevel(logging.WARNING)
         self.logger = logging.getLogger(__name__)
         self.url = url if url else "http://dss.dev.data.humancellatlas.org"
@@ -35,6 +35,7 @@ class DssApi:
 
         self.headers = {'Content-type': 'application/json'}
 
+    # TODO when putting file to dss, check status for cleanup
     def createBundle(self, bundleUuid, submittedFiles):
         bundleFile = {"creator_uid": 8008, "files" : []}
         for file in submittedFiles:

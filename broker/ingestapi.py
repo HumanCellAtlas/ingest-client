@@ -8,7 +8,7 @@ from requests import HTTPError
 __author__ = "jupp"
 __license__ = "Apache 2.0"
 
-import json, os, urllib, requests, logging, uuid
+import json, os, requests, logging, uuid
 
 
 class IngestApi:
@@ -309,13 +309,13 @@ class IngestApi:
                 time.sleep(1)
                 r = self._retry_when_http_error(tries, func, *args)
 
-            except requests.ConnectionError, e:
+            except requests.ConnectionError as e:
                 self.logger.exception(str(e))
                 tries += 1
                 time.sleep(1)
                 r = self._retry_when_http_error(tries, func, *args)
 
-            except Exception, e:
+            except Exception as e:
                 self.logger.exception(str(e))
                 tries += 1
                 time.sleep(1)
@@ -393,7 +393,7 @@ class IngestApi:
 
 class BundleManifest:
     def __init__(self):
-        self.bundleUuid = unicode(uuid.uuid4())
+        self.bundleUuid = str(uuid.uuid4())
         self.envelopeUuid = {}
         self.dataFiles = []
         self.fileBiomaterialMap = {}
