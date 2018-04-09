@@ -819,13 +819,12 @@ class IngestExporter:
         self.logger.info('Generating bundle files...')
         metadata_files_info = self.generate_metadata_files(process_info)
 
-        bundle_manifest = ingestapi.BundleManifest()
+        bundle_manifest = metadata_files_info['bundle_manifest']
+        self.update_bundle_manifest(bundle_manifest, submission_uuid, metadata_files_info, process_info)
 
         if self.dryrun:
             self.logger.info('Export is using dry run mode.')
             self.logger.info('Dumping bundle files...')
-
-            self.update_bundle_manifest(bundle_manifest, submission_uuid, metadata_files_info, process_info)
             self.dump_metadata_files_and_bundle_manifest(metadata_files_info, bundle_manifest)
 
         else:
@@ -840,8 +839,6 @@ class IngestExporter:
             data_files_info = process_info.derived_files
             self.put_bundle_in_dss(bundle_uuid, metadata_files_info, data_files_info)
 
-            self.update_bundle_manifest(bundle_manifest, submission_uuid, metadata_files_info, process_info)
-
             self.logger.info('Saving bundle manifest...')
             self.ingest_api.createBundleManifest(bundle_manifest)
 
@@ -854,19 +851,37 @@ class IngestExporter:
     def get_all_process_info(self, process_url):
         process = self.ingest_api.getAssay(process_url)  # TODO rename getAssay to getProcess
         process_info = ProcessInfo()
-        process_info.project = self.get_project_info(process)
-        self.recurse_process(process, process_info)
         process_info.input_bundle = self.get_input_bundle(process)
+
+        process_info.project = self.get_project_info(process)
+
+        if not process_info.project: # get from input bundle
+            project_uuid_lists = process_info.input_bundle['fileProjectMap'].values()
+
+            if len(project_uuid_lists) == 0 and len(project_uuid_lists[0]) == 0:
+                raise Error('Input bundle manifest has no list project uuid.')
+
+            project_uuid = project_uuid_lists[0][0]
+            process_info.project = self.ingest_api.getProjectByUuid(project_uuid)
+
+        self.recurse_process(process, process_info)
+
 
         return process_info
 
     def get_project_info(self, process):
         projects = list(self.ingest_api.getRelatedEntities('projects', process, 'projects'))
 
-        if len(projects) != 1:
+        if len(projects) > 1:
             raise MultipleProjectsError('Can only be one project in bundle')
 
-        return projects[0]
+        # TODO add checking for project only on an assay process
+        # TODO an analysis process may not have no link to a project
+
+        if len(projects) > 0:
+            return projects[0]
+
+        return None
 
         # get all related info of a process
     def recurse_process(self, process, process_info):
@@ -949,56 +964,79 @@ class IngestExporter:
         bundle_content = self.build_and_validate_content(process_info)
         input_bundle = process_info.input_bundle
 
-        metadata_files = {
-            'project': {
-                'content': bundle_content['project'],
-                'content_type': '"metadata/project"',
-                'indexed': True,
-                'dss_filename': 'project.json',
-                'dss_uuid': None
-            },
-            'biomaterial': {
-                'content': bundle_content['biomaterial'],
-                'content_type': '"metadata/biomaterial"',
-                'indexed': True,
-                'dss_filename': 'biomaterial.json',
-                'dss_uuid': None
-            },
-            'process': {
-                'content': bundle_content['process'],
-                'content_type': '"metadata/process"',
-                'indexed': True,
-                'dss_filename': 'process.json',
-                'dss_uuid': None
-            },
-            'protocol': {
-                'content': bundle_content['protocol'],
-                'content_type': '"metadata/protocol"',
-                'indexed': True,
-                'dss_filename': 'protocol.json',
-                'dss_uuid': None
-            },
-            'file': {
-                'content': bundle_content['file'],
-                'content_type': '"metadata/file"',
-                'indexed': True,
-                'dss_filename': 'file.json',
-                'dss_uuid': None
-            },
-            'links': {
-                'content': bundle_content['links'],
-                'content_type': '"metadata/links"',
-                'indexed': True,
-                'dss_filename': 'links.json',
-                'dss_uuid': None
-            }
-        }
+        metadata_files = {}
+
+        file_uuid = ''
 
         # if input bundle, reuse the project dss uuid, do not reupload metadata file
         # TODO check which else to reuse, biomaterials?
         if input_bundle:
             project_dss_uuid = input_bundle['fileProjectMap'].keys()[0]
-            metadata_files['project']['dss_uuid'] = project_dss_uuid
+            file_uuid = project_dss_uuid
+        else:
+            file_uuid = str(uuid.uuid4())
+
+        metadata_files['project'] = {
+            'content': bundle_content['project'],
+            'content_type': '"metadata/project"',
+            'indexed': True,
+            'dss_filename': 'project.json',
+            'dss_uuid': file_uuid,
+            'upload_filename': 'project_bundle_' + file_uuid + '.json'
+        }
+
+        file_uuid = str(uuid.uuid4())
+        metadata_files['biomaterial'] = {
+            'content': bundle_content['biomaterial'],
+            'content_type': '"metadata/biomaterial"',
+            'indexed': True,
+            'dss_filename': 'biomaterial.json',
+            'dss_uuid': file_uuid,
+            'upload_filename': 'biomaterial_bundle_' + file_uuid + '.json'
+        }
+
+        file_uuid = str(uuid.uuid4())
+        metadata_files['process'] = {
+            'content': bundle_content['process'],
+            'content_type': '"metadata/process"',
+            'indexed': True,
+            'dss_filename': 'process.json',
+            'dss_uuid': file_uuid,
+            'upload_filename': 'process_bundle_' + file_uuid + '.json'
+        }
+
+        file_uuid = str(uuid.uuid4())
+        metadata_files['protocol'] = {
+            'content': bundle_content['protocol'],
+            'content_type': '"metadata/protocol"',
+            'indexed': True,
+            'dss_filename': 'protocol.json',
+            'dss_uuid': file_uuid,
+            'upload_filename': 'protocol_bundle_' + file_uuid + '.json'
+        }
+
+        file_uuid = str(uuid.uuid4())
+        metadata_files['file'] = {
+             'content': bundle_content['file'],
+             'content_type': '"metadata/file"',
+             'indexed': True,
+             'dss_filename': 'file.json',
+             'dss_uuid': file_uuid,
+             'upload_filename': 'file_bundle_' + file_uuid + '.json'
+        }
+
+        file_uuid = str(uuid.uuid4())
+        metadata_files['links'] = {
+            'content': bundle_content['links'],
+            'content_type': '"metadata/links"',
+            'indexed': True,
+            'dss_filename': 'links.json',
+            'dss_uuid': file_uuid,
+            'upload_filename': 'links_bundle_' + file_uuid + '.json'
+        }
+
+        metadata_files['bundle_manifest'] = ingestapi.BundleManifest()
+        metadata_files['input_bundle'] = input_bundle
 
         return metadata_files
 
@@ -1109,26 +1147,23 @@ class IngestExporter:
         project = metadata_files_info['project']['content']
         project_keyword = project['content']['project_core']['project_shortname']
 
-        for metadata_type, bundle_file in metadata_files_info.items():
+        for metadata_type in ['project', 'biomaterial', 'process', 'protocol', 'file', 'links']:
+            bundle_file = metadata_files_info[metadata_type]
             self.dumpJsonToFile(bundle_file['content'], project_keyword, metadata_type + '_bundle')
 
         self.dumpJsonToFile(bundle_manifest.__dict__, project_keyword, 'bundleManifest')
 
     def upload_metadata_files(self, submission_uuid, metadata_files_info):
-        try:
-            for metadata_type, bundle_file in metadata_files_info.items():
 
+        try:
+            for metadata_type in ['project', 'biomaterial', 'process', 'protocol', 'file', 'links']:
+                bundle_file = metadata_files_info[metadata_type]
                 if bundle_file['dss_uuid']:
                     self.logger.info('Skipping upload for ' + bundle_file['dss_filename'] +
                                      ' as it already has a previous dss uuid: ' + bundle_file['dss_uuid'])
                     continue
 
-                file_uuid = str(uuid.uuid4())
-                filename = metadata_type + '_bundle_' + file_uuid + '.json'
-                bundle_file['upload_filename'] = filename
-                bundle_file['dss_uuid'] = file_uuid
-
-                uploaded_file = self.writeMetadataToStaging(submission_uuid, filename, bundle_file['content'],
+                uploaded_file = self.writeMetadataToStaging(submission_uuid, bundle_file['upload_filename'], bundle_file['content'],
                                                             bundle_file['content_type'])
                 bundle_file['upload_file_url'] = uploaded_file.url
 
@@ -1262,4 +1297,5 @@ if __name__ == '__main__':
 
     # 5abb9dcbb375bb0007c2b9c3
     ex.export_bundle('c2f94466-adee-4aac-b8d0-1e864fa5f8e8',
-                     'http://api.ingest.integration.data.humancellatlas.org/processes/5abb9dd6b375bb0007c2bab0')
+                     # 'http://api.ingest.integration.data.humancellatlas.org/processes/5abb9dd6b375bb0007c2bab0') # assay
+                     'http://api.ingest.integration.data.humancellatlas.org/processes/5acb79a3d35a72000728dac4') # analysis

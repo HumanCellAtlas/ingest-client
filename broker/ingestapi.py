@@ -77,6 +77,12 @@ class IngestApi:
         else:
             raise ValueError("Project " + id + " could not be retrieved")
 
+    def getProjectByUuid(self, uuid):
+        url =  self.url + '/projects/search/findByUuid?uuid=' + uuid
+        r = requests.get(url, headers=self.headers)
+        r.raise_for_status()
+        return r.json()
+
     def getSubmissionEnvelope(self, submissionUrl):
         r = requests.get(submissionUrl, headers=self.headers)
         if r.status_code == requests.codes.ok:

@@ -1,6 +1,7 @@
 import json
 import mock
 import time
+import types
 
 from mock import MagicMock
 from mock import Mock
@@ -16,6 +17,10 @@ from broker import stagingapi
 
 
 class TestExporter(TestCase):
+    def setUp(self):
+        self.longMessage = True
+        pass
+
     def test_bundleProject(self):
         # given:
         exporter = IngestExporter()
@@ -136,6 +141,8 @@ class TestExporter(TestCase):
         exporter = IngestExporter()
 
         # and:
+        ingestexportservice.uuid.uuid4 = MagicMock(return_value='new-uuid')
+
         mock_bundle_content = {
             'project': {},
             'biomaterial': {},
@@ -145,6 +152,8 @@ class TestExporter(TestCase):
             'links': [],
         }
         exporter.build_and_validate_content = MagicMock(return_value=mock_bundle_content)
+
+
         process_info = ingestexportservice.ProcessInfo()
         process_info.input_bundle = None
 
@@ -159,12 +168,12 @@ class TestExporter(TestCase):
         self.assertEqual(metadata_files['file']['content'], mock_bundle_content['file'])
         self.assertEqual(metadata_files['links']['content'], mock_bundle_content['links'])
 
-        self.assertEqual(metadata_files['project']['dss_uuid'], None)
-        self.assertEqual(metadata_files['biomaterial']['dss_uuid'], None)
-        self.assertEqual(metadata_files['process']['dss_uuid'], None)
-        self.assertEqual(metadata_files['protocol']['dss_uuid'], None)
-        self.assertEqual(metadata_files['file']['dss_uuid'], None)
-        self.assertEqual(metadata_files['links']['dss_uuid'], None)
+        self.assertEqual(metadata_files['project']['dss_uuid'], 'new-uuid', 'project must have a new file uuid')
+        self.assertEqual(metadata_files['biomaterial']['dss_uuid'], 'new-uuid', 'biomaterial must have a new file uuid')
+        self.assertEqual(metadata_files['process']['dss_uuid'], 'new-uuid', 'process must have a new file uuid')
+        self.assertEqual(metadata_files['protocol']['dss_uuid'], 'new-uuid', 'protocol must have a new file uuid')
+        self.assertEqual(metadata_files['file']['dss_uuid'], 'new-uuid', 'file must have a new file uuid')
+        self.assertEqual(metadata_files['links']['dss_uuid'], 'new-uuid', 'links must have a new file uuid')
 
     def test_generate_metadata_files_has_input_bundle(self):
         # given:
@@ -191,11 +200,11 @@ class TestExporter(TestCase):
 
         # then:
         self.assertEqual(metadata_files['project']['dss_uuid'], 'uuid')
-        self.assertEqual(metadata_files['biomaterial']['dss_uuid'], None)
-        self.assertEqual(metadata_files['process']['dss_uuid'], None)
-        self.assertEqual(metadata_files['protocol']['dss_uuid'], None)
-        self.assertEqual(metadata_files['file']['dss_uuid'], None)
-        self.assertEqual(metadata_files['links']['dss_uuid'], None)
+        self.assertEqual(metadata_files['biomaterial']['dss_uuid'], 'new-uuid')
+        self.assertEqual(metadata_files['process']['dss_uuid'], 'new-uuid')
+        self.assertEqual(metadata_files['protocol']['dss_uuid'], 'new-uuid')
+        self.assertEqual(metadata_files['file']['dss_uuid'], 'new-uuid')
+        self.assertEqual(metadata_files['links']['dss_uuid'], 'new-uuid')
 
     def test_upload_metadata_files(self):
         # given:
@@ -209,32 +218,38 @@ class TestExporter(TestCase):
                 'dss_filename': 'project.json',
                 'dss_uuid': 'uuid',
                 'content': {},
-                'content_type': 'type'
+                'content_type': 'type',
+                'upload_filename': 'filename'
             },
             'biomaterial': {
                 'dss_uuid': None,
                 'content': {},
-                'content_type': 'type'
+                'content_type': 'type',
+                'upload_filename': 'filename'
             },
             'process': {
                 'dss_uuid': None,
                 'content': {},
-                'content_type': 'type'
+                'content_type': 'type',
+                'upload_filename': 'filename'
             },
             'protocol': {
                 'dss_uuid': None,
                 'content': {},
-                'content_type': 'type'
+                'content_type': 'type',
+                'upload_filename': 'filename'
             },
             'file': {
                 'dss_uuid': None,
                 'content': {},
-                'content_type': 'type'
+                'content_type': 'type',
+                'upload_filename': 'filename'
             },
             'links': {
                 'dss_uuid': None,
                 'content': {},
-                'content_type': 'type'
+                'content_type': 'type',
+                'upload_filename': 'filename'
             }
         }
 
@@ -312,27 +327,30 @@ class TestExporter(TestCase):
     def test_refactoring(self, mocked_uuid4):
         self.maxDiff = None
         mocked_uuid4.return_value = 'new-uuid'
+        ingestexportservice.os.path.expandvars = MagicMock(return_value='http://api.ingest.integration.data.humancellatlas.org')
 
-        # given:
+        # given
         exporter = IngestExporter()
 
         # and:
         submission_uuid = 'c2f94466-adee-4aac-b8d0-1e864fa5f8e8'
-        process_ingest_url = 'http://api.ingest.integration.data.humancellatlas.org/processes/5abb9dd6b375bb0007c2bab0' #  the assay is a wrapper process
+        # process_ingest_url = 'http://api.ingest.integration.data.humancellatlas.org/processes/5abb9dd6b375bb0007c2bab0' #  the assay is a wrapper process
+
+
+        process_ingest_url = 'http://api.ingest.integration.data.humancellatlas.org/processes/5acb79a3d35a72000728dac4' #  the analysis
 
         ingestexportservice.uuid.uuid4 = MagicMock(return_value='new-uuid')
 
         # when:
-        exporter.outputDir = './test/bundles/expected/'
-        exporter.dryrun = True
-
-        exporter.generateTestAssayBundle(submission_uuid, process_ingest_url)
+        # exporter.outputDir = './test/bundles/expected/'
+        # exporter.dryrun = True
+        #
+        # exporter.generateTestAssayBundle(submission_uuid, process_ingest_url)
 
         # use dry run and output dir for this test
 
         exporter.outputDir = './test/bundles/actual/'
         exporter.dryrun = True
-        exporter.ingestUrl = 'http://api.ingest.integration.data.humancellatlas.org'
 
         start_time = time.time()
 
@@ -360,9 +378,13 @@ class TestExporter(TestCase):
                 actual_file_json = json.loads(actual_file.read())
 
             for property in expected_file_json.keys():
-                self.assertEqual(list(expected_file_json[property].values()), list(actual_file_json.values()), "discrepancy in " + property)
+                if isinstance(expected_file_json[property], types.DictType):
+                    actual_file_json[property] = frozenset(actual_file_json[property])
 
+                if isinstance(expected_file_json[property], types.ListType):
+                    expected_file_json[property] = frozenset(expected_file_json[property])
 
+                self.assertEqual(expected_file_json[property], actual_file_json[property], "discrepancy in " + property)
 
     def _create_entity_template(self):
         return {
