@@ -2,6 +2,8 @@
 """
 Description goes here
 """
+import datetime
+
 __author__ = "jupp"
 __license__ = "Apache 2.0"
 __date__ = "12/09/2017"
@@ -66,7 +68,7 @@ class DssApi:
                 self.logger.debug("Bundle file submited "+url)
             except Exception as e:
                 self.logger.error('Error in creating bundle')
-                raise ValueError('Can\'t create bundle file :' +url) from e
+                raise ValueError('Can\'t create bundle file :' +url)
 
             version = file_submission_data["version"]
 
@@ -87,14 +89,14 @@ class DssApi:
             hca_client.put_bundle(
                 uuid=bundleUuid,
                 version=version,
-                replica="aws"
+                replica="aws",
                 files=bundleFile["files"],
                 creator_uid=bundleFile["creator_uid"]
             )
             print ("bundle stored to dss! " + bundleUuid)
         except Exception as e:
             self.logger.error('Error in creating analysis bundle')
-            raise ValueError('Can\'t create bundle:' + bundleUuid) from e
+            raise ValueError('Can\'t create bundle:' + bundleUuid)
 
     def _put_bundle_file(self, fileUrl, requestBody):
         r = requests.put(fileUrl, data=json.dumps(requestBody), headers=self.headers)
@@ -136,7 +138,7 @@ class DssApi:
                 self.logger.debug("Bundle file submited "+url)
             except Exception as e:
                 self.logger.error('Error in creating analysis bundle')
-                raise ValueError('Can\'t create bundle file :' +url) from e
+                raise ValueError('Can\'t create bundle file :' +url)
 
             version = file_submission_data["version"]
 
@@ -168,14 +170,14 @@ class DssApi:
             hca_client.put_bundle(
                 uuid=analysisBundleUuid,
                 version=version,
-                replica="aws"
+                replica="aws",
                 files=bundleCreatePayload["files"],
                 creator_uid=bundleCreatePayload["creator_uid"]
             )
             print ("bundle stored to dss! "+ analysisBundleUuid)
         except Exception as e:
             self.logger.error('Error in creating analysis bundle')
-            raise ValueError('Can\'t create bundle:' + analysisBundleUuid) from e
+            raise ValueError('Can\'t create bundle:' + analysisBundleUuid)
 
     def retrieveBundle(self, bundleUuid):
         provenanceBundleUrl = self.url +"/v1/bundles/" + bundleUuid
@@ -184,44 +186,3 @@ class DssApi:
             return json.loads(r.text)
         else:
             raise ValueError("Couldn't find bundle in the DSS with uuid: " + bundleUuid)
-
-    def print_response(self, res):
-        print('RESPONSE:\n{status_code}\n{headers}\n\n{text}\n\n'.format(
-            status_code=res.status_code,
-            headers='\n'.join('{}: {}'.format(k, v) for k, v in res.headers.items()),
-            text=res.text
-        ))
-
-    def print_request(self, req):
-        print('REQUEST:\n{method} {url}\n{headers}\n\n{body}\n\n'.format(
-            method=req.method,
-            url=req.url,
-            headers='\n'.join('{}: {}'.format(k, v) for k, v in req.headers.items()),
-            body=req.body,
-        ))
-
-
-    """
-        func should return http response r
-    """
-    def _retry_when_http_error(self, tries, func, *args):
-        max_retries = 5
-
-        if tries < max_retries:
-            self.logger.debug("no of tries: " + str(tries + 1))
-
-            r = func(*args)
-
-            try:
-                r.raise_for_status()
-            except requests.HTTPError:
-                self.logger.error("\nResponse was: " + str(r.status_code) + " (" + r.text + ")")
-                tries += 1
-                time.sleep(1)
-                r = self._retry_when_http_error(tries, func, *args)
-
-            return r
-        else:
-            error_message = "Maximum no of tries reached: " + str(max_retries)
-            self.logger.error(error_message)
-            return None
