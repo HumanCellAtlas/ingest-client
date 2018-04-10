@@ -1,5 +1,10 @@
-FROM frolvlad/alpine-python2
+FROM python:2-alpine
 MAINTAINER Simon Jupp "jupp@ebi.ac.uk"
+
+RUN apk update && \
+    apk add --update alpine-sdk  && \
+    apk add openssl-dev && \
+    apk add libffi-dev
 
 RUN mkdir /app
 COPY broker /app/broker
