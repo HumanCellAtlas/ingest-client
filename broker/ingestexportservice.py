@@ -819,8 +819,7 @@ class IngestExporter:
         self.logger.info('Generating bundle files...')
         metadata_files_info = self.generate_metadata_files(process_info)
 
-        bundle_manifest = metadata_files_info['bundle_manifest']
-        self.update_bundle_manifest(bundle_manifest, submission_uuid, metadata_files_info, process_info)
+        bundle_manifest = self.create_bundle_manifest(submission_uuid, metadata_files_info, process_info)
 
         if self.dryrun:
             self.logger.info('Export is using dry run mode.')
@@ -844,7 +843,7 @@ class IngestExporter:
 
             saved_bundle_uuid = bundle_manifest.bundleUuid
 
-            self.logger.info('Bundle' + saved_bundle_uuid + ' was successfully created!')
+            self.logger.info('Bundle ' + saved_bundle_uuid + ' was successfully created!')
 
         return saved_bundle_uuid
 
@@ -859,13 +858,12 @@ class IngestExporter:
             project_uuid_lists = process_info.input_bundle['fileProjectMap'].values()
 
             if len(project_uuid_lists) == 0 and len(project_uuid_lists[0]) == 0:
-                raise Error('Input bundle manifest has no list project uuid.')
+                raise Error('Input bundle manifest has no list of project uuid.')
 
             project_uuid = project_uuid_lists[0][0]
             process_info.project = self.ingest_api.getProjectByUuid(project_uuid)
 
         self.recurse_process(process, process_info)
-
 
         return process_info
 
@@ -876,7 +874,7 @@ class IngestExporter:
             raise MultipleProjectsError('Can only be one project in bundle')
 
         # TODO add checking for project only on an assay process
-        # TODO an analysis process may not have no link to a project
+        # TODO an analysis process may have no link to a project
 
         if len(projects) > 0:
             return projects[0]
@@ -962,14 +960,16 @@ class IngestExporter:
 
     def generate_metadata_files(self, process_info):
         bundle_content = self.build_and_validate_content(process_info)
-        input_bundle = process_info.input_bundle
 
         metadata_files = {}
+
+        input_bundle = process_info.input_bundle
 
         file_uuid = ''
 
         # if input bundle, reuse the project dss uuid, do not reupload metadata file
         # TODO check which else to reuse, biomaterials?
+        # TODO can we reuse file uuid if uuid list is the same with the input bundle?
         if input_bundle:
             project_dss_uuid = input_bundle['fileProjectMap'].keys()[0]
             file_uuid = project_dss_uuid
@@ -982,7 +982,11 @@ class IngestExporter:
             'indexed': True,
             'dss_filename': 'project.json',
             'dss_uuid': file_uuid,
-            'upload_filename': 'project_bundle_' + file_uuid + '.json'
+            'upload_filename': 'project_bundle_' + file_uuid + '.json',
+            'skip_upload': True
+
+            # TODO the skip_upload flag may not be needed, reusing the input bundle file uuid should be enough
+            # TODO verify if DSS returns a 200 response if file being PUT is existing and has same content
         }
 
         file_uuid = str(uuid.uuid4())
@@ -1034,9 +1038,6 @@ class IngestExporter:
             'dss_uuid': file_uuid,
             'upload_filename': 'links_bundle_' + file_uuid + '.json'
         }
-
-        metadata_files['bundle_manifest'] = ingestapi.BundleManifest()
-        metadata_files['input_bundle'] = input_bundle
 
         return metadata_files
 
@@ -1112,7 +1113,8 @@ class IngestExporter:
             if not (True == result):
                 raise InvalidBundleError('Invalid ' + metadata_type + ' bundle!')
 
-    def update_bundle_manifest(self, bundle_manifest, submission_uuid, metadata_files_info, process_info):
+    def create_bundle_manifest(self, submission_uuid, metadata_files_info, process_info):
+        bundle_manifest = ingestapi.BundleManifest()
 
         bundle_manifest.envelopeUuid = submission_uuid
 
@@ -1135,7 +1137,7 @@ class IngestExporter:
         }
 
         bundle_manifest.fileFilesMap = {
-            metadata_files_info['file']['dss_uuid']: list(process_info.input_files.keys()) + list(process_info.derived_files.keys())
+            metadata_files_info['file']['dss_uuid']: list(process_info.derived_files.keys())
         }
 
         # TODO store the version timestamp in bundle manifest
@@ -1158,10 +1160,6 @@ class IngestExporter:
         try:
             for metadata_type in ['project', 'biomaterial', 'process', 'protocol', 'file', 'links']:
                 bundle_file = metadata_files_info[metadata_type]
-                if bundle_file['dss_uuid']:
-                    self.logger.info('Skipping upload for ' + bundle_file['dss_filename'] +
-                                     ' as it already has a previous dss uuid: ' + bundle_file['dss_uuid'])
-                    continue
 
                 uploaded_file = self.writeMetadataToStaging(submission_uuid, bundle_file['upload_filename'], bundle_file['content'],
                                                             bundle_file['content_type'])
@@ -1295,7 +1293,7 @@ if __name__ == '__main__':
     # ex.generateTestAssayBundle("5abb9dcbb375bb0007c2b9c3",
     #                            "http://api.ingest.integration.data.humancellatlas.org/processes/5abb9dd6b375bb0007c2bab0")
 
-    # 5abb9dcbb375bb0007c2b9c3
+    # submission id : 5abb9dcbb375bb0007c2b9c3
     ex.export_bundle('c2f94466-adee-4aac-b8d0-1e864fa5f8e8',
                      # 'http://api.ingest.integration.data.humancellatlas.org/processes/5abb9dd6b375bb0007c2bab0') # assay
                      'http://api.ingest.integration.data.humancellatlas.org/processes/5acb79a3d35a72000728dac4') # analysis
