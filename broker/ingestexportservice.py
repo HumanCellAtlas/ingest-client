@@ -142,7 +142,7 @@ class IngestExporter:
             assay = self.ingest_api.getAssay(assayUrl)
 
             self.logger.info("Attempting to export primary assay bundle to DSS...")
-            success = self.primarySubmission(envelopeUuidForAssay, assay)
+            success = self.export_bundle(envelopeUuidForAssay, assayUrl)
         else:
             error_message = "Can\'t do export as no staging area has been created"
             self.logger.error(error_message)
