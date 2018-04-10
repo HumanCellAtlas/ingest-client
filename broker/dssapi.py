@@ -20,6 +20,10 @@ import os
 import requests
 import time
 
+import glob
+import urllib
+import hca
+
 class DssApi:
     def __init__(self, url=None):
         formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -35,7 +39,12 @@ class DssApi:
 
         self.headers = {'Content-type': 'application/json'}
 
+
     def createBundle(self, bundleUuid, submittedFiles):
+
+        hca_client = hca.dss.DSSClient()
+        hca_client.host = self.url + "/v1"
+
         bundleFile = {"creator_uid": 8008, "files" : []}
         for file in submittedFiles:
             submittedName = file["submittedName"]
@@ -47,42 +56,45 @@ class DssApi:
                 self.logger.warn("can't create bundle for "+submittedName+" as no cloud URL is provided")
                 continue
 
-
-            requestBody = {
-                          "bundle_uuid": bundleUuid,
-                          "creator_uid": 8008,
-                          "source_url": url
-                        }
-
-            fileUrl = self.url +"/v1/files/"+uuid
-            r = self._retry_when_http_error(0, self._put_bundle_file, fileUrl, requestBody)
-
-            if r and (r.status_code == requests.codes.ok or r.status_code ==  requests.codes.created or r.status_code == requests.codes.accepted):
+            try:
+                file_submission_data = hca_client.put_file(
+                    uuid=uuid,
+                    bundle_uuid=bundleUuid,
+                    creator_uid=bundleFile["creator_uid"],
+                    source_url=url
+                )
                 self.logger.debug("Bundle file submited "+url)
-                version = json.loads(r.text)["version"]
-                fileObject = {
-                    "indexed": indexed,
-                    "name": submittedName,
-                    "uuid": uuid,
-                    "version": version,
-                    "content-type": contentType
-                }
-                bundleFile["files"].append(fileObject)
-            else:
+            except Exception as e:
                 self.logger.error('Error in creating bundle')
-                raise ValueError('Can\'t create bundle file :' +url)
+                raise ValueError('Can\'t create bundle file :' +url) from e
+
+            version = file_submission_data["version"]
+
+            fileObject = {
+                "indexed": indexed,
+                "name": submittedName,
+                "uuid": uuid,
+                "version": version,
+                "content-type": contentType 
+            }
+            bundleFile["files"].append(fileObject)
+
+        # Generate version client-side for idempotent PUT /bundle
+        version = datetime.datetime.utcnow().strftime("%Y-%m-%dT%H%M%S.%fZ")
 
         # finally create the bundle
-        bundleUrl = self.url +"/v1/bundles/"+bundleUuid
-
-        r = self._retry_when_http_error(0, self._put_bundle, bundleUrl, bundleFile)
-
-        if r and (r.status_code == requests.codes.ok or r.status_code == requests.codes.created or r.status_code == requests.codes.accepted):
-            print("bundle stored to dss! " + bundleUuid)
-        else:
-            print("bundle not stored to dss! " + bundleUuid)
-            raise ValueError("bundle not stored to dss! " + bundleUuid)
-
+        try:
+            hca_client.put_bundle(
+                uuid=bundleUuid,
+                version=version,
+                replica="aws"
+                files=bundleFile["files"],
+                creator_uid=bundleFile["creator_uid"]
+            )
+            print ("bundle stored to dss! " + bundleUuid)
+        except Exception as e:
+            self.logger.error('Error in creating analysis bundle')
+            raise ValueError('Can\'t create bundle:' + bundleUuid) from e
 
     def _put_bundle_file(self, fileUrl, requestBody):
         r = requests.put(fileUrl, data=json.dumps(requestBody), headers=self.headers)
@@ -102,6 +114,9 @@ class DssApi:
         provenanceBundleUuid = provenanceBundleManifest["bundleUuid"]
         analysisBundleUuid = analysisBundleManifest.bundleUuid 
 
+        hca_client = hca.dss.DSSClient()
+        hca_client.host = self.url + "/v1"
+
         bundleCreatePayload = {"creator_uid": 8008, "files" : []}
         # transfer any new files/metadata in the secondary submission
         for fileToTransfer in filesToTransfer:
@@ -111,31 +126,29 @@ class DssApi:
             indexed = fileToTransfer["indexed"]
             contentType = fileToTransfer["content-type"]
 
-            requestBody = {
-                          "bundle_uuid": analysisBundleUuid, # TODO: referring to bundle before it's created might be dodgy?
-                          "creator_uid": 8008,
-                          "source_url": url
-                        }
- 
-            fileUrl = self.url +"/v1/files/"+uuid
-
-            r = requests.put(fileUrl, data=json.dumps(requestBody), headers=self.headers)
-            if r.status_code == requests.codes.ok or r.status_code ==  requests.codes.created or r.status_code ==  requests.codes.accepted :
+            try:
+                file_submission_data = hca_client.put_file(
+                    uuid=uuid,
+                    bundle_uuid=analysisBundleUuid,
+                    creator_uid=bundleCreatePayload["creator_uid"],
+                    source_url=url
+                )
                 self.logger.debug("Bundle file submited "+url)
-                version = json.loads(r.text)["version"]
-                fileObject = {
-                    "indexed": indexed,
-                    "name": submittedName,
-                    "uuid": uuid,
-                    "version": version,
-                    "content-type" : contentType
-                }
-                bundleCreatePayload["files"].append(fileObject)
-            else:
+            except Exception as e:
                 self.logger.error('Error in creating analysis bundle')
-                self.print_response(r)
-                self.print_request(r.request)
-                raise ValueError('Can\'t create bundle file :' +url)
+                raise ValueError('Can\'t create bundle file :' +url) from e
+
+            version = file_submission_data["version"]
+
+            fileObject = {
+                "indexed": indexed,
+                "name": submittedName,
+                "uuid": uuid,
+                "version": version,
+                "content-type" : contentType
+            }
+
+            bundleCreatePayload["files"].append(fileObject)
 
         # merge the bundleCreatePayload.files with provenanceBundle.files
         provenanceBundleFiles = self.retrieveBundle(provenanceBundleUuid)["bundle"]["files"]
@@ -147,11 +160,22 @@ class DssApi:
                                                                          "content-type":provenanceFile["content-type"]
                                                                          },provenanceBundleFiles))
 
+        # Generate version client-side for idempotent PUT /bundle
+        version = datetime.datetime.utcnow().strftime("%Y-%m-%dT%H%M%S.%fZ")
+
         # finally create the bundle
-        bundleUrl = self.url +"/v1/bundles/"+analysisBundleUuid
-        r = requests.put(bundleUrl, data=json.dumps(bundleCreatePayload), params={"replica":"aws"}, headers=self.headers)
-        if r.status_code == requests.codes.ok or r.status_code == requests.codes.created or r.status_code == requests.codes.accepted:
+        try:
+            hca_client.put_bundle(
+                uuid=analysisBundleUuid,
+                version=version,
+                replica="aws"
+                files=bundleCreatePayload["files"],
+                creator_uid=bundleCreatePayload["creator_uid"]
+            )
             print ("bundle stored to dss! "+ analysisBundleUuid)
+        except Exception as e:
+            self.logger.error('Error in creating analysis bundle')
+            raise ValueError('Can\'t create bundle:' + analysisBundleUuid) from e
 
     def retrieveBundle(self, bundleUuid):
         provenanceBundleUrl = self.url +"/v1/bundles/" + bundleUuid
