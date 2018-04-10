@@ -123,26 +123,26 @@ class IngestExporter:
         else:
             self.logger.error("Can\'t do export as no staging area has been created")
 
-    def generateAssayBundle(self, newAssayMessage):
+    def generateBundle(self, message):
         success = False
-        assayCallbackLink = newAssayMessage["callbackLink"]
+        callbackLink = message["callbackLink"]
 
-        self.logger.info('assay received ' + assayCallbackLink)
-        self.logger.info('assay index: ' + str(newAssayMessage["assayIndex"]) + ', total assays: ' + str(
-            newAssayMessage["totalAssays"]))
+        self.logger.info('process received ' + callbackLink)
+        self.logger.info('process index: ' + str(message["index"]) + ', total processes: ' + str(
+            message["total"]))
 
         # given an assay, generate a bundle
 
-        assayUrl = self.ingest_api.getAssayUrl(assayCallbackLink)
-        assayUuid = newAssayMessage["documentUuid"]
-        envelopeUuidForAssay = newAssayMessage["envelopeUuid"]
+        processUrl = self.ingest_api.getAssayUrl(callbackLink)  # TODO rename getAssayUrl
+        processUuid = message["documentUuid"]
+        envelopeUuid = message["envelopeUuid"]
 
         # check staging area is available
-        if self.dryrun or self.staging_api.hasStagingArea(envelopeUuidForAssay):
-            assay = self.ingest_api.getAssay(assayUrl)
+        if self.dryrun or self.staging_api.hasStagingArea(envelopeUuid):
+            assay = self.ingest_api.getAssay(processUrl)
 
-            self.logger.info("Attempting to export primary assay bundle to DSS...")
-            success = self.export_bundle(envelopeUuidForAssay, assayUrl)
+            self.logger.info("Attempting to export bundle to DSS...")
+            success = self.export_bundle(envelopeUuid, processUrl)
         else:
             error_message = "Can\'t do export as no staging area has been created"
             self.logger.error(error_message)
@@ -150,7 +150,7 @@ class IngestExporter:
 
         if not success:
             raise ValueError(
-                "An error occured in primary submission. Failed to export to dss: " + newAssayMessage["callbackLink"])
+                "An error occurred in export. Failed to export to dss: " + message["callbackLink"])
 
     def secondarySubmission(self, submissionEnvelopeUuid, analyses):
         # list of FileDescriptors for files we need to transfer to the DSS before creating the bundle
