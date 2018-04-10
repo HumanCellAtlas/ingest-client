@@ -19,7 +19,7 @@ class TestExporter(TestCase):
 
         # and:
         schema_ref = project_bundle['describedBy']
-        self.assertTrue(schema_ref.endswith('/project.json'))
+        self.assertTrue(schema_ref.endswith('/project'))
         self.assertTrue(schema_ref.startswith(exporter.schema_url))
 
         # and:

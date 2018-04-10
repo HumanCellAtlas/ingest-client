@@ -730,7 +730,7 @@ class IngestExporter:
     def _copyAndTrim(self, project_entity):
         copy = project_entity.copy()
         for property in ["_links", "events", "validationState", "validationErrors", "user", "lastModifiedUser"]:
-            del copy[property]
+            if property in copy: del copy[property]
         return copy
 
     # returns a copy of a bundle manifest JSON, but with a new bundleUuid
