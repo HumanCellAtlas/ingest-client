@@ -1,6 +1,6 @@
 import json
-import mock
 import time
+import mock
 import requests
 
 from mock import MagicMock
@@ -367,8 +367,14 @@ class TestExporter(TestCase):
     # transformation chain refers to the biomaterial/file -> process -> biomaterial/file paradigm used to represent
     # assay and analysis type procedures
     def test_transformation_chain_crawl(self):
-        # mock the calls to the ingest API for the entities in the bundle
-        get_requests_mock = mock()
+
+        class MockRequestResponse:
+            def __init__(self, json_payload, status_code):
+                self.payload = json_payload
+                self.status_code = status_code
+
+            def json(self):
+                return self.payload
 
         def mock_entities_url_to_file_dict():
 
@@ -413,6 +419,38 @@ class TestExporter(TestCase):
 
             return mock_entity_url_to_file_dict
 
+        def mock_entities_retrieval(*args, **kwargs):
+            test_ingest_dir = './test/bundles/ingest-data/'
+            mock_entity_url_to_file_dict = mock_entities_url_to_file_dict()
+            url = args[0]
+            if 'mock-ingest-api' not in url:
+                return requests.get(*args, **kwargs)
+            else: # mockville
+                entity_relative_url = url.replace('http://mock-ingest-api/', '')
+                if entity_relative_url in mock_entity_url_to_file_dict:
+                    entity_file = mock_entity_url_to_file_dict[entity_relative_url]
+                    entity_json = json.load(entity_file)
+                else: # don't have a mock for this entity; if it's a request for an empty input biomaterials/files, return a suitable empty _embedded
+                    entity_json = {'_embedded' : dict(),
+                                   'links' :{
+                                       'self' : {
+                                           'href' : url
+                                       }
+                                   }}
+
+                    if 'derivedByProcesses' in entity_relative_url:
+                        entity_json['_embedded'] = {'processes' : list()}
+                    elif 'inputBiomaterials' in entity_relative_url:
+                        entity_json['_embedded'] = {'biomaterials' : list()}
+                    else:
+                        raise Exception("Unknown resource in mock entities tests:" + url)
+
+                return MockRequestResponse(entity_json, 200)
+
+        # mock the calls to the ingest API for the entities in the bundle
+        get_requests_mock = Mock.mock()
+        get_requests_mock.side_effect = mock_entities_retrieval
+
 
 
 
@@ -431,3 +469,4 @@ class TestExporter(TestCase):
             },
             'accession': 'accession123'
         }
+
