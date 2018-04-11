@@ -1,6 +1,7 @@
 import json
 import mock
 import time
+import requests
 
 from mock import MagicMock
 from mock import Mock
@@ -361,6 +362,58 @@ class TestExporter(TestCase):
 
             for property in expected_file_json.keys():
                 self.assertEqual(list(expected_file_json[property].values()), list(actual_file_json.values()), "discrepancy in " + property)
+
+
+    # transformation chain refers to the biomaterial/file -> process -> biomaterial/file paradigm used to represent
+    # assay and analysis type procedures
+    def test_transformation_chain_crawl(self):
+        # mock the calls to the ingest API for the entities in the bundle
+        get_requests_mock = mock()
+
+        def mock_entities_url_to_file_dict():
+
+            mock_entity_url_to_file_dict = dict()
+
+            # wrapper process(lib prep -> sequencing)
+            mock_entity_url_to_file_dict["processes/mock-assay-process-id"] = "/processes/wrapper_process_lib_prep_and_sequencing.json"
+            mock_entity_url_to_file_dict["processes/mock-assay-process-id/chainedProcesses"] = "/processes/wrapper_process_lib_prep_and_sequencing_chained_processes.json"
+            mock_entity_url_to_file_dict["processes/mock-assay-process-id/inputBiomaterials"] = "/processes/wrapper_process_lib_prep_and_sequencing_input_biomaterial.json"
+
+            # lib prep process
+            mock_entity_url_to_file_dict["processes/mock-lib-prep-process-id"] = "/processes/mock_lib_prep_process.json"
+
+            # sequencing process
+            mock_entity_url_to_file_dict["processes/mock-sequencing-process-id"] = "/processes/mock_sequencing_process.json"
+
+            # cell suspension
+            mock_entity_url_to_file_dict["biomaterials/mock-cell-suspension-id"] = "/biomaterials/mock_cell_suspension.json"
+            mock_entity_url_to_file_dict["biomaterials/mock-cell-suspension-id/derivedByProcesses"] = "/biomaterials/mock_cell_suspension_derived_by_processes.json"
+
+            # wrapper process(dissociation -> enrichment)
+            mock_entity_url_to_file_dict["processes/mock-dissociation-enrichment-process-id"] = "/processes/wrapper_process_dissociation_and_enrichment.json"
+            mock_entity_url_to_file_dict["processes/mock-dissociation-enrichment-process-id/chainedProcesses"] = "/processes/wrapper_process_lib_prep_and_sequencing_chained_processes.json"
+            mock_entity_url_to_file_dict["processes/mock-dissociation-enrichment-process-id/inputBiomaterials"] = "/processes/wrapper_process_lib_prep_and_sequencing_input_biomaterial.json"
+
+            # dissociation process
+            mock_entity_url_to_file_dict["processes/mock-dissociation-process-id"] = "/processes/mock_dissociation_process.json"
+
+            # enrichment process
+            mock_entity_url_to_file_dict["processes/mock-enrichment-process-id"] = "/processes/mock_encrichment_process.json"
+
+            # specimen
+            mock_entity_url_to_file_dict["biomaterials/mock-specimen-id"] = "/biomaterials/mock_specimen.json"
+            mock_entity_url_to_file_dict["biomaterials/mock-specimen-id/derivedByProcesses"] = "/biomaterials/mock_specimen_derived_by_processes.json"
+
+            # sampling process
+            mock_entity_url_to_file_dict["processes/mock-sampling-process-id"] = "/processes/mock_sampling_process.json"
+            mock_entity_url_to_file_dict["processes/mock-sampling-process-id/inputBiomaterials"] = "/processes/mock_sampling_process_input_biomaterial.json"
+
+            # donor
+            mock_entity_url_to_file_dict["biomaterials/mock-donor-id"] = "/biomaterials/mock_donor.json"
+
+            return mock_entity_url_to_file_dict
+
+
 
 
 
