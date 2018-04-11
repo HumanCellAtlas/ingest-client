@@ -413,7 +413,7 @@ class TestExporter(TestCase):
 
     # transformation chain refers to the biomaterial/file -> process -> biomaterial/file paradigm used to represent
     # assay and analysis type procedures
-    def test_transformation_chain_crawl(self):
+    def test_create_bundle_manifest(self):
 
         class MockRequestResponse:
             def __init__(self, json_payload, status_code):
@@ -497,6 +497,11 @@ class TestExporter(TestCase):
         # mock the calls to the ingest API for the entities in the bundle
         get_requests_mock = Mock.mock()
         get_requests_mock.side_effect = mock_entities_retrieval
+        requests.get = get_requests_mock
+
+        exporter = ingestexportservice.IngestExporter()
+        export
+
 
 
     def _create_entity_template(self):
