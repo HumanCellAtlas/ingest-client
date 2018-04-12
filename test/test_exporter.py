@@ -340,7 +340,6 @@ class TestExporter(TestCase):
         with self.assertRaises(ingestexportservice.BundleFileUploadError) as e:
             metadata_files = exporter.upload_metadata_files('sub_uuid', metadata_files_info)
 
-
     def test_put_bundle_in_dss_error(self):
         # given:
         exporter = IngestExporter()
@@ -348,12 +347,11 @@ class TestExporter(TestCase):
         # and:
         exporter.get_metadata_files = MagicMock(return_value=[])
         exporter.get_data_files = MagicMock(return_value=[])
-        exporter.put_files_in_dss = Mock(side_effect=Exception('test create bundle file error'))
+        exporter.put_bundle = Mock(side_effect=Exception('test create bundle file error'))
 
         # when, then:
         with self.assertRaises(ingestexportservice.BundleDSSError) as e:
             metadata_files = exporter.put_bundle_in_dss('bundle_uuid', {}, {})
-
 
     # TODO important!
     def test_recurse_process(self):

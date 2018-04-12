@@ -123,10 +123,6 @@ class IngestExporter:
         self.logger.info("File staged at " + fileDescription.url)
         return fileDescription
 
-    def deleteStagingArea(self, stagingAreaId):
-        self.logger.info("deleting staging area...." + stagingAreaId)
-        self.staging_api.deleteStagingArea(stagingAreaId)
-
     def bundleSample(self, sample_entity):
         sample_copy = self._copyAndTrim(sample_entity)
         bundle = {
@@ -216,6 +212,7 @@ class IngestExporter:
 
         self.logger.info('Generating bundle files...')
         metadata_files_info = self.generate_metadata_files(process_info)
+        data_files_info = process_info.derived_files
 
         bundle_manifest = self.create_bundle_manifest(submission_uuid, metadata_files_info, process_info)
 
@@ -228,10 +225,17 @@ class IngestExporter:
             self.logger.info('Uploading metadata files...')
             self.upload_metadata_files(submission_uuid, metadata_files_info)
 
-            self.logger.info('Storing bundle in DSS...')
+            self.logger.info('Saving files in DSS...')
             bundle_uuid = bundle_manifest.bundleUuid
-            data_files_info = process_info.derived_files
-            self.put_bundle_in_dss(bundle_uuid, metadata_files_info, data_files_info)
+
+            metadata_files = self.get_metadata_files(metadata_files_info)
+            data_files = self.get_data_files(data_files_info)
+            bundle_files = metadata_files + data_files
+
+            created_files = self.put_files_in_dss(bundle_uuid, bundle_files)
+
+            self.logger.info('Saving bundle in DSS...')
+            self.put_bundle_in_dss(bundle_uuid, created_files)
 
             self.logger.info('Saving bundle manifest...')
             self.ingest_api.createBundleManifest(bundle_manifest)
@@ -600,20 +604,14 @@ class IngestExporter:
             message = "An error occurred on uploading bundle files: " + str(e)
             raise BundleFileUploadError(message)
 
-    def put_bundle_in_dss(self, bundle_uuid, metadata_files_info, data_files_info):
-        metadata_files = self.get_metadata_files(metadata_files_info)
-        data_files = self.get_data_files(data_files_info)
-        bundle_files = metadata_files + data_files
-
+    def put_bundle_in_dss(self, bundle_uuid, created_files):
         try:
-            created_files = self.put_files_in_dss(bundle_uuid, bundle_files)
             created_bundle = self.dss_api.put_bundle(bundle_uuid, created_files)
 
             return {
                 'bundle': created_bundle,
                 'files': created_files
             }
-
         except Exception as e:
             message = 'An error occurred while putting bundle in DSS: ' + str(e)
             raise BundleDSSError(message)
