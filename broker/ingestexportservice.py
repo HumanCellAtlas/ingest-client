@@ -2,19 +2,22 @@
 """
 desc goes here
 """
-import dssapi
-
 __author__ = "jupp"
 __license__ = "Apache 2.0"
 
+import datetime
 import logging
-import ingestapi
 import json
 import uuid
+import os
+import sys
+
 from optparse import OptionParser
-import os, sys
-import stagingapi
+
 import bundlevalidator
+import dssapi
+import ingestapi
+import stagingapi
 
 DEFAULT_INGEST_URL = os.environ.get('INGEST_API', 'http://api.ingest.dev.data.humancellatlas.org')
 DEFAULT_STAGING_URL = os.environ.get('STAGING_API', 'http://staging.dev.data.humancellatlas.org')
@@ -59,47 +62,6 @@ class IngestExporter:
         tmpFile.write(json.dumps(self.bundleProject(doc), indent=4))
         tmpFile.close()
 
-    def getNestedProcessObjects(self, relation, entity, entityType):
-
-        nestedChildren = []
-        for nested in self.ingest_api.getRelatedEntities(relation, entity, entityType):
-            # check if process is chained
-
-            chainedProcesses = self.ingest_api.getRelatedEntities("chainedProcesses", nested, "processes")
-            hasChained = False
-            for chainedProcess in chainedProcesses:
-                nestedChildren.append(chainedProcess)
-                hasChained = True
-
-            if not hasChained:
-                nestedChildren.append(nested)
-        return nestedChildren
-
-    def getNestedObjects(self, relation, entity, entityType):
-        nestedChildren = []
-        for nested in self.ingest_api.getRelatedEntities(relation, entity, entityType):
-            # children = self.getNestedObjects(relation, nested, entityType)
-            # if len(children) > 0:
-            #     nested["content"][relation] = children
-            nestedChildren.append(nested)
-            # for child in children:
-            #     nestedChildren.append(self.getBundleDocument(child))
-        return nestedChildren
-
-    def buildSampleObject(self, sample, nestedSamples):
-        nestedProtocols = self.getNestedObjects("protocols", sample, "protocols")
-
-        primarySample = self.bundleProject(sample)
-        primarySample["derivation_protocols"] = []
-
-        for p, protocol in enumerate(nestedProtocols):
-            primarySample["derivation_protocols"].append(nestedProtocols[p]["content"])
-
-        if nestedSamples:
-            primarySample["derived_from"] = nestedSamples[0]["uuid"]["uuid"]
-
-        return primarySample
-
     def getSchemaNameForEntity(self, schemaUrl):
         return schemaUrl["content"]["describedBy"].rsplit('/', 1)[-1]
 
@@ -110,18 +72,6 @@ class IngestExporter:
             'destination_type': destination_type,
             'destination_id': destination_id
         }
-
-    def generateTestAssayBundle(self, envelopeUuidForAssay, assayUrl):
-
-        # check staging area is available
-        if self.dryrun or self.staging_api.hasStagingArea(envelopeUuidForAssay):
-            assay = self.ingest_api.getAssay(assayUrl)
-
-            self.logger.info("Attempting to export primary assay bundle to DSS...")
-            self.primarySubmission(envelopeUuidForAssay, assay)
-
-        else:
-            self.logger.error("Can\'t do export as no staging area has been created")
 
     def generateBundle(self, message):
         success = False
@@ -259,6 +209,7 @@ class IngestExporter:
     def processSubmission(self, submissionEnvelopeId):
         self.ingest_api.updateSubmissionState(submissionEnvelopeId, 'processing')
 
+
     def dumpJsonToFile(self, object, projectId, name, output_dir=None):
         if output_dir:
             self.outputDir = output_dir
@@ -290,9 +241,6 @@ class IngestExporter:
             self.dump_metadata_files_and_bundle_manifest(metadata_files_info, bundle_manifest)
 
         else:
-            self.logger.info('Dumping bundle files...')
-            self.dump_metadata_files_and_bundle_manifest(metadata_files_info, bundle_manifest)
-
             self.logger.info('Uploading metadata files...')
             self.upload_metadata_files(submission_uuid, metadata_files_info)
 
@@ -303,6 +251,9 @@ class IngestExporter:
 
             self.logger.info('Saving bundle manifest...')
             self.ingest_api.createBundleManifest(bundle_manifest)
+
+            self.logger.info('Dumping bundle files...')
+            self.dump_metadata_files_and_bundle_manifest(metadata_files_info, bundle_manifest)
 
             saved_bundle_uuid = bundle_manifest.bundleUuid
 
@@ -317,7 +268,7 @@ class IngestExporter:
 
         process_info.project = self.get_project_info(process)
 
-        if not process_info.project: # get from input bundle
+        if not process_info.project:  # get from input bundle
             project_uuid_lists = process_info.input_bundle['fileProjectMap'].values()
 
             if len(project_uuid_lists) == 0 and len(project_uuid_lists[0]) == 0:
@@ -426,30 +377,14 @@ class IngestExporter:
 
         metadata_files = {}
 
-        input_bundle = process_info.input_bundle
-
-        file_uuid = ''
-
-        # if input bundle, reuse the project dss uuid, do not reupload metadata file
-        # TODO check which else to reuse, biomaterials?
-        # TODO can we reuse file uuid if uuid list is the same with the input bundle?
-        if input_bundle:
-            project_dss_uuid = input_bundle['fileProjectMap'].keys()[0]
-            file_uuid = project_dss_uuid
-        else:
-            file_uuid = str(uuid.uuid4())
-
+        file_uuid = str(uuid.uuid4())
         metadata_files['project'] = {
             'content': bundle_content['project'],
             'content_type': '"metadata/project"',
             'indexed': True,
             'dss_filename': 'project.json',
             'dss_uuid': file_uuid,
-            'upload_filename': 'project_bundle_' + file_uuid + '.json',
-            'skip_upload': True
-
-            # TODO the skip_upload flag may not be needed, reusing the input bundle file uuid should be enough
-            # TODO verify if DSS returns a 200 response if file being PUT is existing and has same content
+            'upload_filename': 'project_bundle_' + file_uuid + '.json'
         }
 
         file_uuid = str(uuid.uuid4())
@@ -502,7 +437,56 @@ class IngestExporter:
             'upload_filename': 'links_bundle_' + file_uuid + '.json'
         }
 
+        self._inherit_same_files_from_input(metadata_files, process_info)
+
         return metadata_files
+
+    # if new file has same set of uuids as the input bundle file
+    # do not re-upload or create bundle metadata file in dss
+    # reuse the file uuid
+    # this scenario might only happen for project, biomaterial, protocol map
+    def _inherit_same_files_from_input(self, metadata_files, process_info):
+        input_bundle = process_info.input_bundle
+
+        if not input_bundle:
+            return
+
+        file_uuids = [process_info.project['uuid']['uuid']]
+        input_file = self._compare_to_input_file(input_bundle, 'fileProjectMap', file_uuids)
+        if input_file['is_equal']:
+            metadata_files['project']['dss_uuid'] = input_file['file_uuid']
+            metadata_files['project']['is_same_as_input'] = input_file['is_equal']
+
+        file_uuids = process_info.input_biomaterials.keys()
+        input_file = self._compare_to_input_file(input_bundle, 'fileBiomaterialMap', file_uuids)
+        if input_file['is_equal']:
+            metadata_files['biomaterial']['dss_uuid'] = input_file['file_uuid']
+            metadata_files['biomaterial']['is_same_as_input'] = input_file['is_equal']
+
+        file_uuids = process_info.input_biomaterials.keys()
+        input_file = self._compare_to_input_file(input_bundle, 'fileProtocolMap', file_uuids)
+        if input_file['is_equal']:
+            metadata_files['protocol']['dss_uuid'] = input_file['file_uuid']
+            metadata_files['protocol']['is_same_as_input'] = input_file['is_equal']
+
+    def _compare_to_input_file(self, input_bundle, attr, file_uuids):
+        file_map = input_bundle[attr]
+        input_file_uuids = file_map.values()[0]
+        input_file_uuid = file_map.keys()[0]
+
+        is_same_as_input_file = self._are_equal_lists(input_file_uuids, file_uuids)
+
+        return {
+            'is_equal': is_same_as_input_file,
+            'file_uuid': input_file_uuid
+        }
+
+    # compare two lists ignoring order
+    def _are_equal_lists(self, list1, list2):
+        set1 = frozenset(list(list1))
+        set2 = frozenset(list(list2))
+        diff = set1.difference(set2)
+        return not len(diff)
 
     # build bundle json for each entity according to schema
     def build_and_validate_content(self, process_info):
@@ -619,10 +603,10 @@ class IngestExporter:
         self.dumpJsonToFile(bundle_manifest.__dict__, project_keyword, 'bundleManifest')
 
     def upload_metadata_files(self, submission_uuid, metadata_files_info):
-
         try:
             for metadata_type in ['project', 'biomaterial', 'process', 'protocol', 'file', 'links']:
                 bundle_file = metadata_files_info[metadata_type]
+                filename = bundle_file['upload_filename']
 
                 uploaded_file = self.writeMetadataToStaging(submission_uuid, bundle_file['upload_filename'], bundle_file['content'],
                                                             bundle_file['content_type'])
@@ -630,7 +614,6 @@ class IngestExporter:
 
         except Exception as e:
             message = "An error occurred on uploading bundle files: " + str(e)
-            self.logger.exception(message)
             raise BundleFileUploadError(message)
 
     def put_bundle_in_dss(self, bundle_uuid, metadata_files_info, data_files_info):
@@ -639,11 +622,48 @@ class IngestExporter:
         bundle_files = metadata_files + data_files
 
         try:
-            self.dss_api.createBundle(bundle_uuid, bundle_files)
+            created_files = self.put_files_in_dss(bundle_uuid, bundle_files)
+            created_bundle = self.dss_api.put_bundle(bundle_uuid, created_files)
+
+            return {
+                'bundle': created_bundle,
+                'files': created_files
+            }
+
         except Exception as e:
-            message = 'An error occurred on creating bundle in DSS: ' + str(e)
-            self.logger.exception(message)
+            message = 'An error occurred while putting bundle in DSS: ' + str(e)
             raise BundleDSSError(message)
+
+    def put_files_in_dss(self, bundle_uuid, files_to_put):
+        created_files = []
+
+        for bundle_file in files_to_put:
+            submitted_name = bundle_file["submittedName"]
+            url = bundle_file["url"]
+            uuid = bundle_file["dss_uuid"]
+            indexed = bundle_file["indexed"]
+            content_type = bundle_file["content-type"]
+            version = ''
+
+            try:
+                created_file = self.dss_api.put_bundle_file(bundle_uuid, bundle_file)
+                # should be safe to put file with same uuid - dss returns 200 when the file is already present and is identical to the file being uploaded.
+
+                version = created_file['version']
+            except Exception as e:
+                raise FileDSSError('An error occurred while putting file in DSS' + str(e))
+
+            file_param = {
+                "indexed": indexed,
+                "name": submitted_name,
+                "uuid": uuid,
+                "content-type": content_type,
+                "version": version
+            }
+
+            created_files.append(file_param)
+
+        return created_files
 
     def get_metadata_files(self, metadata_files_info):
         metadata_files = []
@@ -655,7 +675,8 @@ class IngestExporter:
                 'url': metadata_file['upload_file_url'],
                 'dss_uuid': metadata_file['dss_uuid'],
                 'indexed': metadata_file['indexed'],
-                'content-type': metadata_file['dss_uuid']
+                'content-type': metadata_file['content_type'],
+                'is_same_as_input': metadata_file['is_same_as_input'] if 'is_same_as_input' in metadata_file else False
             })
 
         return metadata_files
@@ -726,13 +747,18 @@ class BundleFileUploadError(Error):
 class BundleDSSError(Error):
     """There was a failure in bundle creation in DSS."""
 
+class FileDSSError(Error):
+    """There was a failure in file creation in DSS."""
+
 
 if __name__ == '__main__':
     logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 
     parser = OptionParser()
-    parser.add_option("-e", "--subsEnvId", dest="submissionsEnvelopeId",
-                      help="Submission envelope ID for which to generate bundles")
+    parser.add_option("-e", "--subsEnvUuid", dest="submissionsEnvelopeUuid",
+                      help="Submission envelope UUID for which to generate the bundle")
+    parser.add_option("-p", "--processUrl", dest="processUrl",
+                      help="Process Url")
     parser.add_option("-D", "--dry", help="do a dry run without submitting to ingest", action="store_true",
                       default=False)
     parser.add_option("-o", "--output", dest="output",
@@ -746,17 +772,14 @@ if __name__ == '__main__':
 
     (options, args) = parser.parse_args()
 
-    # if not options.submissionsEnvelopeId:
-    #     print ("You must supply a submission envelope ID")
-    #     exit(2)
+    if not options.submissionsEnvelopeUuid:
+        print ("You must supply a submission envelope UUID")
+        exit(2)
+
+    if not options.processUrl:
+        print ("You must supply a processUrl")
+        exit(2)
 
     ex = IngestExporter(options)
-    # # ex.generateBundles(options.submissionsEnvelopeId)
-    #
-    # ex.generateTestAssayBundle("5abb9dcbb375bb0007c2b9c3",
-    #                            "http://api.ingest.integration.data.humancellatlas.org/processes/5abb9dd6b375bb0007c2bab0")
 
-    # submission id : 5abb9dcbb375bb0007c2b9c3
-    ex.export_bundle('c2f94466-adee-4aac-b8d0-1e864fa5f8e8',
-                     # 'http://api.ingest.integration.data.humancellatlas.org/processes/5abb9dd6b375bb0007c2bab0') # assay
-                     'http://api.ingest.integration.data.humancellatlas.org/processes/5acb79a3d35a72000728dac4') # analysis
+    ex.export_bundle(options.submissionsEnvelopeUuid, options.processUrl)
