@@ -374,7 +374,7 @@ class TestExporter(TestCase):
 
         # use dry run
         exporter.dryrun = True
-        exporter.outputDir = './test/bundles/assay/actual/'
+        exporter.outputDir = './bundles/assay/actual/'
 
         # and:
         submission_uuid = 'c2f94466-adee-4aac-b8d0-1e864fa5f8e8'
@@ -390,12 +390,12 @@ class TestExporter(TestCase):
 
         print('export_bundle elapsed time:' + str(elapsed_time))
 
-        test_expected_bundles_dir = './test/bundles/assay/expected/'
+        test_expected_bundles_dir = './bundles/assay/expected/'
         test_actual_bundles_dir = exporter.outputDir
         self._compare_files_in_dir(test_expected_bundles_dir, test_actual_bundles_dir)
 
         # TEST ANALYSIS
-        exporter.outputDir = './test/bundles/analysis/actual/'
+        exporter.outputDir = './bundles/analysis/actual/'
 
         process_ingest_url = 'http://api.ingest.integration.data.humancellatlas.org/processes/5acb79a3d35a72000728dac4' #  the analysis
 
@@ -408,7 +408,7 @@ class TestExporter(TestCase):
         print('export_bundle elapsed time:' + str(elapsed_time))
 
         # then:
-        test_expected_bundles_dir = './test/bundles/analysis/expected/'
+        test_expected_bundles_dir = './bundles/analysis/expected/'
         test_actual_bundles_dir = exporter.outputDir
 
         self._compare_files_in_dir(test_expected_bundles_dir, test_actual_bundles_dir)
@@ -588,12 +588,6 @@ class TestExporter(TestCase):
             bundle_metadata_info['project']['content']['hca_ingest']['document_id'],
             json_from_expected_bundle_file('assay/expected/Mouse Melanoma_project_bundle.json')['hca_ingest']['document_id']
         )
-
-
-
-
-
-
 
     def _create_entity_template(self):
         return {
