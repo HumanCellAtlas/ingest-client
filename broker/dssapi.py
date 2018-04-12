@@ -35,7 +35,7 @@ class DssApi:
         self.hca_client.host = self.url + "/v1"
         self.creator_uid = 8008
 
-    def put_bundle_file(self, bundle_uuid, file):
+    def put_file(self, bundle_uuid, file):
         url = file["url"]
         uuid = file["dss_uuid"]
 
