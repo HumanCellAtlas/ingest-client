@@ -22,55 +22,55 @@
         "validationErrors": [],
         "_links": {
           "self": {
-            "href": "http://mock-ingest-api/processes/5abb9ddbb375bb0007c2bacb"
+            "href": "http://mock-ingest-api/processes/mock-dissociation-enrichment-process-id"
           },
           "process": {
-            "href": "http://mock-ingest-api/processes/5abb9ddbb375bb0007c2bacb{?projection}",
+            "href": "http://mock-ingest-api/processes/mock-dissociation-enrichment-process-id{?projection}",
             "templated": true
           },
           "processing": {
-            "href": "http://mock-ingest-api/processes/5abb9ddbb375bb0007c2bacb/processingEvent"
+            "href": "http://mock-ingest-api/processes/mock-dissociation-enrichment-process-id/processingEvent"
           },
           "inputBiomaterials": {
-            "href": "http://mock-ingest-api/processes/5abb9ddbb375bb0007c2bacb/inputBiomaterials"
+            "href": "http://mock-ingest-api/processes/mock-dissociation-enrichment-process-id/inputBiomaterials"
           },
           "derivedBiomaterials": {
-            "href": "http://mock-ingest-api/processes/5abb9ddbb375bb0007c2bacb/derivedBiomaterials"
+            "href": "http://mock-ingest-api/processes/mock-dissociation-enrichment-process-id/derivedBiomaterials"
           },
           "inputFiles": {
-            "href": "http://mock-ingest-api/processes/5abb9ddbb375bb0007c2bacb/inputFiles"
+            "href": "http://mock-ingest-api/processes/mock-dissociation-enrichment-process-id/inputFiles"
           },
           "derivedFiles": {
-            "href": "http://mock-ingest-api/processes/5abb9ddbb375bb0007c2bacb/derivedFiles"
+            "href": "http://mock-ingest-api/processes/mock-dissociation-enrichment-process-id/derivedFiles"
           },
           "inputBundleReferences": {
-            "href": "http://mock-ingest-api/processes/5abb9ddbb375bb0007c2bacb/bundleReferences"
+            "href": "http://mock-ingest-api/processes/mock-dissociation-enrichment-process-id/bundleReferences"
           },
           "inputFileReferences": {
-            "href": "http://mock-ingest-api/processes/5abb9ddbb375bb0007c2bacb/fileReference"
+            "href": "http://mock-ingest-api/processes/mock-dissociation-enrichment-process-id/fileReference"
           },
           "add-input-bundles": {
-            "href": "http://mock-ingest-api/processes/5abb9ddbb375bb0007c2bacb/bundleReferences"
+            "href": "http://mock-ingest-api/processes/mock-dissociation-enrichment-process-id/bundleReferences"
           },
           "add-file-reference": {
-            "href": "http://mock-ingest-api/processes/5abb9ddbb375bb0007c2bacb/fileReference"
+            "href": "http://mock-ingest-api/processes/mock-dissociation-enrichment-process-id/fileReference"
           },
           "projects": {
-            "href": "http://mock-ingest-api/processes/5abb9ddbb375bb0007c2bacb/projects",
+            "href": "http://mock-ingest-api/processes/mock-dissociation-enrichment-process-id/projects",
             "title": "Access or create projects. Creation can only be done inside a submission envelope"
           },
           "protocols": {
-            "href": "http://mock-ingest-api/processes/5abb9ddbb375bb0007c2bacb/protocols",
+            "href": "http://mock-ingest-api/processes/mock-dissociation-enrichment-process-id/protocols",
             "title": "Access or create protocols"
           },
           "inputBundleManifests": {
-            "href": "http://mock-ingest-api/processes/5abb9ddbb375bb0007c2bacb/inputBundleManifests"
+            "href": "http://mock-ingest-api/processes/mock-dissociation-enrichment-process-id/inputBundleManifests"
           },
           "chainedProcesses": {
-            "href": "http://mock-ingest-api/processes/5abb9ddbb375bb0007c2bacb/chainedProcesses"
+            "href": "http://mock-ingest-api/processes/mock-dissociation-enrichment-process-id/chainedProcesses"
           },
           "submissionEnvelopes": {
-            "href": "http://mock-ingest-api/processes/5abb9ddbb375bb0007c2bacb/submissionEnvelopes",
+            "href": "http://mock-ingest-api/processes/mock-dissociation-enrichment-process-id/submissionEnvelopes",
             "title": "Access or create new submission envelopes"
           }
         }
