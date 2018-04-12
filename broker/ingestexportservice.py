@@ -368,7 +368,7 @@ class IngestExporter:
             'indexed': True,
             'dss_filename': 'project.json',
             'dss_uuid': file_uuid,
-            'upload_filename': 'project_bundle_' + file_uuid + '.json',
+            'upload_filename': 'project_bundle_' + file_uuid + '.json'
         }
 
         file_uuid = str(uuid.uuid4())
@@ -378,7 +378,7 @@ class IngestExporter:
             'indexed': True,
             'dss_filename': 'biomaterial.json',
             'dss_uuid': file_uuid,
-            'upload_filename': 'biomaterial_bundle_' + file_uuid + '.json',
+            'upload_filename': 'biomaterial_bundle_' + file_uuid + '.json'
         }
 
         file_uuid = str(uuid.uuid4())
@@ -388,7 +388,7 @@ class IngestExporter:
             'indexed': True,
             'dss_filename': 'process.json',
             'dss_uuid': file_uuid,
-            'upload_filename': 'process_bundle_' + file_uuid + '.json',
+            'upload_filename': 'process_bundle_' + file_uuid + '.json'
         }
 
         file_uuid = str(uuid.uuid4())
@@ -398,7 +398,7 @@ class IngestExporter:
             'indexed': True,
             'dss_filename': 'protocol.json',
             'dss_uuid': file_uuid,
-            'upload_filename': 'protocol_bundle_' + file_uuid + '.json',
+            'upload_filename': 'protocol_bundle_' + file_uuid + '.json'
         }
 
         file_uuid = str(uuid.uuid4())
@@ -408,7 +408,7 @@ class IngestExporter:
              'indexed': True,
              'dss_filename': 'file.json',
              'dss_uuid': file_uuid,
-             'upload_filename': 'file_bundle_' + file_uuid + '.json',
+             'upload_filename': 'file_bundle_' + file_uuid + '.json'
         }
 
         file_uuid = str(uuid.uuid4())
@@ -418,7 +418,7 @@ class IngestExporter:
             'indexed': True,
             'dss_filename': 'links.json',
             'dss_uuid': file_uuid,
-            'upload_filename': 'links_bundle_' + file_uuid + '.json',
+            'upload_filename': 'links_bundle_' + file_uuid + '.json'
         }
 
         self._inherit_same_files_from_input(metadata_files, process_info)
@@ -619,7 +619,7 @@ class IngestExporter:
             }
 
         except Exception as e:
-            message = 'An error occurred on creating bundle in DSS: ' + str(e)
+            message = 'An error occurred while putting bundle in DSS: ' + str(e)
             raise BundleDSSError(message)
 
     def put_files_in_dss(self, bundle_uuid, files_to_put):
@@ -633,10 +633,13 @@ class IngestExporter:
             content_type = bundle_file["content-type"]
             version = ''
 
-            created_file = self.dss_api.put_bundle_file(bundle_uuid, bundle_file)
-            # should be safe to put file with same uuid - dss returns 200 when the file is already present and is identical to the file being uploaded.
+            try:
+                created_file = self.dss_api.put_bundle_file(bundle_uuid, bundle_file)
+                # should be safe to put file with same uuid - dss returns 200 when the file is already present and is identical to the file being uploaded.
 
-            version = created_file['version']
+                version = created_file['version']
+            except Exception as e:
+                raise FileDSSError('An error occurred while putting file in DSS' + str(e))
 
             file_param = {
                 "indexed": indexed,
@@ -657,7 +660,7 @@ class IngestExporter:
             metadata_files.append({
                 'name': metadata_file['upload_filename'],
                 'submittedName': metadata_file['dss_filename'],
-                'url': metadata_file['upload_file_url'] if 'upload_file_url' in metadata_file else None,
+                'url': metadata_file['upload_file_url'],
                 'dss_uuid': metadata_file['dss_uuid'],
                 'indexed': metadata_file['indexed'],
                 'content-type': metadata_file['content_type'],
@@ -731,6 +734,9 @@ class BundleFileUploadError(Error):
 
 class BundleDSSError(Error):
     """There was a failure in bundle creation in DSS."""
+
+class FileDSSError(Error):
+    """There was a failure in file creation in DSS."""
 
 
 if __name__ == '__main__':
