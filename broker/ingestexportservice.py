@@ -40,8 +40,7 @@ class IngestExporter:
 
         self.stagingUrl = options.staging if options and options.staging else os.path.expandvars(DEFAULT_STAGING_URL)
         self.dssUrl = options.dss if options and options.dss else os.path.expandvars(DEFAULT_DSS_URL)
-        self.schema_version = options.schema_version if options and options.schema_version else os.path.expandvars(
-            METADATA_SCHEMA_VERSION)
+        self.schema_version = options.schema_version if options and options.schema_version else os.path.expandvars(METADATA_SCHEMA_VERSION)
         self.schema_url = os.path.expandvars(BUNDLE_SCHEMA_BASE_URL % self.schema_version)
 
         self.logger.debug("ingest url is " + self.ingestUrl)
@@ -78,8 +77,7 @@ class IngestExporter:
         callbackLink = message["callbackLink"]
 
         self.logger.info('process received ' + callbackLink)
-        self.logger.info('process index: ' + str(message["index"]) + ', total processes: ' + str(
-            message["total"]))
+        self.logger.info('process index: ' + str(message["index"]) + ', total processes: ' + str(message["total"]))
 
         # given an assay, generate a bundle
 
@@ -94,13 +92,11 @@ class IngestExporter:
             self.logger.info("Attempting to export bundle to DSS...")
             success = self.export_bundle(envelopeUuid, processUrl)
         else:
-            error_message = "Can\'t do export as no staging area has been created"
-            self.logger.error(error_message)
-            raise ValueError(error_message)
+            error_message = "Can't do export as no upload area has been created"
+            raise NoUploadAreaFoundError(error_message)
 
         if not success:
-            raise ValueError(
-                "An error occurred in export. Failed to export to dss: " + message["callbackLink"])
+            raise Error("An error occurred in export. Failed to export to dss: " + message["callbackLink"])
 
     def bundleFileIngest(self, file_entity):
         return self._bundleEntityIngest(file_entity)
@@ -474,6 +470,7 @@ class IngestExporter:
         set1 = frozenset(list(list1))
         set2 = frozenset(list(list2))
         diff = set1.difference(set2)
+
         return not len(diff)
 
     # build bundle json for each entity according to schema
@@ -595,11 +592,11 @@ class IngestExporter:
             for metadata_type in ['project', 'biomaterial', 'process', 'protocol', 'file', 'links']:
                 bundle_file = metadata_files_info[metadata_type]
                 filename = bundle_file['upload_filename']
+                content = bundle_file['content']
+                content_type = bundle_file['content_type']
 
-                uploaded_file = self.writeMetadataToStaging(submission_uuid, bundle_file['upload_filename'], bundle_file['content'],
-                                                            bundle_file['content_type'])
+                uploaded_file = self.writeMetadataToStaging(submission_uuid, filename, content, content_type)
                 bundle_file['upload_file_url'] = uploaded_file.url
-
         except Exception as e:
             message = "An error occurred on uploading bundle files: " + str(e)
             raise BundleFileUploadError(message)
@@ -721,7 +718,6 @@ class MultipleProjectsError(Error):
 class InvalidBundleError(Error):
     """There was a failure in bundle validation."""
 
-
 class BundleFileUploadError(Error):
     """There was a failure in bundle file upload."""
 
@@ -729,9 +725,13 @@ class BundleFileUploadError(Error):
 class BundleDSSError(Error):
     """There was a failure in bundle creation in DSS."""
 
+
 class FileDSSError(Error):
     """There was a failure in file creation in DSS."""
 
+
+class NoUploadAreaFoundError(Error):
+    """Export couldn't be as no upload area found"""
 
 if __name__ == '__main__':
     logging.basicConfig(stream=sys.stdout, level=logging.INFO)
