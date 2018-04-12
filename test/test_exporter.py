@@ -5,6 +5,7 @@ import types
 
 from mock import MagicMock
 from mock import Mock
+from mock import patch
 
 from os import listdir
 from os.path import isfile, join
@@ -152,7 +153,6 @@ class TestExporter(TestCase):
         }
         exporter.build_and_validate_content = MagicMock(return_value=mock_bundle_content)
 
-
         process_info = ingestexportservice.ProcessInfo()
         process_info.input_bundle = None
 
@@ -187,23 +187,54 @@ class TestExporter(TestCase):
             'file': {},
             'links': [],
         })
+
         process_info = ingestexportservice.ProcessInfo()
         process_info.input_bundle = {
             'fileProjectMap': {
-                'uuid': []
+                'project-file-uuid': ['project-uuid']
+            },
+            'fileBiomaterialMap': {
+                'biomaterial-file-uuid': ['biomaterial-uuid']
+            },
+            'fileProtocolMap': {
+                'uuid:version': ['protocol-uuid']
+            },
+            'fileProcessMap': {
+                'uuid:version': ['process-uuid']
+            },
+            'fileFilesMap': {
+                'uuid:version': ['files-uuid']
+            }
+        }
+        process_info.project = {
+            'uuid': {
+                'uuid': 'project-uuid'
             }
         }
 
+        process_info.input_biomaterials = {
+            'biomaterial-uuid': {
+                'uuid': {
+                  'uuid': 'biomaterial-uuid'
+                }
+            }
+        }
         # when:
         metadata_files = exporter.generate_metadata_files(process_info)
 
         # then:
-        self.assertEqual(metadata_files['project']['dss_uuid'], 'uuid')
-        self.assertEqual(metadata_files['biomaterial']['dss_uuid'], 'new-uuid')
+        self.assertEqual(metadata_files['project']['dss_uuid'], 'project-file-uuid', 'project must have the input file uuid')
+
+        self.assertEqual(metadata_files['biomaterial']['dss_uuid'], 'biomaterial-file-uuid')
+
         self.assertEqual(metadata_files['process']['dss_uuid'], 'new-uuid')
+
         self.assertEqual(metadata_files['protocol']['dss_uuid'], 'new-uuid')
+
         self.assertEqual(metadata_files['file']['dss_uuid'], 'new-uuid')
+
         self.assertEqual(metadata_files['links']['dss_uuid'], 'new-uuid')
+
 
     def test_upload_metadata_files(self):
         # given:
@@ -309,6 +340,7 @@ class TestExporter(TestCase):
         with self.assertRaises(ingestexportservice.BundleFileUploadError) as e:
             metadata_files = exporter.upload_metadata_files('sub_uuid', metadata_files_info)
 
+
     def test_put_bundle_in_dss_error(self):
         # given:
         exporter = IngestExporter()
@@ -316,39 +348,38 @@ class TestExporter(TestCase):
         # and:
         exporter.get_metadata_files = MagicMock(return_value=[])
         exporter.get_data_files = MagicMock(return_value=[])
-        exporter.dss_api.createBundle = Mock(side_effect=Exception('test create bundle error'))
+        exporter.put_files_in_dss = Mock(side_effect=Exception('test create bundle file error'))
 
         # when, then:
         with self.assertRaises(ingestexportservice.BundleDSSError) as e:
             metadata_files = exporter.put_bundle_in_dss('bundle_uuid', {}, {})
+
 
     # TODO important!
     def test_recurse_process(self):
         pass
 
     # TODO this test uses submission_uuid = 'c2f94466-adee-4aac-b8d0-1e864fa5f8e8' is in integration env at the moment
-    # use mock for this
-    @mock.patch('broker.ingestexportservice.uuid.uuid4')
-    def test_refactoring(self, mocked_uuid4):
+    # need to create mocked data
+    def test_refactoring(self):
         self.maxDiff = None
-        mocked_uuid4.return_value = 'new-uuid'
         ingestexportservice.os.path.expandvars = MagicMock(return_value='http://api.ingest.integration.data.humancellatlas.org')
+        ingestexportservice.uuid.uuid4 = MagicMock(return_value='new-uuid')
 
+        # TEST ASSAY
         # given
         exporter = IngestExporter()
 
+        # use dry run
+        exporter.dryrun = True
+        exporter.outputDir = './test/bundles/assay/actual/'
+
         # and:
-        # TEST ASSAY
         submission_uuid = 'c2f94466-adee-4aac-b8d0-1e864fa5f8e8'
         process_ingest_url = 'http://api.ingest.integration.data.humancellatlas.org/processes/5abb9dd6b375bb0007c2bab0' #  the assay is a wrapper process
-        ingestexportservice.uuid.uuid4 = MagicMock(return_value='new-uuid')
 
         # when:
-        # use dry run and output dir for this test
-        exporter.outputDir = './test/bundles/assay/actual/'
-        exporter.dryrun = True
 
-        # when:
         start_time = time.time()
 
         exporter.export_bundle(submission_uuid, process_ingest_url)
@@ -357,14 +388,13 @@ class TestExporter(TestCase):
 
         print('export_bundle elapsed time:' + str(elapsed_time))
 
-        # TEST ANALYSIS
         test_expected_bundles_dir = './test/bundles/assay/expected/'
         test_actual_bundles_dir = exporter.outputDir
         self._compare_files_in_dir(test_expected_bundles_dir, test_actual_bundles_dir)
 
-        # use dry run and output dir for this test
+        # TEST ANALYSIS
         exporter.outputDir = './test/bundles/analysis/actual/'
-        exporter.dryrun = True
+
         process_ingest_url = 'http://api.ingest.integration.data.humancellatlas.org/processes/5acb79a3d35a72000728dac4' #  the analysis
 
         start_time = time.time()
