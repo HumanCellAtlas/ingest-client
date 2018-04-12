@@ -592,10 +592,6 @@ class IngestExporter:
                 bundle_file = metadata_files_info[metadata_type]
                 filename = bundle_file['upload_filename']
 
-                # if 'is_same_as_input' in bundle_file and bundle_file['is_same_as_input']:
-                #     self.logger.info('Skipping upload for input bundle file:' + filename)
-                #     continue
-
                 uploaded_file = self.writeMetadataToStaging(submission_uuid, bundle_file['upload_filename'], bundle_file['content'],
                                                             bundle_file['content_type'])
                 bundle_file['upload_file_url'] = uploaded_file.url
