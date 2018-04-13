@@ -1,0 +1,77 @@
+{
+  "submissionDate": "2018-03-28T13:51:14.986Z",
+  "updateDate": "2018-03-28T13:51:30.643Z",
+  "user": "anonymousUser",
+  "lastModifiedUser": "anonymousUser",
+  "uuid": {
+    "uuid": "6fc87bef-5268-42d1-a27d-a9660194c2fc"
+  },
+  "events": [],
+  "content": {
+    "dissociation_method": "mechanical",
+    "schema_type": "process",
+    "nucleic_acid_source": "single cell",
+    "describedBy": "https://schema.humancellatlas.org/type/process/biomaterial_collection/5.1.0/dissociation_process",
+    "process_core": {
+      "process_name": "Extracting cells from lymph nodes",
+      "process_id": "TissueDissociationProcess"
+    }
+  },
+  "accession": null,
+  "validationState": "Valid",
+  "validationErrors": [],
+  "_links": {
+    "self": {
+      "href": "http://mock-ingest-api/processes/mock-dissociation-process-id"
+    },
+    "process": {
+      "href": "http://mock-ingest-api/processes/mock-dissociation-process-id{?projection}",
+      "templated": true
+    },
+    "processing": {
+      "href": "http://mock-ingest-api/processes/mock-dissociation-process-id/processingEvent"
+    },
+    "inputBiomaterials": {
+      "href": "http://mock-ingest-api/processes/mock-dissociation-process-id/inputBiomaterials"
+    },
+    "derivedBiomaterials": {
+      "href": "http://mock-ingest-api/processes/mock-dissociation-process-id/derivedBiomaterials"
+    },
+    "inputFiles": {
+      "href": "http://mock-ingest-api/processes/mock-dissociation-process-id/inputFiles"
+    },
+    "derivedFiles": {
+      "href": "http://mock-ingest-api/processes/mock-dissociation-process-id/derivedFiles"
+    },
+    "inputBundleReferences": {
+      "href": "http://mock-ingest-api/processes/mock-dissociation-process-id/bundleReferences"
+    },
+    "inputFileReferences": {
+      "href": "http://mock-ingest-api/processes/mock-dissociation-process-id/fileReference"
+    },
+    "add-input-bundles": {
+      "href": "http://mock-ingest-api/processes/mock-dissociation-process-id/bundleReferences"
+    },
+    "add-file-reference": {
+      "href": "http://mock-ingest-api/processes/mock-dissociation-process-id/fileReference"
+    },
+    "projects": {
+      "href": "http://mock-ingest-api/processes/mock-dissociation-process-id/projects",
+      "title": "Access or create projects. Creation can only be done inside a submission envelope"
+    },
+    "protocols": {
+      "href": "http://mock-ingest-api/processes/mock-dissociation-process-id/protocols",
+      "title": "Access or create protocols"
+    },
+    "inputBundleManifests": {
+      "href": "http://mock-ingest-api/processes/mock-dissociation-process-id/inputBundleManifests"
+    },
+    "chainedProcesses": {
+      "href": "http://mock-ingest-api/processes/mock-dissociation-process-id/chainedProcesses"
+    },
+    "submissionEnvelopes": {
+      "href": "http://mock-ingest-api/processes/mock-dissociation-process-id/submissionEnvelopes",
+      "title": "Access or create new submission envelopes"
+    }
+  }
+}

@@ -1,0 +1,76 @@
+{
+  "submissionDate": "2018-03-28T13:51:13.098Z",
+  "updateDate": "2018-03-28T13:51:23.716Z",
+  "user": "anonymousUser",
+  "lastModifiedUser": "anonymousUser",
+  "uuid": {
+    "uuid": "dd0b067e-c75a-46e4-b5fd-035ec7c63095"
+  },
+  "events": [],
+  "content": {
+    "enrichment_method": "FACS",
+    "schema_type": "process",
+    "describedBy": "https://schema.humancellatlas.org/type/process/biomaterial_collection/5.1.0/enrichment_process",
+    "markers": "CD45+ CD3e+ CD8a+",
+    "process_core": {
+      "process_id": "FACS1.5"
+    }
+  },
+  "accession": null,
+  "validationState": "Valid",
+  "validationErrors": [],
+  "_links": {
+    "self": {
+      "href": "http://mock-ingest-api/processes/mock-enrichment-process-id"
+    },
+    "process": {
+      "href": "http://mock-ingest-api/processes/mock-enrichment-process-id{?projection}",
+      "templated": true
+    },
+    "processing": {
+      "href": "http://mock-ingest-api/processes/mock-enrichment-process-id/processingEvent"
+    },
+    "inputBiomaterials": {
+      "href": "http://mock-ingest-api/processes/mock-enrichment-process-id/inputBiomaterials"
+    },
+    "derivedBiomaterials": {
+      "href": "http://mock-ingest-api/processes/mock-enrichment-process-id/derivedBiomaterials"
+    },
+    "inputFiles": {
+      "href": "http://mock-ingest-api/processes/mock-enrichment-process-id/inputFiles"
+    },
+    "derivedFiles": {
+      "href": "http://mock-ingest-api/processes/mock-enrichment-process-id/derivedFiles"
+    },
+    "inputBundleReferences": {
+      "href": "http://mock-ingest-api/processes/mock-enrichment-process-id/bundleReferences"
+    },
+    "inputFileReferences": {
+      "href": "http://mock-ingest-api/processes/mock-enrichment-process-id/fileReference"
+    },
+    "add-input-bundles": {
+      "href": "http://mock-ingest-api/processes/mock-enrichment-process-id/bundleReferences"
+    },
+    "add-file-reference": {
+      "href": "http://mock-ingest-api/processes/mock-enrichment-process-id/fileReference"
+    },
+    "projects": {
+      "href": "http://mock-ingest-api/processes/mock-enrichment-process-id/projects",
+      "title": "Access or create projects. Creation can only be done inside a submission envelope"
+    },
+    "protocols": {
+      "href": "http://mock-ingest-api/processes/mock-enrichment-process-id/protocols",
+      "title": "Access or create protocols"
+    },
+    "inputBundleManifests": {
+      "href": "http://mock-ingest-api/processes/mock-enrichment-process-id/inputBundleManifests"
+    },
+    "chainedProcesses": {
+      "href": "http://mock-ingest-api/processes/mock-enrichment-process-id/chainedProcesses"
+    },
+    "submissionEnvelopes": {
+      "href": "http://mock-ingest-api/processes/mock-enrichment-process-id/submissionEnvelopes",
+      "title": "Access or create new submission envelopes"
+    }
+  }
+}
