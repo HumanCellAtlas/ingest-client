@@ -1,6 +1,8 @@
 import json
-import mock
 import time
+import mock
+import copy
+import requests
 import types
 
 from mock import MagicMock
@@ -385,7 +387,7 @@ class TestExporter(TestCase):
 
         # use dry run
         exporter.dryrun = True
-        exporter.outputDir = './test/bundles/assay/actual/'
+        exporter.outputDir = './bundles/assay/actual/'
 
         # and:
         submission_uuid = 'c2f94466-adee-4aac-b8d0-1e864fa5f8e8'
@@ -401,12 +403,12 @@ class TestExporter(TestCase):
 
         print('export_bundle elapsed time:' + str(elapsed_time))
 
-        test_expected_bundles_dir = './test/bundles/assay/expected/'
+        test_expected_bundles_dir = './bundles/assay/expected/'
         test_actual_bundles_dir = exporter.outputDir
         self._compare_files_in_dir(test_expected_bundles_dir, test_actual_bundles_dir)
 
         # TEST ANALYSIS
-        exporter.outputDir = './test/bundles/analysis/actual/'
+        exporter.outputDir = './bundles/analysis/actual/'
 
         process_ingest_url = 'http://api.ingest.integration.data.humancellatlas.org/processes/5acb79a3d35a72000728dac4' #  the analysis
 
@@ -419,7 +421,7 @@ class TestExporter(TestCase):
         print('export_bundle elapsed time:' + str(elapsed_time))
 
         # then:
-        test_expected_bundles_dir = './test/bundles/analysis/expected/'
+        test_expected_bundles_dir = './bundles/analysis/expected/'
         test_actual_bundles_dir = exporter.outputDir
 
         self._compare_files_in_dir(test_expected_bundles_dir, test_actual_bundles_dir)
@@ -450,6 +452,156 @@ class TestExporter(TestCase):
 
                 self.assertEqual(expected, actual, "discrepancy in " + property + ' in dirs:' + test_expected_bundles_dir + filename + ',' + test_actual_bundles_dir + filename)
 
+
+    # transformation chain refers to the biomaterial/file -> process -> biomaterial/file paradigm used to represent
+    # assay and analysis type procedures
+    def test_create_bundle_manifest(self):
+
+        class MockRequestResponse:
+            def __init__(self, json_payload, status_code):
+                self.payload = json_payload
+                self.status_code = status_code
+                self.text = json.dumps(json_payload)
+
+            def json(self):
+                return self.payload
+
+
+        def mock_entities_url_to_file_dict():
+
+            mock_entity_url_to_file_dict = dict()
+
+            # wrapper process(lib prep -> sequencing)
+            mock_entity_url_to_file_dict["processes/mock-assay-process-id"] = "/processes/wrapper_process_lib_prep_and_sequencing.json"
+            mock_entity_url_to_file_dict["processes/mock-assay-process-id/chainedProcesses"] = "/processes/wrapper_process_lib_prep_and_sequencing_chained_processes.json"
+            mock_entity_url_to_file_dict["processes/mock-assay-process-id/inputBiomaterials"] = "/processes/wrapper_process_lib_prep_and_sequencing_input_biomaterial.json"
+            mock_entity_url_to_file_dict["processes/mock-assay-process-id/derivedFiles"] = "/processes/wrapper_process_lib_prep_and_sequencing_derived_files.json"
+
+
+            # lib prep process
+            mock_entity_url_to_file_dict["processes/mock-lib-prep-process-id"] = "/processes/mock_lib_prep_process.json"
+            mock_entity_url_to_file_dict["processes/mock-lib-prep-process-id/protocols"] = "/processes/mock_lib_prep_process_protocols.json"
+
+
+            # sequencing process
+            mock_entity_url_to_file_dict["processes/mock-sequencing-process-id"] = "/processes/mock_sequencing_process.json"
+            mock_entity_url_to_file_dict["processes/mock-sequencing-process-id/protocols"] = "/processes/mock_sequencing_process_protocols.json"
+
+
+            # cell suspension
+            mock_entity_url_to_file_dict["biomaterials/mock-cell-suspension-id"] = "/biomaterials/mock_cell_suspension.json"
+            mock_entity_url_to_file_dict["biomaterials/mock-cell-suspension-id/derivedByProcesses"] = "/biomaterials/mock_cell_suspension_derived_by_processes.json"
+
+            # wrapper process(dissociation -> enrichment)
+            mock_entity_url_to_file_dict["processes/mock-dissociation-enrichment-process-id"] = "/processes/wrapper_process_dissociation_and_enrichment.json"
+            mock_entity_url_to_file_dict["processes/mock-dissociation-enrichment-process-id/chainedProcesses"] = "/processes/wrapper_process_dissociation_and_enrichment_chained_processes.json"
+            mock_entity_url_to_file_dict["processes/mock-dissociation-enrichment-process-id/inputBiomaterials"] = "/processes/wrapper_process_dissociation_and_enrichment_input_biomaterial.json"
+            mock_entity_url_to_file_dict["processes/mock-dissociation-enrichment-process-id/derivedBiomaterials"] = "/processes/wrapper_process_dissociation_and_enrichment_derived_biomaterial.json"
+
+
+            # dissociation process
+            mock_entity_url_to_file_dict["processes/mock-dissociation-process-id"] = "/processes/mock_dissociation_process.json"
+            mock_entity_url_to_file_dict["processes/mock-dissociation-process-id/protocols"] = "/processes/mock_dissociation_process_protocols.json"
+
+
+            # enrichment process
+            mock_entity_url_to_file_dict["processes/mock-enrichment-process-id"] = "/processes/mock_encrichment_process.json"
+            mock_entity_url_to_file_dict["processes/mock-enrichment-process-id/protocols"] = "/processes/mock_enrichment_process_protocols.json"
+
+            # specimen
+            mock_entity_url_to_file_dict["biomaterials/mock-specimen-id"] = "/biomaterials/mock_specimen.json"
+            mock_entity_url_to_file_dict["biomaterials/mock-specimen-id/derivedByProcesses"] = "/biomaterials/mock_specimen_derived_by_processes.json"
+
+            # sampling process
+            mock_entity_url_to_file_dict["processes/mock-sampling-process-id"] = "/processes/mock_sampling_process.json"
+            mock_entity_url_to_file_dict["processes/mock-sampling-process-id/inputBiomaterials"] = "/processes/mock_sampling_process_input_biomaterial.json"
+            mock_entity_url_to_file_dict["processes/mock-sampling-process-id/derivedBiomaterials"] = "/processes/mock_sampling_process_derived_biomaterials.json"
+
+            # donor
+            mock_entity_url_to_file_dict["biomaterials/mock-donor-id"] = "/biomaterials/mock_donor.json"
+
+            # project
+            mock_entity_url_to_file_dict["projects/mock-project-id"] = "/projects/mock_project.json"
+
+
+            return mock_entity_url_to_file_dict
+
+        regular_requests_get = copy.deepcopy(requests.get)
+
+        def mock_entities_retrieval(*args, **kwargs):
+            test_ingest_dir = './bundles/ingest-data'
+            mock_entity_url_to_file_dict = mock_entities_url_to_file_dict()
+            url = args[0]
+            if 'mock-ingest-api' not in url:
+                return regular_requests_get(*args, **kwargs)
+            else: # mockville
+                entity_relative_url = url.replace('http://mock-ingest-api/', '')
+                if entity_relative_url in mock_entity_url_to_file_dict:
+                    entity_file_location = mock_entity_url_to_file_dict[entity_relative_url]
+                    with open(test_ingest_dir + entity_file_location, 'rb') as entity_file:
+                        entity_json = json.load(entity_file)
+                else: # don't have a mock for this entity; if it's a request for an empty input biomaterials/files/protocols, return a suitable empty _embedded
+                    entity_json = {'_embedded' : dict(),
+                                   '_links' :{
+                                       'self' : {
+                                           'href' : url
+                                       }
+                                   }}
+
+                    if 'derivedByProcesses' in entity_relative_url or 'chainedProcesses' in entity_relative_url:
+                        entity_json['_embedded'] = {'processes' : list()}
+                    elif 'inputBiomaterials' in entity_relative_url or 'derivedBiomaterials' in entity_relative_url:
+                        entity_json['_embedded'] = {'biomaterials' : list()}
+                    elif 'inputBundleManifests' in entity_relative_url:
+                        entity_json['_embedded'] = {'bundleManifests' : list()}
+                    elif 'inputFiles' in entity_relative_url or 'derivedFiles' in entity_relative_url:
+                        entity_json['_embedded'] = {'files' : list()}
+                    elif 'protocols' in entity_relative_url:
+                        entity_json['_embedded'] = {'protocols' : list()}
+                    elif 'projects' in entity_relative_url:
+                        with open(test_ingest_dir + '/projects/mock_project.json', 'rb') as project_file:
+                            entity_json['_embedded'] = {'projects' : [json.load(project_file)]}
+                    else:
+                        raise Exception("Unknown resource in mock entities tests:" + url)
+
+                return MockRequestResponse(entity_json, 200)
+
+        # mock the calls to the ingest API for the entities in the bundle
+        get_requests_mock = Mock()
+        get_requests_mock.side_effect = mock_entities_retrieval
+        requests.get = get_requests_mock
+
+        exporter = ingestexportservice.IngestExporter()
+        process_info = exporter.get_all_process_info('http://mock-ingest-api/processes/mock-assay-process-id')
+        bundle_metadata_info = exporter.generate_metadata_files(process_info)
+
+        # assert that the contents of the bundle metadata info match that of the expected bundle
+        self.assertEqual( # biomaterials...
+            frozenset([biomaterial['hca_ingest']['document_id'] for biomaterial in bundle_metadata_info['biomaterial']['content']['biomaterials']]),
+            frozenset([biomaterial['hca_ingest']['document_id'] for biomaterial in json_from_expected_bundle_file('assay/expected/Mouse Melanoma_biomaterial_bundle.json')['biomaterials']]))
+
+        self.assertEqual( # processes...
+            frozenset([process['hca_ingest']['document_id'] for process in bundle_metadata_info['process']['content']['processes']]),
+            frozenset([process['hca_ingest']['document_id'] for process in json_from_expected_bundle_file('assay/expected/Mouse Melanoma_process_bundle.json')['processes']]))
+
+        self.assertEqual( # protocols...
+            frozenset([protocol['hca_ingest']['document_id'] for protocol in bundle_metadata_info['protocol']['content']['protocols']]),
+            frozenset([protocol['hca_ingest']['document_id'] for protocol in json_from_expected_bundle_file('assay/expected/Mouse Melanoma_protocol_bundle.json')['protocols']]))
+
+        self.assertEqual( # files...
+            frozenset([file['hca_ingest']['document_id'] for file in bundle_metadata_info['file']['content']['files']]),
+            frozenset([file['hca_ingest']['document_id'] for file in json_from_expected_bundle_file('assay/expected/Mouse Melanoma_file_bundle.json')['files']]))
+
+        self.assertEqual( # links...
+            frozenset([tuple(sorted(link.items())) for link in bundle_metadata_info['links']['content']['links']]),
+            frozenset([tuple(sorted(link.items())) for link in json_from_expected_bundle_file('assay/expected/Mouse Melanoma_links_bundle.json')['links']])
+        )
+
+        self.assertEqual( # projects...
+            bundle_metadata_info['project']['content']['hca_ingest']['document_id'],
+            json_from_expected_bundle_file('assay/expected/Mouse Melanoma_project_bundle.json')['hca_ingest']['document_id']
+        )
+
     def _create_entity_template(self):
         return {
             'submissionDate': '2018-03-14T09:53:02Z',
@@ -464,3 +616,9 @@ class TestExporter(TestCase):
             },
             'accession': 'accession123'
         }
+
+
+def json_from_expected_bundle_file(relative_dir):
+    # relative dir is relative to test/bundles
+    with open('./bundles/' + relative_dir, 'rb') as expected_bundle_file:
+        return json.load(expected_bundle_file)

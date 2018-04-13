@@ -1,0 +1,76 @@
+{
+  "submissionDate": "2018-03-28T13:51:08.593Z",
+  "updateDate": "2018-03-28T13:51:25.009Z",
+  "user": "anonymousUser",
+  "lastModifiedUser": "anonymousUser",
+  "uuid": {
+    "uuid": "c0dc1b0a-f0a6-4171-9315-87a54dfb2197"
+  },
+  "events": [],
+  "content": {
+    "is_living": false,
+    "mus_musculus_specific": {
+      "strain": [
+        {
+          "text": "C57BL/6"
+        }
+      ]
+    },
+    "biological_sex": "female",
+    "genus_species": [
+      {
+        "text": "Mus musculus",
+        "ontology": "NCBITaxon:10090"
+      }
+    ],
+    "disease": [
+      {
+        "text": "subcutaneous melanoma",
+        "ontology": "EFO:0000756"
+      }
+    ],
+    "organism_age": "6-12",
+    "schema_type": "biomaterial",
+    "biomaterial_core": {
+      "ncbi_taxon_id": [
+        10090
+      ],
+      "biomaterial_id": "1121",
+      "biomaterial_name": "Mouse_day8_rep3"
+    },
+    "organism_age_unit": {
+      "text": "week",
+      "ontology": "UO:0000034"
+    },
+    "describedBy": "https://schema.humancellatlas.org/type/biomaterial/5.1.0/donor_organism"
+  },
+  "accession": null,
+  "validationState": "Valid",
+  "validationErrors": [],
+  "_links": {
+    "self": {
+      "href": "http://mock-ingest-api/biomaterials/mock-donor-id"
+    },
+    "biomaterial": {
+      "href": "http://mock-ingest-api/biomaterials/mock-donor-id{?projection}",
+      "templated": true
+    },
+    "processing": {
+      "href": "http://mock-ingest-api/biomaterials/mock-donor-id/processingEvent"
+    },
+    "projects": {
+      "href": "http://mock-ingest-api/biomaterials/mock-donor-id/projects",
+      "title": "Access or create projects. Creation can only be done inside a submission envelope"
+    },
+    "inputToProcesses": {
+      "href": "http://mock-ingest-api/biomaterials/mock-donor-id/inputToProcesses"
+    },
+    "derivedByProcesses": {
+      "href": "http://mock-ingest-api/biomaterials/mock-donor-id/derivedByProcesses"
+    },
+    "submissionEnvelopes": {
+      "href": "http://mock-ingest-api/biomaterials/mock-donor-id/submissionEnvelopes",
+      "title": "Access or create new submission envelopes"
+    }
+  }
+}

@@ -1,0 +1,83 @@
+{
+  "_embedded": {
+    "biomaterials": [
+      {
+        "submissionDate": "2018-03-28T13:51:08.459Z",
+        "updateDate": "2018-03-28T13:51:23.594Z",
+        "user": "anonymousUser",
+        "lastModifiedUser": "anonymousUser",
+        "uuid": {
+          "uuid": "a7d27b7c-37e4-41a4-a630-b096c8bd1aa4"
+        },
+        "events": [],
+        "content": {
+          "organ": {
+            "text": "lymph node"
+          },
+          "schema_type": "biomaterial",
+          "biomaterial_core": {
+            "ncbi_taxon_id": [
+              10090
+            ],
+            "biomaterial_id": "1121_LN",
+            "has_input_biomaterial": "1121",
+            "biomaterial_name": "Mouse_day8_LN_rep3",
+            "supplementary_files": [
+              "FACS_sorting_markers.pdf"
+            ]
+          },
+          "organ_part": {
+            "text": "UBERON:0000029"
+          },
+          "genus_species": [
+            {
+              "text": "Mus musculus",
+              "ontology": "NCBITaxon:10090"
+            }
+          ],
+          "describedBy": "https://schema.humancellatlas.org/type/biomaterial/5.1.0/specimen_from_organism"
+        },
+        "accession": null,
+        "validationState": "Valid",
+        "validationErrors": [],
+        "_links": {
+          "self": {
+            "href": "http://mock-ingest-api/biomaterials/mock-specimen-id"
+          },
+          "biomaterial": {
+            "href": "http://mock-ingest-api/biomaterials/mock-specimen-id{?projection}",
+            "templated": true
+          },
+          "processing": {
+            "href": "http://mock-ingest-api/biomaterials/mock-specimen-id/processingEvent"
+          },
+          "projects": {
+            "href": "http://mock-ingest-api/biomaterials/mock-specimen-id/projects",
+            "title": "Access or create projects. Creation can only be done inside a submission envelope"
+          },
+          "inputToProcesses": {
+            "href": "http://mock-ingest-api/biomaterials/mock-specimen-id/inputToProcesses"
+          },
+          "derivedByProcesses": {
+            "href": "http://mock-ingest-api/biomaterials/mock-specimen-id/derivedByProcesses"
+          },
+          "submissionEnvelopes": {
+            "href": "http://mock-ingest-api/biomaterials/mock-specimen-id/submissionEnvelopes",
+            "title": "Access or create new submission envelopes"
+          }
+        }
+      }
+    ]
+  },
+  "_links": {
+    "self": {
+      "href": "http://mock-ingest-api/processes/mock-dissociation-enrichment-process-id/inputBiomaterials?page=0&size=20"
+    }
+  },
+  "page": {
+    "size": 20,
+    "totalElements": 1,
+    "totalPages": 1,
+    "number": 0
+  }
+}

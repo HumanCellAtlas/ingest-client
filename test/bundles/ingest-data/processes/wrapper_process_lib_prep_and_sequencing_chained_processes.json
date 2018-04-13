@@ -1,0 +1,183 @@
+{
+  "_embedded": {
+    "processes": [
+      {
+        "submissionDate": "2018-03-28T13:51:14.932Z",
+        "updateDate": "2018-03-28T13:51:31.622Z",
+        "user": "anonymousUser",
+        "lastModifiedUser": "anonymousUser",
+        "uuid": {
+          "uuid": "d2df18fe-cb09-4f01-8dc9-0bdfe91550e5"
+        },
+        "events": [],
+        "content": {
+          "input_nucleic_acid_molecule": {
+            "text": "polyA RNA",
+            "ontology": "OBI:0000869"
+          },
+          "process_core": {
+            "process_name": "Library preparation process",
+            "process_id": "lib_prep_1"
+          },
+          "umi_barcode": {
+            "barcode_offset": 0,
+            "barcode_length": 16,
+            "barcode_read": "Read 1"
+          },
+          "library_construction_approach": "Smart-seq2",
+          "schema_type": "process",
+          "end_bias": "full length",
+          "primer": "poly-dT",
+          "describedBy": "https://schema.humancellatlas.org/type/process/sequencing/5.1.0/library_preparation_process",
+          "strand": "unstranded"
+        },
+        "accession": null,
+        "validationState": "Valid",
+        "validationErrors": [],
+        "_links": {
+          "self": {
+            "href": "http://mock-ingest-api/processes/mock-lib-prep-process-id"
+          },
+          "process": {
+            "href": "http://mock-ingest-api/processes/mock-lib-prep-process-id{?projection}",
+            "templated": true
+          },
+          "processing": {
+            "href": "http://mock-ingest-api/processes/mock-lib-prep-process-id/processingEvent"
+          },
+          "inputBiomaterials": {
+            "href": "http://mock-ingest-api/processes/mock-lib-prep-process-id/inputBiomaterials"
+          },
+          "derivedBiomaterials": {
+            "href": "http://mock-ingest-api/processes/mock-lib-prep-process-id/derivedBiomaterials"
+          },
+          "inputFiles": {
+            "href": "http://mock-ingest-api/processes/mock-lib-prep-process-id/inputFiles"
+          },
+          "derivedFiles": {
+            "href": "http://mock-ingest-api/processes/mock-lib-prep-process-id/derivedFiles"
+          },
+          "inputBundleReferences": {
+            "href": "http://mock-ingest-api/processes/mock-lib-prep-process-id/bundleReferences"
+          },
+          "inputFileReferences": {
+            "href": "http://mock-ingest-api/processes/mock-lib-prep-process-id/fileReference"
+          },
+          "add-input-bundles": {
+            "href": "http://mock-ingest-api/processes/mock-lib-prep-process-id/bundleReferences"
+          },
+          "add-file-reference": {
+            "href": "http://mock-ingest-api/processes/mock-lib-prep-process-id/fileReference"
+          },
+          "projects": {
+            "href": "http://mock-ingest-api/processes/mock-lib-prep-process-id/projects",
+            "title": "Access or create projects. Creation can only be done inside a submission envelope"
+          },
+          "protocols": {
+            "href": "http://mock-ingest-api/processes/mock-lib-prep-process-id/protocols",
+            "title": "Access or create protocols"
+          },
+          "inputBundleManifests": {
+            "href": "http://mock-ingest-api/processes/mock-lib-prep-process-id/inputBundleManifests"
+          },
+          "chainedProcesses": {
+            "href": "http://mock-ingest-api/processes/mock-lib-prep-process-id/chainedProcesses"
+          },
+          "submissionEnvelopes": {
+            "href": "http://mock-ingest-api/processes/mock-lib-prep-process-id/submissionEnvelopes",
+            "title": "Access or create new submission envelopes"
+          }
+        }
+      },
+      {
+        "submissionDate": "2018-03-28T13:51:13.054Z",
+        "updateDate": "2018-03-28T13:51:25.779Z",
+        "user": "anonymousUser",
+        "lastModifiedUser": "anonymousUser",
+        "uuid": {
+          "uuid": "58cb3079-c313-4e2a-96f6-bb979057eca6"
+        },
+        "events": [],
+        "content": {
+          "paired_ends": true,
+          "schema_type": "process",
+          "smartseq2": {
+            "well_name": "A02",
+            "plate_id": "563"
+          },
+          "instrument_manufacturer_model": {
+            "text": "Illumina HiSeq 2500",
+            "ontology": "EFO:0008567"
+          },
+          "describedBy": "https://schema.humancellatlas.org/type/process/sequencing/5.1.0/sequencing_process",
+          "process_core": {
+            "process_name": "Sequencing process",
+            "process_id": "seq_1"
+          }
+        },
+        "accession": null,
+        "validationState": "Valid",
+        "validationErrors": [],
+        "_links": {
+          "self": {
+            "href": "http://mock-ingest-api/processes/mock-sequencing-process-id"
+          },
+          "process": {
+            "href": "http://mock-ingest-api/processes/mock-sequencing-process-id{?projection}",
+            "templated": true
+          },
+          "processing": {
+            "href": "http://mock-ingest-api/processes/mock-sequencing-process-id/processingEvent"
+          },
+          "inputBiomaterials": {
+            "href": "http://mock-ingest-api/processes/mock-sequencing-process-id/inputBiomaterials"
+          },
+          "derivedBiomaterials": {
+            "href": "http://mock-ingest-api/processes/mock-sequencing-process-id/derivedBiomaterials"
+          },
+          "inputFiles": {
+            "href": "http://mock-ingest-api/processes/mock-sequencing-process-id/inputFiles"
+          },
+          "derivedFiles": {
+            "href": "http://mock-ingest-api/processes/mock-sequencing-process-id/derivedFiles"
+          },
+          "inputBundleReferences": {
+            "href": "http://mock-ingest-api/processes/mock-sequencing-process-id/bundleReferences"
+          },
+          "inputFileReferences": {
+            "href": "http://mock-ingest-api/processes/mock-sequencing-process-id/fileReference"
+          },
+          "add-input-bundles": {
+            "href": "http://mock-ingest-api/processes/mock-sequencing-process-id/bundleReferences"
+          },
+          "add-file-reference": {
+            "href": "http://mock-ingest-api/processes/mock-sequencing-process-id/fileReference"
+          },
+          "projects": {
+            "href": "http://mock-ingest-api/processes/mock-sequencing-process-id/projects",
+            "title": "Access or create projects. Creation can only be done inside a submission envelope"
+          },
+          "protocols": {
+            "href": "http://mock-ingest-api/processes/mock-sequencing-process-id/protocols",
+            "title": "Access or create protocols"
+          },
+          "inputBundleManifests": {
+            "href": "http://mock-ingest-api/processes/mock-sequencing-process-id/inputBundleManifests"
+          },
+          "chainedProcesses": {
+            "href": "http://mock-ingest-api/processes/mock-sequencing-process-id/chainedProcesses"
+          },
+          "submissionEnvelopes": {
+            "href": "http://mock-ingest-api/processes/mock-sequencing-process-id/submissionEnvelopes",
+            "title": "Access or create new submission envelopes"
+          }
+        }
+      }
+    ]
+  },
+  "_links": {
+    "self": {
+      "href": "http://mock-ingest-api/processes/mock-assay-process-id/chainedProcesses"
+    }
+  }
+}
