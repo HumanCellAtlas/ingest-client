@@ -439,9 +439,8 @@ class TestExporter(TestCase):
 
                 self.assertEqual(expected, actual, "discrepancy in " + property + ' in dirs:' + test_expected_bundles_dir + filename + ',' + test_actual_bundles_dir + filename)
 
-
-    # transformation chain refers to the biomaterial/file -> process -> biomaterial/file paradigm used to represent
-    # assay and analysis type procedures
+    # mocks linked entities in the ingest API, attempts to build a bundle by crawling from an assay
+    # process, asserts that the bundle created is equivalent to a known bundle
     def test_create_bundle_manifest(self):
 
         class MockRequestResponse:
@@ -464,16 +463,13 @@ class TestExporter(TestCase):
             mock_entity_url_to_file_dict["processes/mock-assay-process-id/inputBiomaterials"] = "/processes/wrapper_process_lib_prep_and_sequencing_input_biomaterial.json"
             mock_entity_url_to_file_dict["processes/mock-assay-process-id/derivedFiles"] = "/processes/wrapper_process_lib_prep_and_sequencing_derived_files.json"
 
-
             # lib prep process
             mock_entity_url_to_file_dict["processes/mock-lib-prep-process-id"] = "/processes/mock_lib_prep_process.json"
             mock_entity_url_to_file_dict["processes/mock-lib-prep-process-id/protocols"] = "/processes/mock_lib_prep_process_protocols.json"
 
-
             # sequencing process
             mock_entity_url_to_file_dict["processes/mock-sequencing-process-id"] = "/processes/mock_sequencing_process.json"
             mock_entity_url_to_file_dict["processes/mock-sequencing-process-id/protocols"] = "/processes/mock_sequencing_process_protocols.json"
-
 
             # cell suspension
             mock_entity_url_to_file_dict["biomaterials/mock-cell-suspension-id"] = "/biomaterials/mock_cell_suspension.json"
@@ -485,11 +481,9 @@ class TestExporter(TestCase):
             mock_entity_url_to_file_dict["processes/mock-dissociation-enrichment-process-id/inputBiomaterials"] = "/processes/wrapper_process_dissociation_and_enrichment_input_biomaterial.json"
             mock_entity_url_to_file_dict["processes/mock-dissociation-enrichment-process-id/derivedBiomaterials"] = "/processes/wrapper_process_dissociation_and_enrichment_derived_biomaterial.json"
 
-
             # dissociation process
             mock_entity_url_to_file_dict["processes/mock-dissociation-process-id"] = "/processes/mock_dissociation_process.json"
             mock_entity_url_to_file_dict["processes/mock-dissociation-process-id/protocols"] = "/processes/mock_dissociation_process_protocols.json"
-
 
             # enrichment process
             mock_entity_url_to_file_dict["processes/mock-enrichment-process-id"] = "/processes/mock_encrichment_process.json"
@@ -509,7 +503,6 @@ class TestExporter(TestCase):
 
             # project
             mock_entity_url_to_file_dict["projects/mock-project-id"] = "/projects/mock_project.json"
-
 
             return mock_entity_url_to_file_dict
 
