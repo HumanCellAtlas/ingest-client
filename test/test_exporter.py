@@ -237,7 +237,6 @@ class TestExporter(TestCase):
 
         self.assertEqual(metadata_files['links']['dss_uuid'], 'new-uuid')
 
-
     def test_upload_metadata_files(self):
         # given:
         exporter = IngestExporter()
@@ -342,39 +341,20 @@ class TestExporter(TestCase):
         with self.assertRaises(ingestexportservice.BundleFileUploadError) as e:
             metadata_files = exporter.upload_metadata_files('sub_uuid', metadata_files_info)
 
-
     def test_put_bundle_in_dss_error(self):
         # given:
         exporter = IngestExporter()
 
         # and:
-        exporter.get_metadata_files = MagicMock(return_value=[])
-        exporter.get_data_files = MagicMock(return_value=[])
-        exporter.put_files_in_dss = Mock(side_effect=Exception('test create bundle file error'))
+        exporter.dss_api.put_bundle = Mock(side_effect=Exception('test create bundle error'))
 
         # when, then:
         with self.assertRaises(ingestexportservice.BundleDSSError) as e:
-            metadata_files = exporter.put_bundle_in_dss('bundle_uuid', {}, {})
+            metadata_files = exporter.put_bundle_in_dss('bundle_uuid', [])
 
-
-    # TODO important!
-    def test_recurse_process(self):
-        pass
-
-    # TODO this test uses submission_uuid = 'c2f94466-adee-4aac-b8d0-1e864fa5f8e8' is in integration env at the moment
-    # need to create mocked data
-    def test_refactoring(self):
-        self.maxDiff = None
-        ingestexportservice.os.path.expandvars = MagicMock(return_value='http://api.ingest.integration.data.humancellatlas.org')
-        ingestexportservice.uuid.uuid4 = MagicMock(return_value='new-uuid')
-
-        # TEST ASSAY
-        # given
+    def test_put_files_in_dss(self):
+        # given:
         exporter = IngestExporter()
-
-        # use dry run
-        exporter.dryrun = True
-        exporter.outputDir = './bundles/assay/actual/'
 
         # and:
         submission_uuid = 'c2f94466-adee-4aac-b8d0-1e864fa5f8e8'

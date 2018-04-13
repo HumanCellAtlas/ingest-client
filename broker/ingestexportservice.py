@@ -40,8 +40,7 @@ class IngestExporter:
 
         self.stagingUrl = options.staging if options and options.staging else os.path.expandvars(DEFAULT_STAGING_URL)
         self.dssUrl = options.dss if options and options.dss else os.path.expandvars(DEFAULT_DSS_URL)
-        self.schema_version = options.schema_version if options and options.schema_version else os.path.expandvars(
-            METADATA_SCHEMA_VERSION)
+        self.schema_version = options.schema_version if options and options.schema_version else os.path.expandvars(METADATA_SCHEMA_VERSION)
         self.schema_url = os.path.expandvars(BUNDLE_SCHEMA_BASE_URL % self.schema_version)
 
         self.logger.debug("ingest url is " + self.ingestUrl)
@@ -78,8 +77,7 @@ class IngestExporter:
         callbackLink = message["callbackLink"]
 
         self.logger.info('process received ' + callbackLink)
-        self.logger.info('process index: ' + str(message["index"]) + ', total processes: ' + str(
-            message["total"]))
+        self.logger.info('process index: ' + str(message["index"]) + ', total processes: ' + str(message["total"]))
 
         # given an assay, generate a bundle
 
@@ -94,13 +92,11 @@ class IngestExporter:
             self.logger.info("Attempting to export bundle to DSS...")
             success = self.export_bundle(envelopeUuid, processUrl)
         else:
-            error_message = "Can\'t do export as no staging area has been created"
-            self.logger.error(error_message)
-            raise ValueError(error_message)
+            error_message = "Can't do export as no upload area has been created"
+            raise NoUploadAreaFoundError(error_message)
 
         if not success:
-            raise ValueError(
-                "An error occurred in export. Failed to export to dss: " + message["callbackLink"])
+            raise Error("An error occurred in export. Failed to export to dss: " + message["callbackLink"])
 
 
     def bundleFileIngest(self, file_entity):
@@ -123,10 +119,6 @@ class IngestExporter:
         fileDescription = self.staging_api.stageFile(submissionId, fileName, content, contentType)
         self.logger.info("File staged at " + fileDescription.url)
         return fileDescription
-
-    def deleteStagingArea(self, stagingAreaId):
-        self.logger.info("deleting staging area...." + stagingAreaId)
-        self.staging_api.deleteStagingArea(stagingAreaId)
 
     def bundleSample(self, sample_entity):
         sample_copy = self._copyAndTrim(sample_entity)
@@ -232,6 +224,7 @@ class IngestExporter:
 
         self.logger.info('Generating bundle files...')
         metadata_files_info = self.generate_metadata_files(process_info)
+        data_files_info = process_info.derived_files
 
         bundle_manifest = self.create_bundle_manifest(submission_uuid, metadata_files_info, process_info)
 
@@ -244,10 +237,17 @@ class IngestExporter:
             self.logger.info('Uploading metadata files...')
             self.upload_metadata_files(submission_uuid, metadata_files_info)
 
-            self.logger.info('Storing bundle in DSS...')
+            self.logger.info('Saving files in DSS...')
             bundle_uuid = bundle_manifest.bundleUuid
-            data_files_info = process_info.derived_files
-            self.put_bundle_in_dss(bundle_uuid, metadata_files_info, data_files_info)
+
+            metadata_files = self.get_metadata_files(metadata_files_info)
+            data_files = self.get_data_files(data_files_info)
+            bundle_files = metadata_files + data_files
+
+            created_files = self.put_files_in_dss(bundle_uuid, bundle_files)
+
+            self.logger.info('Saving bundle in DSS...')
+            self.put_bundle_in_dss(bundle_uuid, created_files)
 
             self.logger.info('Saving bundle manifest...')
             self.ingest_api.createBundleManifest(bundle_manifest)
@@ -272,7 +272,7 @@ class IngestExporter:
             project_uuid_lists = process_info.input_bundle['fileProjectMap'].values()
 
             if len(project_uuid_lists) == 0 and len(project_uuid_lists[0]) == 0:
-                raise Error('Input bundle manifest has no list of project uuid.')
+                raise Error('Input bundle manifest has no list of project uuid.')  # very unlikely to happen
 
             project_uuid = project_uuid_lists[0][0]
             process_info.project = self.ingest_api.getProjectByUuid(project_uuid)
@@ -295,7 +295,7 @@ class IngestExporter:
 
         return None
 
-        # get all related info of a process
+    # get all related info of a process
     def recurse_process(self, process, process_info):
         chained_processes = list(self.ingest_api.getRelatedEntities('chainedProcesses', process, 'processes'))
 
@@ -486,6 +486,7 @@ class IngestExporter:
         set1 = frozenset(list(list1))
         set2 = frozenset(list(list2))
         diff = set1.difference(set2)
+
         return not len(diff)
 
     # build bundle json for each entity according to schema
@@ -607,57 +608,44 @@ class IngestExporter:
             for metadata_type in ['project', 'biomaterial', 'process', 'protocol', 'file', 'links']:
                 bundle_file = metadata_files_info[metadata_type]
                 filename = bundle_file['upload_filename']
+                content = bundle_file['content']
+                content_type = bundle_file['content_type']
 
-                uploaded_file = self.writeMetadataToStaging(submission_uuid, bundle_file['upload_filename'], bundle_file['content'],
-                                                            bundle_file['content_type'])
+                uploaded_file = self.writeMetadataToStaging(submission_uuid, filename, content, content_type)
                 bundle_file['upload_file_url'] = uploaded_file.url
-
         except Exception as e:
             message = "An error occurred on uploading bundle files: " + str(e)
             raise BundleFileUploadError(message)
 
-    def put_bundle_in_dss(self, bundle_uuid, metadata_files_info, data_files_info):
-        metadata_files = self.get_metadata_files(metadata_files_info)
-        data_files = self.get_data_files(data_files_info)
-        bundle_files = metadata_files + data_files
-
+    def put_bundle_in_dss(self, bundle_uuid, created_files):
         try:
-            created_files = self.put_files_in_dss(bundle_uuid, bundle_files)
             created_bundle = self.dss_api.put_bundle(bundle_uuid, created_files)
-
-            return {
-                'bundle': created_bundle,
-                'files': created_files
-            }
-
         except Exception as e:
             message = 'An error occurred while putting bundle in DSS: ' + str(e)
             raise BundleDSSError(message)
+
+        return created_bundle
 
     def put_files_in_dss(self, bundle_uuid, files_to_put):
         created_files = []
 
         for bundle_file in files_to_put:
-            submitted_name = bundle_file["submittedName"]
-            url = bundle_file["url"]
-            uuid = bundle_file["dss_uuid"]
-            indexed = bundle_file["indexed"]
-            content_type = bundle_file["content-type"]
             version = ''
 
             try:
-                created_file = self.dss_api.put_bundle_file(bundle_uuid, bundle_file)
-                # should be safe to put file with same uuid - dss returns 200 when the file is already present and is identical to the file being uploaded.
+                created_file = self.dss_api.put_file(bundle_uuid, bundle_file)
+                # should be safe to put file with existing uuid
+                # DSS returns 200 when the file is already present and is identical to the file being uploaded.
 
                 version = created_file['version']
             except Exception as e:
                 raise FileDSSError('An error occurred while putting file in DSS' + str(e))
 
             file_param = {
-                "indexed": indexed,
-                "name": submitted_name,
-                "uuid": uuid,
-                "content-type": content_type,
+                "indexed": bundle_file["indexed"],
+                "name": bundle_file["submittedName"],
+                "uuid": bundle_file["dss_uuid"],
+                "content-type": bundle_file["content-type"],
                 "version": version
             }
 
@@ -739,7 +727,6 @@ class MultipleProjectsError(Error):
 class InvalidBundleError(Error):
     """There was a failure in bundle validation."""
 
-
 class BundleFileUploadError(Error):
     """There was a failure in bundle file upload."""
 
@@ -747,9 +734,13 @@ class BundleFileUploadError(Error):
 class BundleDSSError(Error):
     """There was a failure in bundle creation in DSS."""
 
+
 class FileDSSError(Error):
     """There was a failure in file creation in DSS."""
 
+
+class NoUploadAreaFoundError(Error):
+    """Export couldn't be as no upload area found"""
 
 if __name__ == '__main__':
     logging.basicConfig(stream=sys.stdout, level=logging.INFO)
