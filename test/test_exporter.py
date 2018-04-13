@@ -235,7 +235,6 @@ class TestExporter(TestCase):
 
         self.assertEqual(metadata_files['links']['dss_uuid'], 'new-uuid')
 
-
     def test_upload_metadata_files(self):
         # given:
         exporter = IngestExporter()
@@ -345,13 +344,29 @@ class TestExporter(TestCase):
         exporter = IngestExporter()
 
         # and:
-        exporter.get_metadata_files = MagicMock(return_value=[])
-        exporter.get_data_files = MagicMock(return_value=[])
-        exporter.put_bundle = Mock(side_effect=Exception('test create bundle file error'))
+        exporter.dss_api.put_bundle = Mock(side_effect=Exception('test create bundle error'))
 
         # when, then:
         with self.assertRaises(ingestexportservice.BundleDSSError) as e:
-            metadata_files = exporter.put_bundle_in_dss('bundle_uuid', {}, {})
+            metadata_files = exporter.put_bundle_in_dss('bundle_uuid', [])
+
+    def test_put_files_in_dss(self):
+        # given:
+        exporter = IngestExporter()
+
+        # and:
+        exporter.dss_api.put_file = Mock(side_effect=Exception('test create file error'))
+        files_to_put = [{
+            'name': 'name',
+            'submittedName': 'submittedName',
+            'url': 'url',
+            'dss_uuid': 'dss_uuid',
+            'indexed': False,
+            'content-type': 'data'
+        }]
+        # when, then:
+        with self.assertRaises(ingestexportservice.FileDSSError) as e:
+            bundle = exporter.put_files_in_dss('bundle_uuid', files_to_put)
 
     # TODO important!
     def test_recurse_process(self):

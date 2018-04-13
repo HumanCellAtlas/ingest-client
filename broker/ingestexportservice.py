@@ -256,7 +256,7 @@ class IngestExporter:
             project_uuid_lists = process_info.input_bundle['fileProjectMap'].values()
 
             if len(project_uuid_lists) == 0 and len(project_uuid_lists[0]) == 0:
-                raise Error('Input bundle manifest has no list of project uuid.')
+                raise Error('Input bundle manifest has no list of project uuid.')  # very unlikely to happen
 
             project_uuid = project_uuid_lists[0][0]
             process_info.project = self.ingest_api.getProjectByUuid(project_uuid)
@@ -279,7 +279,7 @@ class IngestExporter:
 
         return None
 
-        # get all related info of a process
+    # get all related info of a process
     def recurse_process(self, process, process_info):
         chained_processes = list(self.ingest_api.getRelatedEntities('chainedProcesses', process, 'processes'))
 
@@ -604,39 +604,32 @@ class IngestExporter:
     def put_bundle_in_dss(self, bundle_uuid, created_files):
         try:
             created_bundle = self.dss_api.put_bundle(bundle_uuid, created_files)
-
-            return {
-                'bundle': created_bundle,
-                'files': created_files
-            }
         except Exception as e:
             message = 'An error occurred while putting bundle in DSS: ' + str(e)
             raise BundleDSSError(message)
+
+        return created_bundle
 
     def put_files_in_dss(self, bundle_uuid, files_to_put):
         created_files = []
 
         for bundle_file in files_to_put:
-            submitted_name = bundle_file["submittedName"]
-            url = bundle_file["url"]
-            uuid = bundle_file["dss_uuid"]
-            indexed = bundle_file["indexed"]
-            content_type = bundle_file["content-type"]
             version = ''
 
             try:
-                created_file = self.dss_api.put_bundle_file(bundle_uuid, bundle_file)
-                # should be safe to put file with same uuid - dss returns 200 when the file is already present and is identical to the file being uploaded.
+                created_file = self.dss_api.put_file(bundle_uuid, bundle_file)
+                # should be safe to put file with existing uuid
+                # DSS returns 200 when the file is already present and is identical to the file being uploaded.
 
                 version = created_file['version']
             except Exception as e:
                 raise FileDSSError('An error occurred while putting file in DSS' + str(e))
 
             file_param = {
-                "indexed": indexed,
-                "name": submitted_name,
-                "uuid": uuid,
-                "content-type": content_type,
+                "indexed": bundle_file["indexed"],
+                "name": bundle_file["submittedName"],
+                "uuid": bundle_file["dss_uuid"],
+                "content-type": bundle_file["content-type"],
                 "version": version
             }
 
