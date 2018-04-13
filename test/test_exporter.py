@@ -370,10 +370,6 @@ class TestExporter(TestCase):
         with self.assertRaises(ingestexportservice.FileDSSError) as e:
             bundle = exporter.put_files_in_dss('bundle_uuid', files_to_put)
 
-    # TODO important!
-    def test_recurse_process(self):
-        pass
-
     # TODO this test uses submission_uuid = 'c2f94466-adee-4aac-b8d0-1e864fa5f8e8' is in integration env at the moment
     # need to create mocked data
     def test_refactoring(self):
@@ -401,7 +397,7 @@ class TestExporter(TestCase):
 
         elapsed_time = time.time() - start_time
 
-        print('export_bundle elapsed time:' + str(elapsed_time))
+        print('export_bundle assay elapsed time:' + str(elapsed_time))
 
         test_expected_bundles_dir = './bundles/assay/expected/'
         test_actual_bundles_dir = exporter.outputDir
@@ -418,7 +414,7 @@ class TestExporter(TestCase):
 
         elapsed_time = time.time() - start_time
 
-        print('export_bundle elapsed time:' + str(elapsed_time))
+        print('export_bundle analysis elapsed time:' + str(elapsed_time))
 
         # then:
         test_expected_bundles_dir = './bundles/analysis/expected/'
