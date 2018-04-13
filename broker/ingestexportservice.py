@@ -187,21 +187,6 @@ class IngestExporter:
                 del copy[property]
         return copy
 
-    # returns a copy of a bundle manifest JSON, but with a new bundleUuid
-    def makeCopyBundle(self, bundleToCopy):
-        newBundle = ingestapi.BundleManifest()
-
-        newBundle.dataFiles = bundleToCopy["files"]
-        newBundle.fileBiomaterialMap = bundleToCopy["fileSampleMap"]
-        newBundle.fileProcessMap = bundleToCopy["fileAssayMap"]
-        newBundle.fileProjectMap = bundleToCopy["fileProjectMap"]
-        newBundle.fileProtocolMap = bundleToCopy["fileProtocolMap"]
-        return newBundle
-
-    def processSubmission(self, submissionEnvelopeId):
-        self.ingest_api.updateSubmissionState(submissionEnvelopeId, 'processing')
-
-
     def dumpJsonToFile(self, object, projectId, name, output_dir=None):
         if output_dir:
             self.outputDir = output_dir
