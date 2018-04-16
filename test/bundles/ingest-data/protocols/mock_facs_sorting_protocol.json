@@ -21,17 +21,17 @@
   "validationErrors": [],
   "_links": {
     "self": {
-      "href": "http://api.ingest.integration.data.humancellatlas.org/protocols/mock-facs-sorting-protocol-id"
+      "href": "http://mock-ingest-api/protocols/mock-facs-sorting-protocol-id"
     },
     "protocol": {
-      "href": "http://api.ingest.integration.data.humancellatlas.org/protocols/mock-facs-sorting-protocol-id",
+      "href": "http://mock-ingest-api/protocols/mock-facs-sorting-protocol-id",
       "title": "A single protocol"
     },
     "processing": {
-      "href": "http://api.ingest.integration.data.humancellatlas.org/protocols/mock-facs-sorting-protocol-id/processingEvent"
+      "href": "http://mock-ingest-api/protocols/mock-facs-sorting-protocol-id/processingEvent"
     },
     "submissionEnvelopes": {
-      "href": "http://api.ingest.integration.data.humancellatlas.org/protocols/mock-facs-sorting-protocol-id/submissionEnvelopes",
+      "href": "http://mock-ingest-api/protocols/mock-facs-sorting-protocol-id/submissionEnvelopes",
       "title": "Access or create new submission envelopes"
     }
   }

@@ -103,7 +103,7 @@
   },
   "_links": {
     "self": {
-      "href": "http://mock-ingest-api/processes/mock-assay-process-id/derivedFiles?page=0&size=20"
+      "href": "http://mock-ingest-api/processes/mock-analysis-process-id/inputFiles?page=0&size=20"
     }
   },
   "page": {

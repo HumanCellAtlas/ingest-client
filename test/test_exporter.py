@@ -358,7 +358,7 @@ class TestExporter(TestCase):
 
         # and:
         submission_uuid = 'c2f94466-adee-4aac-b8d0-1e864fa5f8e8'
-        process_ingest_url = 'http://api.ingest.integration.data.humancellatlas.org/processes/5abb9dd6b375bb0007c2bab0' #  the assay is a wrapper process
+        process_ingest_url = 'http://mock-ingest-api/processes/5abb9dd6b375bb0007c2bab0' #  the assay is a wrapper process
 
         # when:
 
@@ -377,7 +377,7 @@ class TestExporter(TestCase):
         # TEST ANALYSIS
         exporter.outputDir = './bundles/analysis/actual/'
 
-        process_ingest_url = 'http://api.ingest.integration.data.humancellatlas.org/processes/5acb79a3d35a72000728dac4' #  the analysis
+        process_ingest_url = 'http://mock-ingest-api/processes/5acb79a3d35a72000728dac4' #  the analysis
 
         start_time = time.time()
 
@@ -436,6 +436,21 @@ class TestExporter(TestCase):
         def mock_entities_url_to_file_dict():
 
             mock_entity_url_to_file_dict = dict()
+
+            # analysis process
+            mock_entity_url_to_file_dict["processes/mock-analysis-process-id"] = "/processes/mock_analysis_process.json"
+            mock_entity_url_to_file_dict["processes/mock-analysis-process-id/derivedFiles"] = "/processes/mock_analysis_process_derived_files.json"
+            mock_entity_url_to_file_dict["processes/mock-analysis-process-id/inputFiles"] = "/processes/mock_analysis_process_input_files.json"
+            mock_entity_url_to_file_dict["processes/mock-analysis-process-id/inputBundleManifests"] = "/processes/mock_analysis_process_input_bundle_manifests.json"
+
+            # input bundle manifests
+            mock_entity_url_to_file_dict["bundleManifests/mock-input-bundle-manifest-id"] = "/processes/mock_bundle_manifest.json"
+
+            # files
+            mock_entity_url_to_file_dict["files/mock-fastq-read1-id"] = "/processes/mock_fastq_read1.json"
+            mock_entity_url_to_file_dict["files/mock-fastq-read1-id/derivedByProcesses"] = "/files/mock_fastq_read1_derived_by_processes.json"
+            mock_entity_url_to_file_dict["files/mock-fastq-read2-id"] = "/processes/mock_fastq_read2.json"
+            mock_entity_url_to_file_dict["files/mock-fastq-read2-id/derivedByProcesses"] = "/files/mock_fastq_read2_derived_by_processes.json"
 
             # wrapper process(lib prep -> sequencing)
             mock_entity_url_to_file_dict["processes/mock-assay-process-id"] = "/processes/wrapper_process_lib_prep_and_sequencing.json"
@@ -561,6 +576,38 @@ class TestExporter(TestCase):
             bundle_metadata_info['project']['content']['hca_ingest']['document_id'],
             json_from_expected_bundle_file('assay/expected/Mouse Melanoma_project_bundle.json')['hca_ingest']['document_id']
         )
+
+        # now run it on analysis
+        process_info = exporter.get_all_process_info('http://mock-ingest-api/processes/mock-analysis-process-id')
+        bundle_metadata_info = exporter.generate_metadata_files(process_info)
+
+        # assert that the contents of the bundle metadata info match that of the expected bundle
+        self.assertEqual( # biomaterials...
+            frozenset([biomaterial['hca_ingest']['document_id'] for biomaterial in bundle_metadata_info['biomaterial']['content']['biomaterials']]),
+            frozenset([biomaterial['hca_ingest']['document_id'] for biomaterial in json_from_expected_bundle_file('analysis/expected/Mouse Melanoma_biomaterial_bundle.json')['biomaterials']]))
+
+        self.assertEqual( # processes...
+            frozenset([process['hca_ingest']['document_id'] for process in bundle_metadata_info['process']['content']['processes']]),
+            frozenset([process['hca_ingest']['document_id'] for process in json_from_expected_bundle_file('analysis/expected/Mouse Melanoma_process_bundle.json')['processes']]))
+
+        self.assertEqual( # protocols...
+            frozenset([protocol['hca_ingest']['document_id'] for protocol in bundle_metadata_info['protocol']['content']['protocols']]),
+            frozenset([protocol['hca_ingest']['document_id'] for protocol in json_from_expected_bundle_file('analysis/expected/Mouse Melanoma_protocol_bundle.json')['protocols']]))
+
+        self.assertEqual( # files...
+            frozenset([file['hca_ingest']['document_id'] for file in bundle_metadata_info['file']['content']['files']]),
+            frozenset([file['hca_ingest']['document_id'] for file in json_from_expected_bundle_file('analysis/expected/Mouse Melanoma_file_bundle.json')['files']]))
+
+        self.assertEqual( # links...
+            frozenset([tuple(sorted(link.items())) for link in bundle_metadata_info['links']['content']['links']]),
+            frozenset([tuple(sorted(link.items())) for link in json_from_expected_bundle_file('analysis/expected/Mouse Melanoma_links_bundle.json')['links']])
+        )
+
+        self.assertEqual( # projects...
+            bundle_metadata_info['project']['content']['hca_ingest']['document_id'],
+            json_from_expected_bundle_file('analysis/expected/Mouse Melanoma_project_bundle.json')['hca_ingest']['document_id']
+        )
+
 
     def _create_entity_template(self):
         return {

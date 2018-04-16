@@ -100,17 +100,17 @@
   "validationErrors": [],
   "_links": {
     "self": {
-      "href": "http://api.ingest.integration.data.humancellatlas.org/projects/mock-project-id"
+      "href": "http://mock-ingest-api/projects/mock-project-id"
     },
     "project": {
-      "href": "http://api.ingest.integration.data.humancellatlas.org/projects/mock-project-id",
+      "href": "http://mock-ingest-api/projects/mock-project-id",
       "title": "A single project"
     },
     "processing": {
-      "href": "http://api.ingest.integration.data.humancellatlas.org/projects/mock-project-id/processingEvent"
+      "href": "http://mock-ingest-api/projects/mock-project-id/processingEvent"
     },
     "submissionEnvelopes": {
-      "href": "http://api.ingest.integration.data.humancellatlas.org/projects/mock-project-id/submissionEnvelopes",
+      "href": "http://mock-ingest-api/projects/mock-project-id/submissionEnvelopes",
       "title": "Access or create new submission envelopes"
     }
   }

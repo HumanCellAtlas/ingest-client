@@ -26,23 +26,23 @@
   "validationId": "7baadd22-db2d-4f14-abcf-a5da566a2cb5",
   "_links": {
     "self": {
-      "href": "http://api.ingest.integration.data.humancellatlas.org/files/mock-fastq-read1-id"
+      "href": "http://mock-ingest-api/files/mock-fastq-read1-id"
     },
     "file": {
-      "href": "http://api.ingest.integration.data.humancellatlas.org/files/mock-fastq-read1-id",
+      "href": "http://mock-ingest-api/files/mock-fastq-read1-id",
       "title": "A single file"
     },
     "processing": {
-      "href": "http://api.ingest.integration.data.humancellatlas.org/files/mock-fastq-read1-id/processingEvent"
+      "href": "http://mock-ingest-api/files/mock-fastq-read1-id/processingEvent"
     },
     "inputToProcesses": {
-      "href": "http://api.ingest.integration.data.humancellatlas.org/files/mock-fastq-read1-id/inputToProcesses"
+      "href": "http://mock-ingest-api/files/mock-fastq-read1-id/inputToProcesses"
     },
     "derivedByProcesses": {
-      "href": "http://api.ingest.integration.data.humancellatlas.org/files/mock-fastq-read1-id/derivedByProcesses"
+      "href": "http://mock-ingest-api/files/mock-fastq-read1-id/derivedByProcesses"
     },
     "submissionEnvelopes": {
-      "href": "http://api.ingest.integration.data.humancellatlas.org/files/mock-fastq-read1-id/submissionEnvelopes",
+      "href": "http://mock-ingest-api/files/mock-fastq-read1-id/submissionEnvelopes",
       "title": "Access or create new submission envelopes"
     }
   }

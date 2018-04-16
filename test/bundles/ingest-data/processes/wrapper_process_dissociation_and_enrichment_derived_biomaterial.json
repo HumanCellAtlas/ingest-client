@@ -39,27 +39,27 @@
         "validationErrors": [],
         "_links": {
           "self": {
-            "href": "http://api.ingest.integration.data.humancellatlas.org/biomaterials/mock-cell-suspension-id"
+            "href": "http://mock-ingest-api/biomaterials/mock-cell-suspension-id"
           },
           "biomaterial": {
-            "href": "http://api.ingest.integration.data.humancellatlas.org/biomaterials/mock-cell-suspension-id{?projection}",
+            "href": "http://mock-ingest-api/biomaterials/mock-cell-suspension-id{?projection}",
             "templated": true
           },
           "processing": {
-            "href": "http://api.ingest.integration.data.humancellatlas.org/biomaterials/mock-cell-suspension-id/processingEvent"
+            "href": "http://mock-ingest-api/biomaterials/mock-cell-suspension-id/processingEvent"
           },
           "projects": {
-            "href": "http://api.ingest.integration.data.humancellatlas.org/biomaterials/mock-cell-suspension-id/projects",
+            "href": "http://mock-ingest-api/biomaterials/mock-cell-suspension-id/projects",
             "title": "Access or create projects. Creation can only be done inside a submission envelope"
           },
           "inputToProcesses": {
-            "href": "http://api.ingest.integration.data.humancellatlas.org/biomaterials/mock-cell-suspension-id/inputToProcesses"
+            "href": "http://mock-ingest-api/biomaterials/mock-cell-suspension-id/inputToProcesses"
           },
           "derivedByProcesses": {
-            "href": "http://api.ingest.integration.data.humancellatlas.org/biomaterials/mock-cell-suspension-id/derivedByProcesses"
+            "href": "http://mock-ingest-api/biomaterials/mock-cell-suspension-id/derivedByProcesses"
           },
           "submissionEnvelopes": {
-            "href": "http://api.ingest.integration.data.humancellatlas.org/biomaterials/mock-cell-suspension-id/submissionEnvelopes",
+            "href": "http://mock-ingest-api/biomaterials/mock-cell-suspension-id/submissionEnvelopes",
             "title": "Access or create new submission envelopes"
           }
         }
@@ -68,7 +68,7 @@
   },
   "_links": {
     "self": {
-      "href": "http://api.ingest.integration.data.humancellatlas.org/processes/mock-dissociation-enrichment-process-id/derivedBiomaterials?page=0&size=20"
+      "href": "http://mock-ingest-api/processes/mock-dissociation-enrichment-process-id/derivedBiomaterials?page=0&size=20"
     }
   },
   "page": {

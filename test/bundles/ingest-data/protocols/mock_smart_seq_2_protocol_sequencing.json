@@ -20,17 +20,17 @@
   "validationErrors": [],
   "_links": {
     "self": {
-      "href": "http://api.ingest.integration.data.humancellatlas.org/protocols/mock-smart-seq-2-protocol-seq-id"
+      "href": "http://mock-ingest-api/protocols/mock-smart-seq-2-protocol-seq-id"
     },
     "protocol": {
-      "href": "http://api.ingest.integration.data.humancellatlas.org/protocols/mock-smart-seq-2-protocol-seq-id",
+      "href": "http://mock-ingest-api/protocols/mock-smart-seq-2-protocol-seq-id",
       "title": "A single protocol"
     },
     "processing": {
-      "href": "http://api.ingest.integration.data.humancellatlas.org/protocols/mock-smart-seq-2-protocol-seq-id/processingEvent"
+      "href": "http://mock-ingest-api/protocols/mock-smart-seq-2-protocol-seq-id/processingEvent"
     },
     "submissionEnvelopes": {
-      "href": "http://api.ingest.integration.data.humancellatlas.org/protocols/mock-smart-seq-2-protocol-seq-id/submissionEnvelopes",
+      "href": "http://mock-ingest-api/protocols/mock-smart-seq-2-protocol-seq-id/submissionEnvelopes",
       "title": "Access or create new submission envelopes"
     }
   }
