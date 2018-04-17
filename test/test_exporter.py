@@ -1,6 +1,6 @@
 import json
 import time
-import mock
+import os
 import copy
 import requests
 import types
@@ -16,6 +16,8 @@ from unittest import TestCase
 from broker.ingestexportservice import IngestExporter
 from broker import ingestexportservice
 from broker import stagingapi
+
+BASE_PATH = os.path.dirname(__file__)
 
 
 class TestExporter(TestCase):
@@ -352,47 +354,6 @@ class TestExporter(TestCase):
         with self.assertRaises(ingestexportservice.BundleDSSError) as e:
             metadata_files = exporter.put_bundle_in_dss('bundle_uuid', [])
 
-    def test_put_files_in_dss(self):
-        # given:
-        exporter = IngestExporter()
-
-        # and:
-        submission_uuid = 'c2f94466-adee-4aac-b8d0-1e864fa5f8e8'
-        process_ingest_url = 'http://mock-ingest-api/processes/5abb9dd6b375bb0007c2bab0' #  the assay is a wrapper process
-
-        # when:
-
-        start_time = time.time()
-
-        exporter.export_bundle(submission_uuid, process_ingest_url)
-
-        elapsed_time = time.time() - start_time
-
-        print('export_bundle elapsed time:' + str(elapsed_time))
-
-        test_expected_bundles_dir = './bundles/assay/expected/'
-        test_actual_bundles_dir = exporter.outputDir
-        self._compare_files_in_dir(test_expected_bundles_dir, test_actual_bundles_dir)
-
-        # TEST ANALYSIS
-        exporter.outputDir = './bundles/analysis/actual/'
-
-        process_ingest_url = 'http://mock-ingest-api/processes/5acb79a3d35a72000728dac4' #  the analysis
-
-        start_time = time.time()
-
-        exporter.export_bundle(submission_uuid, process_ingest_url)
-
-        elapsed_time = time.time() - start_time
-
-        print('export_bundle elapsed time:' + str(elapsed_time))
-
-        # then:
-        test_expected_bundles_dir = './bundles/analysis/expected/'
-        test_actual_bundles_dir = exporter.outputDir
-
-        self._compare_files_in_dir(test_expected_bundles_dir, test_actual_bundles_dir)
-
     def _compare_files_in_dir(self, test_expected_bundles_dir, test_actual_bundles_dir):
         # TODO test only bundle manifest uuids for now
         expected_files = [f for f in listdir(test_expected_bundles_dir) if isfile(join(test_expected_bundles_dir, f))]
@@ -504,7 +465,7 @@ class TestExporter(TestCase):
         regular_requests_get = copy.deepcopy(requests.get)
 
         def mock_entities_retrieval(*args, **kwargs):
-            test_ingest_dir = './bundles/ingest-data'
+            test_ingest_dir = BASE_PATH + '/bundles/ingest-data'
             mock_entity_url_to_file_dict = mock_entities_url_to_file_dict()
             url = args[0]
             if 'mock-ingest-api' not in url:
@@ -627,5 +588,5 @@ class TestExporter(TestCase):
 
 def json_from_expected_bundle_file(relative_dir):
     # relative dir is relative to test/bundles
-    with open('./bundles/' + relative_dir, 'rb') as expected_bundle_file:
+    with open(BASE_PATH + '/bundles/' + relative_dir, 'rb') as expected_bundle_file:
         return json.load(expected_bundle_file)
