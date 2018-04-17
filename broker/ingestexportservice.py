@@ -237,9 +237,6 @@ class IngestExporter:
             self.logger.info('Saving bundle manifest...')
             self.ingest_api.createBundleManifest(bundle_manifest)
 
-            self.logger.info('Dumping bundle files...')
-            self.dump_metadata_files_and_bundle_manifest(metadata_files_info, bundle_manifest)
-
             saved_bundle_uuid = bundle_manifest.bundleUuid
 
             self.logger.info('Bundle ' + saved_bundle_uuid + ' was successfully created!')
@@ -448,7 +445,7 @@ class IngestExporter:
             metadata_files['biomaterial']['dss_uuid'] = input_file['file_uuid']
             metadata_files['biomaterial']['is_same_as_input'] = input_file['is_equal']
 
-        file_uuids = process_info.input_biomaterials.keys()
+        file_uuids = process_info.protocols.keys()
         input_file = self._compare_to_input_file(input_bundle, 'fileProtocolMap', file_uuids)
         if input_file['is_equal']:
             metadata_files['protocol']['dss_uuid'] = input_file['file_uuid']
