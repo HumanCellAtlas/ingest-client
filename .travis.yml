@@ -9,7 +9,7 @@ before_script:
         - chmod +x ./cc-test-reporter
         - ./cc-test-reporter before-build
 script:
-        - coverage run -m unittest discover --start-directory tests --top-level-directory . --verbose
+        - coverage run -m unittest discover --start-directory test --top-level-directory . --verbose
         - coverage xml -o coverage.xml
 notifications:
         slack: humancellatlas:VpHVbri4SQhHvnYQ5abP8t5f
