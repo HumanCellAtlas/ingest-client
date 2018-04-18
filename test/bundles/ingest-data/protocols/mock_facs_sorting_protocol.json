@@ -1,0 +1,38 @@
+{
+  "submissionDate": "2018-03-28T13:51:08.104Z",
+  "updateDate": "2018-03-28T13:51:15.468Z",
+  "user": "anonymousUser",
+  "lastModifiedUser": "anonymousUser",
+  "uuid": {
+    "uuid": "d26b3529-f0cf-4969-8bbc-5e6eb28ab4cc"
+  },
+  "events": [],
+  "content": {
+    "protocol_core": {
+      "protocol_name": "FACS sorting cells by surface markers",
+      "document": "FACSsortingProtocol.pdf",
+      "protocol_id": "FACS_sorting_protocol"
+    },
+    "describedBy": "https://schema.humancellatlas.org/type/protocol/5.1.0/protocol",
+    "schema_type": "protocol"
+  },
+  "accession": null,
+  "validationState": "Valid",
+  "validationErrors": [],
+  "_links": {
+    "self": {
+      "href": "http://mock-ingest-api/protocols/mock-facs-sorting-protocol-id"
+    },
+    "protocol": {
+      "href": "http://mock-ingest-api/protocols/mock-facs-sorting-protocol-id",
+      "title": "A single protocol"
+    },
+    "processing": {
+      "href": "http://mock-ingest-api/protocols/mock-facs-sorting-protocol-id/processingEvent"
+    },
+    "submissionEnvelopes": {
+      "href": "http://mock-ingest-api/protocols/mock-facs-sorting-protocol-id/submissionEnvelopes",
+      "title": "Access or create new submission envelopes"
+    }
+  }
+}

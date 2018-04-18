@@ -1,0 +1,80 @@
+{
+  "_embedded": {
+    "biomaterials": [
+      {
+        "submissionDate": "2018-03-28T13:51:08.990Z",
+        "updateDate": "2018-03-28T13:51:23.699Z",
+        "user": "anonymousUser",
+        "lastModifiedUser": "anonymousUser",
+        "uuid": {
+          "uuid": "47551530-cb55-48f3-8afa-6744cc641297"
+        },
+        "events": [],
+        "content": {
+          "target_cell_type": [
+            {
+              "text": "CD8+ T cell",
+              "ontology": "CL:0000625"
+            }
+          ],
+          "schema_type": "biomaterial",
+          "biomaterial_core": {
+            "has_input_biomaterial": "1121_LN",
+            "ncbi_taxon_id": [
+              10090
+            ],
+            "biomaterial_id": "22011_1#3"
+          },
+          "genus_species": [
+            {
+              "text": "Mus musculus",
+              "ontology": "NCBITaxon:10090"
+            }
+          ],
+          "describedBy": "https://schema.humancellatlas.org/type/biomaterial/5.1.0/cell_suspension",
+          "total_estimated_cells": 1
+        },
+        "accession": null,
+        "validationState": "Valid",
+        "validationErrors": [],
+        "_links": {
+          "self": {
+            "href": "http://mock-ingest-api/biomaterials/mock-cell-suspension-id"
+          },
+          "biomaterial": {
+            "href": "http://mock-ingest-api/biomaterials/mock-cell-suspension-id{?projection}",
+            "templated": true
+          },
+          "processing": {
+            "href": "http://mock-ingest-api/biomaterials/mock-cell-suspension-id/processingEvent"
+          },
+          "projects": {
+            "href": "http://mock-ingest-api/biomaterials/mock-cell-suspension-id/projects",
+            "title": "Access or create projects. Creation can only be done inside a submission envelope"
+          },
+          "inputToProcesses": {
+            "href": "http://mock-ingest-api/biomaterials/mock-cell-suspension-id/inputToProcesses"
+          },
+          "derivedByProcesses": {
+            "href": "http://mock-ingest-api/biomaterials/mock-cell-suspension-id/derivedByProcesses"
+          },
+          "submissionEnvelopes": {
+            "href": "http://mock-ingest-api/biomaterials/mock-cell-suspension-id/submissionEnvelopes",
+            "title": "Access or create new submission envelopes"
+          }
+        }
+      }
+    ]
+  },
+  "_links": {
+    "self": {
+      "href": "http://mock-ingest-api/processes/mock-assay-process-id/inputBiomaterials?page=0&size=20"
+    }
+  },
+  "page": {
+    "size": 20,
+    "totalElements": 1,
+    "totalPages": 1,
+    "number": 0
+  }
+}

@@ -1,0 +1,42 @@
+{
+  "submissionDate": "2018-03-28T13:51:08.115Z",
+  "updateDate": "2018-03-28T13:51:15.440Z",
+  "user": "anonymousUser",
+  "lastModifiedUser": "anonymousUser",
+  "uuid": {
+    "uuid": "92300067-cf51-4ed8-95f5-cedc41ce9af1"
+  },
+  "events": [],
+  "content": {
+    "protocol_core": {
+      "protocol_name": "Make/amplify cDNA for each cell",
+      "document": "SmartSeq2_RTPCR_protocol.pdf",
+      "protocol_id": "SmartSeq2_RTPCR_protocol"
+    },
+    "describedBy": "https://schema.humancellatlas.org/type/protocol/5.1.0/protocol",
+    "protocol_type": {
+      "text": "Smart-seq2 protocol",
+      "ontology": "EFO:0008442"
+    },
+    "schema_type": "protocol"
+  },
+  "accession": null,
+  "validationState": "Valid",
+  "validationErrors": [],
+  "_links": {
+    "self": {
+      "href": "http://mock-ingest-api/protocols/mock-smart-seq-2-protocol-lib-id"
+    },
+    "protocol": {
+      "href": "http://mock-ingest-api/protocols/mock-smart-seq-2-protocol-lib-id",
+      "title": "A single protocol"
+    },
+    "processing": {
+      "href": "http://mock-ingest-api/protocols/mock-smart-seq-2-protocol-lib-id/processingEvent"
+    },
+    "submissionEnvelopes": {
+      "href": "http://mock-ingest-api/protocols/mock-smart-seq-2-protocol-lib-id/submissionEnvelopes",
+      "title": "Access or create new submission envelopes"
+    }
+  }
+}

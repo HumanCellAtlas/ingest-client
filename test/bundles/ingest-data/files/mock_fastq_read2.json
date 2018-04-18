@@ -1,0 +1,49 @@
+{
+  "content": {
+    "file_core": {
+      "file_name": "22011_1#3_2.fastq.gz",
+      "file_format": "fastq.gz"
+    },
+    "schema_type": "file",
+    "describedBy": "https://schema.humancellatlas.org/type/file/5.1.0/sequence_file",
+    "lane_index": 1,
+    "read_index": "read2"
+  },
+  "submissionDate": "2018-03-28T13:51:12.929Z",
+  "updateDate": "2018-04-09T14:45:34.076Z",
+  "user": "anonymousUser",
+  "lastModifiedUser": "anonymousUser",
+  "uuid": {
+    "uuid": "2b6f539d-b2a2-445d-8c7e-96e2e525e670"
+  },
+  "events": [],
+  "accession": null,
+  "validationState": "Valid",
+  "validationErrors": [],
+  "fileName": "22011_1#3_2.fastq.gz",
+  "cloudUrl": "s3://org-humancellatlas-upload-integration/c2f94466-adee-4aac-b8d0-1e864fa5f8e8/22011_1#3_2.fastq.gz",
+  "checksums": null,
+  "validationId": "d493cbb0-9fb5-46ae-a63e-a5790143ac6e",
+  "_links": {
+    "self": {
+      "href": "http://mock-ingest-api/files/mock-fastq-read2-id"
+    },
+    "file": {
+      "href": "http://mock-ingest-api/files/mock-fastq-read2-id",
+      "title": "A single file"
+    },
+    "processing": {
+      "href": "http://mock-ingest-api/files/mock-fastq-read2-id/processingEvent"
+    },
+    "inputToProcesses": {
+      "href": "http://mock-ingest-api/files/mock-fastq-read2-id/inputToProcesses"
+    },
+    "derivedByProcesses": {
+      "href": "http://mock-ingest-api/files/mock-fastq-read2-id/derivedByProcesses"
+    },
+    "submissionEnvelopes": {
+      "href": "http://mock-ingest-api/files/mock-fastq-read2-id/submissionEnvelopes",
+      "title": "Access or create new submission envelopes"
+    }
+  }
+}
