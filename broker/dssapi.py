@@ -86,6 +86,17 @@ class DssApi:
 
         return bundle
 
+    def head_file(self, file_uuid ):
+        # finally create the bundle
+        try:
+            return self.hca_client.head_file(
+                uuid=file_uuid,
+                replica="aws"
+            )
+        except Exception as e:
+            raise Error(e)
+
+
 # Module Exceptions
 
 

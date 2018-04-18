@@ -161,7 +161,7 @@ class TestExporter(TestCase):
         process_info.input_bundle = None
 
         # when:
-        metadata_files = exporter.generate_metadata_files(process_info)
+        metadata_files = exporter.prepare_metadata_files(process_info)
 
         # then:
         self.assertEqual(metadata_files['project']['content'], mock_bundle_content['project'])
@@ -224,7 +224,7 @@ class TestExporter(TestCase):
             }
         }
         # when:
-        metadata_files = exporter.generate_metadata_files(process_info)
+        metadata_files = exporter.prepare_metadata_files(process_info)
 
         # then:
         self.assertEqual(metadata_files['project']['dss_uuid'], 'project-file-uuid', 'project must have the input file uuid')
@@ -509,7 +509,7 @@ class TestExporter(TestCase):
 
         exporter = ingestexportservice.IngestExporter()
         process_info = exporter.get_all_process_info('http://mock-ingest-api/processes/mock-assay-process-id')
-        bundle_metadata_info = exporter.generate_metadata_files(process_info)
+        bundle_metadata_info = exporter.prepare_metadata_files(process_info)
 
         # assert that the contents of the bundle metadata info match that of the expected bundle
         self.assertEqual( # biomaterials...
@@ -540,7 +540,7 @@ class TestExporter(TestCase):
 
         # now run it on analysis
         process_info = exporter.get_all_process_info('http://mock-ingest-api/processes/mock-analysis-process-id')
-        bundle_metadata_info = exporter.generate_metadata_files(process_info)
+        bundle_metadata_info = exporter.prepare_metadata_files(process_info)
 
         # assert that the contents of the bundle metadata info match that of the expected bundle
         self.assertEqual( # biomaterials...

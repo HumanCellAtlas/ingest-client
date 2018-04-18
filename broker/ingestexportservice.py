@@ -208,8 +208,8 @@ class IngestExporter:
         process_info = self.get_all_process_info(process_url)
 
         self.logger.info('Generating bundle files...')
-        metadata_files_info = self.generate_metadata_files(process_info)
-        data_files_info = process_info.derived_files
+        metadata_files_info = self.prepare_metadata_files(process_info)
+        data_files_info = self.prepare_data_files(process_info)
 
         bundle_manifest = self.create_bundle_manifest(submission_uuid, metadata_files_info, process_info)
 
@@ -354,7 +354,7 @@ class IngestExporter:
 
         return None
 
-    def generate_metadata_files(self, process_info):
+    def prepare_metadata_files(self, process_info):
         bundle_content = self.build_and_validate_content(process_info)
 
         metadata_files = {}
@@ -615,9 +615,16 @@ class IngestExporter:
             version = ''
 
             try:
-                created_file = self.dss_api.put_file(bundle_uuid, bundle_file)
-                # should be safe to put file with existing uuid
-                # DSS returns 200 when the file is already present and is identical to the file being uploaded.
+                if bundle_file['is_same_as_input']:
+                    # TODO this assumes that the latest version is the file version in the input bundle, should be a safe assumption for now
+                    # Ideally, bundle manifest must store the file uuid and version and version must be retrieved from there
+                    file_response = self.dss_api.head_file(bundle_file["dss_uuid"])
+                    created_file = {
+                        'version': file_response.headers['X-DSS-VERSION']
+                    }
+                else:
+                    created_file = self.dss_api.put_file(bundle_uuid, bundle_file)
+
 
                 version = created_file['version']
             except Exception as e:
@@ -664,11 +671,17 @@ class IngestExporter:
                 'url': cloud_url,
                 'dss_uuid': uuid,
                 'indexed': False,
-                'content-type': 'data'
+                'content-type': 'data',
+                'is_same_as_input': data_file['is_same_as_input']
             })
 
         return data_files
 
+    def prepare_data_files(self, process_info):
+        for uuid, data_file in process_info.derived_files.items():
+            process_info.derived_files[uuid]['is_same_as_input'] = uuid in process_info.input_files
+
+        return process_info.derived_files
 
 class File:
     def __init__(self):
