@@ -47,6 +47,13 @@ class DssApi:
                 source_url=url
             )
         except Exception as e:
+            params = {
+                'uuid': uuid,
+                'bundle_uuid': bundle_uuid,
+                'creator_uid': self.creator_uid,
+                'source_url': url
+            }
+            self.logger.error('Error in hca_client.put_file method call with params:' + json.dumps(params))
             raise Error(e)
 
         return bundle_file
