@@ -1,0 +1,85 @@
+{
+  "_embedded": {
+    "processes": [
+      {
+        "submissionDate": "2018-03-28T13:51:23.452Z",
+        "updateDate": "2018-03-28T13:51:36.695Z",
+        "user": "anonymousUser",
+        "lastModifiedUser": "anonymousUser",
+        "uuid": {
+          "uuid": "1c5a46de-1d39-44b0-b8cc-b5f9010d1180"
+        },
+        "events": [],
+        "content": {
+          "schema_type": "process",
+          "describedBy": "https://schema.humancellatlas.org/type/process/1.0.0/process",
+          "process_core": {
+            "process_id": "wrapper_process_14"
+          }
+        },
+        "accession": null,
+        "validationState": "Valid",
+        "validationErrors": [],
+        "_links": {
+          "self": {
+            "href": "http://mock-ingest-api/processes/mock-dissociation-enrichment-process-id"
+          },
+          "process": {
+            "href": "http://mock-ingest-api/processes/mock-dissociation-enrichment-process-id{?projection}",
+            "templated": true
+          },
+          "processing": {
+            "href": "http://mock-ingest-api/processes/mock-dissociation-enrichment-process-id/processingEvent"
+          },
+          "inputBiomaterials": {
+            "href": "http://mock-ingest-api/processes/mock-dissociation-enrichment-process-id/inputBiomaterials"
+          },
+          "derivedBiomaterials": {
+            "href": "http://mock-ingest-api/processes/mock-dissociation-enrichment-process-id/derivedBiomaterials"
+          },
+          "inputFiles": {
+            "href": "http://mock-ingest-api/processes/mock-dissociation-enrichment-process-id/inputFiles"
+          },
+          "derivedFiles": {
+            "href": "http://mock-ingest-api/processes/mock-dissociation-enrichment-process-id/derivedFiles"
+          },
+          "inputBundleReferences": {
+            "href": "http://mock-ingest-api/processes/mock-dissociation-enrichment-process-id/bundleReferences"
+          },
+          "inputFileReferences": {
+            "href": "http://mock-ingest-api/processes/mock-dissociation-enrichment-process-id/fileReference"
+          },
+          "add-input-bundles": {
+            "href": "http://mock-ingest-api/processes/mock-dissociation-enrichment-process-id/bundleReferences"
+          },
+          "add-file-reference": {
+            "href": "http://mock-ingest-api/processes/mock-dissociation-enrichment-process-id/fileReference"
+          },
+          "projects": {
+            "href": "http://mock-ingest-api/processes/mock-dissociation-enrichment-process-id/projects",
+            "title": "Access or create projects. Creation can only be done inside a submission envelope"
+          },
+          "protocols": {
+            "href": "http://mock-ingest-api/processes/mock-dissociation-enrichment-process-id/protocols",
+            "title": "Access or create protocols"
+          },
+          "inputBundleManifests": {
+            "href": "http://mock-ingest-api/processes/mock-dissociation-enrichment-process-id/inputBundleManifests"
+          },
+          "chainedProcesses": {
+            "href": "http://mock-ingest-api/processes/mock-dissociation-enrichment-process-id/chainedProcesses"
+          },
+          "submissionEnvelopes": {
+            "href": "http://mock-ingest-api/processes/mock-dissociation-enrichment-process-id/submissionEnvelopes",
+            "title": "Access or create new submission envelopes"
+          }
+        }
+      }
+    ]
+  },
+  "_links": {
+    "self": {
+      "href": "http://mock-ingest-api/biomaterials/mock-cell-suspension-id/derivedByProcesses"
+    }
+  }
+}

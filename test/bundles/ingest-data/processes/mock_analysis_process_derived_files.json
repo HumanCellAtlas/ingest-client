@@ -1,0 +1,66 @@
+{
+  "_embedded": {
+    "files": [
+      {
+        "content": {
+          "file_core": {
+            "file_name": "be53a909-2f0a-4b5c-ba67-c07f390f2f67_qc.bam",
+            "describedBy": "https://schema.humancellatlas.org/core/file/5.1.0/file_core",
+            "file_format": "bam"
+          },
+          "describedBy": "https://schema.humancellatlas.org/type/file/5.1.0/analysis_file",
+          "schema_type": "file"
+        },
+        "submissionDate": "2018-04-09T15:16:47.672Z",
+        "updateDate": "2018-04-09T15:16:55.187Z",
+        "user": "anonymousUser",
+        "lastModifiedUser": "anonymousUser",
+        "uuid": {
+          "uuid": "c0523a60-cb45-43fd-8718-2eaff1dcdf30"
+        },
+        "events": [],
+        "accession": null,
+        "validationState": "Invalid",
+        "validationErrors": [
+          {
+            "user_friendly_message": "'validation_id'"
+          }
+        ],
+        "fileName": "be53a909-2f0a-4b5c-ba67-c07f390f2f67_qc.bam",
+        "cloudUrl": "s3://org-humancellatlas-upload-integration/a610450d-fcc7-49d3-a7f4-b6ed4022059b/be53a909-2f0a-4b5c-ba67-c07f390f2f67_qc.bam",
+        "checksums": null,
+        "validationId": null,
+        "_links": {
+          "self": {
+            "href": "http://mock-ingest-api/files/mock-analysis-output-file-id"
+          },
+          "file": {
+            "href": "http://mock-ingest-api/files/mock-analysis-output-file-id",
+            "title": "A single file"
+          },
+          "inputToProcesses": {
+            "href": "http://mock-ingest-api/files/mock-analysis-output-file-id/inputToProcesses"
+          },
+          "derivedByProcesses": {
+            "href": "http://mock-ingest-api/files/mock-analysis-output-file-id/derivedByProcesses"
+          },
+          "submissionEnvelopes": {
+            "href": "http://mock-ingest-api/files/mock-analysis-output-file-id/submissionEnvelopes",
+            "title": "Access or create new submission envelopes"
+          }
+        }
+      }
+    ]
+  },
+  "_links": {
+    "self": {
+      "href": "http://mock-ingest-api/processes/mock-analysis-process-id/derivedFiles?page=0&size=20"
+    }
+  },
+  "page": {
+    "size": 20,
+    "totalElements": 1,
+    "totalPages": 1,
+    "number": 0
+  }
+}

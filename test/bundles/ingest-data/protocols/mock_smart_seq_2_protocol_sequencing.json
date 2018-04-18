@@ -1,0 +1,37 @@
+{
+  "submissionDate": "2018-03-28T13:51:08.125Z",
+  "updateDate": "2018-03-28T13:51:15.429Z",
+  "user": "anonymousUser",
+  "lastModifiedUser": "anonymousUser",
+  "uuid": {
+    "uuid": "8d6db096-f623-4e02-ab07-6aefe218c2dd"
+  },
+  "events": [],
+  "content": {
+    "protocol_core": {
+      "protocol_name": "Sequencing SmartSeq2 cells",
+      "protocol_id": "SmartSeq2_sequencing_protocol"
+    },
+    "describedBy": "https://schema.humancellatlas.org/type/protocol/5.1.0/protocol",
+    "schema_type": "protocol"
+  },
+  "accession": null,
+  "validationState": "Valid",
+  "validationErrors": [],
+  "_links": {
+    "self": {
+      "href": "http://mock-ingest-api/protocols/mock-smart-seq-2-protocol-seq-id"
+    },
+    "protocol": {
+      "href": "http://mock-ingest-api/protocols/mock-smart-seq-2-protocol-seq-id",
+      "title": "A single protocol"
+    },
+    "processing": {
+      "href": "http://mock-ingest-api/protocols/mock-smart-seq-2-protocol-seq-id/processingEvent"
+    },
+    "submissionEnvelopes": {
+      "href": "http://mock-ingest-api/protocols/mock-smart-seq-2-protocol-seq-id/submissionEnvelopes",
+      "title": "Access or create new submission envelopes"
+    }
+  }
+}
