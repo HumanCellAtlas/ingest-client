@@ -1,6 +1,6 @@
 from unittest import TestCase
 
-import broker.token_util as token_util
+import ingest.utils.token_util as token_util
 
 
 class TestTokenReteival(TestCase):
