@@ -5,21 +5,22 @@ assign uuid and generate a directory of bundles for the submitted data
 """
 from openpyxl.utils.exceptions import InvalidFileException
 
-from spreadsheetUploadError import SpreadsheetUploadError
-
 __author__ = "jupp"
 __license__ = "Apache 2.0"
 
 import json, os
-from openpyxl import load_workbook
-from ingestapi import IngestApi
-from optparse import OptionParser
 import logging
+import ingest.utils.token_util as token_util
+
+
+from openpyxl import load_workbook
+from ingest.api.ingestapi import IngestApi
+
+from optparse import OptionParser
 
 from itertools import chain
 from collections import defaultdict
 
-import token_util as token_util
 
 # these are spreadsheet fields that can be a list
 # todo - these should be read out of the json schema at the start

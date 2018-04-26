@@ -5,17 +5,20 @@ desc goes here
 __author__ = "jupp"
 __license__ = "Apache 2.0"
 
-import ingestapi
+
 import json
 import logging
 import os
-import stagingapi
+
 import sys
 import uuid
 from optparse import OptionParser
 
-from ingest.api import dssapi
-from ingest.utils import bundlevalidator
+import ingest.api.stagingapi as stagingapi
+import ingest.api.ingestapi as ingestapi
+import ingest.api.dssapi as dssapi
+
+import ingest.utils.bundlevalidator as bundlevalidator
 
 DEFAULT_INGEST_URL = os.environ.get('INGEST_API', 'http://api.ingest.dev.data.humancellatlas.org')
 DEFAULT_STAGING_URL = os.environ.get('STAGING_API', 'http://staging.dev.data.humancellatlas.org')

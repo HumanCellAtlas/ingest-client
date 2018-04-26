@@ -13,9 +13,9 @@ from os import listdir
 from os.path import isfile, join
 from unittest import TestCase
 
-from broker.ingestexportservice import IngestExporter
-from broker import ingestexportservice
-from broker import stagingapi
+from ingest.exporter.ingestexportservice import IngestExporter
+import ingest.exporter.ingestexportservice as ingestexportservice
+import ingest.api.stagingapi as stagingapi
 
 BASE_PATH = os.path.dirname(__file__)
 
