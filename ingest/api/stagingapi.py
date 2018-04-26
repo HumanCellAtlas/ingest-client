@@ -6,10 +6,13 @@ __author__ = "jupp"
 __license__ = "Apache 2.0"
 __date__ = "12/09/2017"
 
-import json, os, requests, logging
+import json
+import os
+import requests
+import logging
+
 from time import sleep
-# from urllib.parse import urlparse # TODO python 3 conversion
-import urlparse
+from urllib.parse import urlparse
 
 DEFAULT_STAGING_URL = os.environ.get('STAGING_API', 'https://staging.dev.data.humancellatlas.org')
 DEFAULT_STAGING_VERSION = os.environ.get('STAGING_API_VERSION', 'v1')
