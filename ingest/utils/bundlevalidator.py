@@ -1,11 +1,7 @@
-from functools import reduce
-
-import errorreport as errorreport
 import jsonschema
-import requests
 import os
-
-import validationreport as validationreport
+import requests
+from functools import reduce
 
 BUNDLE_SCHEMA_BASE_URL = "https://schema.humancellatlas.org/bundle/%s/"
 BUNDLE_SCHEMA_VERSION = "5.1.0"
@@ -24,15 +20,15 @@ class BundleValidator:
 
         validator = jsonschema.Draft4Validator(schema=schema)
         if validator.is_valid(instance=metadata):
-            validationreport.ValidationReport.validation_report_ok()
+            ingest.exporter.validationreport.ValidationReport.validation_report_ok()
             return True
         else:
-            validation_report = validationreport.ValidationReport()
+            validation_report = ingest.exporter.validationreport.ValidationReport()
             validation_report.validation_state = "INVALID"
 
             for error in validator.iter_errors(instance=metadata):
                 validation_report.error_reports.append(
-                    errorreport.ErrorReport(self.generate_error_message(error), error, "schema validation"))
+                    ingest.exporter.errorreport.ErrorReport(self.generate_error_message(error), error, "schema validation"))
 
             return validation_report
             # return False
