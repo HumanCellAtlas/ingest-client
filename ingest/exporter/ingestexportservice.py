@@ -454,8 +454,8 @@ class IngestExporter:
 
     def _compare_to_input_file(self, input_bundle, attr, file_uuids):
         file_map = input_bundle[attr]
-        input_file_uuids = file_map.values()[0]
-        input_file_uuid = file_map.keys()[0]
+        input_file_uuids = list(file_map.values())[0]
+        input_file_uuid = list(file_map.keys())[0]
 
         is_same_as_input_file = self._are_equal_lists(input_file_uuids, file_uuids)
 
