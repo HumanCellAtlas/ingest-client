@@ -12,7 +12,7 @@ import requests
 import logging
 
 from time import sleep
-from urllib.parse import urlparse
+from urllib.parse import urljoin
 
 DEFAULT_STAGING_URL = os.environ.get('STAGING_API', 'https://staging.dev.data.humancellatlas.org')
 DEFAULT_STAGING_VERSION = os.environ.get('STAGING_API_VERSION', 'v1')
@@ -44,7 +44,7 @@ class StagingApi:
         self.header = {'Api-Key': self.apikey, 'Content-type': 'application/json'}
 
     def createStagingArea(self, submissionId):
-        base = urlparse.urljoin(self.url, self.apiversion + '/area/' + submissionId)
+        base = urljoin(self.url, self.apiversion + '/area/' + submissionId)
         r = requests.post(base, headers=self.header)
         if r.status_code == requests.codes.created:
             print ("Waiting 10 seconds for IAM policy to take effect..."),
@@ -55,7 +55,7 @@ class StagingApi:
         raise ValueError('Can\'t create staging area for sub id:' + submissionId + ', Error:' + r.text)
 
     def deleteStagingArea(self, submissionId):
-        base = urlparse.urljoin(self.url, self.apiversion + '/area/' + submissionId)
+        base = urljoin(self.url, self.apiversion + '/area/' + submissionId)
         try:
 
             r = requests.delete(base, headers=self.header)
@@ -69,7 +69,7 @@ class StagingApi:
 
     def stageFile(self, submissionId, filename, body, type):
 
-        fileUrl = urlparse.urljoin(self.url, self.apiversion + '/area/' + submissionId + "/" + filename)
+        fileUrl = urljoin(self.url, self.apiversion + '/area/' + submissionId + "/" + filename)
 
         header = dict(self.header)
         header['Content-type'] = 'application/json; dcp-type=' + type
@@ -88,7 +88,7 @@ class StagingApi:
         return r
 
     def hasStagingArea(self, submissionId):
-        base = urlparse.urljoin(self.url, self.apiversion + '/area/' + submissionId + '/files_info')
+        base = urljoin(self.url, self.apiversion + '/area/' + submissionId + '/files_info')
 
         r = requests.put(base, data="{}", headers=self.header)
         return r.status_code == requests.codes.ok
