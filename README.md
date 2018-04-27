@@ -8,8 +8,11 @@ Requirements for this project are listed in 2 files: `requirements.txt` and `req
 The `requirements-dev.txt` file contains dependencies specific for development, and needs to be 
 installed:
 
+    pip install -r requirements.txt
     pip install -r requirements-dev.txt
+    
 
+Note: This package is currently only compatible with Python 3. 
 ### Running the Tests
 
 To run all the tests, use `nose` package:
