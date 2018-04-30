@@ -2,6 +2,19 @@
 
 This repository contain the hca-ingest Python package library which can be shared across ingest services.
 
+## Installation
+
+    pip install hca-ingest
+
+## Usage
+To use the Ingest API interface in your python script 
+
+    from ingest.api.ingestapi import IngestApi
+
+Configure the ingest url to be used by setting the environment variable for INGEST_API
+    
+    INGEST_API=http://localhost:8080
+
 ## Developer Notes
 
 Requirements for this project are listed in 2 files: `requirements.txt` and `requirements-dev.txt`.
@@ -18,6 +31,11 @@ Note: This package is currently only compatible with Python 3.
 To run all the tests, use `nose` package:
 
     nosetests
+    
+### Testing changes locally
+You can use editable mode of pip install to test the package before publishing to PyPI
+
+    pip install -e path/to/ingest-common
 
 ### Publish to PyPI
 
@@ -46,3 +64,5 @@ To run all the tests, use `nose` package:
     base directory. Specific packages can be chosen if preferred instead of the wildcard `*`:
     
         twine upload dist/hca_ingest-0.1a0.tar.gz
+
+
