@@ -302,7 +302,9 @@ class IngestApi:
         max_retries = 5
 
         if tries < max_retries:
-            self.logger.info("no of tries: " + str(tries + 1))
+            if tries > 1:
+                self.logger.info("no of tries: " + str(tries + 1))
+
             r = None
             
             try:
