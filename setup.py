@@ -6,7 +6,7 @@ install_requires = [line.rstrip() for line in open(os.path.join(base_dir, 'requi
 
 setup(
     name = 'hca_ingest',
-    version = '0.3-a',
+    version = '0.3-b',
     packages = find_packages(exclude=['tests', 'tests.*']),
     install_requires = install_requires,
     include_package_data = True
