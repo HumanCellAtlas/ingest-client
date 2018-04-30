@@ -28,16 +28,29 @@ installed:
     
 
 Note: This package is currently only compatible with Python 3. 
+
 ### Running the Tests
 
 To run all the tests, use `nose` package:
 
     nosetests
     
-### Testing changes locally
-You can use editable mode of pip install to test the package before publishing to PyPI
+### Developing Code in Editable Mode
+
+Using `pip`'s editable mode, client projects can refer to the latest code in this repository 
+directly without installing it through PyPI. This can be done either by manually cloning the code
+base:
 
     pip install -e path/to/ingest-common
+
+or by having `pip` do it automatically by providing a reference to this repository:
+
+    pip install -e \
+    git+https://github.com/HumanCellAtlas/ingest-common.git\
+    #egg=hca_ingest
+    
+For more information on version control support with `pip`, refer to the [VCS
+support documentation](https://pip.pypa.io/en/stable/reference/pip_install/#vcs-support).
 
 ### Publish to PyPI
 
