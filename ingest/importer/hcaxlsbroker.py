@@ -12,6 +12,7 @@ import json, os
 import logging
 import ingest.utils.token_util as token_util
 
+from ingest.importer.spreadsheetUploadError import SpreadsheetUploadError
 
 from openpyxl import load_workbook
 from ingest.api.ingestapi import IngestApi
@@ -131,7 +132,7 @@ class SpreadsheetSubmission:
         # todo - the logging code below doesn't work in python 3 - we should upgrade this
         formatter = logging.Formatter(
             '[%(filename)s:%(lineno)s - %(funcName)20s() ] %(asctime)s - %(name)s - %(levelname)s - %(message)s')
-        logging.basicConfig(formatter=formatter, level=logging.INFO)
+        # logging.basicConfig(formatter=formatter, level=logging.INFO)
         self.logger = logging.getLogger(__name__)
 
         self.dryrun = dry
@@ -347,12 +348,12 @@ class SpreadsheetSubmission:
         empty_sampling_id = 1
 
         if existing_project_id is None:
-            projectSheet = wb.get_sheet_by_name("project")
+            projectSheet = wb["project"]
 
             if "project.publications" in wb.sheetnames:
-                projectPubsSheet = wb.get_sheet_by_name("project.publications")
+                projectPubsSheet = wb["project.publications"]
             if "contact" in wb.sheetnames:
-                contributorSheet = wb.get_sheet_by_name("contact")
+                contributorSheet = wb["contact"]
 
         specimenSheet = wb.create_sheet()
         donorSheet = wb.create_sheet()
@@ -360,25 +361,25 @@ class SpreadsheetSubmission:
         familialRelationshipSheet = wb.create_sheet()
 
         if "specimen_from_organism" in wb.sheetnames:
-            specimenSheet = wb.get_sheet_by_name("specimen_from_organism")
+            specimenSheet = wb["specimen_from_organism"]
         if "donor_organism" in wb.sheetnames:
-            donorSheet = wb.get_sheet_by_name("donor_organism")
+            donorSheet = wb["donor_organism"]
         if "cell_suspension" in wb.sheetnames:
-            cellSuspensionSheet = wb.get_sheet_by_name("cell_suspension")
+            cellSuspensionSheet = wb["cell_suspension"]
         if "familial_relationship" in wb.sheetnames:
-            familialRelationshipSheet = wb.get_sheet_by_name("familial_relationship")
+            familialRelationshipSheet = wb["familial_relationship"]
 
         organoidSheet = wb.create_sheet()
         if "organoid" in wb.sheetnames:
-            organoidSheet = wb.get_sheet_by_name("organoid")
+            organoidSheet = wb["organoid"]
 
         clSheet = wb.create_sheet()
         if "cell_line" in wb.sheetnames:
-            clSheet = wb.get_sheet_by_name("cell_line")
+            clSheet = wb["cell_line"]
 
         clPublicationSheet = wb.create_sheet()
         if "cell_line.publications" in wb.sheetnames:
-            clPublicationSheet = wb.get_sheet_by_name("cell_line.publications")
+            clPublicationSheet = wb["cell_line.publications"]
 
 
         protocolSheet = wb.create_sheet()
@@ -391,21 +392,21 @@ class SpreadsheetSubmission:
         filesSheet = wb.create_sheet()
 
         if "protocol" in wb.sheetnames:
-            protocolSheet = wb.get_sheet_by_name("protocol")
+            protocolSheet = wb["protocol"]
         if "enrichment_process" in wb.sheetnames:
-            enrichmentSheet = wb.get_sheet_by_name("enrichment_process")
+            enrichmentSheet = wb["enrichment_process"]
         if "collection_process" in wb.sheetnames:
-            collectionSheet = wb.get_sheet_by_name("collection_process")
+            collectionSheet = wb["collection_process"]
         if "dissociation_process" in wb.sheetnames:
-            dissociationSheet = wb.get_sheet_by_name("dissociation_process")
+            dissociationSheet = wb["dissociation_process"]
         if "library_preparation_process" in wb.sheetnames:
-            libraryPrepSheet = wb.get_sheet_by_name("library_preparation_process")
+            libraryPrepSheet = wb["library_preparation_process"]
         if "sequencing_process" in wb.sheetnames:
-            sequencingSheet = wb.get_sheet_by_name("sequencing_process")
+            sequencingSheet = wb["sequencing_process"]
         if "purchased_reagents" in wb.sheetnames:
-            reagentsSheet = wb.get_sheet_by_name("purchased_reagents")
+            reagentsSheet = wb["purchased_reagents"]
         if "sequence_file" in wb.sheetnames:
-            filesSheet = wb.get_sheet_by_name("sequence_file")
+            filesSheet = wb["sequence_file"]
 
 
         # convert data in sheets back into dict + add the schema_type/describedBy boilerplate
@@ -847,18 +848,17 @@ class SpreadsheetSubmission:
 if __name__ == '__main__':
     parser = OptionParser()
     parser.add_option("-p", "--path", dest="path",
-                      help="path to HCA example data bundles", metavar="FILE")
-    parser.add_option("-d", "--dry", help="doa dry run without submitting to ingest", action="store_true", default=False)
+                      help="path to spreadsheet", metavar="FILE")
+    parser.add_option("-d", "--dry", help="do a dry run without submitting to ingest", action="store_true", default=False)
     parser.add_option("-o", "--output", dest="output",
                       help="output directory where to dump json files submitted to ingest", metavar="FILE", default=None)
     parser.add_option("-i", "--id", dest="project_id",
                       help="The project_id for an existing submission", default=None)
     parser.add_option("-v", "--version", dest="schema_version", help="Metadata schema version", default=None)
 
-
     (options, args) = parser.parse_args()
     if not options.path:
-        print ("You must supply path to the HCA bundles directory")
+        print ("You must supply path to the spreadsheet")
         exit(2)
     submission = SpreadsheetSubmission(options.dry, options.output, options.schema_version)
     submission.submit(options.path, None, None, options.project_id)
