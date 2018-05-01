@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/HumanCellAtlas/ingest-common.svg?branch=master)](https://travis-ci.org/HumanCellAtlas/ingest-common)
+[![Build Status](https://travis-ci.org/HumanCellAtlas/ingest-client.svg?branch=master)](https://travis-ci.org/HumanCellAtlas/ingest-client)
 
 # Ingest Client
 
@@ -41,12 +41,12 @@ Using `pip`'s editable mode, client projects can refer to the latest code in thi
 directly without installing it through PyPI. This can be done either by manually cloning the code
 base:
 
-    pip install -e path/to/ingest-common
+    pip install -e path/to/ingest-client
 
 or by having `pip` do it automatically by providing a reference to this repository:
 
     pip install -e \
-    git+https://github.com/HumanCellAtlas/ingest-common.git\
+    git+https://github.com/HumanCellAtlas/ingest-client.git\
     #egg=hca_ingest
     
 For more information on version control support with `pip`, refer to the [VCS
