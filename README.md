@@ -1,5 +1,6 @@
-[![Build Status](https://travis-ci.org/HumanCellAtlas/ingest-common.svg?branch=master)](https://travis-ci.org/HumanCellAtlas/ingest-common)
-
+[![Build Status](https://travis-ci.org/HumanCellAtlas/ingest-client.svg?branch=master)](https://travis-ci.org/HumanCellAtlas/ingest-client)
+[![Maintainability](https://api.codeclimate.com/v1/badges/2fba112abcaba6d7bcda/maintainability)](https://codeclimate.com/github/HumanCellAtlas/ingest-client/maintainability)
+[![Test Coverage](https://api.codeclimate.com/v1/badges/2fba112abcaba6d7bcda/test_coverage)](https://codeclimate.com/github/HumanCellAtlas/ingest-client/test_coverage)
 # Ingest Client
 
 This repository contain the hca-ingest Python package library which can be shared across ingest services.
