@@ -1,16 +1,13 @@
 import json
-import time
 import os
 import copy
 import requests
-import types
 
 from mock import MagicMock
 from mock import Mock
 from mock import patch
 
-from os import listdir
-from os.path import isfile, join
+
 from unittest import TestCase
 
 from ingest.exporter.ingestexportservice import IngestExporter
@@ -353,32 +350,6 @@ class TestExporter(TestCase):
         # when, then:
         with self.assertRaises(ingestexportservice.BundleDSSError) as e:
             metadata_files = exporter.put_bundle_in_dss('bundle_uuid', [])
-
-    def _compare_files_in_dir(self, test_expected_bundles_dir, test_actual_bundles_dir):
-        # TODO test only bundle manifest uuids for now
-        expected_files = [f for f in listdir(test_expected_bundles_dir) if isfile(join(test_expected_bundles_dir, f))]
-        expected_files = ['Mouse Melanoma_bundleManifest.json']
-
-        for filename in expected_files:
-
-            with open(test_expected_bundles_dir + filename) as expected_file:
-                expected_file_json = json.loads(expected_file.read())
-
-            with open(test_actual_bundles_dir + filename) as actual_file:
-                actual_file_json = json.loads(actual_file.read())
-
-            for property in expected_file_json.keys():
-                if isinstance(expected_file_json[property], types.DictType):  # map of uuid to list
-                    actual = frozenset(actual_file_json[property].values()[0])
-                else:
-                    actual = expected_file_json[property]
-
-                if isinstance(expected_file_json[property], types.DictType):
-                    expected = frozenset(expected_file_json[property].values()[0])
-                else:
-                    expected = expected_file_json[property]
-
-                self.assertEqual(expected, actual, "discrepancy in " + property + ' in dirs:' + test_expected_bundles_dir + filename + ',' + test_actual_bundles_dir + filename)
 
     # mocks linked entities in the ingest API, attempts to build a bundle by crawling from an assay
     # process, asserts that the bundle created is equivalent to a known bundle
