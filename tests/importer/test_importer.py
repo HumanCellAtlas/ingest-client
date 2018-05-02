@@ -1,17 +1,15 @@
 import json
 import os
-
-from unittest import TestCase
 from os import listdir
 from os.path import isfile, join
+from unittest import TestCase
 
-import yaml
+from mock import patch, Mock
 from openpyxl import Workbook
 
-from ingest.importer.importer import Importer
-from ingest.utils.compare_json import compare_json_data
-
 from ingest.importer.hcaxlsbroker import SpreadsheetSubmission
+from ingest.importer.importer import TabImporter, MetadataMapping
+from ingest.utils.compare_json import compare_json_data
 
 BASE_PATH = os.path.dirname(__file__)
 
@@ -56,24 +54,30 @@ class TestImporter(TestCase):
             self.assertTrue(compare_json_data(a_json, b_json), 'discrepancy in ' + filename)
 
 
-class ImporterTest(TestCase):
+class TabImporterTest(TestCase):
 
     def test_import(self):
         # given:
-        with open('data/spleen_config.yaml', 'r') as spec_file:
-            yaml_spec = yaml.load(spec_file)
-        importer = Importer(yaml_spec)
+        mapping = MetadataMapping()
+        mapping.get_column_mapping = Mock(side_effect=[
+            ('project_shortname', 'Short name'),
+            ('project_title', 'Project title')
+        ])
+        tab_importer = TabImporter(mapping, [
+                'projects.project.project_core.project_shortname',
+                'projects.project.project_core.project_title'
+            ])
 
         # and:
         workbook = Workbook()
-        project_sheet = workbook.create_sheet('Project')
-        project_sheet['A1'] = 'Short name'
-        project_sheet['A4'] = 'Tissue stability'
-        project_sheet['B1'] = 'Project title'
-        project_sheet['B4'] = 'Ischaemic sensitivity of human tissue by single cell RNA seq.'
+        tab = workbook.create_sheet('Project')
+        tab['A1'] = 'Short name'
+        tab['A4'] = 'Tissue stability'
+        tab['B1'] = 'Project title'
+        tab['B4'] = 'Ischaemic sensitivity of human tissue by single cell RNA seq.'
 
         # when:
-        json = importer.do_import(project_sheet)
+        json = tab_importer.do_import(tab)
 
         # then:
         self.assertTrue(json)
