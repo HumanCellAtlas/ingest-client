@@ -1,0 +1,12 @@
+{
+    "protocol_core": {
+        "protocol_id": "lib_prep_protocol_1",
+        "protocol_description": "single-cell sorting in 96-well plates followed by cDNA preparation using Smart-seq2"
+    },
+    "protocol_type": {
+        "text": "nucleic acid library construction protocol",
+        "ontology": "EFO:0004184"
+    },
+    "schema_type": "protocol",
+    "describedBy": "https://schema.humancellatlas.org/type/protocol/5.1.0/protocol"
+}

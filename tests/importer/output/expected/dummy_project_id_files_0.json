@@ -1,0 +1,9 @@
+{
+    "file_core": {
+        "file_name": "SRR3934349_1.fastq.gz",
+        "file_format": "fastq.gz"
+    },
+    "read_index": "read1",
+    "schema_type": "file",
+    "describedBy": "https://schema.humancellatlas.org/type/file/5.1.0/sequence_file"
+}

@@ -1,0 +1,18 @@
+{
+    "process_core": {
+        "process_id": "lib_prep_proc_1"
+    },
+    "cell_barcode": {
+        "barcode_read": "Read 1",
+        "barcode_offset": 0,
+        "barcode_length": 16
+    },
+    "input_nucleic_acid_molecule": {
+        "text": "polyA RNA"
+    },
+    "library_construction_approach": "Smart-seq2",
+    "end_bias": "full length",
+    "strand": "unstranded",
+    "schema_type": "process",
+    "describedBy": "https://schema.humancellatlas.org/type/process/sequencing/5.1.0/library_preparation_process"
+}

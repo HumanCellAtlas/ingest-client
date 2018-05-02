@@ -1,0 +1,8 @@
+{
+    "protocol_core": {
+        "protocol_id": "seq_protocol_1",
+        "protocol_description": "SmartSeq2 sequencing protocol"
+    },
+    "schema_type": "protocol",
+    "describedBy": "https://schema.humancellatlas.org/type/protocol/5.1.0/protocol"
+}
