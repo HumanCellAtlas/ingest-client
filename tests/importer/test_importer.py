@@ -77,7 +77,7 @@ class ImporterTest(TestCase):
 
         # then:
         self.assertTrue(json)
-        project_core = json['content']['project_core']
+        project_core = json['project_core']
         self.assertEqual('Tissue stability', project_core['project_shortname'])
         self.assertEqual('Ischaemic sensitivity of human tissue by single cell RNA seq.',
                          project_core['project_title'])
