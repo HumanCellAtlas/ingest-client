@@ -4,7 +4,6 @@ from os import listdir
 from os.path import isfile, join
 from unittest import TestCase
 
-from mock import patch, Mock
 from openpyxl import Workbook
 
 from ingest.importer.hcaxlsbroker import SpreadsheetSubmission
@@ -58,11 +57,14 @@ class TabImporterTest(TestCase):
 
     def test_import(self):
         # given:
+        column_mapping = {
+            'Short name': 'project_shortname',
+            'Project title': 'project_title'
+        }
+
+        # and:
         mapping = MetadataMapping()
-        mapping.get_column_mapping = Mock(side_effect=[
-            ('project_shortname', 'Short name'),
-            ('project_title', 'Project title')
-        ])
+        mapping.get_column_mapping = lambda display_name: column_mapping[display_name]
         tab_importer = TabImporter(mapping, [
                 'projects.project.project_core.project_shortname',
                 'projects.project.project_core.project_title'

@@ -11,10 +11,10 @@ class TabImporter:
 
     def do_import(self, worksheet):
         data = {}
-        for column in self.columns:
-            column_name, display_name = self.metadata_mapping.get_column_mapping(column)
-            for cell in list(worksheet.iter_rows())[0]:
-                if cell.value == display_name:
-                    coordinate = "%s4" % (cell.column)
-                    data[column_name] = worksheet[coordinate].value
+        for row in worksheet.iter_rows(row_offset=3, max_row=(worksheet.max_row - 3)):
+            for cell in row:
+                header_coordinate = "%s1" % (cell.column)
+                display_name = worksheet[header_coordinate].value
+                property_name = self.metadata_mapping.get_column_mapping(display_name)
+                data[property_name] = cell.value
         return { 'project_core': data }
