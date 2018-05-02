@@ -22,15 +22,24 @@ def load_json(file_path):
     return data
 
 
+def empty_dir(directory):
+    files = [f for f in listdir(directory) if isfile(join(directory, f))]
+
+    for filename in files:
+        os.unlink(join(directory, filename))
+
+
 class TestImporter(TestCase):
 
     def test_submit_dryrun(self):
         actual_output_dir = BASE_PATH + '/output/actual/'
-        expected_output_dir = BASE_PATH + './output/expected/'
+        expected_output_dir = BASE_PATH + '/output/expected/'
+
+        empty_dir(actual_output_dir)
 
         spreadsheet_path = './glioblastoma_v5_plainHeaders_small_2cells.xlsx'
         submission = SpreadsheetSubmission(dry=True, output=actual_output_dir)
-        submission.submit(spreadsheet_path, None, None, 'glioblastoma')
+        submission.submit2(spreadsheet_path, None, None, 'glioblastoma')
 
         self._compare_files_in_dir(expected_output_dir, actual_output_dir)
 
