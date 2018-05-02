@@ -66,11 +66,18 @@ class ImporterTest(TestCase):
 
         # and:
         workbook = Workbook()
-        project_sheet = workbook.create_sheet('project')
-        project_sheet['A1'] = 'data'
+        project_sheet = workbook.create_sheet('Project')
+        project_sheet['A1'] = 'Short name'
+        project_sheet['A4'] = 'Tissue stability'
+        project_sheet['B1'] = 'Project title'
+        project_sheet['B4'] = 'Ischaemic sensitivity of human tissue by single cell RNA seq.'
 
         # when:
         json = importer.do_import(project_sheet)
 
         # then:
         self.assertTrue(json)
+        project_core = json['content']['project_core']
+        self.assertEqual('Tissue stability', project_core['project_shortname'])
+        self.assertEqual('Ischaemic sensitivity of human tissue by single cell RNA seq.',
+                         project_core['project_title'])

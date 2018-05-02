@@ -5,4 +5,12 @@ class Importer:
         pass
 
     def do_import(self, worksheet):
-        return '{}'
+        return { 'content':
+                     {
+                         'project_core':
+                             {
+                                 'project_shortname': worksheet['A4'].value,
+                                 'project_title': worksheet['B4'].value
+                             }
+                     }
+        }
