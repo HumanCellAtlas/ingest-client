@@ -5,7 +5,10 @@ from unittest import TestCase
 from os import listdir
 from os.path import isfile, join
 
+import yaml
+from openpyxl import Workbook
 
+from ingest.importer.importer import Importer
 from ingest.utils.compare_json import compare_json_data
 
 from ingest.importer.hcaxlsbroker import SpreadsheetSubmission
@@ -51,3 +54,23 @@ class TestImporter(TestCase):
             b_json = load_json(join(dir2, filename))
 
             self.assertTrue(compare_json_data(a_json, b_json), 'discrepancy in ' + filename)
+
+
+class ImporterTest(TestCase):
+
+    def test_import(self):
+        # given:
+        with open('data/spleen_config.yaml', 'r') as spec_file:
+            yaml_spec = yaml.load(spec_file)
+        importer = Importer(yaml_spec)
+
+        # and:
+        workbook = Workbook()
+        project_sheet = workbook.create_sheet('project')
+        project_sheet['A1'] = 'data'
+
+        # when:
+        json = importer.do_import(project_sheet)
+
+        # then:
+        self.assertTrue(json)
