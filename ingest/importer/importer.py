@@ -3,7 +3,7 @@ class MetadataMapping:
     def __init__(self):
         pass
 
-class TabImporter:
+class WorksheetImporter:
 
     def __init__(self):
         pass

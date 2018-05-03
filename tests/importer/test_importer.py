@@ -7,7 +7,7 @@ from unittest import TestCase
 from openpyxl import Workbook
 
 from ingest.importer.hcaxlsbroker import SpreadsheetSubmission
-from ingest.importer.importer import TabImporter, MetadataMapping
+from ingest.importer.importer import WorksheetImporter, MetadataMapping
 from ingest.utils.compare_json import compare_json_data
 
 BASE_PATH = os.path.dirname(__file__)
@@ -53,22 +53,22 @@ class TestImporter(TestCase):
             self.assertTrue(compare_json_data(a_json, b_json), 'discrepancy in ' + filename)
 
 
-class TabImporterTest(TestCase):
+class WorksheetImporterTest(TestCase):
 
-    def test_import(self):
+    def test_do_import(self):
         # given:
-        tab_importer = TabImporter()
+        worksheet_importer = WorksheetImporter()
 
         # and:
         workbook = Workbook()
-        tab = workbook.create_sheet('Project')
-        tab['A1'] = 'projects.project.project_core.project_shortname'
-        tab['A4'] = 'Tissue stability'
-        tab['B1'] = 'projects.project.project_core.project_title'
-        tab['B4'] = 'Ischaemic sensitivity of human tissue by single cell RNA seq.'
+        worksheet = workbook.create_sheet('Project')
+        worksheet['A1'] = 'projects.project.project_core.project_shortname'
+        worksheet['A4'] = 'Tissue stability'
+        worksheet['B1'] = 'projects.project.project_core.project_title'
+        worksheet['B4'] = 'Ischaemic sensitivity of human tissue by single cell RNA seq.'
 
         # when:
-        json = tab_importer.do_import(tab)
+        json = worksheet_importer.do_import(worksheet)
 
         # then:
         self.assertTrue(json)
