@@ -57,22 +57,14 @@ class TabImporterTest(TestCase):
 
     def test_import(self):
         # given:
-        column_mapping = {
-            'Short name': 'project_shortname',
-            'Project title': 'project_title'
-        }
-
-        # and:
-        mapping = MetadataMapping()
-        mapping.get_column_mapping = lambda display_name: column_mapping[display_name]
-        tab_importer = TabImporter(mapping)
+        tab_importer = TabImporter()
 
         # and:
         workbook = Workbook()
         tab = workbook.create_sheet('Project')
-        tab['A1'] = 'Short name'
+        tab['A1'] = 'projects.project.project_core.project_shortname'
         tab['A4'] = 'Tissue stability'
-        tab['B1'] = 'Project title'
+        tab['B1'] = 'projects.project.project_core.project_title'
         tab['B4'] = 'Ischaemic sensitivity of human tissue by single cell RNA seq.'
 
         # when:
