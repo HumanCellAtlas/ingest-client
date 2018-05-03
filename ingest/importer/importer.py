@@ -1,3 +1,5 @@
+import re
+
 from ingest.importer.data_node import DataNode
 
 
@@ -20,9 +22,8 @@ class WorksheetImporter:
 
     def _get_header_name(self, cell, worksheet):
         header_coordinate = '%s1' % (cell.column)
-        header_name = worksheet[header_coordinate].value
-        return header_name
+        return worksheet[header_coordinate].value
 
     def _get_field_chain(self, header_name):
-        properties = header_name.split('.')
-        return '.'.join(properties[2:])
+        match = re.search('(\w+\.){2}(?P<field_chain>.*)', header_name)
+        return match.group('field_chain')
