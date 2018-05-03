@@ -11,6 +11,9 @@ class DataNodeTest(TestCase):
 
         # when:
         node['path.to.node'] = 'value'
+        node['path.to.nested.field'] = 347
 
         # then:
-        self.assertEqual('value', node.as_dict()['path']['to']['node'])
+        dict = node.as_dict()
+        self.assertEqual('value', dict['path']['to']['node'])
+        self.assertEqual(347, dict['path']['to']['nested']['field'])
