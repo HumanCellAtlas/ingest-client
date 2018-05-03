@@ -129,12 +129,12 @@ class SchemaParser:
             raise RootSchemaException(
                 "Schema must start with a root submittable type schema")
 
-        endpoint = get_endpoint_name_for_schema(property.schema)
+        endpoint = self.get_core_type_from_url(property.schema.url)
 
         self.schema_template.meta_data_properties[endpoint] = {}
         self.schema_template.meta_data_properties[endpoint][property.schema.domain_entity] = property
 
-        path = endpoint + "." + property.schema.domain_entity
+        path = self._get_path(endpoint, property.schema.domain_entity)
         self._recursive_fill_properties(path, data)
 
         self.schema_template.labels = self.key_lookup
@@ -156,12 +156,15 @@ class SchemaParser:
         else:
             return d[keys]
 
+    def _get_path(self, str1, str2):
+        return ".".join([str1, str2.split('/')[0]])
+
     def _recursive_fill_properties(self, path, data):
 
         for property_name, property_block in self._get_schema_properties_from_object(data).items():
             self._collect_required_properties(property_block)
 
-            new_path = path + "." + property_name
+            new_path =  self._get_path(path, property_name)
             property = self._extract_property(property_block, property_name=property_name, key=new_path)
             self.put(self.schema_template.meta_data_properties, new_path, property)
             self._recursive_fill_properties(new_path, property_block)
@@ -233,6 +236,14 @@ class SchemaParser:
     def get_module_from_url(self, url):
         return url.rsplit('/', 1)[-1]
 
+    def get_core_type_from_url(self, url):
+        pattern = re.compile("http[s]://[^/]*/type/([^/]*)/.*")
+        match = pattern.search(url).group(1)
+
+        if match == "process":
+            return match + "es"
+        return match + "s"
+
     def _get_schema_properties_from_object(self, object):
 
         if "items" in object and isinstance(object["items"], dict):
@@ -245,12 +256,6 @@ class SchemaParser:
                 del object["properties"][unwanted_key]
             return object["properties"]
         return {}
-
-
-def get_endpoint_name_for_schema(schema):
-    if schema.domain_entity == "process":
-        return schema.domain_entity + "es"
-    return schema.domain_entity + "s"
 
 
 class Schema:
