@@ -5,9 +5,12 @@ class WorksheetImporter:
 
     def do_import(self, worksheet):
         node = {}
-        for row in worksheet.iter_rows(row_offset=3, max_row=(worksheet.max_row - 3)):
+        for row in self._get_data_rows(worksheet):
             for cell in row: self._add_to_node(node, worksheet, cell)
         return node
+
+    def _get_data_rows(self, worksheet):
+        return worksheet.iter_rows(row_offset=3, max_row=(worksheet.max_row - 3))
 
     def _add_to_node(self, node, worksheet, cell):
         header_coordinate = '%s1' % (cell.column)
