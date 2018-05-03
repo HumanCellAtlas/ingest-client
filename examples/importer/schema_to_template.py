@@ -10,21 +10,21 @@ schemas = [
 
 ]
 
-data = schematemplate.get_template_from_schemas_by_url(schemas)
+template = schematemplate.get_template_from_schemas_by_url(schemas)
 
 # lookup the schema url for project_core
 
-print (data.lookup("projects.project.project_core.schema.url"))
+print (template.lookup("projects.project.project_core.schema.url"))
 
 # get the user friendly name
 
-print (data.lookup("projects.project.project_core.project_title.user_friendly"))
+print (template.lookup("projects.project.project_core.project_title.user_friendly"))
 
 # get key from user friendly name
 
-print (data.get_key_for_label("Project title") )
+print (template.get_key_for_label("Project title"))
 
 # dump the config in yaml or json
 
-print(data.yaml_dump())
+print(template.yaml_dump())
 # print(data.json_dump())
