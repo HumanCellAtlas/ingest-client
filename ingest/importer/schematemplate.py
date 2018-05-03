@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 """
-This package will return a SchemaTemplate objects from a set of JSON schema files.
+This package will return a SchemaTemplate objects
+from a set of JSON schema files.
 """
 
 __author__ = "jupp"
@@ -29,6 +30,7 @@ def get_template_from_schemas_by_url(list_of_schema_urls):
             parser.load_schema(data)
     return parser.schema_template
 
+
 def get_template_from_schemas_by_file(list_of_schema_file):
     """
     given a list of JSON schema files
@@ -36,12 +38,12 @@ def get_template_from_schemas_by_file(list_of_schema_file):
     """
     return None
 
+
 def get_template_from_schemas(list_of_schema_file):
     """
     given a list of JSON schema objects
     return a SchemaTemplate object
     """
-
     schema_template = SchemaParser()
 
     # for each file
@@ -56,18 +58,20 @@ def get_template_from_schemas(list_of_schema_file):
 
 class SchemaTemplate:
     """
-    A schema template is a simplified view over JSON schema that is used to build and
+    A schema template is a simplified view over
+    JSON schema for the HCA metadata
     """
     def __init__(self):
 
         self.template_version = "1.0.0"
         self.created_date = str(datetime.now())
-        self.meta_data_properties ={}
+        self.meta_data_properties = {}
         self.tabs = {}
         self.labels = {}
 
     def lookup(self, key):
         return self.get(self.meta_data_properties, key)
+
     def yaml_dump(self):
         return yaml_dump(yaml_load(self.json_dump()))
 
@@ -84,16 +88,13 @@ class SchemaTemplate:
         else:
             return d[keys]
 
+
 class Error(Exception):
     """Base-class for all exceptions raised by this module."""
 
+
 class RootSchemaException(Error):
     """When generating a template we have to start with root JSON objects"""
-
-class Property:
-    def __init__(self):
-        pass
-
 
 
 class dotdict(dict):
@@ -102,10 +103,13 @@ class dotdict(dict):
     __setattr__ = dict.__setitem__
     __delattr__ = dict.__delitem__
 
+
 class SchemaParser:
-    """A schema parser provides functions for accessing objects in a JSON schema"""
+    """A schema parser provides functions for
+    accessing objects in a JSON schema"""
     def __init__(self):
-        self.properties_to_ignore = ["describedBy","schema_version", "schema_type"]
+        self.properties_to_ignore = \
+            ["describedBy", "schema_version", "schema_type"]
         self.schema_template = SchemaTemplate()
         self.required = []
         self.key_lookup = {}
@@ -122,15 +126,16 @@ class SchemaParser:
 
         property = self._extract_property(data)
         if "type" not in property.schema.high_level_entity:
-            raise RootSchemaException("Schema must start with a root submittable type schema")
+            raise RootSchemaException(
+                "Schema must start with a root submittable type schema")
 
         endpoint = get_endpoint_name_for_schema(property.schema)
 
         self.schema_template.meta_data_properties[endpoint] = {}
         self.schema_template.meta_data_properties[endpoint][property.schema.domain_entity] = property
 
-        path = endpoint +"."+property.schema.domain_entity
-        self._recursive_fill_properties(path,data)
+        path = endpoint + "." + property.schema.domain_entity
+        self._recursive_fill_properties(path, data)
 
         self.schema_template.labels = self.key_lookup
         return self.schema_template
@@ -156,12 +161,12 @@ class SchemaParser:
         for property_name, property_block in self._get_schema_properties_from_object(data).items():
             self._collect_required_properties(property_block)
 
-            new_path= path + "." +property_name
-            property = self._extract_property(property_block, property_name = property_name, key=new_path)
+            new_path = path + "." + property_name
+            property = self._extract_property(property_block, property_name=property_name, key=new_path)
             self.put(self.schema_template.meta_data_properties, new_path, property)
-            self._recursive_fill_properties( new_path, property_block)
+            self._recursive_fill_properties(new_path, property_block)
 
-    def _collect_required_properties(self,data):
+    def _collect_required_properties(self, data):
         if "required" in data:
             self.required = list(set().union(self.required, data["required"]))
 
@@ -182,7 +187,7 @@ class SchemaParser:
 
         schema = self._get_schema_from_object(data)
 
-        if 'property_name' in kwargs and  kwargs.get('property_name') in self.required:
+        if 'property_name' in kwargs and kwargs.get('property_name') in self.required:
             dic["required"] = True
 
         if schema:
@@ -230,16 +235,17 @@ class SchemaParser:
 
     def _get_schema_properties_from_object(self, object):
 
-        if "items" in object and isinstance(object["items"],dict):
+        if "items" in object and isinstance(object["items"], dict):
             return self._get_schema_properties_from_object(object["items"])
 
-        if "properties" in object and isinstance(object["properties"],dict):
+        if "properties" in object and isinstance(object["properties"], dict):
             keys_to_remove = set(self.properties_to_ignore).intersection(set(object["properties"].keys()))
 
             for unwanted_key in keys_to_remove:
                 del object["properties"][unwanted_key]
             return object["properties"]
         return {}
+
 
 def get_endpoint_name_for_schema(schema):
     if schema.domain_entity == "process":
@@ -258,13 +264,15 @@ class Schema:
 
     def build(self):
         self.dict = {
-            "high_level_entity" : None,
-            "domain_entity" : None,
-            "module" : None,
-            "url" : None,
-            "required_fields" : []
+            "high_level_entity": None,
+            "domain_entity": None,
+            "module": None,
+            "url": None,
+            "required_fields": []
         }
         return dotdict(self.dict)
+
+
 class Tab:
     def __init__(self):
         self.display_name = ""
