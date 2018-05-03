@@ -65,10 +65,7 @@ class TabImporterTest(TestCase):
         # and:
         mapping = MetadataMapping()
         mapping.get_column_mapping = lambda display_name: column_mapping[display_name]
-        tab_importer = TabImporter(mapping, [
-                'projects.project.project_core.project_shortname',
-                'projects.project.project_core.project_title'
-            ])
+        tab_importer = TabImporter(mapping)
 
         # and:
         workbook = Workbook()

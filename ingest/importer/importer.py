@@ -5,9 +5,8 @@ class MetadataMapping:
 
 class TabImporter:
 
-    def __init__(self, metadata_mapping, columns):
+    def __init__(self, metadata_mapping):
         self.metadata_mapping = metadata_mapping
-        self.columns = columns
 
     def do_import(self, worksheet):
         data = {}
