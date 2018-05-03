@@ -1,8 +1,3 @@
-class MetadataMapping:
-
-    def __init__(self):
-        pass
-
 class WorksheetImporter:
 
     def __init__(self):

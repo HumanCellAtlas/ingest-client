@@ -7,7 +7,7 @@ from unittest import TestCase
 from openpyxl import Workbook
 
 from ingest.importer.hcaxlsbroker import SpreadsheetSubmission
-from ingest.importer.importer import WorksheetImporter, MetadataMapping
+from ingest.importer.importer import WorksheetImporter
 from ingest.utils.compare_json import compare_json_data
 
 BASE_PATH = os.path.dirname(__file__)
