@@ -1,32 +1,28 @@
+from ingest.importer.data_node import DataNode
+
+
 class WorksheetImporter:
 
     def __init__(self):
         pass
 
     def do_import(self, worksheet):
-        node = {}
+        node = DataNode()
         for row in self._get_data_rows(worksheet):
-            for cell in row: self._add_to_node(node, worksheet, cell)
-        return node
+            for cell in row:
+                header_name = self._get_header_name(cell, worksheet)
+                field_chain = self._get_field_chain(header_name)
+                node[field_chain] = cell.value
+        return node.as_dict()
 
     def _get_data_rows(self, worksheet):
         return worksheet.iter_rows(row_offset=3, max_row=(worksheet.max_row - 3))
 
-    def _add_to_node(self, node, worksheet, cell):
+    def _get_header_name(self, cell, worksheet):
         header_coordinate = '%s1' % (cell.column)
         header_name = worksheet[header_coordinate].value
-        field_chain = self._extract_field_chain(header_name)
-        target_node = self._determine_node(node, field_chain)
-        target_node[field_chain[-1]] = cell.value
+        return header_name
 
-    def _extract_field_chain(self, header_name):
+    def _get_field_chain(self, header_name):
         properties = header_name.split('.')
-        return properties[2:]
-
-    def _determine_node(self, node, field_chain):
-        current_node = node
-        for field in field_chain[:len(field_chain) - 1]:
-            if field not in current_node:
-                current_node[field] = {}
-            current_node = current_node[field]
-        return current_node
+        return '.'.join(properties[2:])
