@@ -1,4 +1,5 @@
 class BooleanConverter(object):
 
     def convert(self, value):
-        return True if value.lower() == 'true' else False
+        truth_values = ['true', 'yes']
+        return True if value.lower() in truth_values else False
