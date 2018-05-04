@@ -6,8 +6,9 @@ from unittest import TestCase
 
 from openpyxl import Workbook
 
+from ingest.importer.data_converter import Converter, ListConverter, BooleanConverter
 from ingest.importer.hcaxlsbroker import SpreadsheetSubmission
-from ingest.importer.importer import WorksheetImporter
+from ingest.importer.importer import WorksheetImporter, TemplateManager
 from ingest.importer.schematemplate import SchemaTemplate
 from ingest.utils.compare_json import compare_json_data
 
@@ -61,38 +62,24 @@ class WorksheetImporterTest(TestCase):
         worksheet_importer = WorksheetImporter()
 
         # and:
-        cell_mapping = {
-            'projects.project.project_core.project_shortname': {
-                'value_type': 'string',
-                'multivalue': False
-            },
-            'projects.project.miscellaneous': {
-                'value_type': 'string',
-                'multivalue': True
-            },
-            'projects.project.numbers': {
-                'value_type': 'integer',
-                'multivalue': True
-            },
-            'projects.project.is_active': {
-                'value_type': 'boolean',
-                'multivalue': False
-            },
-            'projects.project.is_submitted': {
-                'value_type': 'boolean',
-                'multivalue': False
-            }
+        converter_mapping = {
+            'projects.project.project_core.project_shortname': Converter(),
+            'projects.project.miscellaneous': ListConverter(),
+            'projects.project.numbers': ListConverter(data_type='integer'),
+            'projects.project.is_active': BooleanConverter(),
+            'projects.project.is_submitted': BooleanConverter()
         }
 
         # and:
-        schema_template = SchemaTemplate()
-        schema_template.lookup = lambda key: cell_mapping.get(key)
+        template_manager = TemplateManager()
+        template_manager.get_converter = lambda key: converter_mapping.get(key) if key in converter_mapping \
+            else Converter()
 
         # and:
         worksheet = self._create_test_worksheet()
 
         # when:
-        json = worksheet_importer.do_import(worksheet, schema_template)
+        json = worksheet_importer.do_import(worksheet, template_manager)
 
         # then:
         self.assertTrue(json)

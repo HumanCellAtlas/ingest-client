@@ -8,27 +8,16 @@ class WorksheetImporter:
     def __init__(self):
         pass
 
-    def do_import(self, worksheet, schema_template):
+    def do_import(self, worksheet, template_manager):
         node = DataNode()
         for row in self._get_data_rows(worksheet):
             for cell in row:
                 header_name = self._get_header_name(cell, worksheet)
                 field_chain = self._get_field_chain(header_name)
 
-                column_spec = schema_template.lookup(header_name)
+                converter = template_manager.get_converter(header_name)
 
-                data = cell.value
-
-                if column_spec and column_spec['multivalue']:
-                    data = data.split('||')
-
-                    if column_spec['value_type'] == 'integer':
-                        data = [int(elem) for elem in data]
-
-                true_values = ['yes', 'true']
-
-                if column_spec and column_spec['value_type'] == 'boolean':
-                    data = True if data.lower() in true_values else False
+                data = converter.convert(cell.value)
 
                 node[field_chain] = data
 
@@ -44,3 +33,7 @@ class WorksheetImporter:
     def _get_field_chain(self, header_name):
         match = re.search('(\w+\.){2}(?P<field_chain>.*)', header_name)
         return match.group('field_chain')
+
+
+class TemplateManager(object):
+    pass
