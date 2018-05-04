@@ -5,7 +5,7 @@
    "additionalProperties":false,
    "required":[
       "describedBy",
-      " schema_type"
+      "schema_type"
    ],
    "title":"project",
    "type":"object",
