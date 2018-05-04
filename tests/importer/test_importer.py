@@ -73,6 +73,14 @@ class WorksheetImporterTest(TestCase):
             'projects.project.numbers': {
                 'value_type': 'integer',
                 'multivalue': True
+            },
+            'projects.project.is_active': {
+                'value_type': 'boolean',
+                'multivalue': False
+            },
+            'projects.project.is_submitted': {
+                'value_type': 'boolean',
+                'multivalue': False
             }
         }
 
@@ -81,20 +89,7 @@ class WorksheetImporterTest(TestCase):
         schema_template.lookup = lambda key: cell_mapping.get(key)
 
         # and:
-        workbook = Workbook()
-        worksheet = workbook.create_sheet('Project')
-        worksheet['A1'] = 'projects.project.project_core.project_shortname'
-        worksheet['A4'] = 'Tissue stability'
-        worksheet['B1'] = 'projects.project.project_core.project_title'
-        worksheet['B4'] = 'Ischaemic sensitivity of human tissue by single cell RNA seq.'
-        worksheet['C1'] = 'projects.project.miscellaneous'
-        worksheet['C4'] = 'extra||details'
-        worksheet['D1'] = 'projects.project.contributor_count'
-        worksheet['D4'] = 7
-        worksheet['E1'] = 'projects.project.contributors'
-        worksheet['E4'] = 'Juan Dela Cruz||John Doe'
-        worksheet['F1'] = 'projects.project.numbers'
-        worksheet['F4'] = '1||2||3'
+        worksheet = self._create_test_worksheet()
 
         # when:
         json = worksheet_importer.do_import(worksheet, schema_template)
@@ -118,3 +113,31 @@ class WorksheetImporterTest(TestCase):
 
         # and
         self.assertEqual([1, 2, 3], json['numbers'])
+
+        # and
+        self.assertEqual(True, json['is_active'])
+        self.assertEqual(False, json['is_submitted'])
+
+
+
+    def _create_test_worksheet(self):
+        workbook = Workbook()
+        worksheet = workbook.create_sheet('Project')
+        worksheet['A1'] = 'projects.project.project_core.project_shortname'
+        worksheet['A4'] = 'Tissue stability'
+        worksheet['B1'] = 'projects.project.project_core.project_title'
+        worksheet['B4'] = 'Ischaemic sensitivity of human tissue by single cell RNA seq.'
+        worksheet['C1'] = 'projects.project.miscellaneous'
+        worksheet['C4'] = 'extra||details'
+        worksheet['D1'] = 'projects.project.contributor_count'
+        worksheet['D4'] = 7
+        worksheet['E1'] = 'projects.project.contributors'
+        worksheet['E4'] = 'Juan Dela Cruz||John Doe'
+        worksheet['F1'] = 'projects.project.numbers'
+        worksheet['F4'] = '1||2||3'
+        worksheet['G1'] = 'projects.project.is_active'
+        worksheet['G4'] = 'Yes'
+        worksheet['H1'] = 'projects.project.is_submitted'
+        worksheet['H4'] = 'No'
+
+        return worksheet

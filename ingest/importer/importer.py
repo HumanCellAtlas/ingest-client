@@ -25,6 +25,11 @@ class WorksheetImporter:
                     if column_spec['value_type'] == 'integer':
                         data = [int(elem) for elem in data]
 
+                true_values = ['yes', 'true']
+
+                if column_spec and column_spec['value_type'] == 'boolean':
+                    data = True if data.lower() in true_values else False
+
                 node[field_chain] = data
 
         return node.as_dict()
