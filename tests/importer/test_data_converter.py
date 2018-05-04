@@ -1,6 +1,6 @@
 from unittest import TestCase
 
-from ingest.importer.data_converter import BooleanConverter
+from ingest.importer.data_converter import BooleanConverter, InvalidBooleanValue
 
 
 class DataConverterTest(TestCase):
@@ -19,3 +19,10 @@ class DataConverterTest(TestCase):
         self.assertTrue(converter.convert('yes'))
         self.assertTrue(converter.convert('Yes'))
 
+    def test_convert_invalid_value(self):
+        converter = BooleanConverter()
+
+        with self.assertRaises(InvalidBooleanValue) as context:
+            converter.convert('yup')
+
+        self.assertEqual('yup', context.exception.get_value())
