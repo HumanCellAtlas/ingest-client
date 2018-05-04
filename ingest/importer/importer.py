@@ -18,10 +18,15 @@ class WorksheetImporter:
                 column_spec = schema_template.lookup(header_name)
 
                 data = cell.value
+
                 if column_spec and column_spec['multivalue']:
                     data = data.split('||')
 
+                    if column_spec['value_type'] == 'integer':
+                        data = [int(elem) for elem in data]
+
                 node[field_chain] = data
+
         return node.as_dict()
 
     def _get_data_rows(self, worksheet):

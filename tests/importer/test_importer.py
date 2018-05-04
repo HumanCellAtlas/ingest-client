@@ -69,6 +69,10 @@ class WorksheetImporterTest(TestCase):
             'projects.project.miscellaneous': {
                 'value_type': 'string',
                 'multivalue': True
+            },
+            'projects.project.numbers': {
+                'value_type': 'integer',
+                'multivalue': True
             }
         }
 
@@ -87,6 +91,10 @@ class WorksheetImporterTest(TestCase):
         worksheet['C4'] = 'extra||details'
         worksheet['D1'] = 'projects.project.contributor_count'
         worksheet['D4'] = 7
+        worksheet['E1'] = 'projects.project.contributors'
+        worksheet['E4'] = 'Juan Dela Cruz||John Doe'
+        worksheet['F1'] = 'projects.project.numbers'
+        worksheet['F4'] = '1||2||3'
 
         # when:
         json = worksheet_importer.do_import(worksheet, schema_template)
@@ -100,7 +108,13 @@ class WorksheetImporterTest(TestCase):
 
         # and:
         self.assertEqual(2, len(json['miscellaneous']))
-        self.assertEqual(json['miscellaneous'], ['extra', 'details'])
+        self.assertEqual(['extra', 'details'], json['miscellaneous'])
 
         # and:
         self.assertEqual(7, json['contributor_count'])
+
+        # and
+        self.assertEqual('Juan Dela Cruz||John Doe', json['contributors'])
+
+        # and
+        self.assertEqual([1, 2, 3], json['numbers'])
