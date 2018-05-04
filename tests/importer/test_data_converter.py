@@ -32,5 +32,5 @@ class ListConverterTest(TestCase):
 
     def test_convert_to_string_list(self):
         converter = ListConverter()
-        string_list = converter.convert('apple||banana||carrot')
-        self.assertEqual(['apple', 'banana', 'carrot'], string_list)
+        self.assertEqual(['apple', 'banana', 'carrot'], converter.convert('apple||banana||carrot'))
+        self.assertEqual(['durian', 'elderberry', 'fig'], converter.convert('durian||elderberry||fig'))

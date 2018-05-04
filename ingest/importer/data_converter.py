@@ -37,4 +37,4 @@ class InvalidBooleanValue(Exception):
 class ListConverter(Converter):
 
     def convert(self, data):
-        return ['apple', 'banana', 'carrot']
+        return data.split('||')
