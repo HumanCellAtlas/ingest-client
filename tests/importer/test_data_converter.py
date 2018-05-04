@@ -34,3 +34,7 @@ class ListConverterTest(TestCase):
         converter = ListConverter()
         self.assertEqual(['apple', 'banana', 'carrot'], converter.convert('apple||banana||carrot'))
         self.assertEqual(['durian', 'elderberry', 'fig'], converter.convert('durian||elderberry||fig'))
+
+    def test_convert_to_int_list(self):
+        converter = ListConverter(data_type='integer')
+        self.assertEqual([1, 2, 3], converter.convert('1||2||3'))

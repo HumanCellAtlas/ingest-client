@@ -35,6 +35,13 @@ class InvalidBooleanValue(Exception):
 
 
 class ListConverter(Converter):
+    def __init__(self, data_type='string'):
+        self.data_type = data_type
 
     def convert(self, data):
-        return data.split('||')
+        value = data.split('||')
+
+        if self.data_type == 'integer':
+            value = [int(elem) for elem in value]
+
+        return value
