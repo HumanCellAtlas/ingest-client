@@ -85,6 +85,8 @@ class WorksheetImporterTest(TestCase):
         worksheet['B4'] = 'Ischaemic sensitivity of human tissue by single cell RNA seq.'
         worksheet['C1'] = 'projects.project.miscellaneous'
         worksheet['C4'] = 'extra||details'
+        worksheet['D1'] = 'projects.project.contributor_count'
+        worksheet['D4'] = 7
 
         # when:
         json = worksheet_importer.do_import(worksheet, schema_template)
@@ -99,3 +101,6 @@ class WorksheetImporterTest(TestCase):
         # and:
         self.assertEqual(2, len(json['miscellaneous']))
         self.assertEqual(json['miscellaneous'], ['extra', 'details'])
+
+        # and:
+        self.assertEqual(7, json['contributor_count'])
