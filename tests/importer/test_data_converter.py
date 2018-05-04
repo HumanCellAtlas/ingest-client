@@ -1,9 +1,9 @@
 from unittest import TestCase
 
-from ingest.importer.data_converter import BooleanConverter, InvalidBooleanValue
+from ingest.importer.data_converter import BooleanConverter, InvalidBooleanValue, ListConverter
 
 
-class DataConverterTest(TestCase):
+class BooleanConverterTest(TestCase):
 
     def test_convert_to_false(self):
         converter = BooleanConverter()
@@ -26,3 +26,11 @@ class DataConverterTest(TestCase):
             converter.convert('yup')
 
         self.assertEqual('yup', context.exception.get_value())
+
+
+class ListConverterTest(TestCase):
+
+    def test_convert_to_string_list(self):
+        converter = ListConverter()
+        string_list = converter.convert('apple||banana||carrot')
+        self.assertEqual(['apple', 'banana', 'carrot'], string_list)

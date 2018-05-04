@@ -1,3 +1,5 @@
+from abc import abstractmethod
+
 VALUE_TABLE = {
     'true': True,
     'yes': True,
@@ -6,7 +8,14 @@ VALUE_TABLE = {
 }
 
 
-class BooleanConverter(object):
+class Converter:
+
+    @abstractmethod
+    def convert(self, data):
+        return data
+
+
+class BooleanConverter(Converter):
 
     def convert(self, data):
         value = VALUE_TABLE.get(data.lower())
@@ -23,3 +32,9 @@ class InvalidBooleanValue(Exception):
 
     def get_value(self):
         return self.value
+
+
+class ListConverter(Converter):
+
+    def convert(self, data):
+        return ['apple', 'banana', 'carrot']
