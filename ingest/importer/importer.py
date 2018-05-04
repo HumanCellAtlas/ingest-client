@@ -8,13 +8,20 @@ class WorksheetImporter:
     def __init__(self):
         pass
 
-    def do_import(self, worksheet):
+    def do_import(self, worksheet, schema_template):
         node = DataNode()
         for row in self._get_data_rows(worksheet):
             for cell in row:
                 header_name = self._get_header_name(cell, worksheet)
                 field_chain = self._get_field_chain(header_name)
-                node[field_chain] = cell.value
+
+                column_spec = schema_template.lookup(header_name)
+
+                data = cell.value
+                if column_spec and column_spec['multivalue']:
+                    data = data.split('||')
+
+                node[field_chain] = data
         return node.as_dict()
 
     def _get_data_rows(self, worksheet):

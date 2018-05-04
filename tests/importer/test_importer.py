@@ -8,6 +8,7 @@ from openpyxl import Workbook
 
 from ingest.importer.hcaxlsbroker import SpreadsheetSubmission
 from ingest.importer.importer import WorksheetImporter
+from ingest.importer.schematemplate import SchemaTemplate
 from ingest.utils.compare_json import compare_json_data
 
 BASE_PATH = os.path.dirname(__file__)
@@ -60,15 +61,33 @@ class WorksheetImporterTest(TestCase):
         worksheet_importer = WorksheetImporter()
 
         # and:
+        cell_mapping = {
+            'projects.project.project_core.project_shortname': {
+                'value_type': 'string',
+                'multivalue': False
+            },
+            'projects.project.miscellaneous': {
+                'value_type': 'string',
+                'multivalue': True
+            }
+        }
+
+        # and:
+        schema_template = SchemaTemplate()
+        schema_template.lookup = lambda key: cell_mapping.get(key)
+
+        # and:
         workbook = Workbook()
         worksheet = workbook.create_sheet('Project')
         worksheet['A1'] = 'projects.project.project_core.project_shortname'
         worksheet['A4'] = 'Tissue stability'
         worksheet['B1'] = 'projects.project.project_core.project_title'
         worksheet['B4'] = 'Ischaemic sensitivity of human tissue by single cell RNA seq.'
+        worksheet['C1'] = 'projects.project.miscellaneous'
+        worksheet['C4'] = 'extra||details'
 
         # when:
-        json = worksheet_importer.do_import(worksheet)
+        json = worksheet_importer.do_import(worksheet, schema_template)
 
         # then:
         self.assertTrue(json)
@@ -76,3 +95,7 @@ class WorksheetImporterTest(TestCase):
         self.assertEqual('Tissue stability', project_core['project_shortname'])
         self.assertEqual('Ischaemic sensitivity of human tissue by single cell RNA seq.',
                          project_core['project_title'])
+
+        # and:
+        self.assertEqual(2, len(json['miscellaneous']))
+        self.assertEqual(json['miscellaneous'], ['extra', 'details'])
