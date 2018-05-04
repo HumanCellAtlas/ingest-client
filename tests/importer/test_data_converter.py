@@ -8,14 +8,8 @@ class DataConverterTest(TestCase):
     def test_convert(self):
         converter = BooleanConverter()
 
-        value = converter.convert('true')
-
-        self.assertTrue(value)
-
-        value = converter.convert('false')
-
-        self.assertFalse(value)
-
-
-
+        self.assertTrue(converter.convert('true'))
+        self.assertTrue(converter.convert('True'))
+        self.assertFalse(converter.convert('false'))
+        self.assertFalse(converter.convert('False'))
 
