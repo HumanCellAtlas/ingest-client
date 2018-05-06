@@ -13,12 +13,11 @@ class WorksheetImporter:
         for row in self._get_data_rows(worksheet):
             for cell in row:
                 header_name = self._get_header_name(cell, worksheet)
-                field_chain = self._get_field_chain(header_name)
 
                 converter = template_manager.get_converter(header_name)
-
                 data = converter.convert(cell.value)
 
+                field_chain = self._get_field_chain(header_name)
                 node[field_chain] = data
 
         return node.as_dict()
