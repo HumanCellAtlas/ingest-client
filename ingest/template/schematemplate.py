@@ -70,7 +70,10 @@ class SchemaTemplate:
         self.labels = {}
 
     def lookup(self, key):
-        return self.get(self.meta_data_properties, key)
+        try:
+            return self.get(self.meta_data_properties, key)
+        except:
+            return None
 
     def yaml_dump(self):
         return yaml_dump(yaml_load(self.json_dump()))
@@ -93,12 +96,16 @@ class SchemaTemplate:
 
 
     def get(self, d, keys):
-        if "." in keys:
-            key, rest = keys.split(".", 1)
-            return self.get(d[key], rest)
-        else:
-            return d[keys]
-
+        try:
+            if "." in keys:
+                key, rest = keys.split(".", 1)
+                return self.get(d[key], rest)
+            else:
+                return d[keys]
+        except:
+            print("Key error: " +keys)
+            raise UnknownKeyException(
+                "Can't map the key to a known JSON schema property")
 
 class Error(Exception):
     """Base-class for all exceptions raised by this module."""
@@ -165,12 +172,7 @@ class SchemaParser:
 
     def _extract_property(self, data, *args, **kwargs):
 
-        dic = {
-            "multivalue": False,
-            "links_to": [],
-            "values": [],
-            "ontology_values": {}
-        }
+        dic = {"multivalue": False}
 
         if "type" in data:
             dic["value_type"] = data["type"]

@@ -8,12 +8,12 @@ tabs:
   contact:
       display_name : Contact
       columns:
-        - project.contact.contact_name
-        - project.contact.email
-        - project.contact.institution
-        - project.contact.laboratory
-        - project.contact.address
-        - project.contact.country
+        - project.contributors.contact_name
+        - project.contributors.email
+        - project.contributors.institution
+        - project.contributors.laboratory
+        - project.contributors.address
+        - project.contributors.country
   donor_organism:
       display_name : Donor
       columns:

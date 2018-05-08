@@ -1,8 +1,12 @@
 #!/usr/bin/env python
+"""
+Description goes here
+"""
+__author__ = "jupp"
+__license__ = "Apache 2.0"
+__date__ = "08/05/2018"
 
-
-import ingest.template.schematemplate as schematemplate
-from ingest.template.template_tabs import TabParser
+import ingest.template.spreadsheet_builder as spreadsheet_builder
 
 schemas = [
     "https://schema.humancellatlas.org/type/project/5.1.0/project",
@@ -20,27 +24,4 @@ schemas = [
     "https://schema.humancellatlas.org/type/protocol/sequencing/5.1.0/sequencing_protocol",
 ]
 
-template = schematemplate.get_template_from_schemas_by_url(schemas)
-
-# get key from user friendly name
-
-tabs = TabParser().load_template("tabs_human_10x.yaml")
-print (template.get_key_for_label("Biomaterial name", tab="Cell suspension", tabs_config=tabs))
-
-# lookup where to submit this entity
-
-print (template.lookup("cell_suspension.schema.domain_entity"))
-
-
-# lookup the schema url for project_core
-
-print (template.lookup("project.project_core.schema.url"))
-
-# get the user friendly name
-
-print (template.lookup("project.project_core.project_title.user_friendly"))
-
-# dump the config in yaml or json
-
-print(template.yaml_dump())
-# print(data.json_dump())
+spreadsheet_builder.generate_spreadsheet("human_10x.xlsx", "tabs_human_10x.yaml", schemas)

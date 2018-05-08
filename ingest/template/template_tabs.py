@@ -11,25 +11,23 @@ from ingest.utils import doctict
 from ingest.utils.doctict import DotDict
 
 class TabParser:
-    def __init__(self, file=None):
+    def __init__(self):
         self.dic = DotDict()
         self.key_label = {}
-        if file:
-            self.dic = self.load_template(file)
 
-    def load_template(self, tabs_yaml):
-        stream = open(tabs_yaml, 'r').read()
+
+    def load_template(self, input):
+        stream = open(input, 'r').read()
         yaml = yaml_load(stream)
-        dic = DotDict(yaml)
-
-        if "tabs" in dic:
-            for key, value in dic["tabs"].items():
+        self.dic = DotDict(yaml)
+        if "tabs" in self.dic:
+            for key, value in self.dic["tabs"].items():
                 dn = value["display_name"]
                 self.key_label[dn.lower()] = key
                 self.key_label[key] = key
         else:
             print ("warning")
-        return dic
+        return self
 
     def lookup(self, key):
         return doctict.get(self.dic, key)
