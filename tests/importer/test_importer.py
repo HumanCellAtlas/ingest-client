@@ -54,10 +54,13 @@ class WorksheetImporterTest(TestCase):
         worksheet = self._create_test_worksheet()
 
         # when:
-        json = worksheet_importer.do_import(worksheet, template_manager)
+        json_list = worksheet_importer.do_import(worksheet, template_manager)
 
         # then:
-        self.assertTrue(json)
+        json = json_list[0]
+        self.assertTrue(2, len(json_list))
+        self.assertEqual('Tissue stability 2', json_list[1]['project_core']['project_shortname'])
+
         project_core = json['project_core']
         self.assertEqual('Tissue stability', project_core['project_shortname'])
         self.assertEqual('Ischaemic sensitivity of human tissue by single cell RNA seq.',
@@ -87,6 +90,7 @@ class WorksheetImporterTest(TestCase):
         worksheet = workbook.create_sheet('Project')
         worksheet['A1'] = 'projects.project.project_core.project_shortname'
         worksheet['A4'] = 'Tissue stability'
+        worksheet['A5'] = 'Tissue stability 2'
         worksheet['B1'] = 'projects.project.project_core.project_title'
         worksheet['B4'] = 'Ischaemic sensitivity of human tissue by single cell RNA seq.'
         worksheet['C1'] = 'projects.project.miscellaneous'
