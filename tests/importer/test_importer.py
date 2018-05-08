@@ -10,6 +10,7 @@ from ingest.importer.conversion.data_converter import Converter, ListConverter, 
     DataType
 from ingest.importer.importer import WorksheetImporter
 from ingest.importer.conversion.template_manager import TemplateManager
+from ingest.importer.schematemplate import SchemaTemplate
 
 BASE_PATH = os.path.dirname(__file__)
 
@@ -47,7 +48,7 @@ class WorksheetImporterTest(TestCase):
         }
 
         # and:
-        template_manager = TemplateManager()
+        template_manager = TemplateManager(SchemaTemplate())
         template_manager.get_converter = lambda key: converter_mapping.get(key, Converter())
 
         # and:
