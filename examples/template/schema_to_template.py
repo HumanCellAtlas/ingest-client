@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 
-import ingest.importer.schematemplate as schematemplate
+
+import ingest.template.schematemplate as schematemplate
+from ingest.template.template_tabs import TabParser
 
 schemas = [
     "https://schema.humancellatlas.org/type/project/5.1.0/project",
@@ -20,19 +22,23 @@ schemas = [
 
 template = schematemplate.get_template_from_schemas_by_url(schemas)
 
+# get key from user friendly name
+
+tabs = TabParser("tabs_human_10x.yaml")
+print (template.get_key_for_label("Biomaterial name", tab="Cell suspension", tabs_config=tabs))
+
+
 # lookup the schema url for project_core
 
-print (template.lookup("projects.project.project_core.schema.url"))
+print (template.lookup("project.project_core.schema.url"))
 
 # get the user friendly name
 
-print (template.lookup("projects.project.project_core.project_title.user_friendly"))
+print (template.lookup("project.project_core.project_title.user_friendly"))
 
-# get key from user friendly name
 
-print (template.get_key_for_label("Project title"))
 
 # dump the config in yaml or json
 
-print(template.yaml_dump())
+# print(template.yaml_dump())
 # print(data.json_dump())

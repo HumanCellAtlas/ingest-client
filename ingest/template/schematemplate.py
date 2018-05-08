@@ -11,7 +11,7 @@ __date__ = "01/05/2018"
 from datetime import datetime
 from yaml import dump as yaml_dump
 from yaml import load as yaml_load
-
+from ingest.utils import doctict
 import json
 import jsonref
 import re
@@ -52,7 +52,7 @@ def get_template_from_schemas(list_of_schema_file):
 
     # add json schema
 
-    schema_template.load_schema()
+    schema_template.load_schema(list_of_schema_file)
     return None
 
 
@@ -78,8 +78,19 @@ class SchemaTemplate:
     def json_dump(self):
         return json.dumps(self.__dict__, indent=4)
 
-    def get_key_for_label(self, label):
-        return self.labels[label.lower()]
+    def get_key_for_label(self, label, tab=None, tabs_config=None):
+
+        if tab and tabs_config:
+            tab_key = tabs_config.get_key_for_label(tab)
+
+            for key in tabs_config.lookup("tabs."+tab_key+".columns"):
+                if key in self.labels[label.lower()]:
+                    return key
+
+        raise UnknownKeyException(
+            "Can't map the key to a known JSON schema property")
+
+
 
     def get(self, d, keys):
         if "." in keys:
@@ -96,13 +107,8 @@ class Error(Exception):
 class RootSchemaException(Error):
     """When generating a template we have to start with root JSON objects"""
 
-
-class dotdict(dict):
-    """dot.notation access to dictionary attributes"""
-    __getattr__ = dict.get
-    __setattr__ = dict.__setitem__
-    __delattr__ = dict.__delitem__
-
+class UnknownKeyException(Error):
+    """Can't map the key to a known property"""
 
 class SchemaParser:
     """A schema parser provides functions for
@@ -131,30 +137,14 @@ class SchemaParser:
 
         endpoint = self.get_core_type_from_url(property.schema.url)
 
-        self.schema_template.meta_data_properties[endpoint] = {}
-        self.schema_template.meta_data_properties[endpoint][property.schema.domain_entity] = property
+        # self.schema_template.meta_data_properties[endpoint] = {}
+        self.schema_template.meta_data_properties[property.schema.module] = property
 
-        path = self._get_path(endpoint, property.schema.domain_entity)
-        self._recursive_fill_properties(path, data)
+        # path = self._get_path(endpoint, property.schema.module)
+        self._recursive_fill_properties(property.schema.module, data)
 
         self.schema_template.labels = self.key_lookup
         return self.schema_template
-
-    def put(self, d, keys, item):
-        if "." in keys:
-            key, rest = keys.split(".", 1)
-            if key not in d:
-                d[key] = {}
-            self.put(d[key], rest, item)
-        else:
-            d[keys] = item
-
-    def get(self, d, keys):
-        if "." in keys:
-            key, rest = keys.split(".", 1)
-            return self.get(d[key], rest)
-        else:
-            return d[keys]
 
     def _get_path(self, str1, str2):
         return ".".join([str1, str2.split('/')[0]])
@@ -166,7 +156,7 @@ class SchemaParser:
 
             new_path =  self._get_path(path, property_name)
             property = self._extract_property(property_block, property_name=property_name, key=new_path)
-            self.put(self.schema_template.meta_data_properties, new_path, property)
+            doctict.put(self.schema_template.meta_data_properties, new_path, property)
             self._recursive_fill_properties(new_path, property_block)
 
     def _collect_required_properties(self, data):
@@ -198,13 +188,26 @@ class SchemaParser:
 
         if "user_friendly" in data:
             dic["user_friendly"] = data["user_friendly"]
-            if 'key' in kwargs:
-                self.key_lookup[data["user_friendly"].lower()] = kwargs.get("key")
+            self._update_key_to_label(data["user_friendly"], kwargs)
 
         if "description" in data:
             dic["description"] = data["description"]
 
-        return dotdict(dic)
+        return doctict.DotDict(dic)
+
+    def _update_key_to_label(self, label, kwargs ):
+        values = []
+        if 'key' in kwargs:
+            if label.lower() not in self.key_lookup:
+                values =  [ kwargs.get("key") ]
+            else:
+                values = self.key_lookup[label.lower()]
+                values.append(kwargs.get("key"))
+
+            if kwargs.get("key") not in self.key_lookup:
+                self.key_lookup[kwargs.get("key")] = [ kwargs.get("key") ]
+
+            self.key_lookup[label.lower()] = list(set(values))
 
     def _get_schema_from_object(self, data):
         """
@@ -262,23 +265,13 @@ class Schema:
     def __init__(self):
         self.dict = {}
 
-    def get_endpoint(self, schema):
-        if schema.domain_entity == "process":
-            return schema.domain_entity + "es"
-        return schema.domain_entity + "s"
-
     def build(self):
         self.dict = {
             "high_level_entity": None,
             "domain_entity": None,
             "module": None,
             "url": None,
-            "required_fields": []
         }
-        return dotdict(self.dict)
+        return doctict.DotDict(self.dict)
 
 
-class Tab:
-    def __init__(self):
-        self.display_name = ""
-        self.columns = []
