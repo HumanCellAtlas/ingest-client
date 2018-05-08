@@ -1,6 +1,7 @@
 from unittest import TestCase
 
-from ingest.importer.conversion.data_converter import BooleanConverter, InvalidBooleanValue, ListConverter
+from ingest.importer.conversion.data_converter import BooleanConverter, ListConverter
+from ingest.importer.conversion.exceptions import InvalidBooleanValue
 
 
 class BooleanConverterTest(TestCase):

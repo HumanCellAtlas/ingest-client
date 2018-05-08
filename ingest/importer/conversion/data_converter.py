@@ -1,5 +1,7 @@
 from abc import abstractmethod
 
+from ingest.importer.conversion.exceptions import InvalidBooleanValue
+
 VALUE_TABLE = {
     'true': True,
     'yes': True,
@@ -22,16 +24,6 @@ class BooleanConverter(Converter):
         if value is None:
             raise InvalidBooleanValue(data)
         return value
-
-
-# TODO this can be moved to importer.conversion.exceptions (python file)
-class InvalidBooleanValue(Exception):
-
-    def __init__(self, value):
-        self.value = value
-
-    def get_value(self):
-        return self.value
 
 
 class ListConverter(Converter):
