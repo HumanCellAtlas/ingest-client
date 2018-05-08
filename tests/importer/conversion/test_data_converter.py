@@ -1,6 +1,6 @@
 from unittest import TestCase
 
-from ingest.importer.conversion.data_converter import BooleanConverter, ListConverter
+from ingest.importer.conversion.data_converter import BooleanConverter, ListConverter, DataType
 from ingest.importer.conversion.exceptions import InvalidBooleanValue
 
 
@@ -37,5 +37,5 @@ class ListConverterTest(TestCase):
         self.assertEqual(['durian', 'elderberry', 'fig'], converter.convert('durian||elderberry||fig'))
 
     def test_convert_to_int_list(self):
-        converter = ListConverter(data_type='integer')
+        converter = ListConverter(data_type=DataType.INTEGER)
         self.assertEqual([1, 2, 3], converter.convert('1||2||3'))

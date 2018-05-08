@@ -1,4 +1,5 @@
 from abc import abstractmethod
+from enum import Enum
 
 from ingest.importer.conversion.exceptions import InvalidBooleanValue
 
@@ -8,6 +9,11 @@ VALUE_TABLE = {
     'false': False,
     'no': False
 }
+
+
+class DataType(Enum):
+    STRING = 'string',
+    INTEGER = 'integer'
 
 
 class Converter:
@@ -28,14 +34,13 @@ class BooleanConverter(Converter):
 
 class ListConverter(Converter):
 
-    # TODO define enum for data_type
-    def __init__(self, data_type='string'):
+    def __init__(self, data_type:DataType=DataType.STRING):
         self.data_type = data_type
 
     def convert(self, data):
         value = data.split('||')
 
-        if self.data_type == 'integer':
+        if self.data_type == DataType.INTEGER:
             value = [int(elem) for elem in value]
 
         return value

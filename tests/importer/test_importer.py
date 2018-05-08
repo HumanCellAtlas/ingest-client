@@ -6,7 +6,8 @@ from unittest import TestCase
 
 from openpyxl import Workbook
 
-from ingest.importer.conversion.data_converter import Converter, ListConverter, BooleanConverter
+from ingest.importer.conversion.data_converter import Converter, ListConverter, BooleanConverter, \
+    DataType
 from ingest.importer.hcaxlsbroker import SpreadsheetSubmission
 from ingest.importer.importer import WorksheetImporter, TemplateManager
 from ingest.utils.compare_json import compare_json_data
@@ -64,7 +65,7 @@ class WorksheetImporterTest(TestCase):
         converter_mapping = {
             'projects.project.project_core.project_shortname': Converter(),
             'projects.project.miscellaneous': ListConverter(),
-            'projects.project.numbers': ListConverter(data_type='integer'),
+            'projects.project.numbers': ListConverter(data_type=DataType.INTEGER),
             'projects.project.is_active': BooleanConverter(),
             'projects.project.is_submitted': BooleanConverter()
         }
