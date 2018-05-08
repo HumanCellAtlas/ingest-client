@@ -66,7 +66,7 @@ tabs:
         - enrichment_process.process_core.process_id
   cell_suspension:
       display_name : "Cell suspension"
-      primary_id_key: cell_suspension.biomaterial_core.biomaterial_id
+      primary_id: cell_suspension.biomaterial_core.biomaterial_id
       process_links:
           library_preparation_process.process_core.process_id
           sequencing_process.process_core.process_id
@@ -84,7 +84,7 @@ tabs:
         - sequencing_process.process_core.process_id
   dissociation_process:
       display_name : "Dissociation process"
-      primary_id_key: dissociation_process.process_core.process_id
+      primary_id: dissociation_process.process_core.process_id
       entity_links:
           protocol.protocol_core.process_id
       columns:
@@ -96,7 +96,7 @@ tabs:
         - protocol.protocol_core.process_id
   enrichment_process:
       display_name : "Enrichment process"
-      primary_id_key: enrichment_process.process_core.process_id
+      primary_id: enrichment_process.process_core.process_id
       entity_links:
           protocol.protocol_core.process_id
       columns:
@@ -108,7 +108,7 @@ tabs:
         - protocol.protocol_core.process_id
   library_preparation_process:
       display_name : "Library preparation process"
-      primary_id_key: library_preparation_process.process_core.process_id
+      primary_id: library_preparation_process.process_core.process_id
       entity_links:
           protocol.protocol_core.process_id
       columns:
@@ -129,7 +129,7 @@ tabs:
         - protocol.protocol_core.process_id
   sequencing_process:
       display_name : "Sequencing process"
-      primary_id_key: sequencing_process.process_core.process_id
+      primary_id: sequencing_process.process_core.process_id
       entity_links:
           protocol.protocol_core.process_id
       columns:
@@ -142,7 +142,7 @@ tabs:
         - protocol.protocol_core.process_id
   protocol:
       display_name : "Protocols"
-      primary_id_key: protocol.protocol_core.process_id
+      primary_id: protocol.protocol_core.process_id
       columns:
         - protocol.protocol_core.process_id
         - protocol.protocol_core.process_name
@@ -152,7 +152,7 @@ tabs:
         - protocol.protocol_type.ontology
   sequence_file:
       display_name : "Sequence files"
-      primary_id_key: sequence_file.file_core.file_name
+      primary_id: sequence_file.file_core.file_name
       entity_links:
           cell_suspension.biomaterial_core.biomaterial_id
       columns:
