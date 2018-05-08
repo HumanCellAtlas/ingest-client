@@ -27,6 +27,10 @@ template = schematemplate.get_template_from_schemas_by_url(schemas)
 tabs = TabParser("tabs_human_10x.yaml")
 print (template.get_key_for_label("Biomaterial name", tab="Cell suspension", tabs_config=tabs))
 
+# lookup where to submit this entity
+
+print (template.lookup("cell_suspension.schema.domain_entity"))
+
 
 # lookup the schema url for project_core
 
