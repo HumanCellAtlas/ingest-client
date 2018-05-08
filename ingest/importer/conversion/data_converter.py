@@ -3,12 +3,6 @@ from enum import Enum
 
 from ingest.importer.conversion.exceptions import InvalidBooleanValue
 
-VALUE_TABLE = {
-    'true': True,
-    'yes': True,
-    'false': False,
-    'no': False
-}
 
 class DataType(Enum):
     STRING = 'string',
@@ -28,10 +22,18 @@ class IntegerConverter(Converter):
         return int(data)
 
 
+BOOLEAN_TABLE = {
+    'true': True,
+    'yes': True,
+    'false': False,
+    'no': False
+}
+
+
 class BooleanConverter(Converter):
 
     def convert(self, data):
-        value = VALUE_TABLE.get(data.lower())
+        value = BOOLEAN_TABLE.get(data.lower())
         if value is None:
             raise InvalidBooleanValue(data)
         return value
