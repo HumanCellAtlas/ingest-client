@@ -46,7 +46,6 @@ class ListConverter(Converter):
     def convert(self, data):
         value = data.split('||')
 
-        # TODO define separate integer converter
         if self.data_type == DataType.INTEGER:
             value = [int(elem) for elem in value]
 

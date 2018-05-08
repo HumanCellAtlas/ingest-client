@@ -23,6 +23,14 @@ class IntegerConverterTest(TestCase):
         self.assertEqual(899, converter.convert(899.003))
         self.assertEqual(200934, converter.convert(200934.118))
 
+    def test_convert_from_integer(self):
+        # given:
+        converter = IntegerConverter()
+
+        # expect:
+        self.assertEqual(755, converter.convert(755))
+        self.assertEqual(89221, converter.convert(89221))
+
 
 class BooleanConverterTest(TestCase):
 
