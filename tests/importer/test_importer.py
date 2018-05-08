@@ -36,19 +36,18 @@ class WorksheetImporterTest(TestCase):
         worksheet_importer = WorksheetImporter()
 
         # and:
+        boolean_converter = BooleanConverter()
         converter_mapping = {
             'projects.project.project_core.project_shortname': Converter(),
             'projects.project.miscellaneous': ListConverter(),
             'projects.project.numbers': ListConverter(data_type=DataType.INTEGER),
-            'projects.project.is_active': BooleanConverter(),
-            'projects.project.is_submitted': BooleanConverter()
+            'projects.project.is_active': boolean_converter,
+            'projects.project.is_submitted': boolean_converter
         }
 
         # and:
         template_manager = TemplateManager()
-        template_manager.get_converter = (
-            lambda key: converter_mapping.get(key) if key in converter_mapping else Converter()
-        )
+        template_manager.get_converter = lambda key: converter_mapping.get(key, Converter())
 
         # and:
         worksheet = self._create_test_worksheet()
@@ -79,8 +78,6 @@ class WorksheetImporterTest(TestCase):
         # and
         self.assertEqual(True, json['is_active'])
         self.assertEqual(False, json['is_submitted'])
-
-
 
     def _create_test_worksheet(self):
         workbook = Workbook()
