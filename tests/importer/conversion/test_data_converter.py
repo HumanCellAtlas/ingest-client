@@ -15,6 +15,14 @@ class IntegerConverterTest(TestCase):
         self.assertEqual(37, converter.convert('37'))
         self.assertEqual(190, converter.convert('190'))
 
+    def test_convert_from_float(self):
+        # given:
+        converter = IntegerConverter()
+
+        # expect:
+        self.assertEqual(899, converter.convert(899.003))
+        self.assertEqual(200934, converter.convert(200934.118))
+
 
 class BooleanConverterTest(TestCase):
 
