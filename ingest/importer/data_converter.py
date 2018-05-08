@@ -1,3 +1,5 @@
+# TODO consider moving this to importer.conversion submodule?
+
 from abc import abstractmethod
 
 VALUE_TABLE = {
@@ -19,12 +21,12 @@ class BooleanConverter(Converter):
 
     def convert(self, data):
         value = VALUE_TABLE.get(data.lower())
-
         if value is None:
             raise InvalidBooleanValue(data)
         return value
 
 
+# TODO this can be moved to importer.conversion.exceptions (python file)
 class InvalidBooleanValue(Exception):
 
     def __init__(self, value):
@@ -35,6 +37,8 @@ class InvalidBooleanValue(Exception):
 
 
 class ListConverter(Converter):
+
+    # TODO define enum for data_type
     def __init__(self, data_type='string'):
         self.data_type = data_type
 

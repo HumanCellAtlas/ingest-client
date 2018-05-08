@@ -12,6 +12,8 @@ class WorksheetImporter:
         node = DataNode()
         for row in self._get_data_rows(worksheet):
             for cell in row:
+                # TODO preprocess headers so that cells can be converted without having to always
+                # look at the header name
                 header_name = self._get_header_name(cell, worksheet)
 
                 converter = template_manager.get_converter(header_name)
