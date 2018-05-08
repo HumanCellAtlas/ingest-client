@@ -8,9 +8,7 @@ from openpyxl import Workbook
 
 from ingest.importer.conversion.data_converter import Converter, ListConverter, BooleanConverter, \
     DataType
-from ingest.importer.hcaxlsbroker import SpreadsheetSubmission
 from ingest.importer.importer import WorksheetImporter, TemplateManager
-from ingest.utils.compare_json import compare_json_data
 
 BASE_PATH = os.path.dirname(__file__)
 
@@ -29,30 +27,6 @@ def empty_dir(directory):
 
     for filename in files:
         os.unlink(join(directory, filename))
-
-
-class TestImporter(TestCase):
-
-    def test_submit_dryrun(self):
-        actual_output_dir = BASE_PATH + '/output/actual/'
-        expected_output_dir = BASE_PATH + '/output/expected/'
-
-        empty_dir(actual_output_dir)
-
-        spreadsheet_path = './glioblastoma_v5_plainHeaders_small_2cells.xlsx'
-        submission = SpreadsheetSubmission(dry=True, output=actual_output_dir)
-        submission.submit2(spreadsheet_path, None, None, 'glioblastoma')
-
-        self._compare_files_in_dir(expected_output_dir, actual_output_dir)
-
-    def _compare_files_in_dir(self, dir1, dir2):
-        expected_files = [f for f in listdir(dir1) if isfile(join(dir1, f))]
-
-        for filename in expected_files:
-            a_json = load_json(join(dir1, filename))
-            b_json = load_json(join(dir2, filename))
-
-            self.assertTrue(compare_json_data(a_json, b_json), 'discrepancy in ' + filename)
 
 
 class WorksheetImporterTest(TestCase):
