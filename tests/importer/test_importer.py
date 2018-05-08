@@ -72,8 +72,9 @@ class WorksheetImporterTest(TestCase):
 
         # and:
         template_manager = TemplateManager()
-        template_manager.get_converter = lambda key: converter_mapping.get(key) if key in converter_mapping \
-            else Converter()
+        template_manager.get_converter = (
+            lambda key: converter_mapping.get(key) if key in converter_mapping else Converter()
+        )
 
         # and:
         worksheet = self._create_test_worksheet()
