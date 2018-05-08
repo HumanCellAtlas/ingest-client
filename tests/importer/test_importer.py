@@ -49,6 +49,14 @@ class WorksheetImporterTest(TestCase):
         template_manager.get_converter = (
             lambda key: converter_mapping.get(key) if key in converter_mapping else Converter()
         )
+        ontology_fields_mapping = {
+            'projects.project.genus_species.ontology': True,
+            'projects.project.genus_species.text': True,
+        }
+
+        template_manager.is_ontology_subfield = (
+            lambda field_name: ontology_fields_mapping.get(field_name)
+        )
 
         # and:
         worksheet = self._create_test_worksheet()
@@ -83,6 +91,11 @@ class WorksheetImporterTest(TestCase):
         self.assertEqual(True, json['is_active'])
         self.assertEqual(False, json['is_submitted'])
 
+        # ontology field
+        self.assertTrue(type(json['genus_species']) is list)
+        self.assertEqual(1, len(json['genus_species']))
+        self.assertEqual({'ontology': 'UO:000008', 'text': 'meter'}, json['genus_species'][0])
+
 
 
     def _create_test_worksheet(self):
@@ -105,5 +118,9 @@ class WorksheetImporterTest(TestCase):
         worksheet['G4'] = 'Yes'
         worksheet['H1'] = 'projects.project.is_submitted'
         worksheet['H4'] = 'No'
+        worksheet['I1'] = 'projects.project.genus_species.ontology'
+        worksheet['I4'] = 'UO:000008'
+        worksheet['J1'] = 'projects.project.genus_species.text'
+        worksheet['J4'] = 'meter'
 
         return worksheet
