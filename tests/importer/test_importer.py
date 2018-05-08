@@ -8,7 +8,8 @@ from openpyxl import Workbook
 
 from ingest.importer.conversion.data_converter import Converter, ListConverter, BooleanConverter, \
     DataType
-from ingest.importer.importer import WorksheetImporter, TemplateManager
+from ingest.importer.importer import WorksheetImporter
+from ingest.importer.conversion.template_manager import TemplateManager
 
 BASE_PATH = os.path.dirname(__file__)
 

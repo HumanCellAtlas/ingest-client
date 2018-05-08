@@ -34,7 +34,3 @@ class WorksheetImporter:
     def _get_field_chain(self, header_name):
         match = re.search('(\w+\.){2}(?P<field_chain>.*)', header_name)
         return match.group('field_chain')
-
-
-class TemplateManager(object):
-    pass
