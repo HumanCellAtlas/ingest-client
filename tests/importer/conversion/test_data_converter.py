@@ -1,7 +1,19 @@
 from unittest import TestCase
 
-from ingest.importer.conversion.data_converter import BooleanConverter, ListConverter, DataType
+from ingest.importer.conversion.data_converter import BooleanConverter, ListConverter, DataType, \
+    IntegerConverter
 from ingest.importer.conversion.exceptions import InvalidBooleanValue
+
+
+class IntegerConverterTest(TestCase):
+
+    def test_convert_from_string(self):
+        # given:
+        converter = IntegerConverter()
+
+        # expect:
+        self.assertEqual(37, converter.convert('37'))
+        self.assertEqual(190, converter.convert('190'))
 
 
 class BooleanConverterTest(TestCase):

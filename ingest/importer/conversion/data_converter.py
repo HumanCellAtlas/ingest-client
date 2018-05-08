@@ -23,6 +23,12 @@ class Converter:
         return data
 
 
+class IntegerConverter(Converter):
+
+    def convert(self, data):
+        return int(data)
+
+
 class BooleanConverter(Converter):
 
     def convert(self, data):
@@ -40,6 +46,7 @@ class ListConverter(Converter):
     def convert(self, data):
         value = data.split('||')
 
+        # TODO define separate integer converter
         if self.data_type == DataType.INTEGER:
             value = [int(elem) for elem in value]
 
