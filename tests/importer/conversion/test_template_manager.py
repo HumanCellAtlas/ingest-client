@@ -2,6 +2,7 @@ from unittest import TestCase
 
 from mock import MagicMock
 
+from ingest.importer.conversion.data_converter import Converter
 from ingest.importer.conversion.template_manager import TemplateManager
 from ingest.importer.schematemplate import SchemaTemplate
 
@@ -28,4 +29,7 @@ class TemplateManagerTest(TestCase):
         converter = template_manager.get_converter('path.to.field.project_shortname')
 
         # then:
-        self.assertIsNotNone(converter)
+        schema_template.lookup.assert_called_with('path.to.field.project_shortname')
+
+        # and:
+        self.assertIsInstance(converter, Converter)
