@@ -10,7 +10,6 @@ VALUE_TABLE = {
     'no': False
 }
 
-
 class DataType(Enum):
     STRING = 'string',
     INTEGER = 'integer'
@@ -38,15 +37,22 @@ class BooleanConverter(Converter):
         return value
 
 
+CONVERTER_MAP = {
+
+    # TODO define actual converter for string?
+    # This is because some cells may be numeric, etc. but need to be treated as string
+    DataType.STRING: Converter(),
+    DataType.INTEGER: IntegerConverter()
+
+}
+
+
 class ListConverter(Converter):
 
     def __init__(self, data_type:DataType=DataType.STRING):
-        self.data_type = data_type
+        self.converter = CONVERTER_MAP.get(data_type, CONVERTER_MAP[DataType.STRING])
 
     def convert(self, data):
         value = data.split('||')
-
-        if self.data_type == DataType.INTEGER:
-            value = [int(elem) for elem in value]
-
+        value = [self.converter.convert(elem) for elem in value]
         return value
