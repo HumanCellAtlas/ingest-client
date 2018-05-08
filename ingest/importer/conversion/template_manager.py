@@ -1,4 +1,4 @@
-from ingest.importer.conversion.data_converter import Converter
+from ingest.importer.conversion.data_converter import Converter, ListConverter
 from ingest.importer.schematemplate import SchemaTemplate
 
 
@@ -8,5 +8,9 @@ class TemplateManager:
         self.template = template
 
     def get_converter(self, header_name):
-        self.template.lookup(header_name)
-        return Converter()
+        column_spec = self.template.lookup(header_name)
+        if (column_spec.get('multivalue')):
+            converter = ListConverter()
+        else:
+            converter = Converter()
+        return converter

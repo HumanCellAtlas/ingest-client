@@ -2,7 +2,7 @@ from unittest import TestCase
 
 from mock import MagicMock
 
-from ingest.importer.conversion.data_converter import Converter
+from ingest.importer.conversion.data_converter import Converter, ListConverter
 from ingest.importer.conversion.template_manager import TemplateManager
 from ingest.importer.schematemplate import SchemaTemplate
 
@@ -26,10 +26,11 @@ class TemplateManagerTest(TestCase):
         template_manager = TemplateManager(schema_template)
 
         # when:
-        converter = template_manager.get_converter('path.to.field.project_shortname')
+        header_name = 'path.to.field.project_shortname'
+        converter = template_manager.get_converter(header_name)
 
         # then:
-        schema_template.lookup.assert_called_with('path.to.field.project_shortname')
+        schema_template.lookup.assert_called_with(header_name)
 
         # and:
         self.assertIsInstance(converter, Converter)
@@ -38,12 +39,10 @@ class TemplateManagerTest(TestCase):
         # given:
         schema_template = SchemaTemplate()
         names_spec = {
-            'names': {
-                'diplay_name': 'Names',
-                'description': 'List of names',
-                'value_type': 'string',
-                'multivalue': True
-            }
+            'diplay_name': 'Names',
+            'description': 'List of names',
+            'value_type': 'string',
+            'multivalue': True
         }
         schema_template.lookup = MagicMock(return_value=names_spec)
 
@@ -51,10 +50,14 @@ class TemplateManagerTest(TestCase):
         template_manager = TemplateManager(schema_template)
 
         # when:
-        converter = template_manager.get_converter('path.to.field.names')
+        header_name = 'path.to.field.names'
+        converter = template_manager.get_converter(header_name)
 
         # then:
-        schema_template.lookup.assert_called_with('path.to.field.names')
+        schema_template.lookup.assert_called_with(header_name)
 
         # and:
         self.assertIsNotNone(converter)
+
+        # and:
+        self.assertIsInstance(converter, ListConverter)
