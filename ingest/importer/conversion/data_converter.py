@@ -1,5 +1,3 @@
-# TODO consider moving this to importer.conversion submodule?
-
 from abc import abstractmethod
 
 VALUE_TABLE = {

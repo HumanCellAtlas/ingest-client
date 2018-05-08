@@ -6,10 +6,9 @@ from unittest import TestCase
 
 from openpyxl import Workbook
 
-from ingest.importer.data_converter import Converter, ListConverter, BooleanConverter
+from ingest.importer.conversion.data_converter import Converter, ListConverter, BooleanConverter
 from ingest.importer.hcaxlsbroker import SpreadsheetSubmission
 from ingest.importer.importer import WorksheetImporter, TemplateManager
-from ingest.importer.schematemplate import SchemaTemplate
 from ingest.utils.compare_json import compare_json_data
 
 BASE_PATH = os.path.dirname(__file__)
