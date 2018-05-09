@@ -7,6 +7,7 @@ from ingest.importer.conversion.exceptions import InvalidBooleanValue
 class DataType(Enum):
     STRING = 'string'
     INTEGER = 'integer'
+    BOOLEAN = 'boolean'
     UNDEFINED = 'undefined'
 
     @staticmethod
@@ -53,7 +54,8 @@ CONVERTER_MAP = {
     # TODO define actual converter for string?
     # This is because some cells may be numeric, etc. but need to be treated as string
     DataType.STRING: Converter(),
-    DataType.INTEGER: IntegerConverter()
+    DataType.INTEGER: IntegerConverter(),
+    DataType.BOOLEAN: BooleanConverter()
 
 }
 

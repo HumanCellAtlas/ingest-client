@@ -3,7 +3,7 @@ from unittest import TestCase
 from mock import MagicMock
 
 from ingest.importer.conversion.data_converter import Converter, ListConverter, DataType, \
-    IntegerConverter
+    IntegerConverter, BooleanConverter
 from ingest.importer.conversion.template_manager import TemplateManager
 from ingest.template.schematemplate import SchemaTemplate
 
@@ -71,3 +71,14 @@ class TemplateManagerTest(TestCase):
         # then:
         self.assertIsInstance(converter, ListConverter)
         self.assertEqual(DataType.INTEGER, converter.base_type)
+
+    def test_get_converter_for_boolean(self):
+        # given:
+        schema_template = _mock_schema_template_lookup(value_type='boolean')
+        template_manager = TemplateManager(schema_template)
+
+        # when:
+        converter = template_manager.get_converter('path.to.field')
+
+        # then:
+        self.assertIsInstance(converter, BooleanConverter)
