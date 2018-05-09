@@ -58,6 +58,13 @@ class WorksheetImporterTest(TestCase):
             lambda field_name: ontology_fields_mapping.get(field_name)
         )
 
+        template_manager.get_schema_url = (
+            lambda: 'https://schema.humancellatlas.org/type/project/5.1.0/project'
+        )
+
+        template_manager.get_schema_type = (
+            lambda: 'project'
+        )
         # and:
         worksheet = self._create_test_worksheet()
 
@@ -96,7 +103,8 @@ class WorksheetImporterTest(TestCase):
         self.assertEqual(1, len(json['genus_species']))
         self.assertEqual({'ontology': 'UO:000008', 'text': 'meter'}, json['genus_species'][0])
 
-
+        self.assertEqual('https://schema.humancellatlas.org/type/project/5.1.0/project', json['describedBy'])
+        self.assertEqual('project', json['schema_type'])
 
     def _create_test_worksheet(self):
         workbook = Workbook()

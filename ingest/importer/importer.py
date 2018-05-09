@@ -40,6 +40,9 @@ class WorksheetImporter:
             for field_chain in ontology_fields:
                 node[field_chain] = ontology_tracker.get_value_by_field(field_chain)
 
+            node['describedBy'] = template_manager.get_schema_url()
+            node['schema_type'] = template_manager.get_schema_type()
+
             json_list.append(node.as_dict())
 
         return json_list
