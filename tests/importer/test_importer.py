@@ -22,6 +22,7 @@ def _create_single_row_worksheet(worksheet_data:dict):
 
     return worksheet
 
+
 class WorksheetImporterTest(TestCase):
 
     def test_do_import(self):
@@ -142,6 +143,9 @@ class WorksheetImporterTest(TestCase):
         template_manager.get_converter = MagicMock(return_value=Converter())
 
         # and:
+        # TODO merge get_schema_url with get_schema_type as predefined block of data
+        # TODO the resulting method should be able to determine the data block based on
+        #   the worksheet info (worksheet name)
         template_manager.get_schema_url = (
             lambda: 'https://schema.humancellatlas.org/type/project/5.1.0/project'
         )
