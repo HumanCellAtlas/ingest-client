@@ -52,6 +52,7 @@ CONVERTER_MAP = {
 class ListConverter(Converter):
 
     def __init__(self, data_type:DataType=DataType.STRING):
+        self.base_type = data_type
         self.converter = CONVERTER_MAP.get(data_type, CONVERTER_MAP[DataType.STRING])
 
     def convert(self, data):
