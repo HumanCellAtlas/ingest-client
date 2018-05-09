@@ -21,3 +21,12 @@ class TemplateManager:
         value_type = column_spec.get('value_type')
         data_type = DataType.find(value_type)
         return data_type
+
+    # TODO implement this
+    def is_ontology_subfield(self, field): ...
+
+    # TODO implement this
+    def get_schema_url(self): ...
+
+    # TODO implement this
+    def get_schema_type(self): ...
