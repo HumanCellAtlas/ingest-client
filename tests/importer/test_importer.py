@@ -18,19 +18,19 @@ class WorksheetImporterTest(TestCase):
         # and:
         boolean_converter = BooleanConverter()
         converter_mapping = {
-            'projects.project.project_core.project_shortname': Converter(),
-            'projects.project.miscellaneous': ListConverter(),
-            'projects.project.numbers': ListConverter(data_type=DataType.INTEGER),
-            'projects.project.is_active': boolean_converter,
-            'projects.project.is_submitted': boolean_converter
+            'project.project_core.project_shortname': Converter(),
+            'project.miscellaneous': ListConverter(),
+            'project.numbers': ListConverter(data_type=DataType.INTEGER),
+            'project.is_active': boolean_converter,
+            'project.is_submitted': boolean_converter
         }
 
         # and:
         template_manager = TemplateManager(SchemaTemplate())
         template_manager.get_converter = lambda key: converter_mapping.get(key, Converter())
         ontology_fields_mapping = {
-            'projects.project.genus_species.ontology': True,
-            'projects.project.genus_species.text': True,
+            'project.genus_species.ontology': True,
+            'project.genus_species.text': True,
         }
 
         template_manager.is_ontology_subfield = (
@@ -89,26 +89,26 @@ class WorksheetImporterTest(TestCase):
     def _create_test_worksheet(self):
         workbook = Workbook()
         worksheet = workbook.create_sheet('Project')
-        worksheet['A1'] = 'projects.project.project_core.project_shortname'
+        worksheet['A1'] = 'project.project_core.project_shortname'
         worksheet['A4'] = 'Tissue stability'
         worksheet['A5'] = 'Tissue stability 2'
-        worksheet['B1'] = 'projects.project.project_core.project_title'
+        worksheet['B1'] = 'project.project_core.project_title'
         worksheet['B4'] = 'Ischaemic sensitivity of human tissue by single cell RNA seq.'
-        worksheet['C1'] = 'projects.project.miscellaneous'
+        worksheet['C1'] = 'project.miscellaneous'
         worksheet['C4'] = 'extra||details'
-        worksheet['D1'] = 'projects.project.contributor_count'
+        worksheet['D1'] = 'project.contributor_count'
         worksheet['D4'] = 7
-        worksheet['E1'] = 'projects.project.contributors'
+        worksheet['E1'] = 'project.contributors'
         worksheet['E4'] = 'Juan Dela Cruz||John Doe'
-        worksheet['F1'] = 'projects.project.numbers'
+        worksheet['F1'] = 'project.numbers'
         worksheet['F4'] = '1||2||3'
-        worksheet['G1'] = 'projects.project.is_active'
+        worksheet['G1'] = 'project.is_active'
         worksheet['G4'] = 'Yes'
-        worksheet['H1'] = 'projects.project.is_submitted'
+        worksheet['H1'] = 'project.is_submitted'
         worksheet['H4'] = 'No'
-        worksheet['I1'] = 'projects.project.genus_species.ontology'
+        worksheet['I1'] = 'project.genus_species.ontology'
         worksheet['I4'] = 'UO:000008'
-        worksheet['J1'] = 'projects.project.genus_species.text'
+        worksheet['J1'] = 'project.genus_species.text'
         worksheet['J4'] = 'meter'
 
         return worksheet

@@ -55,8 +55,7 @@ class WorksheetImporter:
         return worksheet[header_coordinate].value
 
     def _get_field_chain(self, header_name):
-        # FIXME the format of column header has changed
-        match = re.search('(\w+\.){2}(?P<field_chain>.*)', header_name)
+        match = re.search('(\w+\.){1}(?P<field_chain>.*)', header_name)
         return match.group('field_chain')
 
 
