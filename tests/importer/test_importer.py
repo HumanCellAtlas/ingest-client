@@ -90,7 +90,12 @@ class WorksheetImporterTest(TestCase):
         )
 
         # and:
-        worksheet = self._create_test_worksheet()
+        workbook = Workbook()
+        worksheet = workbook.create_sheet('Project')
+        worksheet['A1'] = 'project.genus_species.ontology'
+        worksheet['A4'] = 'UO:000008'
+        worksheet['B1'] = 'project.genus_species.text'
+        worksheet['B4'] = 'meter'
 
         # and:
         worksheet_importer = WorksheetImporter()
@@ -99,7 +104,7 @@ class WorksheetImporterTest(TestCase):
         json_list = worksheet_importer.do_import(worksheet, template_manager)
 
         # then:
-        self.assertEqual(2, len(json_list))
+        self.assertEqual(1, len(json_list))
         json = json_list[0]
 
         # and:
@@ -131,9 +136,5 @@ class WorksheetImporterTest(TestCase):
         worksheet['G4'] = 'Yes'
         worksheet['H1'] = 'project.is_submitted'
         worksheet['H4'] = 'No'
-        worksheet['I1'] = 'project.genus_species.ontology'
-        worksheet['I4'] = 'UO:000008'
-        worksheet['J1'] = 'project.genus_species.text'
-        worksheet['J4'] = 'meter'
 
         return worksheet

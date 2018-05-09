@@ -35,8 +35,7 @@ class WorksheetImporter:
 
                 node[field_chain] = data
 
-                ontology_fields = ontology_tracker.get_ontology_fields()
-
+            ontology_fields = ontology_tracker.get_ontology_fields()
             for field_chain in ontology_fields:
                 node[field_chain] = ontology_tracker.get_value_by_field(field_chain)
 
