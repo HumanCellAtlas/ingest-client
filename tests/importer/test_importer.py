@@ -50,15 +50,34 @@ class WorksheetImporterTest(TestCase):
         # and:
         template_manager = TemplateManager(SchemaTemplate())
         template_manager.get_converter = lambda key: converter_mapping.get(key, Converter())
+        ontology_fields_mapping = {
+            'projects.project.genus_species.ontology': True,
+            'projects.project.genus_species.text': True,
+        }
+
+        template_manager.is_ontology_subfield = (
+            lambda field_name: ontology_fields_mapping.get(field_name)
+        )
+
+        template_manager.get_schema_url = (
+            lambda: 'https://schema.humancellatlas.org/type/project/5.1.0/project'
+        )
+
+        template_manager.get_schema_type = (
+            lambda: 'project'
+        )
 
         # and:
         worksheet = self._create_test_worksheet()
 
         # when:
-        json = worksheet_importer.do_import(worksheet, template_manager)
+        json_list = worksheet_importer.do_import(worksheet, template_manager)
 
         # then:
-        self.assertTrue(json)
+        json = json_list[0]
+        self.assertTrue(2, len(json_list))
+        self.assertEqual('Tissue stability 2', json_list[1]['project_core']['project_shortname'])
+
         project_core = json['project_core']
         self.assertEqual('Tissue stability', project_core['project_shortname'])
         self.assertEqual('Ischaemic sensitivity of human tissue by single cell RNA seq.',
@@ -81,11 +100,20 @@ class WorksheetImporterTest(TestCase):
         self.assertEqual(True, json['is_active'])
         self.assertEqual(False, json['is_submitted'])
 
+        # ontology field
+        self.assertTrue(type(json['genus_species']) is list)
+        self.assertEqual(1, len(json['genus_species']))
+        self.assertEqual({'ontology': 'UO:000008', 'text': 'meter'}, json['genus_species'][0])
+
+        self.assertEqual('https://schema.humancellatlas.org/type/project/5.1.0/project', json['describedBy'])
+        self.assertEqual('project', json['schema_type'])
+        
     def _create_test_worksheet(self):
         workbook = Workbook()
         worksheet = workbook.create_sheet('Project')
         worksheet['A1'] = 'projects.project.project_core.project_shortname'
         worksheet['A4'] = 'Tissue stability'
+        worksheet['A5'] = 'Tissue stability 2'
         worksheet['B1'] = 'projects.project.project_core.project_title'
         worksheet['B4'] = 'Ischaemic sensitivity of human tissue by single cell RNA seq.'
         worksheet['C1'] = 'projects.project.miscellaneous'
@@ -100,5 +128,9 @@ class WorksheetImporterTest(TestCase):
         worksheet['G4'] = 'Yes'
         worksheet['H1'] = 'projects.project.is_submitted'
         worksheet['H4'] = 'No'
+        worksheet['I1'] = 'projects.project.genus_species.ontology'
+        worksheet['I4'] = 'UO:000008'
+        worksheet['J1'] = 'projects.project.genus_species.text'
+        worksheet['J4'] = 'meter'
 
         return worksheet
