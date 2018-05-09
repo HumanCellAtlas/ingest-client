@@ -1,34 +1,12 @@
-import json
-import os
-from os import listdir
-from os.path import isfile, join
 from unittest import TestCase
 
 from openpyxl import Workbook
 
 from ingest.importer.conversion.data_converter import Converter, ListConverter, BooleanConverter, \
     DataType
-from ingest.importer.importer import WorksheetImporter
 from ingest.importer.conversion.template_manager import TemplateManager
+from ingest.importer.importer import WorksheetImporter
 from ingest.template.schematemplate import SchemaTemplate
-
-BASE_PATH = os.path.dirname(__file__)
-
-
-def load_json(file_path):
-    # open JSON file and parse contents
-    fh = open(file_path, 'r')
-    data = json.load(fh)
-    fh.close()
-
-    return data
-
-
-def empty_dir(directory):
-    files = [f for f in listdir(directory) if isfile(join(directory, f))]
-
-    for filename in files:
-        os.unlink(join(directory, filename))
 
 
 class WorksheetImporterTest(TestCase):
