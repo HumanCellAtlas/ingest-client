@@ -1,6 +1,6 @@
 from unittest import TestCase
 
-from mock import MagicMock
+from mock import MagicMock, patch
 from openpyxl import Workbook
 
 from ingest.importer.conversion.data_converter import (
@@ -40,11 +40,33 @@ class WorkbookImporterTest(TestCase):
             project_worksheet, cell_suspension_worksheet
         ])
 
+        # and:
+        projects = [
+            {'short_name': 'project 1', 'description': 'first project'},
+            {'short_name': 'project 2', 'description': 'second project'}
+        ]
+
+        # and:
+        cell_suspensions = [
+            {'biomaterial_id': 'cell_suspension_101', 'biomaterial_name': 'cell suspension'}
+        ]
+
+        # and:
+        worksheet_importer = WorksheetImporter()
+        worksheet_importer.do_import = MagicMock(side_effect=[projects, cell_suspensions])
+
         # when:
-        pre_ingest_json_list = workbook_importer.do_import(ingest_workbook)
+        with patch('ingest.importer.importer.WorksheetImporter') as mock_constructor:
+            mock_constructor.return_value = worksheet_importer
+            pre_ingest_json_list = workbook_importer.do_import(ingest_workbook)
 
         # then:
-        self.assertIsNotNone(pre_ingest_json_list)
+        self.assertEqual(3, len(pre_ingest_json_list))
+        for project in projects:
+            self.assertTrue(project in pre_ingest_json_list, f'{project} not in list')
+        for cell_suspension in cell_suspensions:
+            self.assertTrue(cell_suspension in pre_ingest_json_list,
+                            f'{cell_suspension} not in list')
 
 
 class WorksheetImporterTest(TestCase):

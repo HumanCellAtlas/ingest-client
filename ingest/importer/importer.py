@@ -14,7 +14,12 @@ class IngestWorkbook:
 class WorkbookImporter:
 
     def do_import(self, workbook:IngestWorkbook):
-        return []
+        pre_ingest_json_list = []
+        worksheet_importer = WorksheetImporter()
+        for worksheet in workbook.importable_worksheets():
+            json_list = worksheet_importer.do_import(worksheet, None)
+            pre_ingest_json_list.extend(json_list)
+        return pre_ingest_json_list
 
 
 class WorksheetImporter:
