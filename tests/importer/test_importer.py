@@ -3,8 +3,9 @@ from unittest import TestCase
 from mock import MagicMock
 from openpyxl import Workbook
 
-from ingest.importer.conversion.data_converter import Converter, ListConverter, BooleanConverter, \
-    DataType
+from ingest.importer.conversion.data_converter import (
+    Converter, ListConverter, BooleanConverter, DataType
+)
 from ingest.importer.conversion.template_manager import TemplateManager
 from ingest.importer.importer import WorksheetImporter
 from ingest.template.schematemplate import SchemaTemplate
