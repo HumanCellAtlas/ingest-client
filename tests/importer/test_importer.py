@@ -11,6 +11,17 @@ from ingest.importer.importer import WorksheetImporter
 from ingest.template.schematemplate import SchemaTemplate
 
 
+def _create_single_row_worksheet(worksheet_data:dict):
+    workbook = Workbook()
+    worksheet = workbook.create_sheet()
+
+    for column, data in worksheet_data.items():
+        key, value = data
+        worksheet[f'{column}1'] = key
+        worksheet[f'{column}4'] = value
+
+    return worksheet
+
 class WorksheetImporterTest(TestCase):
 
     def test_do_import(self):
@@ -90,12 +101,10 @@ class WorksheetImporterTest(TestCase):
         )
 
         # and:
-        workbook = Workbook()
-        worksheet = workbook.create_sheet('Project')
-        worksheet['A1'] = 'project.genus_species.ontology'
-        worksheet['A4'] = 'UO:000008'
-        worksheet['B1'] = 'project.genus_species.text'
-        worksheet['B4'] = 'meter'
+        worksheet = _create_single_row_worksheet({
+            'A': ('project.genus_species.ontology', 'UO:000008'),
+            'B': ('project.genus_species.text', 'meter')
+        })
 
         # and:
         worksheet_importer = WorksheetImporter()
