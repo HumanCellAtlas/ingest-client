@@ -6,6 +6,15 @@ from ingest.importer.conversion.data_converter import (
 from ingest.importer.conversion.exceptions import InvalidBooleanValue
 
 
+class DataTypeTest(TestCase):
+
+    def test_find_case_insensitive(self):
+        # expect:
+        self.assertEqual(DataType.STRING, DataType.find('string'))
+        self.assertEqual(DataType.STRING, DataType.find('String'))
+        self.assertEqual(DataType.STRING, DataType.find('STRING'))
+
+
 class IntegerConverterTest(TestCase):
 
     def test_convert_from_string(self):

@@ -5,9 +5,12 @@ from ingest.importer.conversion.exceptions import InvalidBooleanValue
 
 
 class DataType(Enum):
-    STRING = 'string',
+    STRING = 'string'
     INTEGER = 'integer'
 
+    @staticmethod
+    def find(value:str):
+        return DataType(value.lower())
 
 class Converter:
 
