@@ -1,4 +1,5 @@
-from ingest.importer.conversion.data_converter import Converter, ListConverter, IntegerConverter
+from ingest.importer.conversion.data_converter import Converter, ListConverter, IntegerConverter, \
+    DataType
 from ingest.template.schematemplate import SchemaTemplate
 
 
@@ -18,5 +19,7 @@ class TemplateManager:
         value_type = column_spec.get('value_type')
         if value_type == 'integer':
             converter = IntegerConverter()
+            if column_spec.get('multivalue'):
+                converter = ListConverter(data_type=DataType.INTEGER)
 
         return converter

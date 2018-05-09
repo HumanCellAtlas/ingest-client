@@ -59,3 +59,15 @@ class TemplateManagerTest(TestCase):
 
         # then:
         self.assertIsInstance(converter, IntegerConverter)
+
+    def test_get_converter_for_integer_array(self):
+        # given:
+        schema_template = _mock_schema_template_lookup(value_type='integer', multivalue=True)
+        template_manager = TemplateManager(schema_template)
+
+        # when:
+        converter = template_manager.get_converter('path.to.field')
+
+        # then:
+        self.assertIsInstance(converter, ListConverter)
+        self.assertEqual(DataType.INTEGER, converter.base_type)
