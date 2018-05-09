@@ -12,7 +12,7 @@ import json
 import unittest
 from unittest import TestCase
 
-from ingest.template.schematemplate import SchemaParser
+from ingest.template.schema_template import SchemaParser
 
 class TestSchemaTemplate(TestCase):
     def setUp(self):

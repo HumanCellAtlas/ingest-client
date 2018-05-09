@@ -6,20 +6,21 @@ __author__ = "jupp"
 __license__ = "Apache 2.0"
 __date__ = "08/05/2018"
 
-from ingest.template import schematemplate, template_tabs
+from ingest.template import schema_template, tabs
 import xlsxwriter
 
 def generate_spreadsheet(outputfile, tabs_template, schema_urls):
 
-    tabs_parser = template_tabs.TabParser()
-    tabs = tabs_parser.load_template(tabs_template)
+    tabs_parser = tabs.TabParser()
+    tabs = tabs_parser.load(tabs_template)
 
     _build(outputfile, tabs, schema_urls)
 
 
 def _build(outputfile, tabs, schema_urls):
 
-    template = schematemplate.get_template_from_schemas_by_url(schema_urls)
+
+    template = schema_template.SchemaTemplate().load(schema_urls)
 
     workbook = xlsxwriter.Workbook(outputfile)
 
@@ -53,6 +54,11 @@ def _build(outputfile, tabs, schema_urls):
             col_number+=1
 
         print (tab_info)
+
+    worksheet = workbook.add_worksheet("Schemas")
+    worksheet.write(0,0, "Schemas")
+    for index, url in enumerate(schema_urls):
+        worksheet.write(index+1, 0, url)
 
     workbook.close()
 

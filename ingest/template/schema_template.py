@@ -18,68 +18,66 @@ import re
 import urllib.request
 
 
-def get_template_from_schemas_by_url(list_of_schema_urls):
-    """
-    given a list of URLs to JSON schema files
-    return a SchemaTemplate object
-    """
-    parser = SchemaParser()
-    for uri in list_of_schema_urls:
-        with urllib.request.urlopen(uri) as url:
-            data = json.loads(url.read().decode())
-            parser.load_schema(data)
-    return parser.schema_template
-
-
-def get_template_from_schemas_by_file(list_of_schema_file):
-    """
-    given a list of JSON schema files
-    return a SchemaTemplate object
-    """
-    return None
-
-
-def get_template_from_schemas(list_of_schema_file):
-    """
-    given a list of JSON schema objects
-    return a SchemaTemplate object
-    """
-    schema_template = SchemaParser()
-
-    # for each file
-
-    # check is valid json schema
-
-    # add json schema
-
-    schema_template.load_schema(list_of_schema_file)
-    return None
-
 
 class SchemaTemplate:
     """
     A schema template is a simplified view over
     JSON schema for the HCA metadata
     """
-    def __init__(self):
+    def __init__(self,):
 
-        self.template_version = "1.0.0"
-        self.created_date = str(datetime.now())
-        self.meta_data_properties = {}
-        self.tabs = {}
-        self.labels = {}
+        self._template = {
+            "template_version" : "1.0.0",
+            "created_date" : str(datetime.now()),
+            "meta_data_properties" : {},
+            "labels" : {}
+        }
+
+    def load(self, list_of_schema_urls):
+        """
+        given a list of URLs to JSON schema files
+        return a SchemaTemplate object
+        """
+        _parser = SchemaParser(self)
+
+        for uri in list_of_schema_urls:
+            with urllib.request.urlopen(uri) as url:
+                data = json.loads(url.read().decode())
+                _parser.load_schema(data)
+        return self
 
     def lookup(self, key):
         try:
-            return self.get(self.meta_data_properties, key)
+            return self.get(self._template["meta_data_properties"], key)
         except:
             return None
+
+    def get_template(self):
+        return self._template["meta_data_properties"]
+
+    def put (self, property, value):
+        '''
+        Add a property to the schema template
+        :param property:
+        :param value:
+        :return: void
+        '''
+        self._template["meta_data_properties"][property] = value
+
+    def set_label_mappings(self, dict):
+        '''
+        A dictionary of label to keys mapping
+        :param label:
+        :param key:
+        :return: void
+        '''
+        self._template["labels"] = dict
 
     def yaml_dump(self):
         return yaml_dump(yaml_load(self.json_dump()))
 
     def json_dump(self):
-        return json.dumps(self.__dict__, indent=4)
+        return json.dumps(self._template, indent=4)
 
     def get_key_for_label(self, label, tab=None, tabs_config=None):
 
@@ -87,7 +85,7 @@ class SchemaTemplate:
             tab_key = tabs_config.get_key_for_label(tab)
 
             for key in tabs_config.lookup("tabs."+tab_key+".columns"):
-                if key in self.labels[label.lower()]:
+                if key in self._template["labels"][label.lower()]:
                     return key
 
         raise UnknownKeyException(
@@ -107,23 +105,14 @@ class SchemaTemplate:
             raise UnknownKeyException(
                 "Can't map the key to a known JSON schema property")
 
-class Error(Exception):
-    """Base-class for all exceptions raised by this module."""
-
-
-class RootSchemaException(Error):
-    """When generating a template we have to start with root JSON objects"""
-
-class UnknownKeyException(Error):
-    """Can't map the key to a known property"""
 
 class SchemaParser:
     """A schema parser provides functions for
     accessing objects in a JSON schema"""
-    def __init__(self):
+    def __init__(self, template=SchemaTemplate()):
         self.properties_to_ignore = \
             ["describedBy", "schema_version", "schema_type"]
-        self.schema_template = SchemaTemplate()
+        self.schema_template = template
         self.required = []
         self.key_lookup = {}
 
@@ -142,15 +131,15 @@ class SchemaParser:
             raise RootSchemaException(
                 "Schema must start with a root submittable type schema")
 
-        endpoint = self.get_core_type_from_url(property.schema.url)
-
         # self.schema_template.meta_data_properties[endpoint] = {}
-        self.schema_template.meta_data_properties[property.schema.module] = property
+        self.schema_template.put(property.schema.module, property)
+
+        # self.schema_template.meta_data_properties[property.schema.module] = property
 
         # path = self._get_path(endpoint, property.schema.module)
         self._recursive_fill_properties(property.schema.module, data)
 
-        self.schema_template.labels = self.key_lookup
+        self.schema_template.set_label_mappings(self.key_lookup)
         return self.schema_template
 
     def _get_path(self, str1, str2):
@@ -163,7 +152,7 @@ class SchemaParser:
 
             new_path =  self._get_path(path, property_name)
             property = self._extract_property(property_block, property_name=property_name, key=new_path)
-            doctict.put(self.schema_template.meta_data_properties, new_path, property)
+            doctict.put(self.schema_template.get_template(), new_path, property)
             self._recursive_fill_properties(new_path, property_block)
 
     def _collect_required_properties(self, data):
@@ -277,3 +266,15 @@ class Schema:
         return doctict.DotDict(self.dict)
 
 
+class Error(Exception):
+    """Base-class for all exceptions raised by this module."""
+
+
+class RootSchemaException(Error):
+    """When generating a template we have to start with root JSON objects"""
+
+class UnknownKeyException(Error):
+    """Can't map the key to a known property"""
+
+if __name__ == '__main__':
+    pass
