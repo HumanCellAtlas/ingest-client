@@ -16,7 +16,7 @@ class DataTypeTest(TestCase):
 
     def test_find_not_found(self):
         # expect:
-        self.assertIsNone(DataType.find('does_not_exist'))
+        self.assertEqual(DataType.UNDEFINED, DataType.find('does_not_exist'))
 
 
 class IntegerConverterTest(TestCase):
