@@ -10,7 +10,7 @@ from ingest.importer.conversion.data_converter import Converter, ListConverter, 
     DataType
 from ingest.importer.importer import WorksheetImporter
 from ingest.importer.conversion.template_manager import TemplateManager
-from ingest.importer.schematemplate import SchemaTemplate
+from ingest.template.schematemplate import SchemaTemplate
 
 BASE_PATH = os.path.dirname(__file__)
 
@@ -107,7 +107,7 @@ class WorksheetImporterTest(TestCase):
 
         self.assertEqual('https://schema.humancellatlas.org/type/project/5.1.0/project', json['describedBy'])
         self.assertEqual('project', json['schema_type'])
-        
+
     def _create_test_worksheet(self):
         workbook = Workbook()
         worksheet = workbook.create_sheet('Project')

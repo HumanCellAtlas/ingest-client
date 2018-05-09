@@ -1,5 +1,5 @@
 from ingest.importer.conversion.data_converter import Converter, ListConverter
-from ingest.importer.schematemplate import SchemaTemplate
+from ingest.template.schematemplate import SchemaTemplate
 
 
 class TemplateManager:
