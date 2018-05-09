@@ -7,18 +7,21 @@ from ingest.importer.conversion.template_manager import TemplateManager
 from ingest.template.schematemplate import SchemaTemplate
 
 
+def _mock_schema_template_lookup(value_type='string', multivalue=False):
+    schema_template = SchemaTemplate()
+    single_string_spec = {
+        'value_type': value_type,
+        'multivalue': multivalue
+    }
+    schema_template.lookup = MagicMock(name='lookup', return_value=single_string_spec)
+    return schema_template
+
+
 class TemplateManagerTest(TestCase):
 
     def test_get_converter_for_string(self):
         # given:
-        schema_template = SchemaTemplate()
-        single_string_spec = {
-            'value_type': 'string',
-            'multivalue': False
-        }
-        schema_template.lookup = MagicMock(name='lookup', return_value=single_string_spec)
-
-        # and:
+        schema_template = _mock_schema_template_lookup()
         template_manager = TemplateManager(schema_template)
 
         # when:
@@ -31,14 +34,7 @@ class TemplateManagerTest(TestCase):
 
     def test_get_converter_for_string_array(self):
         # given:
-        schema_template = SchemaTemplate()
-        string_array_spec = {
-            'value_type': 'string',
-            'multivalue': True
-        }
-        schema_template.lookup = MagicMock(return_value=string_array_spec)
-
-        # and:
+        schema_template = _mock_schema_template_lookup(multivalue=True)
         template_manager = TemplateManager(schema_template)
 
         # when:
