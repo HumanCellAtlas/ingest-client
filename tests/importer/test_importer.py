@@ -7,7 +7,7 @@ from ingest.importer.conversion.data_converter import (
     Converter, ListConverter, BooleanConverter, DataType
 )
 from ingest.importer.conversion.template_manager import TemplateManager
-from ingest.importer.importer import WorksheetImporter
+from ingest.importer.importer import WorksheetImporter, WorkbookImporter, IngestWorkbook
 from ingest.template.schematemplate import SchemaTemplate
 
 
@@ -21,6 +21,30 @@ def _create_single_row_worksheet(worksheet_data:dict):
         worksheet[f'{column}4'] = value
 
     return worksheet
+
+
+class WorkbookImporterTest(TestCase):
+
+    def test_do_import(self):
+        # given:
+        workbook_importer = WorkbookImporter()
+
+        # and:
+        workbook = Workbook()
+        ingest_workbook = IngestWorkbook(workbook)
+
+        # and:
+        project_worksheet = workbook.create_sheet('Project')
+        cell_suspension_worksheet = workbook.create_sheet('Cell Suspension')
+        ingest_workbook.importable_worksheets = MagicMock(return_value=[
+            project_worksheet, cell_suspension_worksheet
+        ])
+
+        # when:
+        pre_ingest_json_list = workbook_importer.do_import(ingest_workbook)
+
+        # then:
+        self.assertIsNotNone(pre_ingest_json_list)
 
 
 class WorksheetImporterTest(TestCase):

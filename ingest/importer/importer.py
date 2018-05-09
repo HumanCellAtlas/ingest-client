@@ -1,6 +1,20 @@
 import re
 
+from openpyxl import Workbook
+
 from ingest.importer.data_node import DataNode
+
+
+class IngestWorkbook:
+
+    def __init__(self, workbook:Workbook):
+        pass
+
+
+class WorkbookImporter:
+
+    def do_import(self, workbook:IngestWorkbook):
+        return []
 
 
 class WorksheetImporter:
