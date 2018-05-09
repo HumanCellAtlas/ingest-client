@@ -12,8 +12,7 @@ import json
 import unittest
 from unittest import TestCase
 
-import ingest.importer.schematemplate as schematemplate
-from ingest.importer.schematemplate import SchemaParser
+from ingest.template.schematemplate import SchemaParser
 
 class TestSchemaTemplate(TestCase):
     def setUp(self):
