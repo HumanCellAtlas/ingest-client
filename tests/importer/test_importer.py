@@ -78,6 +78,29 @@ class WorksheetImporterTest(TestCase):
         self.assertEqual(True, json['is_active'])
         self.assertEqual(False, json['is_submitted'])
 
+    def _create_test_worksheet(self):
+        workbook = Workbook()
+        worksheet = workbook.create_sheet('Project')
+        worksheet['A1'] = 'project.project_core.project_shortname'
+        worksheet['A4'] = 'Tissue stability'
+        worksheet['A5'] = 'Tissue stability 2'
+        worksheet['B1'] = 'project.project_core.project_title'
+        worksheet['B4'] = 'Ischaemic sensitivity of human tissue by single cell RNA seq.'
+        worksheet['C1'] = 'project.miscellaneous'
+        worksheet['C4'] = 'extra||details'
+        worksheet['D1'] = 'project.contributor_count'
+        worksheet['D4'] = 7
+        worksheet['E1'] = 'project.contributors'
+        worksheet['E4'] = 'Juan Dela Cruz||John Doe'
+        worksheet['F1'] = 'project.numbers'
+        worksheet['F4'] = '1||2||3'
+        worksheet['G1'] = 'project.is_active'
+        worksheet['G4'] = 'Yes'
+        worksheet['H1'] = 'project.is_submitted'
+        worksheet['H4'] = 'No'
+
+        return worksheet
+
     def test_do_import_with_ontology_fields(self):
         # given:
         template_manager = TemplateManager(SchemaTemplate())
@@ -90,14 +113,6 @@ class WorksheetImporterTest(TestCase):
         }
         template_manager.is_ontology_subfield = (
             lambda field_name: ontology_fields_mapping.get(field_name)
-        )
-
-        template_manager.get_schema_url = (
-            lambda: 'https://schema.humancellatlas.org/type/project/5.1.0/project'
-        )
-
-        template_manager.get_schema_type = (
-            lambda: 'project'
         )
 
         # and:
@@ -121,29 +136,37 @@ class WorksheetImporterTest(TestCase):
         self.assertEqual(1, len(json['genus_species']))
         self.assertEqual({'ontology': 'UO:000008', 'text': 'meter'}, json['genus_species'][0])
 
+    def test_do_import_adds_metadata_info(self):
+        # given:
+        template_manager = TemplateManager(SchemaTemplate())
+        template_manager.get_converter = MagicMock(return_value=Converter())
+
+        # and:
+        template_manager.get_schema_url = (
+            lambda: 'https://schema.humancellatlas.org/type/project/5.1.0/project'
+        )
+
+        template_manager.get_schema_type = (
+            lambda: 'project'
+        )
+
+        # and:
+        importer = WorksheetImporter()
+
+        # and:
+        worksheet = _create_single_row_worksheet({
+            'A': ('project.short_name', 'Project'),
+            'B': ('project.description', 'This is a project')
+        })
+
+        # when:
+        json_list = importer.do_import(worksheet, template_manager)
+
+        # then:
+        self.assertEqual(1, len(json_list))
+        json = json_list[0]
+
+        # and:
         self.assertEqual('https://schema.humancellatlas.org/type/project/5.1.0/project',
                          json['describedBy'])
         self.assertEqual('project', json['schema_type'])
-
-    def _create_test_worksheet(self):
-        workbook = Workbook()
-        worksheet = workbook.create_sheet('Project')
-        worksheet['A1'] = 'project.project_core.project_shortname'
-        worksheet['A4'] = 'Tissue stability'
-        worksheet['A5'] = 'Tissue stability 2'
-        worksheet['B1'] = 'project.project_core.project_title'
-        worksheet['B4'] = 'Ischaemic sensitivity of human tissue by single cell RNA seq.'
-        worksheet['C1'] = 'project.miscellaneous'
-        worksheet['C4'] = 'extra||details'
-        worksheet['D1'] = 'project.contributor_count'
-        worksheet['D4'] = 7
-        worksheet['E1'] = 'project.contributors'
-        worksheet['E4'] = 'Juan Dela Cruz||John Doe'
-        worksheet['F1'] = 'project.numbers'
-        worksheet['F4'] = '1||2||3'
-        worksheet['G1'] = 'project.is_active'
-        worksheet['G4'] = 'Yes'
-        worksheet['H1'] = 'project.is_submitted'
-        worksheet['H4'] = 'No'
-
-        return worksheet
