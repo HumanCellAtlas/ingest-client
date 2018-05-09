@@ -81,3 +81,11 @@ class ListConverterTest(TestCase):
     def test_convert_to_int_list(self):
         converter = ListConverter(data_type=DataType.INTEGER)
         self.assertEqual([1, 2, 3], converter.convert('1||2||3'))
+
+    def test_convert_to_int_list_multiple(self):
+        converter = ListConverter(data_type=DataType.INTEGER)
+        self.assertEqual([1, 2, 3], converter.convert('1||2||3'))
+
+    def test_convert_to_int_list_single(self):
+        converter = ListConverter(data_type=DataType.INTEGER)
+        self.assertEqual([9606], converter.convert(9606))

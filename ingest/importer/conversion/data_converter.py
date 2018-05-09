@@ -67,6 +67,7 @@ class ListConverter(Converter):
         self.converter = CONVERTER_MAP.get(data_type, CONVERTER_MAP[DataType.STRING])
 
     def convert(self, data):
+        data = str(data)
         value = data.split('||')
         value = [self.converter.convert(elem) for elem in value]
         return value
