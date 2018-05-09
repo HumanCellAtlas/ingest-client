@@ -18,7 +18,6 @@ def _mock_schema_template_lookup(value_type='string', multivalue=False):
     return schema_template
 
 
-# TODO make the processing of value type case insensitive
 class TemplateManagerTest(TestCase):
 
     def test_get_converter_for_string(self):
