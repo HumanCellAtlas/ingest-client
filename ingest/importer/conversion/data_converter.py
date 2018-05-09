@@ -10,7 +10,11 @@ class DataType(Enum):
 
     @staticmethod
     def find(value:str):
-        return DataType(value.lower())
+        try:
+            data_type = DataType(value.lower())
+            return data_type
+        except ValueError:
+            pass
 
 class Converter:
 

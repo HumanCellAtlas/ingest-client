@@ -14,6 +14,10 @@ class DataTypeTest(TestCase):
         self.assertEqual(DataType.STRING, DataType.find('String'))
         self.assertEqual(DataType.STRING, DataType.find('STRING'))
 
+    def test_find_not_found(self):
+        # expect:
+        self.assertIsNone(DataType.find('does_not_exist'))
+
 
 class IntegerConverterTest(TestCase):
 
