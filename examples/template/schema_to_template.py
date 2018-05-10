@@ -20,12 +20,13 @@ schemas = [
     "https://schema.humancellatlas.org/type/protocol/sequencing/5.1.0/sequencing_protocol",
 ]
 
-template = SchemaTemplate().load(schemas)
+template = SchemaTemplate(schemas)
 
 # get key from user friendly name
 
-tabs = TabConfig().load("tabs_human_10x.yaml")
-print (template.get_key_for_label("Biomaterial name", tab="Cell suspension", tabs_config=tabs))
+# tabs = TabConfig().load("tabs_human_10x.yaml")
+
+print (template.get_key_for_label("Biomaterial name", tab="Cell suspension"))
 
 # lookup where to submit this entity
 

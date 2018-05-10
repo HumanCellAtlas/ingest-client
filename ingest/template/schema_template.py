@@ -12,6 +12,7 @@ from datetime import datetime
 from yaml import dump as yaml_dump
 from yaml import load as yaml_load
 from ingest.utils import doctict
+from ingest.template.tabs import TabConfig
 import json
 import jsonref
 import re
@@ -24,26 +25,34 @@ class SchemaTemplate:
     A schema template is a simplified view over
     JSON schema for the HCA metadata
     """
-    def __init__(self,):
+    def __init__(self, list_of_schema_urls, tab_config=None):
+
 
         self._template = {
             "template_version" : "1.0.0",
             "created_date" : str(datetime.now()),
             "meta_data_properties" : {},
-            "labels" : {}
+            "labels" : {},
+            "tabs": []
         }
+        self._parser = SchemaParser(self)
 
-    def load(self, list_of_schema_urls):
+        self._load(list_of_schema_urls)
+
+        if not tab_config:
+            self._tab_config = TabConfig(init=self._template)
+
+
+    def _load(self, list_of_schema_urls):
         """
         given a list of URLs to JSON schema files
         return a SchemaTemplate object
         """
-        _parser = SchemaParser(self)
 
         for uri in list_of_schema_urls:
             with urllib.request.urlopen(uri) as url:
                 data = json.loads(url.read().decode())
-                _parser.load_schema(data)
+                self._parser._load_schema(data)
         return self
 
     def lookup(self, key):
@@ -54,6 +63,9 @@ class SchemaTemplate:
 
     def get_template(self):
         return self._template["meta_data_properties"]
+
+    def append_tab(self, tab_info):
+        self._template["tabs"].append(tab_info)
 
     def put (self, property, value):
         '''
@@ -79,19 +91,21 @@ class SchemaTemplate:
     def json_dump(self):
         return json.dumps(self._template, indent=4)
 
-    def get_key_for_label(self, label, tab=None, tabs_config=None):
+    def get_key_for_label(self, column, tab):
 
-        if tab and tabs_config:
-            tab_key = tabs_config.get_key_for_label(tab)
+        try:
 
-            for key in tabs_config.lookup("tabs."+tab_key+".columns"):
-                if key in self._template["labels"][label.lower()]:
-                    return key
+            tab_key = self._tab_config.get_key_for_label(tab)
 
-        raise UnknownKeyException(
-            "Can't map the key to a known JSON schema property")
+            for column_key  in self._parser.key_lookup(column.lower()):
+                if tab_key == self._get_level_one(column_key):
+                    return column_key
+        except:
+            raise UnknownKeyException(
+                "Can't map the key to a known JSON schema property: "+column)
 
-
+    def _get_level_one(self, key):
+        return key.split('.')[0]
 
     def get(self, d, keys):
         try:
@@ -109,18 +123,21 @@ class SchemaTemplate:
 class SchemaParser:
     """A schema parser provides functions for
     accessing objects in a JSON schema"""
-    def __init__(self, template=SchemaTemplate()):
+    def __init__(self, template):
         self.properties_to_ignore = \
             ["describedBy", "schema_version", "schema_type"]
         self.schema_template = template
-        self.required = []
-        self.key_lookup = {}
+        self._required = []
+        self._key_lookup = {}
 
-    def load_schema(self, json_schema):
+    def _load_schema(self, json_schema):
         """load a JSON schema representation"""
         # use jsonrefs to resolve all $refs in json
         data = jsonref.loads(json.dumps(json_schema))
         return self.__initialise_template(data)
+
+    def key_lookup(self, key):
+        return self._key_lookup[key]
 
     def __initialise_template(self, data):
 
@@ -131,6 +148,10 @@ class SchemaParser:
             raise RootSchemaException(
                 "Schema must start with a root submittable type schema")
 
+        # todo get tab display name from schema
+        tab_display = property.schema.module[0].upper() + property.schema.module[1:].replace("_", " ")
+        tab_info = {property.schema.module : {"display_name": tab_display, "columns" : []}}
+        self.schema_template.append_tab(tab_info)
         # self.schema_template.meta_data_properties[endpoint] = {}
         self.schema_template.put(property.schema.module, property)
 
@@ -139,7 +160,7 @@ class SchemaParser:
         # path = self._get_path(endpoint, property.schema.module)
         self._recursive_fill_properties(property.schema.module, data)
 
-        self.schema_template.set_label_mappings(self.key_lookup)
+        self.schema_template.set_label_mappings(self._key_lookup)
         return self.schema_template
 
     def _get_path(self, str1, str2):
@@ -157,7 +178,7 @@ class SchemaParser:
 
     def _collect_required_properties(self, data):
         if "required" in data:
-            self.required = list(set().union(self.required, data["required"]))
+            self._required = list(set().union(self._required, data["required"]))
 
     def _extract_property(self, data, *args, **kwargs):
 
@@ -171,7 +192,7 @@ class SchemaParser:
 
         schema = self._get_schema_from_object(data)
 
-        if 'property_name' in kwargs and kwargs.get('property_name') in self.required:
+        if 'property_name' in kwargs and kwargs.get('property_name') in self._required:
             dic["required"] = True
 
         if schema:
@@ -189,16 +210,16 @@ class SchemaParser:
     def _update_key_to_label(self, label, kwargs ):
         values = []
         if 'key' in kwargs:
-            if label.lower() not in self.key_lookup:
+            if label.lower() not in self._key_lookup:
                 values =  [ kwargs.get("key") ]
             else:
-                values = self.key_lookup[label.lower()]
+                values = self._key_lookup[label.lower()]
                 values.append(kwargs.get("key"))
 
-            if kwargs.get("key") not in self.key_lookup:
-                self.key_lookup[kwargs.get("key")] = [ kwargs.get("key") ]
+            if kwargs.get("key") not in self._key_lookup:
+                self._key_lookup[kwargs.get("key")] = [kwargs.get("key")]
 
-            self.key_lookup[label.lower()] = list(set(values))
+            self._key_lookup[label.lower()] = list(set(values))
 
     def _get_schema_from_object(self, data):
         """

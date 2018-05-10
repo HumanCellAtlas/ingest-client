@@ -11,19 +11,27 @@ from ingest.utils import doctict
 from ingest.utils.doctict import DotDict
 
 class TabConfig:
-    def __init__(self):
+    def __init__(self, init=None):
         self._dic = DotDict()
         self._key_label = {}
+        if init:
+            self._dic = DotDict(init)
+            self._index()
 
     def load(self, input):
         stream = open(input, 'r').read()
         yaml = yaml_load(stream)
         self._dic = DotDict(yaml)
+        self._index()
+        return self
+
+    def _index(self):
         if "tabs" in self._dic:
-            for key, value in self._dic["tabs"].items():
-                dn = value["display_name"]
-                self._key_label[dn.lower()] = key
-                self._key_label[key] = key
+            for tab_name in self._dic["tabs"]:
+                for key, value in tab_name.items():
+                    dn = value["display_name"]
+                    self._key_label[dn.lower()] = key
+                    self._key_label[key] = key
         else:
             print ("warning")
         return self

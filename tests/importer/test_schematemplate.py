@@ -25,7 +25,7 @@ class TestSchemaTemplate(TestCase):
 
         with open(os.path.join(dirname,"data","project_type.json")) as json_file:
             json_data = json.load(json_file)
-            schema_template = schema_parser.load_schema(json_data)
+            schema_template = schema_parser._load_schema(json_data)
             schema_template.json_dump()
             print (schema_template.yaml_dump())
         pass

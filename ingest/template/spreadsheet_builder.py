@@ -7,11 +7,12 @@ __license__ = "Apache 2.0"
 __date__ = "08/05/2018"
 
 from ingest.template import schema_template, tabs
+from ingest.template.tabs import TabConfig
 import xlsxwriter
 
 def generate_spreadsheet(outputfile, tabs_template, schema_urls):
 
-    tabs_parser = tabs.TabParser()
+    tabs_parser = TabConfig()
     tabs = tabs_parser.load(tabs_template)
 
     _build(outputfile, tabs, schema_urls)
