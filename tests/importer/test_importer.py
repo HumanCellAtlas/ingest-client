@@ -32,61 +32,63 @@ class WorkbookImporterTest(TestCase):
         # given:
         workbook_importer = WorkbookImporter()
 
-        # and:
+        # and: set up template manager
+        mock_template_manager = MagicMock()
+        template_manager_build.return_value = mock_template_manager
+
+        # and: set up worksheet importer
+        worksheet_importer = WorksheetImporter()
+        expected_json_list = self._fake_worksheet_import(worksheet_importer, mock_template_manager)
+
+        # and: set up workbook
         workbook = Workbook()
         ingest_workbook = IngestWorkbook(workbook)
+        schema_list = self._mock_get_schemas(ingest_workbook)
+        self._mock_importable_worksheets(ingest_workbook, workbook)
+
+        # when:
+        worksheet_importer_constructor.return_value = worksheet_importer
+        actual_json_list = workbook_importer.do_import(ingest_workbook)
+
+        # then:
+        template_manager_build.assert_called_with(schema_list)
 
         # and:
+        self.assertEqual(3, len(actual_json_list))
+        for expected_json in expected_json_list:
+            self.assertTrue(expected_json in actual_json_list, f'{expected_json} not in list')
+
+    def _mock_get_schemas(self, ingest_workbook):
         schema_base_url = 'https://schema.humancellatlas.org'
         schema_list = [
             f'{schema_base_url}/type/project',
             f'{schema_base_url}/type/biomaterial'
         ]
         ingest_workbook.get_schemas = MagicMock(return_value=schema_list)
+        return schema_list
 
-        # and:
-        template_manager = MagicMock()
-        template_manager_build.return_value = template_manager
-
-        # and:
+    def _mock_importable_worksheets(self, ingest_workbook, workbook):
         project_worksheet = workbook.create_sheet('Project')
         cell_suspension_worksheet = workbook.create_sheet('Cell Suspension')
         ingest_workbook.importable_worksheets = MagicMock(return_value=[
             project_worksheet, cell_suspension_worksheet
         ])
 
-        # and:
+    def _fake_worksheet_import(self, worksheet_importer:WorksheetImporter, mock_template_manager):
         projects = [
             {'short_name': 'project 1', 'description': 'first project'},
             {'short_name': 'project 2', 'description': 'second project'}
         ]
 
-        # and:
         cell_suspensions = [
             {'biomaterial_id': 'cell_suspension_101', 'biomaterial_name': 'cell suspension'}
         ]
 
-        # and:
-        worksheet_importer = WorksheetImporter()
         worksheet_iterator = iter([projects, cell_suspensions])
         worksheet_importer.do_import = (
-            lambda __, tm: worksheet_iterator.__next__() if tm is template_manager else []
+            lambda __, tm: worksheet_iterator.__next__() if tm is mock_template_manager else []
         )
-
-        # when:
-        worksheet_importer_constructor.return_value = worksheet_importer
-        pre_ingest_json_list = workbook_importer.do_import(ingest_workbook)
-
-        # then:
-        template_manager_build.assert_called_with(schema_list)
-
-        # and:
-        self.assertEqual(3, len(pre_ingest_json_list))
-        for project in projects:
-            self.assertTrue(project in pre_ingest_json_list, f'{project} not in list')
-        for cell_suspension in cell_suspensions:
-            self.assertTrue(cell_suspension in pre_ingest_json_list,
-                            f'{cell_suspension} not in list')
+        return projects + cell_suspensions
 
 
 class WorksheetImporterTest(TestCase):
