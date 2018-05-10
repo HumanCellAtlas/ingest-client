@@ -14,12 +14,14 @@ class IngestWorkbook:
 
 class WorkbookImporter:
 
+    def __init__(self):
+        self.worksheet_importer = WorksheetImporter()
+
     def do_import(self, workbook:IngestWorkbook):
         pre_ingest_json_list = []
         tm = template_manager.build(workbook.get_schemas())
-        worksheet_importer = WorksheetImporter()
         for worksheet in workbook.importable_worksheets():
-            json_list = worksheet_importer.do_import(worksheet, tm)
+            json_list = self.worksheet_importer.do_import(worksheet, tm)
             pre_ingest_json_list.extend(json_list)
         return pre_ingest_json_list
 

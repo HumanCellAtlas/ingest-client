@@ -29,10 +29,7 @@ class WorkbookImporterTest(TestCase):
     @patch('ingest.importer.importer.WorksheetImporter')
     @patch.object(template_manager, 'build')
     def test_do_import(self, template_manager_build, worksheet_importer_constructor):
-        # given:
-        workbook_importer = WorkbookImporter()
-
-        # and: set up template manager
+        # given: set up template manager
         mock_template_manager = MagicMock()
         template_manager_build.return_value = mock_template_manager
 
@@ -46,8 +43,11 @@ class WorkbookImporterTest(TestCase):
         schema_list = self._mock_get_schemas(ingest_workbook)
         self._mock_importable_worksheets(ingest_workbook, workbook)
 
-        # when:
+        # and: mock WorksheetImporter constructor
         worksheet_importer_constructor.return_value = worksheet_importer
+        workbook_importer = WorkbookImporter()
+
+        # when:
         actual_json_list = workbook_importer.do_import(ingest_workbook)
 
         # then:
@@ -93,6 +93,7 @@ class WorkbookImporterTest(TestCase):
 
 class WorksheetImporterTest(TestCase):
 
+    # TODO refactor this
     def test_do_import(self):
         # given:
         worksheet_importer = WorksheetImporter()
