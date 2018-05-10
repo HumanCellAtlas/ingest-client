@@ -2,6 +2,7 @@ import re
 
 from openpyxl import Workbook
 
+from ingest.importer.conversion import template_manager
 from ingest.importer.data_node import DataNode
 
 
@@ -15,9 +16,10 @@ class WorkbookImporter:
 
     def do_import(self, workbook:IngestWorkbook):
         pre_ingest_json_list = []
+        tm = template_manager.build(workbook.get_schemas())
         worksheet_importer = WorksheetImporter()
         for worksheet in workbook.importable_worksheets():
-            json_list = worksheet_importer.do_import(worksheet, None)
+            json_list = worksheet_importer.do_import(worksheet, tm)
             pre_ingest_json_list.extend(json_list)
         return pre_ingest_json_list
 

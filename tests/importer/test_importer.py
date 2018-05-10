@@ -3,6 +3,7 @@ from unittest import TestCase
 from mock import MagicMock, patch
 from openpyxl import Workbook
 
+from ingest.importer.conversion import template_manager
 from ingest.importer.conversion.data_converter import (
     Converter, ListConverter, BooleanConverter, DataType
 )
@@ -11,7 +12,7 @@ from ingest.importer.importer import WorksheetImporter, WorkbookImporter, Ingest
 from ingest.template.schematemplate import SchemaTemplate
 
 
-def _create_single_row_worksheet(worksheet_data:dict):
+def _create_single_row_worksheet(worksheet_data: dict):
     workbook = Workbook()
     worksheet = workbook.create_sheet()
 
@@ -25,13 +26,27 @@ def _create_single_row_worksheet(worksheet_data:dict):
 
 class WorkbookImporterTest(TestCase):
 
-    def test_do_import(self):
+    @patch('ingest.importer.importer.WorksheetImporter')
+    @patch.object(template_manager, 'build')
+    def test_do_import(self, template_manager_build, worksheet_importer_constructor):
         # given:
         workbook_importer = WorkbookImporter()
 
         # and:
         workbook = Workbook()
         ingest_workbook = IngestWorkbook(workbook)
+
+        # and:
+        schema_base_url = 'https://schema.humancellatlas.org'
+        schema_list = [
+            f'{schema_base_url}/type/project',
+            f'{schema_base_url}/type/biomaterial'
+        ]
+        ingest_workbook.get_schemas = MagicMock(return_value=schema_list)
+
+        # and:
+        template_manager = MagicMock()
+        template_manager_build.return_value = template_manager
 
         # and:
         project_worksheet = workbook.create_sheet('Project')
@@ -53,14 +68,19 @@ class WorkbookImporterTest(TestCase):
 
         # and:
         worksheet_importer = WorksheetImporter()
-        worksheet_importer.do_import = MagicMock(side_effect=[projects, cell_suspensions])
+        worksheet_iterator = iter([projects, cell_suspensions])
+        worksheet_importer.do_import = (
+            lambda __, tm: worksheet_iterator.__next__() if tm is template_manager else []
+        )
 
         # when:
-        with patch('ingest.importer.importer.WorksheetImporter') as mock_constructor:
-            mock_constructor.return_value = worksheet_importer
-            pre_ingest_json_list = workbook_importer.do_import(ingest_workbook)
+        worksheet_importer_constructor.return_value = worksheet_importer
+        pre_ingest_json_list = workbook_importer.do_import(ingest_workbook)
 
         # then:
+        template_manager_build.assert_called_with(schema_list)
+
+        # and:
         self.assertEqual(3, len(pre_ingest_json_list))
         for project in projects:
             self.assertTrue(project in pre_ingest_json_list, f'{project} not in list')

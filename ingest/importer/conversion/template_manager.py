@@ -30,3 +30,7 @@ class TemplateManager:
 
     # TODO implement this
     def get_schema_type(self): ...
+
+
+# TODO implement this
+def build(schemas) -> TemplateManager: ...
