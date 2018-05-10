@@ -2,7 +2,7 @@ from unittest import TestCase
 
 from openpyxl import Workbook
 
-from ingest.importer.importer import IngestWorkbook
+from ingest.importer.spreadsheet.ingest_workbook import IngestWorkbook
 
 
 class IngestWorkbookTest(TestCase):

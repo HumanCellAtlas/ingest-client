@@ -8,7 +8,8 @@ from ingest.importer.conversion.data_converter import (
     Converter, ListConverter, BooleanConverter, DataType
 )
 from ingest.importer.conversion.template_manager import TemplateManager
-from ingest.importer.importer import WorksheetImporter, WorkbookImporter, IngestWorkbook
+from ingest.importer.importer import WorksheetImporter, WorkbookImporter
+from ingest.importer.spreadsheet.ingest_workbook import IngestWorkbook
 from ingest.template.schematemplate import SchemaTemplate
 
 
