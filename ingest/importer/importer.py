@@ -1,14 +1,15 @@
 import re
 
-from ingest.importer.data_node import DataNode
+import openpyxl
 
+from ingest.importer.data_node import DataNode
 
 class WorksheetImporter:
 
     def __init__(self):
         pass
 
-    def do_import(self, worksheet, template_manager):
+    def do_import(self, worksheet, template_manager, entity):
         json_list = []
 
         for row in self._get_data_rows(worksheet):
@@ -20,6 +21,7 @@ class WorksheetImporter:
                 header_name = self._get_header_name(cell, worksheet)
 
                 cell_value = cell.value
+
                 if cell_value is None:
                     continue
 
@@ -39,8 +41,8 @@ class WorksheetImporter:
             for field_chain in ontology_fields:
                 node[field_chain] = ontology_tracker.get_value_by_field(field_chain)
 
-            node['describedBy'] = template_manager.get_schema_url()
-            node['schema_type'] = template_manager.get_schema_type()
+            node['describedBy'] = template_manager.get_schema_url(entity)
+            node['schema_type'] = template_manager.get_schema_type(entity)
 
             json_list.append(node.as_dict())
 

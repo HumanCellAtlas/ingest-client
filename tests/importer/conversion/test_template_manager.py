@@ -93,3 +93,97 @@ class TemplateManagerTest(TestCase):
         # then:
         self.assertIsInstance(converter, ListConverter)
         self.assertEqual(DataType.BOOLEAN, converter.base_type)
+
+    def test_is_ontology_subfield_true(self):
+        # given:
+
+        schema_template = SchemaTemplate()
+        spec = {
+            'multivalue': True,
+            'value_type': 'object',
+            'schema': {
+                'high_level_entity': 'module',
+                'domain_entity': 'ontology',
+                'module': 'species_ontology',
+                'url': 'https://schema.humancellatlas.org/module/ontology/5.0.0/species_ontology'
+            }
+        }
+        schema_template.lookup = MagicMock(name='lookup', return_value=spec)
+        template_manager = TemplateManager(schema_template)
+
+        # when:
+        is_ontology = template_manager.is_ontology_subfield('path.ontology_field.subfield')
+
+        # then:
+        self.assertTrue(is_ontology)
+
+    def test_is_ontology_subfield_false(self):
+        # given:
+
+        schema_template = SchemaTemplate()
+        spec = {
+            'multivalue': False,
+            'value_type': 'string'
+        }
+        schema_template.lookup = MagicMock(name='lookup', return_value=spec)
+        template_manager = TemplateManager(schema_template)
+
+        # when:
+        is_ontology = template_manager.is_ontology_subfield('path.ontology_field.subfield')
+
+        # then:
+        self.assertFalse(is_ontology)
+
+    def test_is_ontology_subfield_false_no_spec(self):
+        # given:
+
+        schema_template = SchemaTemplate()
+        schema_template.lookup = MagicMock(name='lookup', return_value=None)
+        template_manager = TemplateManager(schema_template)
+
+        # when:
+        is_ontology = template_manager.is_ontology_subfield('path.ontology_field.subfield')
+
+        # then:
+        self.assertFalse(is_ontology)
+
+    def test_get_schema_type(self):
+        # given
+        schema_template = SchemaTemplate()
+        spec = {
+            'schema': {
+                'high_level_entity': 'type',
+                'domain_entity': 'biomaterial',
+                'module': 'donor_organism',
+                'url': 'https://schema.humancellatlas.org/type/biomaterial/5.0.0/donor_organism'
+            }
+        }
+        schema_template.lookup = MagicMock(name='lookup', return_value=spec)
+        template_manager = TemplateManager(schema_template)
+
+        # when:
+        domain_entity = template_manager.get_schema_type('cell_suspension')
+
+        # then:
+        self.assertEqual('biomaterial', domain_entity)
+
+
+    def test_get_schema_url(self):
+        # given
+        schema_template = SchemaTemplate()
+        spec = {
+            'schema': {
+                'high_level_entity': 'type',
+                'domain_entity': 'biomaterial',
+                'module': 'donor_organism',
+                'url': 'https://schema.humancellatlas.org/type/biomaterial/5.0.0/donor_organism'
+            }
+        }
+        schema_template.lookup = MagicMock(name='lookup', return_value=spec)
+        template_manager = TemplateManager(schema_template)
+
+        # when:
+        url = template_manager.get_schema_url('cell_suspension.path.field')
+
+        # then:
+        self.assertEqual('https://schema.humancellatlas.org/type/biomaterial/5.0.0/donor_organism', url)
