@@ -12,7 +12,7 @@ from ingest.importer.importer import WorksheetImporter, WorkbookImporter, Ingest
 from ingest.template.schematemplate import SchemaTemplate
 
 
-def _create_single_row_worksheet(worksheet_data: dict):
+def _create_single_row_worksheet(worksheet_data:dict):
     workbook = Workbook()
     worksheet = workbook.create_sheet()
 
@@ -113,7 +113,7 @@ class WorksheetImporterTest(TestCase):
         worksheet = self._create_test_worksheet()
 
         # when:
-        json_list = worksheet_importer.do_import(worksheet, template_manager)
+        json_list = worksheet_importer.do_import(worksheet, template_manager, 'project')
 
         # then:
         self.assertEqual(2, len(json_list))
@@ -192,7 +192,7 @@ class WorksheetImporterTest(TestCase):
         worksheet_importer = WorksheetImporter()
 
         # when:
-        json_list = worksheet_importer.do_import(worksheet, template_manager)
+        json_list = worksheet_importer.do_import(worksheet, template_manager, 'project')
 
         # then:
         self.assertEqual(1, len(json_list))
@@ -213,11 +213,11 @@ class WorksheetImporterTest(TestCase):
         # TODO the resulting method should be able to determine the data block based on
         #   the worksheet info (worksheet name)
         template_manager.get_schema_url = (
-            lambda: 'https://schema.humancellatlas.org/type/project/5.1.0/project'
+            lambda entity: 'https://schema.humancellatlas.org/type/project/5.1.0/project'
         )
 
         template_manager.get_schema_type = (
-            lambda: 'project'
+            lambda entity: 'project'
         )
 
         # and:
@@ -230,7 +230,7 @@ class WorksheetImporterTest(TestCase):
         })
 
         # when:
-        json_list = importer.do_import(worksheet, template_manager)
+        json_list = importer.do_import(worksheet, template_manager, 'project')
 
         # then:
         self.assertEqual(1, len(json_list))
