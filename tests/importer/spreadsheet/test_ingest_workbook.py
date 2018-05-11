@@ -22,8 +22,9 @@ class IngestWorkbookTest(TestCase):
             f'{base_url}type/biomaterial/organ_from_donor',
             f'{base_url}/type/process/library_preparation'
         ]
+        header_offset = 2
         for index, schema in enumerate(expected_schemas):
-            schemas_sheet[f'A{index + 1}'] = schema
+            schemas_sheet[f'A{index + header_offset}'] = schema
 
         # and:
         ingest_workbook = IngestWorkbook(workbook)
@@ -32,4 +33,4 @@ class IngestWorkbookTest(TestCase):
         actual_schemas = ingest_workbook.get_schemas()
 
         # then:
-        self.assertEqual(len(expected_schemas), len(actual_schemas))
+        self.assertEqual(expected_schemas, actual_schemas)
