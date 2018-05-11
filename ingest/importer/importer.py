@@ -1,8 +1,23 @@
 import re
 
-import openpyxl
-
+from ingest.importer.conversion import template_manager
 from ingest.importer.data_node import DataNode
+from ingest.importer.spreadsheet.ingest_workbook import IngestWorkbook
+
+
+class WorkbookImporter:
+
+    def __init__(self):
+        self.worksheet_importer = WorksheetImporter()
+
+    def do_import(self, workbook: IngestWorkbook):
+        pre_ingest_json_list = []
+        tm = template_manager.build(workbook.get_schemas())
+        for worksheet in workbook.importable_worksheets():
+            json_list = self.worksheet_importer.do_import(worksheet, tm)
+            pre_ingest_json_list.extend(json_list)
+        return pre_ingest_json_list
+
 
 class WorksheetImporter:
 

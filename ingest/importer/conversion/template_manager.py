@@ -32,7 +32,9 @@ class TemplateManager:
         parent_field = self._get_parent_field(header_name)
         column_spec = self.template.lookup(parent_field)
 
-        return column_spec and column_spec.get('schema') and column_spec['schema'].get('domain_entity') == 'ontology'
+        return column_spec and column_spec.get('schema') and (
+                column_spec['schema'].get('domain_entity') == 'ontology'
+        )
 
     def _get_parent_field(self, header_name):
         match = re.search('(?P<field_chain>.*)(\.\w+)', header_name)
@@ -52,3 +54,6 @@ class TemplateManager:
         spec = self.template.lookup(concrete_entity)
         return spec.get('schema') if spec else None
 
+
+# TODO implement this
+def build(schemas) -> TemplateManager: ...

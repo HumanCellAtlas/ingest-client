@@ -1,14 +1,17 @@
 from unittest import TestCase
 
-from mock import MagicMock
+from mock import MagicMock, patch
 from openpyxl import Workbook
 
+from ingest.importer.conversion import template_manager
 from ingest.importer.conversion.data_converter import (
     Converter, ListConverter, BooleanConverter, DataType
 )
 from ingest.importer.conversion.template_manager import TemplateManager
-from ingest.importer.importer import WorksheetImporter
+from ingest.importer.importer import WorksheetImporter, WorkbookImporter
+from ingest.importer.spreadsheet.ingest_workbook import IngestWorkbook
 from ingest.template.schematemplate import SchemaTemplate
+
 
 def _create_single_row_worksheet(worksheet_data:dict):
     workbook = Workbook()
@@ -22,8 +25,76 @@ def _create_single_row_worksheet(worksheet_data:dict):
     return worksheet
 
 
+class WorkbookImporterTest(TestCase):
+
+    @patch('ingest.importer.importer.WorksheetImporter')
+    @patch.object(template_manager, 'build')
+    def test_do_import(self, template_manager_build, worksheet_importer_constructor):
+        # given: set up template manager
+        mock_template_manager = MagicMock()
+        template_manager_build.return_value = mock_template_manager
+
+        # and: set up worksheet importer
+        worksheet_importer = WorksheetImporter()
+        expected_json_list = self._fake_worksheet_import(worksheet_importer, mock_template_manager)
+
+        # and: set up workbook
+        workbook = Workbook()
+        ingest_workbook = IngestWorkbook(workbook)
+        schema_list = self._mock_get_schemas(ingest_workbook)
+        self._mock_importable_worksheets(ingest_workbook, workbook)
+
+        # and: mock WorksheetImporter constructor
+        worksheet_importer_constructor.return_value = worksheet_importer
+        workbook_importer = WorkbookImporter()
+
+        # when:
+        actual_json_list = workbook_importer.do_import(ingest_workbook)
+
+        # then:
+        template_manager_build.assert_called_with(schema_list)
+
+        # and:
+        self.assertEqual(3, len(actual_json_list))
+        for expected_json in expected_json_list:
+            self.assertTrue(expected_json in actual_json_list, f'{expected_json} not in list')
+
+    def _mock_get_schemas(self, ingest_workbook):
+        schema_base_url = 'https://schema.humancellatlas.org'
+        schema_list = [
+            f'{schema_base_url}/type/project',
+            f'{schema_base_url}/type/biomaterial'
+        ]
+        ingest_workbook.get_schemas = MagicMock(return_value=schema_list)
+        return schema_list
+
+    def _mock_importable_worksheets(self, ingest_workbook, workbook):
+        project_worksheet = workbook.create_sheet('Project')
+        cell_suspension_worksheet = workbook.create_sheet('Cell Suspension')
+        ingest_workbook.importable_worksheets = MagicMock(return_value=[
+            project_worksheet, cell_suspension_worksheet
+        ])
+
+    def _fake_worksheet_import(self, worksheet_importer:WorksheetImporter, mock_template_manager):
+        projects = [
+            {'short_name': 'project 1', 'description': 'first project'},
+            {'short_name': 'project 2', 'description': 'second project'}
+        ]
+
+        cell_suspensions = [
+            {'biomaterial_id': 'cell_suspension_101', 'biomaterial_name': 'cell suspension'}
+        ]
+
+        worksheet_iterator = iter([projects, cell_suspensions])
+        worksheet_importer.do_import = (
+            lambda __, tm: worksheet_iterator.__next__() if tm is mock_template_manager else []
+        )
+        return projects + cell_suspensions
+
+
 class WorksheetImporterTest(TestCase):
 
+    # TODO refactor this
     def test_do_import(self):
         # given:
         worksheet_importer = WorksheetImporter()
@@ -142,6 +213,9 @@ class WorksheetImporterTest(TestCase):
         template_manager.get_converter = MagicMock(return_value=Converter())
 
         # and:
+        # TODO merge get_schema_url with get_schema_type as predefined block of data
+        # TODO the resulting method should be able to determine the data block based on
+        #   the worksheet info (worksheet name)
         template_manager.get_schema_url = (
             lambda entity: 'https://schema.humancellatlas.org/type/project/5.1.0/project'
         )
