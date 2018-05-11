@@ -5,7 +5,7 @@ tabs:
         - project.project_core.project_shortname
         - project.project_core.project_title
         - project.project_core.project_description
-  - contact:
+  - contributors:
       display_name : Contact
       columns:
         - project.contributors.contact_name
@@ -43,12 +43,6 @@ tabs:
         - donor_organism.weight_unit.ontology
   - specimen_from_organism:
       display_name : "Specimen from organism"
-      primary_id: specimen_from_organism.biomaterial_core.biomaterial_id
-      process_links:
-          dissociation_process.process_core.process_id
-          enrichment_process.process_core.process_id
-      entity_links:
-          donor_organism.biomaterial_core.biomaterial_id
       columns:
         - specimen_from_organism.biomaterial_core.biomaterial_id
         - specimen_from_organism.biomaterial_core.biomaterial_name
@@ -66,12 +60,6 @@ tabs:
         - enrichment_process.process_core.process_id
   - cell_suspension:
       display_name : "Cell suspension"
-      primary_id: cell_suspension.biomaterial_core.biomaterial_id
-      process_links:
-          library_preparation_process.process_core.process_id
-          sequencing_process.process_core.process_id
-      entity_links:
-          specimen_from_organism.biomaterial_core.biomaterial_id
       columns:
         - cell_suspension.biomaterial_core.biomaterial_id
         - cell_suspension.biomaterial_core.biomaterial_name
@@ -84,33 +72,24 @@ tabs:
         - sequencing_process.process_core.process_id
   - dissociation_process:
       display_name : "Dissociation process"
-      primary_id: dissociation_process.process_core.process_id
-      entity_links:
-          protocol.protocol_core.process_id
       columns:
         - dissociation_process.process_core.process_id
         - dissociation_process.process_core.process_name
         - dissociation_process.process_core.process_description
         - dissociation_process.dissociation_method
         - dissociation_process.nucleic_acid_source
-        - protocol.protocol_core.process_id
+        - protocol.protocol_core.protocol_id
   - enrichment_process:
       display_name : "Enrichment process"
-      primary_id: enrichment_process.process_core.process_id
-      entity_links:
-          protocol.protocol_core.process_id
       columns:
         - enrichment_process.process_core.process_id
         - enrichment_process.process_core.process_name
         - enrichment_process.process_core.process_description
         - enrichment_process.enrichment_method
         - enrichment_process.markers
-        - protocol.protocol_core.process_id
+        - protocol.protocol_core.protocol_id
   - library_preparation_process:
       display_name : "Library preparation process"
-      primary_id: library_preparation_process.process_core.process_id
-      entity_links:
-          protocol.protocol_core.process_id
       columns:
         - library_preparation_process.process_core.process_id
         - library_preparation_process.process_core.process_name
@@ -126,12 +105,9 @@ tabs:
         - library_preparation_process.umi_barcode.barcode_read
         - library_preparation_process.umi_barcode.barcode_offset
         - library_preparation_process.umi_barcode.barcode_length
-        - protocol.protocol_core.process_id
+        - protocol.protocol_core.protocol_id
   - sequencing_process:
       display_name : "Sequencing process"
-      primary_id: sequencing_process.process_core.process_id
-      entity_links:
-          protocol.protocol_core.process_id
       columns:
         - sequencing_process.process_core.process_id
         - sequencing_process.process_core.process_name
@@ -139,20 +115,18 @@ tabs:
         - sequencing_process.instrument_manufacturer_model.text
         - sequencing_process.instrument_manufacturer_model.ontology
         - sequencing_process.paired_ends
-        - protocol.protocol_core.process_id
+        - protocol.protocol_core.protocol_id
   - protocol:
       display_name : "Protocols"
-      primary_id: protocol.protocol_core.process_id
       columns:
-        - protocol.protocol_core.process_id
-        - protocol.protocol_core.process_name
-        - protocol.protocol_core.process_description
-        - protocol.protocol_core.process_document
+        - protocol.protocol_core.protocol_id
+        - protocol.protocol_core.protocol_name
+        - protocol.protocol_core.protocol_description
+        - protocol.protocol_core.document
         - protocol.protocol_type.text
         - protocol.protocol_type.ontology
   - sequence_file:
       display_name : "Sequence files"
-      primary_id: sequence_file.file_core.file_name
       entity_links:
           cell_suspension.biomaterial_core.biomaterial_id
       columns:

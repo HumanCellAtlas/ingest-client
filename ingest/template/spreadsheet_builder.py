@@ -21,7 +21,7 @@ def generate_spreadsheet(outputfile, tabs_template, schema_urls):
 def _build(outputfile, tabs, schema_urls):
 
 
-    template = schema_template.SchemaTemplate().load(schema_urls)
+    template = schema_template.SchemaTemplate(schema_urls, tab_config=tabs)
 
     workbook = xlsxwriter.Workbook(outputfile)
 
@@ -29,32 +29,35 @@ def _build(outputfile, tabs, schema_urls):
     required_header_format = workbook.add_format({'bold': True, 'bg_color': 'yellow'})
     desc_format = workbook.add_format({'font_color':'light-grey', 'italic': True, 'text_wrap':True})
 
-    for tab_info in tabs.lookup("tabs"):
+    for tab in tabs.lookup("tabs"):
 
-        worksheet = workbook.add_worksheet(tabs.lookup("tabs."+tab_info+".display_name"))
+        for tab_name, detail in tab.items():
 
-        col_number = 0
-        for cols in tabs.lookup("tabs."+tab_info+".columns"):
-            uf = template.lookup(cols+".user_friendly")
-            if not uf:
-                uf = cols
-            desc = template.lookup(cols+".description")
-            if not desc:
-                desc = ""
+            worksheet = workbook.add_worksheet(detail["display_name"])
 
-            required = template.lookup(cols+".required")
-            hf = header_format
-            if required:
-                hf= required_header_format
+            col_number = 0
 
 
-            worksheet.write(0, col_number, uf, hf)
-            worksheet.set_column(col_number, col_number, len(uf))
+            for cols in detail["columns"]:
+                uf = template.lookup(cols+".user_friendly")
+                if not uf:
+                    uf = cols
+                desc = template.lookup(cols+".description")
+                if not desc:
+                    desc = ""
 
-            worksheet.write(1, col_number, desc, desc_format)
-            col_number+=1
+                required = template.lookup(cols+".required")
+                hf = header_format
+                if required:
+                    hf= required_header_format
 
-        print (tab_info)
+
+                worksheet.write(0, col_number, uf, hf)
+                worksheet.set_column(col_number, col_number, len(uf))
+
+                worksheet.write(1, col_number, desc, desc_format)
+                col_number+=1
+
 
     worksheet = workbook.add_worksheet("Schemas")
     worksheet.write(0,0, "Schemas")

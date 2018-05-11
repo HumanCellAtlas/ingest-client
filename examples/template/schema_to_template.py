@@ -2,7 +2,6 @@
 
 
 from ingest.template.schema_template import SchemaTemplate
-from ingest.template.tabs import TabConfig
 
 schemas = [
     "https://schema.humancellatlas.org/type/project/5.1.0/project",

@@ -59,6 +59,8 @@ class SchemaTemplate:
         try:
             return self.get(self._template["meta_data_properties"], key)
         except:
+            raise UnknownKeyException(
+                "Can't map the key to a known JSON schema property")
             return None
 
     def get_template(self):
@@ -108,16 +110,11 @@ class SchemaTemplate:
         return key.split('.')[0]
 
     def get(self, d, keys):
-        try:
-            if "." in keys:
-                key, rest = keys.split(".", 1)
-                return self.get(d[key], rest)
-            else:
-                return d[keys]
-        except:
-            print("Key error: " +keys)
-            raise UnknownKeyException(
-                "Can't map the key to a known JSON schema property")
+        if "." in keys:
+            key, rest = keys.split(".", 1)
+            return self.get(d[key], rest)
+        else:
+            return d[keys]
 
 
 class SchemaParser:
@@ -128,6 +125,8 @@ class SchemaParser:
             ["describedBy", "schema_version", "schema_type"]
         self.schema_template = template
         self._required = []
+        # todo identifiable should be in the schema - hard coded here for now
+        self._identifiable = ["biomaterial_id", "process_id", "protocol_id", "file_name"]
         self._key_lookup = {}
 
     def _load_schema(self, json_schema):
@@ -182,7 +181,7 @@ class SchemaParser:
 
     def _extract_property(self, data, *args, **kwargs):
 
-        dic = {"multivalue": False}
+        dic = {"multivalue": False, "required" : False, "user_friendly" : None, "description": None}
 
         if "type" in data:
             dic["value_type"] = data["type"]
@@ -192,8 +191,12 @@ class SchemaParser:
 
         schema = self._get_schema_from_object(data)
 
-        if 'property_name' in kwargs and kwargs.get('property_name') in self._required:
-            dic["required"] = True
+        if 'property_name' in kwargs:
+            if kwargs.get('property_name') in self._required:
+                dic["required"] = True
+
+            if kwargs.get('property_name') in self._identifiable:
+                dic["identifiable"] = True
 
         if schema:
             dic["schema"] = schema
@@ -201,6 +204,7 @@ class SchemaParser:
         if "user_friendly" in data:
             dic["user_friendly"] = data["user_friendly"]
             self._update_key_to_label(data["user_friendly"], kwargs)
+
 
         if "description" in data:
             dic["description"] = data["description"]
