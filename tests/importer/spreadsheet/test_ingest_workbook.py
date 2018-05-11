@@ -34,3 +34,21 @@ class IngestWorkbookTest(TestCase):
 
         # then:
         self.assertEqual(expected_schemas, actual_schemas)
+
+    def test_importable_worksheets(self):
+        # given:
+        workbook = Workbook()
+
+        # and:
+        importable_names = ['Project', 'Organ From Donor', 'Cell Suspension']
+        expected_worksheets = [workbook.create_sheet(name) for name in importable_names]
+        workbook.create_sheet('schemas')
+
+        # and:
+        ingest_workbook = IngestWorkbook(workbook)
+
+        # when:
+        actual_worksheets = ingest_workbook.importable_worksheets()
+
+        # then:
+        self.assertEqual(len(expected_worksheets), len(actual_worksheets))

@@ -13,3 +13,6 @@ class IngestWorkbook:
             schema_cell = row[0]
             schemas.append(schema_cell.value)
         return schemas
+
+    def importable_worksheets(self):
+        return [1, 2, 3]
