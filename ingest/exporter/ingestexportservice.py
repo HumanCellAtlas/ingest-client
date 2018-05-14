@@ -252,7 +252,7 @@ class IngestExporter:
         process_info.project = self.get_project_info(process)
 
         if not process_info.project:  # get from input bundle
-            project_uuid_lists = process_info.input_bundle['fileProjectMap'].values()
+            project_uuid_lists = list(process_info.input_bundle['fileProjectMap'].values())
 
             if len(project_uuid_lists) == 0 and len(project_uuid_lists[0]) == 0:
                 raise Error('Input bundle manifest has no list of project uuid.')  # very unlikely to happen
