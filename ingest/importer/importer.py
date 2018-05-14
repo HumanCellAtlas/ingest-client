@@ -1,6 +1,7 @@
 import re
 
 from ingest.importer.conversion import template_manager
+from ingest.importer.conversion.template_manager import TemplateManager
 from ingest.importer.data_node import DataNode
 from ingest.importer.spreadsheet.ingest_workbook import IngestWorkbook
 
@@ -24,9 +25,8 @@ class WorksheetImporter:
     def __init__(self):
         pass
 
-    def do_import(self, worksheet, template_manager, entity):
+    def do_import(self, worksheet, template:TemplateManager, entity):
         json_list = []
-
         for row in self._get_data_rows(worksheet):
             node = DataNode()
             ontology_tracker = OntologyTracker()
@@ -42,11 +42,11 @@ class WorksheetImporter:
 
                 field_chain = self._get_field_chain(header_name)
 
-                if template_manager.is_ontology_subfield(header_name):
+                if template.is_ontology_subfield(header_name):
                     ontology_tracker.track_value(field_chain, cell_value)
                     continue
 
-                converter = template_manager.get_converter(header_name)
+                converter = template.get_converter(header_name)
 
                 data = converter.convert(cell_value)
 
@@ -56,8 +56,8 @@ class WorksheetImporter:
             for field_chain in ontology_fields:
                 node[field_chain] = ontology_tracker.get_value_by_field(field_chain)
 
-            node['describedBy'] = template_manager.get_schema_url(entity)
-            node['schema_type'] = template_manager.get_schema_type(entity)
+            node['describedBy'] = template.get_schema_url(entity)
+            node['schema_type'] = template.get_schema_type(entity)
 
             json_list.append(node.as_dict())
 

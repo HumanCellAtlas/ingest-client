@@ -209,18 +209,18 @@ class WorksheetImporterTest(TestCase):
 
     def test_do_import_adds_metadata_info(self):
         # given:
-        template_manager = TemplateManager(SchemaTemplate())
-        template_manager.get_converter = MagicMock(return_value=Converter())
+        mock_template_manager = TemplateManager(SchemaTemplate())
+        mock_template_manager.get_converter = MagicMock(return_value=Converter())
 
         # and:
         # TODO merge get_schema_url with get_schema_type as predefined block of data
         # TODO the resulting method should be able to determine the data block based on
         #   the worksheet info (worksheet name)
-        template_manager.get_schema_url = (
+        mock_template_manager.get_schema_url = (
             lambda entity: 'https://schema.humancellatlas.org/type/project/5.1.0/project'
         )
 
-        template_manager.get_schema_type = (
+        mock_template_manager.get_schema_type = (
             lambda entity: 'project'
         )
 
@@ -234,7 +234,7 @@ class WorksheetImporterTest(TestCase):
         })
 
         # when:
-        json_list = importer.do_import(worksheet, template_manager, 'project')
+        json_list = importer.do_import(worksheet, mock_template_manager, 'project')
 
         # then:
         self.assertEqual(1, len(json_list))
