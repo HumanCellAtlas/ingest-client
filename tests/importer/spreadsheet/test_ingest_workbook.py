@@ -45,10 +45,14 @@ class IngestWorkbookTest(TestCase):
         workbook.create_sheet('schemas')
 
         # and:
+        default_worksheet = workbook.get_sheet_by_name('Sheet')
+        workbook.remove_sheet(default_worksheet)
+
+        # and:
         ingest_workbook = IngestWorkbook(workbook)
 
         # when:
         actual_worksheets = ingest_workbook.importable_worksheets()
 
         # then:
-        self.assertEqual(len(expected_worksheets), len(actual_worksheets))
+        self.assertEqual(expected_worksheets, actual_worksheets)

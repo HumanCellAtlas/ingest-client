@@ -15,4 +15,6 @@ class IngestWorkbook:
         return schemas
 
     def importable_worksheets(self):
-        return [1, 2, 3]
+        importable_names = [name for name in self.workbook.get_sheet_names() if
+                            (not name == 'schemas')]
+        return [self.workbook.get_sheet_by_name(name) for name in importable_names]
