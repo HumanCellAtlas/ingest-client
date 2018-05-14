@@ -20,6 +20,20 @@ def _mock_schema_template_lookup(value_type='string', multivalue=False):
 
 class TemplateManagerTest(TestCase):
 
+    def test_create_template_node(self):
+        # given:
+        schema_template = SchemaTemplate()
+
+        # and:
+        template_manager = TemplateManager(schema_template)
+
+        # when:
+        data_node = template_manager.create_template_node()
+
+        # then:
+        self.assertIsNotNone(data_node)
+
+
     def test_get_converter_for_string(self):
         # given:
         schema_template = _mock_schema_template_lookup()

@@ -9,6 +9,9 @@ class TemplateManager:
     def __init__(self, template:SchemaTemplate):
         self.template = template
 
+    def create_template_node(self):
+        return []
+
     def get_converter(self, header_name):
         column_spec = self.template.lookup(header_name)
         default_converter = CONVERTER_MAP[DataType.STRING]
