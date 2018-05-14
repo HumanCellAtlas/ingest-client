@@ -1,6 +1,9 @@
 import re
 
+from openpyxl.worksheet import Worksheet
+
 from ingest.importer.conversion.data_converter import ListConverter, DataType, CONVERTER_MAP
+from ingest.importer.data_node import DataNode
 from ingest.template.schematemplate import SchemaTemplate
 
 
@@ -9,8 +12,11 @@ class TemplateManager:
     def __init__(self, template:SchemaTemplate):
         self.template = template
 
-    def create_template_node(self):
-        return []
+    def create_template_node(self, worksheet:Worksheet):
+        tab_spec = self.template.get_tab_spec(worksheet.title)
+        data_node = DataNode()
+        data_node['describedBy'] = tab_spec['schema']['url']
+        return data_node
 
     def get_converter(self, header_name):
         column_spec = self.template.lookup(header_name)

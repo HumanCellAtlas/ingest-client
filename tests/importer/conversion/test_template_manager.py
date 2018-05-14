@@ -1,10 +1,12 @@
 from unittest import TestCase
 
 from mock import MagicMock
+from openpyxl import Workbook
 
 from ingest.importer.conversion.data_converter import Converter, ListConverter, DataType, \
     IntegerConverter, BooleanConverter
 from ingest.importer.conversion.template_manager import TemplateManager
+from ingest.importer.data_node import DataNode
 from ingest.template.schematemplate import SchemaTemplate
 
 
@@ -23,15 +25,29 @@ class TemplateManagerTest(TestCase):
     def test_create_template_node(self):
         # given:
         schema_template = SchemaTemplate()
+        schema_url = 'https://schema.humancellatlas.org/type/biomaterial/5.1.0/donor_organsim'
+        tab_spec = {
+            'schema': {
+                'domain_entity': 'biomaterial',
+                'url': schema_url
+            }
+        }
+        # TODO define get_tab_spec in SchemaTemplate
+        schema_template.get_tab_spec = lambda title: tab_spec if title == 'Donor' else None
 
         # and:
         template_manager = TemplateManager(schema_template)
 
+        # and:
+        workbook = Workbook()
+        donor_worksheet = workbook.create_sheet('Donor')
+
         # when:
-        data_node = template_manager.create_template_node()
+        data_node:DataNode = template_manager.create_template_node(donor_worksheet)
 
         # then:
-        self.assertIsNotNone(data_node)
+        data = data_node.as_dict()
+        self.assertEqual(schema_url, data.get('describedBy'))
 
 
     def test_get_converter_for_string(self):
@@ -150,7 +166,6 @@ class TemplateManagerTest(TestCase):
 
     def test_is_ontology_subfield_false_no_spec(self):
         # given:
-
         schema_template = SchemaTemplate()
         schema_template.lookup = MagicMock(name='lookup', return_value=None)
         template_manager = TemplateManager(schema_template)
