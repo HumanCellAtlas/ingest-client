@@ -62,8 +62,6 @@ class SubmissionTest(TestCase):
 
 
 class IngestSubmitterTest(TestCase):
-    def setUp(self):
-        pass
 
     def test_submit(self):
         ingest.api.ingestapi.requests.get = MagicMock()
