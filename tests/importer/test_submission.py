@@ -109,31 +109,18 @@ class IngestSubmitterTest(TestCase):
                     'content': {
                         'key': 'biomaterial_2'
                     },
-                    'links': [
-                        {
-                            'entity': 'biomaterial',
-                            'ids': ['biomaterial_1']
-                        },
-                        {
-                            'entity': 'process',
-                            'ids': ['process_id_1']
-                        }
-                    ]
+                    'links': {
+                        'biomaterial': []
+                    }
                 },
                 'biomaterial_id_3': {
                     'content': {
                         'key': 'biomaterial_3'
                     },
-                    'links': [
-                        {
-                            'entity': 'biomaterial',
-                            'ids': ['biomaterial_2']
-                        },
-                        {
-                            'entity': 'process',
-                            'ids': ['process_id_2', 'process_id_3']
-                        }
-                    ]
+                    'links': {
+                        'biomaterial': ['biomaterial_2'],
+                        'process': ['process_id_2', 'process_id_3']
+                    }
                 },
             },
             'file': {
@@ -141,10 +128,9 @@ class IngestSubmitterTest(TestCase):
                     'content': {
                         'key': 'file_1'
                     },
-                    'links': [{
-                        'entity': 'biomaterial',
-                        'ids': ['biomaterial_id_3']
-                    }]
+                    'links': {
+                        'biomaterial': ['biomaterial_id_3']
+                    }
                 }
             },
             'process': {
@@ -152,28 +138,25 @@ class IngestSubmitterTest(TestCase):
                     'content': {
                         'key': 'process_1'
                     },
-                    'links': [{
-                        'entity': 'protocol',
-                        'ids': ['protocol_id_1']
-                    }]
+                    'links': {
+                        'protocol': ['protocol_id_1']
+                    }
                 },
                 'process_id_2': {
                     'content': {
                         'key': 'process_2'
                     },
-                    'links': [{
-                        'entity': 'protocol',
-                        'ids': ['protocol_id_1']
-                    }]
+                    'links': {
+                        'protocol': ['protocol_id_1']
+                    }
                 },
                 'process_id_3': {
                     'content': {
                         'key': 'process_3'
                     },
-                    'links': [{
-                        'entity': 'protocol',
-                        'ids': ['protocol_id_1']
-                    }]
+                    'links': {
+                        'protocol': ['protocol_id_1']
+                    }
                 }
             },
             'protocol': {
