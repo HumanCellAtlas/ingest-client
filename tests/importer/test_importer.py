@@ -177,7 +177,8 @@ class WorksheetImporterTest(TestCase):
 
     def test_do_import_with_ontology_fields(self):
         # given:
-        template_manager = TemplateManager(SchemaTemplate())
+        template_manager = MagicMock(name='template_manager')
+        template_manager.create_template_node = lambda __: DataNode()
         template_manager.get_converter = MagicMock(return_value=Converter())
 
         # and:
