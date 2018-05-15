@@ -36,20 +36,17 @@ class WorksheetImporter:
                 header_name = self._get_header_name(cell, worksheet)
 
                 cell_value = cell.value
+                field_chain = self._get_field_chain(header_name)
 
                 if cell_value is None:
                     continue
-
-                field_chain = self._get_field_chain(header_name)
 
                 if template.is_ontology_subfield(header_name):
                     ontology_tracker.track_value(field_chain, cell_value)
                     continue
 
                 converter = template.get_converter(header_name)
-
                 data = converter.convert(cell_value)
-
                 node[field_chain] = data
 
             ontology_fields = ontology_tracker.get_ontology_fields()

@@ -208,9 +208,10 @@ class WorksheetImporterTest(TestCase):
         self.assertEqual(1, len(json['genus_species']))
         self.assertEqual({'ontology': 'UO:000008', 'text': 'meter'}, json['genus_species'][0])
 
-    def test_do_import_builds_from_template(self):
+    @patch('ingest.importer.importer.OntologyTracker')
+    def test_do_import_builds_from_template(self, ontology_tracker_constructor):
         # given:
-        mock_template_manager = TemplateManager(SchemaTemplate())
+        mock_template_manager = MagicMock(name='template_manager')
         mock_template_manager.get_converter = MagicMock(return_value=Converter())
 
         # and:
@@ -219,6 +220,9 @@ class WorksheetImporterTest(TestCase):
         node_template['extra_field'] = 'an extra field'
         node_template['version'] = '0.0.1'
         mock_template_manager.create_template_node = lambda __: node_template
+
+        # and:
+        ontology_tracker_constructor.return_value = MagicMock(name='ontology_tracker')
 
         # and:
         importer = WorksheetImporter()

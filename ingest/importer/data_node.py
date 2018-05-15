@@ -10,7 +10,6 @@ class DataNode:
         field_chain = key.split('.')
         target_node = self._determine_node(field_chain)
         target_node[field_chain[-1]] = value
-        pass
 
     def _determine_node(self, field_chain):
         current_node = self.node
