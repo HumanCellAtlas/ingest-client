@@ -48,7 +48,7 @@ class TemplateManagerTest(TestCase):
         # then:
         data = data_node.as_dict()
         self.assertEqual(schema_url, data.get('describedBy'))
-
+        self.assertEqual('biomaterial', data.get('schema_type'))
 
     def test_get_converter_for_string(self):
         # given:

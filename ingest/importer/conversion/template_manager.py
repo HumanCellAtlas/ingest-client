@@ -16,6 +16,7 @@ class TemplateManager:
         tab_spec = self.template.get_tab_spec(worksheet.title)
         data_node = DataNode()
         data_node['describedBy'] = tab_spec['schema']['url']
+        data_node['schema_type'] = tab_spec['schema']['domain_entity']
         return data_node
 
     def get_converter(self, header_name):
