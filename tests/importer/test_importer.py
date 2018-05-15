@@ -8,6 +8,7 @@ from ingest.importer.conversion.data_converter import (
     Converter, ListConverter, BooleanConverter, DataType
 )
 from ingest.importer.conversion.template_manager import TemplateManager
+from ingest.importer.data_node import DataNode
 from ingest.importer.importer import WorksheetImporter, WorkbookImporter
 from ingest.importer.spreadsheet.ingest_workbook import IngestWorkbook
 from ingest.template.schematemplate import SchemaTemplate
@@ -207,22 +208,17 @@ class WorksheetImporterTest(TestCase):
         self.assertEqual(1, len(json['genus_species']))
         self.assertEqual({'ontology': 'UO:000008', 'text': 'meter'}, json['genus_species'][0])
 
-    def test_do_import_adds_metadata_info(self):
+    def test_do_import_builds_from_template(self):
         # given:
         mock_template_manager = TemplateManager(SchemaTemplate())
         mock_template_manager.get_converter = MagicMock(return_value=Converter())
 
         # and:
-        # TODO merge get_schema_url with get_schema_type as predefined block of data
-        # TODO the resulting method should be able to determine the data block based on
-        #   the worksheet info (worksheet name)
-        mock_template_manager.get_schema_url = (
-            lambda entity: 'https://schema.humancellatlas.org/type/project/5.1.0/project'
-        )
-
-        mock_template_manager.get_schema_type = (
-            lambda entity: 'project'
-        )
+        node_template = DataNode()
+        node_template['describedBy'] = 'https://schemas.sample.com/test'
+        node_template['extra_field'] = 'an extra field'
+        node_template['version'] = '0.0.1'
+        mock_template_manager.create_template_node = lambda __: node_template
 
         # and:
         importer = WorksheetImporter()
@@ -241,6 +237,6 @@ class WorksheetImporterTest(TestCase):
         json = json_list[0]
 
         # and:
-        self.assertEqual('https://schema.humancellatlas.org/type/project/5.1.0/project',
-                         json['describedBy'])
-        self.assertEqual('project', json['schema_type'])
+        self.assertEqual('https://schemas.sample.com/test', json.get('describedBy'))
+        self.assertEqual('an extra field', json.get('extra_field'))
+        self.assertEqual('0.0.1', json.get('version'))

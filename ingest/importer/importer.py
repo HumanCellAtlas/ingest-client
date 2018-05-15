@@ -28,7 +28,7 @@ class WorksheetImporter:
     def do_import(self, worksheet, template:TemplateManager, entity):
         json_list = []
         for row in self._get_data_rows(worksheet):
-            node = DataNode()
+            node = template.create_template_node(worksheet)
             ontology_tracker = OntologyTracker()
             for cell in row:
                 # TODO preprocess headers so that cells can be converted without having to always
@@ -55,9 +55,6 @@ class WorksheetImporter:
             ontology_fields = ontology_tracker.get_ontology_fields()
             for field_chain in ontology_fields:
                 node[field_chain] = ontology_tracker.get_value_by_field(field_chain)
-
-            node['describedBy'] = template.get_schema_url(entity)
-            node['schema_type'] = template.get_schema_type(entity)
 
             json_list.append(node.as_dict())
 
