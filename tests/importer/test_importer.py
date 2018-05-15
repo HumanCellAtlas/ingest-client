@@ -111,14 +111,16 @@ class WorksheetImporterTest(TestCase):
         }
 
         # and:
-        template_manager = TemplateManager(SchemaTemplate())
-        template_manager.get_converter = lambda key: converter_mapping.get(key, Converter())
+        mock_template_manager = MagicMock(name='template_manager')
+        mock_template_manager.create_template_node = lambda __: DataNode()
+        mock_template_manager.get_converter = lambda key: converter_mapping.get(key, Converter())
+        mock_template_manager.is_ontology_subfield = lambda __: False
 
         # and:
         worksheet = self._create_test_worksheet()
 
         # when:
-        json_list = worksheet_importer.do_import(worksheet, template_manager, 'project')
+        json_list = worksheet_importer.do_import(worksheet, mock_template_manager, 'project')
 
         # then:
         self.assertEqual(2, len(json_list))
