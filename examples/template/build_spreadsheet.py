@@ -24,4 +24,6 @@ schemas = [
     "https://schema.humancellatlas.org/type/protocol/sequencing/5.1.0/sequencing_protocol",
 ]
 
-spreadsheet_builder.generate_spreadsheet("human_10x.xlsx", "tabs_human_10x.yaml", schemas)
+spreadsheet_builder.generate_spreadsheet("human_10x.xlsx", tabs_template="tabs_human_10x.yaml", schema_urls=schemas)
+
+spreadsheet_builder.generate_spreadsheet("generic.xlsx", schema_urls=schemas)

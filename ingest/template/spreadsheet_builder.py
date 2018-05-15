@@ -10,18 +10,24 @@ from ingest.template import schema_template, tabs
 from ingest.template.tabs import TabConfig
 import xlsxwriter
 
-def generate_spreadsheet(outputfile, tabs_template, schema_urls):
+def generate_spreadsheet(outputfile, tabs_template=None, schema_urls=None):
+    template = None
 
-    tabs_parser = TabConfig()
-    tabs = tabs_parser.load(tabs_template)
+    if tabs_template:
 
-    _build(outputfile, tabs, schema_urls)
+        tabs_parser = TabConfig()
+        tabs = tabs_parser.load(tabs_template)
+        template = schema_template.SchemaTemplate(schema_urls, tab_config=tabs)
+    else:
+        template = schema_template.SchemaTemplate(schema_urls)
 
 
-def _build(outputfile, tabs, schema_urls):
+    _build(outputfile, template, schema_urls)
 
 
-    template = schema_template.SchemaTemplate(schema_urls, tab_config=tabs)
+def _build(outputfile, template, schema_urls):
+
+    tabs = template.get_tabs_config()
 
     workbook = xlsxwriter.Workbook(outputfile)
 
@@ -51,11 +57,24 @@ def _build(outputfile, tabs, schema_urls):
                 if required:
                     hf= required_header_format
 
+                # set the description
+                worksheet.write(0, col_number, desc, desc_format)
 
-                worksheet.write(0, col_number, uf, hf)
+                # set the user friendly name
+                worksheet.write(1, col_number, uf, hf)
                 worksheet.set_column(col_number, col_number, len(uf))
 
-                worksheet.write(1, col_number, desc, desc_format)
+                # set the example
+                example_text = ""
+                if template.lookup(cols+".example"):
+                    example_text = "e.g. "+str(template.lookup(cols+".example"))
+                worksheet.write(2, col_number, example_text)
+
+                # set the key
+                worksheet.write(3, col_number, cols)
+
+                worksheet.write(4, 0, "Add your data below this line", header_format)
+
                 col_number+=1
 
 

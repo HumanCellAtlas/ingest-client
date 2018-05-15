@@ -39,8 +39,10 @@ class SchemaTemplate:
 
         self._load(list_of_schema_urls)
 
-        if not tab_config:
-            self._tab_config = TabConfig(init=self._template)
+        self._tab_config  = TabConfig(init=self._template)
+        if tab_config:
+            self._tab_config = tab_config
+
 
 
     def _load(self, list_of_schema_urls):
@@ -55,6 +57,9 @@ class SchemaTemplate:
                 self._parser._load_schema(data)
         return self
 
+    def get_tabs_config(self, ):
+        return self._tab_config
+
     def lookup(self, key):
         try:
             return self.get(self._template["meta_data_properties"], key)
@@ -68,6 +73,14 @@ class SchemaTemplate:
 
     def append_tab(self, tab_info):
         self._template["tabs"].append(tab_info)
+
+    def append_column_to_tab(self, property_key):
+        level_one = self._get_level_one(property_key)
+
+        for i, tab in enumerate(self._template["tabs"]):
+            if level_one in tab:
+                self._template["tabs"][i][level_one]["columns"].append(property_key)
+
 
     def put (self, property, value):
         '''
@@ -150,6 +163,7 @@ class SchemaParser:
         # todo get tab display name from schema
         tab_display = property.schema.module[0].upper() + property.schema.module[1:].replace("_", " ")
         tab_info = {property.schema.module : {"display_name": tab_display, "columns" : []}}
+
         self.schema_template.append_tab(tab_info)
         # self.schema_template.meta_data_properties[endpoint] = {}
         self.schema_template.put(property.schema.module, property)
@@ -181,7 +195,7 @@ class SchemaParser:
 
     def _extract_property(self, data, *args, **kwargs):
 
-        dic = {"multivalue": False, "required" : False, "user_friendly" : None, "description": None}
+        dic = {"multivalue": False, "required" : False, "user_friendly" : None, "description": None, "example" : None}
 
         if "type" in data:
             dic["value_type"] = data["type"]
@@ -198,6 +212,10 @@ class SchemaParser:
             if kwargs.get('property_name') in self._identifiable:
                 dic["identifiable"] = True
 
+
+        if 'key' in kwargs:
+            self.schema_template.append_column_to_tab(kwargs.get('key'))
+
         if schema:
             dic["schema"] = schema
 
@@ -208,6 +226,9 @@ class SchemaParser:
 
         if "description" in data:
             dic["description"] = data["description"]
+
+        if "example" in data:
+            dic["example"] = data["example"]
 
         return doctict.DotDict(dic)
 
