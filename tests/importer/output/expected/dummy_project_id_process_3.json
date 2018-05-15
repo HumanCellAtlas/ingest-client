@@ -1,9 +1,0 @@
-{
-    "process_core": {
-        "process_id": "dis_proc_4"
-    },
-    "dissociation_method": "FACS",
-    "nucleic_acid_source": "single cell",
-    "schema_type": "process",
-    "describedBy": "https://schema.humancellatlas.org/type/process/biomaterial_collection/5.1.0/dissociation_process"
-}
