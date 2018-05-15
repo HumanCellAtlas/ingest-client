@@ -172,18 +172,19 @@ class WorksheetImporterTest(TestCase):
 
         return worksheet
 
-    def test_do_import_with_ontology_fields(self):
+    def test_do_import_with_object_list_fields(self):
         # given:
         template_manager = TemplateManager(SchemaTemplate())
         template_manager.get_converter = MagicMock(return_value=Converter())
 
         # and:
-        ontology_fields_mapping = {
+        multivalue_fields = {
             'project.genus_species.ontology': True,
             'project.genus_species.text': True,
         }
-        template_manager.is_ontology_subfield = (
-            lambda field_name: ontology_fields_mapping.get(field_name)
+
+        template_manager.is_parent_field_multivalue = (
+            lambda field_name: multivalue_fields.get(field_name)
         )
 
         # and:

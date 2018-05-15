@@ -29,7 +29,7 @@ class WorksheetImporter:
         json_list = []
         for row in self._get_data_rows(worksheet):
             node = DataNode()
-            ontology_tracker = OntologyTracker()
+            object_list_tracker = ObjectListTracker()
             for cell in row:
                 # TODO preprocess headers so that cells can be converted without having to always
                 # check the header
@@ -40,21 +40,20 @@ class WorksheetImporter:
                 if cell_value is None:
                     continue
 
+                converter = template.get_converter(header_name)
+                data = converter.convert(cell_value)
+
                 field_chain = self._get_field_chain(header_name)
 
-                if template.is_ontology_subfield(header_name):
-                    ontology_tracker.track_value(field_chain, cell_value)
+                if template.is_parent_field_multivalue(header_name):
+                    object_list_tracker.track_value(field_chain, cell_value)
                     continue
-
-                converter = template.get_converter(header_name)
-
-                data = converter.convert(cell_value)
 
                 node[field_chain] = data
 
-            ontology_fields = ontology_tracker.get_ontology_fields()
-            for field_chain in ontology_fields:
-                node[field_chain] = ontology_tracker.get_value_by_field(field_chain)
+            object_list_fields = object_list_tracker.get_object_list_fields()
+            for field_chain in object_list_fields:
+                node[field_chain] = object_list_tracker.get_value_by_field(field_chain)
 
             node['describedBy'] = template.get_schema_url(entity)
             node['schema_type'] = template.get_schema_type(entity)
@@ -75,7 +74,7 @@ class WorksheetImporter:
         return match.group('field_chain')
 
 
-class OntologyTracker(object):
+class ObjectListTracker(object):
 
     def __init__(self):
         self.ontology_values = {}
@@ -97,7 +96,7 @@ class OntologyTracker(object):
 
         self.ontology_values[ontology_field][ontology_subfield] = value
 
-    def get_ontology_fields(self):
+    def get_object_list_fields(self):
         return self.ontology_values.keys()
 
     def get_value_by_field(self, field):
