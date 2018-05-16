@@ -67,3 +67,12 @@ class TemplateManager:
 
 # TODO implement this
 def build(schemas) -> TemplateManager: ...
+
+
+class RowTemplate:
+
+    def __init__(self, *converters):
+        pass
+
+    def do_import(self, row):
+        return []

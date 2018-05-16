@@ -5,7 +5,7 @@ from openpyxl import Workbook
 
 from ingest.importer.conversion.data_converter import Converter, ListConverter, DataType, \
     IntegerConverter, BooleanConverter
-from ingest.importer.conversion.template_manager import TemplateManager
+from ingest.importer.conversion.template_manager import TemplateManager, RowTemplate
 from ingest.importer.data_node import DataNode
 from ingest.template.schematemplate import SchemaTemplate
 
@@ -210,3 +210,24 @@ class TemplateManagerTest(TestCase):
 
         # then:
         self.assertEqual('https://schema.humancellatlas.org/type/biomaterial/5.0.0/donor_organism', url)
+
+
+class RowTemplateTest(TestCase):
+
+    def test_do_import(self):
+        # given:
+        default_converter = Converter()
+        row_template = RowTemplate(default_converter, default_converter)
+
+        # and:
+        workbook = Workbook()
+        worksheet = workbook.create_sheet('profile')
+        worksheet['A1'] = 'Juan'
+        worksheet['B1'] = 'dela Cruz'
+        row = list(worksheet.rows)[0]
+
+        # when:
+        result = row_template.do_import(row)
+
+        # then:
+        self.assertIsNotNone(result)
