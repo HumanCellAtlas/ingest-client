@@ -2,6 +2,7 @@ import re
 
 from openpyxl.worksheet import Worksheet
 
+from ingest.importer.conversion.conversion_strategy import ConversionStrategy
 from ingest.importer.conversion.data_converter import ListConverter, DataType, CONVERTER_MAP
 from ingest.importer.data_node import DataNode
 from ingest.template.schematemplate import SchemaTemplate
@@ -71,8 +72,12 @@ def build(schemas) -> TemplateManager: ...
 
 class RowTemplate:
 
-    def __init__(self, *converters):
-        pass
+    def __init__(self, *strategies):
+        self.strategies = strategies
 
     def do_import(self, row):
-        return []
+        data = {}
+        for index, cell in enumerate(row):
+            strategy:ConversionStrategy = self.strategies[index]
+            strategy.apply(data, cell.value)
+        return data

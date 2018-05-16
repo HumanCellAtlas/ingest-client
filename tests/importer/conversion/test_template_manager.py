@@ -3,6 +3,7 @@ from unittest import TestCase
 from mock import MagicMock
 from openpyxl import Workbook
 
+from ingest.importer.conversion.conversion_strategy import ConversionStrategy
 from ingest.importer.conversion.data_converter import Converter, ListConverter, DataType, \
     IntegerConverter, BooleanConverter
 from ingest.importer.conversion.template_manager import TemplateManager, RowTemplate
@@ -212,12 +213,20 @@ class TemplateManagerTest(TestCase):
         self.assertEqual('https://schema.humancellatlas.org/type/biomaterial/5.0.0/donor_organism', url)
 
 
+class FakeStrategy(ConversionStrategy):
+
+    def __init__(self, field):
+        self.field = field
+
+    def apply(self, data_node, cell_data):
+        data_node[self.field] = cell_data
+
+
 class RowTemplateTest(TestCase):
 
     def test_do_import(self):
         # given:
-        default_converter = Converter()
-        row_template = RowTemplate(default_converter, default_converter)
+        row_template = RowTemplate(FakeStrategy('first_name'), FakeStrategy('last_name'))
 
         # and:
         workbook = Workbook()
@@ -231,3 +240,4 @@ class RowTemplateTest(TestCase):
 
         # then:
         self.assertIsNotNone(result)
+        self.assertEqual('Juan', result.get('first_name'))
