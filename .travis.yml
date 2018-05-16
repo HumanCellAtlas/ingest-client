@@ -11,7 +11,6 @@ before_script:
 script:
   - nosetests --with-coverage --cover-erase --cover-package=ingest --cover-xml
 after_script:
-  - coverage xml
   - if [[ "$TRAVIS_PULL_REQUEST" == "false" && "$TRAVIS_PYTHON_VERSION" == "3.6" ]]; then ./cc-test-reporter after-build --exit-code $TRAVIS_TEST_RESULT; fi
 notifications:
   - slack: humancellatlas:VpHVbri4SQhHvnYQ5abP8t5f
