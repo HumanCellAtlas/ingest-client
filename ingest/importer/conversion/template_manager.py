@@ -76,8 +76,8 @@ class RowTemplate:
         self.strategies = strategies
 
     def do_import(self, row):
-        data = {}
+        data_node = DataNode()
         for index, cell in enumerate(row):
             strategy:ConversionStrategy = self.strategies[index]
-            strategy.apply(data, cell.value)
-        return data
+            strategy.apply(data_node, cell.value)
+        return data_node.as_dict()

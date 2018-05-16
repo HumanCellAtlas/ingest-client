@@ -226,13 +226,16 @@ class RowTemplateTest(TestCase):
 
     def test_do_import(self):
         # given:
-        row_template = RowTemplate(FakeStrategy('first_name'), FakeStrategy('last_name'))
+        row_template = RowTemplate(FakeStrategy('first_name'), FakeStrategy('last_name'),
+                                   FakeStrategy('address.city'), FakeStrategy('address.country'))
 
         # and:
         workbook = Workbook()
         worksheet = workbook.create_sheet('profile')
         worksheet['A1'] = 'Juan'
         worksheet['B1'] = 'dela Cruz'
+        worksheet['C1'] = 'Manila'
+        worksheet['D1'] = 'Philippines'
         row = list(worksheet.rows)[0]
 
         # when:
@@ -241,3 +244,10 @@ class RowTemplateTest(TestCase):
         # then:
         self.assertIsNotNone(result)
         self.assertEqual('Juan', result.get('first_name'))
+        self.assertEqual('dela Cruz', result.get('last_name'))
+
+        # and:
+        address = result.get('address')
+        self.assertIsNotNone(address)
+        self.assertEqual('Manila', address.get('city'))
+        self.assertEqual('Philippines', address.get('country'))
