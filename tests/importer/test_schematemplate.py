@@ -19,7 +19,7 @@ class TestSchemaTemplate(TestCase):
         self.longMessage = True
         pass
 
-    @unittest.skip
+    @unittest.skip('Fix me')
     def test_load_schema(self):
         schema_parser = SchemaParser()
         dirname = os.path.dirname(os.path.realpath(__file__))
@@ -31,7 +31,7 @@ class TestSchemaTemplate(TestCase):
             print (schema_template.yaml_dump())
         pass
 
-    @unittest.skip
+    @unittest.skip('Fix me')
     def test_get_schema_properties_from_object(self):
         schema_parser = SchemaParser()
         self.assertIn("foo", schema_parser._get_schema_properties_from_object({'properties': {'foo': 'bar'} }).keys())
@@ -42,7 +42,7 @@ class TestSchemaTemplate(TestCase):
         self.assertFalse(schema_parser._get_schema_properties_from_object({'properties': '' }).keys())
         self.assertIn("foo", schema_parser._get_schema_properties_from_object({'items': {'properties': {'foo': 'bar'}}}))
 
-    @unittest.skip
+    @unittest.skip('Fix me')
     def test_get_domain_entity_from_url(self):
         schema_parser = SchemaParser()
         url = "https://schema.humancellatlas.org/type/project/5.1.0/project"
@@ -50,13 +50,13 @@ class TestSchemaTemplate(TestCase):
         url = "https://schema.humancellatlas.org/type/foo/bar/5.1.0/project"
         self.assertEqual("foo/bar", schema_parser.get_domain_entity_from_url(url))
 
-    @unittest.skip
+    @unittest.skip('Fix me')
     def test_get_high_level_entity_from_url(self):
         schema_parser = SchemaParser()
         url = "https://schema.humancellatlas.org/type/project/5.1.0/project"
         self.assertEqual("type", schema_parser.get_high_level_entity_from_url(url))
 
-    @unittest.skip
+    @unittest.skip('Fix me')
     def test_get_module_from_url(self):
         schema_parser = SchemaParser()
         url = "https://schema.humancellatlas.org/type/project/5.1.0/project"

@@ -2,7 +2,6 @@ import re
 
 from ingest.importer.conversion import template_manager
 from ingest.importer.conversion.template_manager import TemplateManager
-from ingest.importer.data_node import DataNode
 from ingest.importer.spreadsheet.ingest_workbook import IngestWorkbook
 
 
@@ -28,7 +27,7 @@ class WorksheetImporter:
     def do_import(self, worksheet, template:TemplateManager, entity):
         json_list = []
         for row in self._get_data_rows(worksheet):
-            node = DataNode()
+            node = template.create_template_node(worksheet)
             object_list_tracker = ObjectListTracker()
             for cell in row:
                 # TODO preprocess headers so that cells can be converted without having to always
@@ -36,27 +35,23 @@ class WorksheetImporter:
                 header_name = self._get_header_name(cell, worksheet)
 
                 cell_value = cell.value
+                field_chain = self._get_field_chain(header_name)
 
                 if cell_value is None:
                     continue
 
-                converter = template.get_converter(header_name)
-                data = converter.convert(cell_value)
-
-                field_chain = self._get_field_chain(header_name)
-
                 if template.is_parent_field_multivalue(header_name):
                     object_list_tracker.track_value(field_chain, cell_value)
                     continue
+
+                converter = template.get_converter(header_name)
+                data = converter.convert(cell_value)
 
                 node[field_chain] = data
 
             object_list_fields = object_list_tracker.get_object_list_fields()
             for field_chain in object_list_fields:
                 node[field_chain] = object_list_tracker.get_value_by_field(field_chain)
-
-            node['describedBy'] = template.get_schema_url(entity)
-            node['schema_type'] = template.get_schema_type(entity)
 
             json_list.append(node.as_dict())
 

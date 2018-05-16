@@ -7,7 +7,7 @@ from ingest.importer.conversion import template_manager
 from ingest.importer.conversion.data_converter import (
     Converter, ListConverter, BooleanConverter, DataType
 )
-from ingest.importer.conversion.template_manager import TemplateManager
+from ingest.importer.data_node import DataNode
 from ingest.importer.importer import WorksheetImporter, WorkbookImporter
 from ingest.importer.spreadsheet.ingest_workbook import IngestWorkbook
 from ingest.template.schema_template import SchemaTemplate
@@ -110,17 +110,16 @@ class WorksheetImporterTest(TestCase):
         }
 
         # and:
-        template_manager = TemplateManager(SchemaTemplate([]))
-        template_manager.get_converter = lambda key: converter_mapping.get(key, Converter())
-        template_manager.is_parent_field_multivalue = MagicMock(return_value=False)
-        template_manager.get_schema_url = MagicMock(return_value='url')
-        template_manager.get_schema_type = MagicMock(return_value='type')
+        mock_template_manager = MagicMock(name='template_manager')
+        mock_template_manager.create_template_node = lambda __: DataNode()
+        mock_template_manager.get_converter = lambda key: converter_mapping.get(key, Converter())
+        mock_template_manager.is_parent_field_multivalue = lambda __: False
 
         # and:
         worksheet = self._create_test_worksheet()
 
         # when:
-        json_list = worksheet_importer.do_import(worksheet, template_manager, 'project')
+        json_list = worksheet_importer.do_import(worksheet, mock_template_manager, 'project')
 
         # then:
         self.assertEqual(2, len(json_list))
@@ -177,8 +176,8 @@ class WorksheetImporterTest(TestCase):
 
     def test_do_import_with_object_list_fields(self):
         # given:
-        schema_list = []
-        template_manager = TemplateManager(SchemaTemplate(schema_list))
+        template_manager = MagicMock(name='template_manager')
+        template_manager.create_template_node = lambda __: DataNode()
         template_manager.get_converter = MagicMock(return_value=Converter())
         template_manager.get_schema_url = MagicMock(return_value='url')
         template_manager.get_schema_type = MagicMock(return_value='type')
@@ -214,23 +213,23 @@ class WorksheetImporterTest(TestCase):
         self.assertEqual(1, len(json['genus_species']))
         self.assertEqual({'ontology': 'UO:000008', 'text': 'meter'}, json['genus_species'][0])
 
-    def test_do_import_adds_metadata_info(self):
+    @patch('ingest.importer.importer.ObjectListTracker')
+    def test_do_import_builds_from_template(self, object_list_tracker_constructor):
         # given:
-        mock_template_manager = TemplateManager(SchemaTemplate([]))
+
+        mock_template_manager = MagicMock(name='template_manager')
         mock_template_manager.get_converter = MagicMock(return_value=Converter())
         mock_template_manager.is_parent_field_multivalue = MagicMock(return_value=False)
 
         # and:
-        # TODO merge get_schema_url with get_schema_type as predefined block of data
-        # TODO the resulting method should be able to determine the data block based on
-        #   the worksheet info (worksheet name)
-        mock_template_manager.get_schema_url = (
-            lambda entity: 'https://schema.humancellatlas.org/type/project/5.1.0/project'
-        )
+        node_template = DataNode()
+        node_template['describedBy'] = 'https://schemas.sample.com/test'
+        node_template['extra_field'] = 'an extra field'
+        node_template['version'] = '0.0.1'
+        mock_template_manager.create_template_node = lambda __: node_template
 
-        mock_template_manager.get_schema_type = (
-            lambda entity: 'project'
-        )
+        # and:
+        object_list_tracker_constructor.return_value = MagicMock(name='object_list_tracker')
 
         # and:
         importer = WorksheetImporter()
@@ -249,6 +248,6 @@ class WorksheetImporterTest(TestCase):
         json = json_list[0]
 
         # and:
-        self.assertEqual('https://schema.humancellatlas.org/type/project/5.1.0/project',
-                         json['describedBy'])
-        self.assertEqual('project', json['schema_type'])
+        self.assertEqual('https://schemas.sample.com/test', json.get('describedBy'))
+        self.assertEqual('an extra field', json.get('extra_field'))
+        self.assertEqual('0.0.1', json.get('version'))
