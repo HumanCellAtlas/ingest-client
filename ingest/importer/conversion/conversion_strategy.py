@@ -18,3 +18,12 @@ class DirectCellConversion(CellConversion):
 
     def apply(self, data_node:DataNode, cell_data):
         data_node[self.field] = self.converter.convert(cell_data)
+
+
+class ListElementCellConversion(CellConversion):
+
+    def __init__(self, field, converter:Converter):
+        pass
+
+    def apply(self, data_node:DataNode, cell_data):
+        data_node['list_of_things'] = {}
