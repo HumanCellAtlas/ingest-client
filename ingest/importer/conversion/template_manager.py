@@ -38,12 +38,12 @@ class TemplateManager:
         data_type = DataType.find(value_type)
         return data_type
 
-    def is_ontology_subfield(self, header_name):
+    def is_parent_field_multivalue(self, header_name):
         parent_field = self._get_parent_field(header_name)
         column_spec = self.template.lookup(parent_field)
 
-        return column_spec and column_spec.get('schema') and (
-                column_spec['schema'].get('domain_entity') == 'ontology'
+        return column_spec and column_spec.get('multivalue') and (
+            column_spec.get('value_type') and column_spec.get('value_type') == 'object'
         )
 
     def _get_parent_field(self, header_name):

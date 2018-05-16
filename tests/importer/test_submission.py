@@ -112,11 +112,11 @@ class IngestSubmitterTest(TestCase):
                     'links': [
                         {
                             'entity': 'biomaterial',
-                            'ids': ['biomaterial_1']
+                            'id': 'biomaterial_id_1'
                         },
                         {
                             'entity': 'process',
-                            'ids': ['process_id_1']
+                            'id': 'process_id_1'
                         }
                     ]
                 },
@@ -127,11 +127,15 @@ class IngestSubmitterTest(TestCase):
                     'links': [
                         {
                             'entity': 'biomaterial',
-                            'ids': ['biomaterial_2']
+                            'id': 'biomaterial_id_2'
                         },
                         {
                             'entity': 'process',
-                            'ids': ['process_id_2', 'process_id_3']
+                            'id': 'process_id_2'
+                        },
+                        {
+                            'entity': 'process',
+                            'id': 'process_id_3'
                         }
                     ]
                 },
@@ -143,7 +147,7 @@ class IngestSubmitterTest(TestCase):
                     },
                     'links': [{
                         'entity': 'biomaterial',
-                        'ids': ['biomaterial_id_3']
+                        'id': 'biomaterial_id_3'
                     }]
                 }
             },
@@ -154,7 +158,7 @@ class IngestSubmitterTest(TestCase):
                     },
                     'links': [{
                         'entity': 'protocol',
-                        'ids': ['protocol_id_1']
+                        'id': 'protocol_id_1'
                     }]
                 },
                 'process_id_2': {
@@ -163,7 +167,7 @@ class IngestSubmitterTest(TestCase):
                     },
                     'links': [{
                         'entity': 'protocol',
-                        'ids': ['protocol_id_1']
+                        'id': 'protocol_id_1'
                     }]
                 },
                 'process_id_3': {
@@ -172,7 +176,7 @@ class IngestSubmitterTest(TestCase):
                     },
                     'links': [{
                         'entity': 'protocol',
-                        'ids': ['protocol_id_1']
+                        'id': 'protocol_id_1'
                     }]
                 }
             },

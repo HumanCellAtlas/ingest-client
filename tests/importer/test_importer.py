@@ -112,7 +112,7 @@ class WorksheetImporterTest(TestCase):
         mock_template_manager = MagicMock(name='template_manager')
         mock_template_manager.create_template_node = lambda __: DataNode()
         mock_template_manager.get_converter = lambda key: converter_mapping.get(key, Converter())
-        mock_template_manager.is_ontology_subfield = lambda __: False
+        mock_template_manager.is_parent_field_multivalue = lambda __: False
 
         # and:
         worksheet = self._create_test_worksheet()
@@ -173,19 +173,20 @@ class WorksheetImporterTest(TestCase):
 
         return worksheet
 
-    def test_do_import_with_ontology_fields(self):
+    def test_do_import_with_object_list_fields(self):
         # given:
         template_manager = MagicMock(name='template_manager')
         template_manager.create_template_node = lambda __: DataNode()
         template_manager.get_converter = MagicMock(return_value=Converter())
 
         # and:
-        ontology_fields_mapping = {
+        multivalue_fields = {
             'project.genus_species.ontology': True,
             'project.genus_species.text': True,
         }
-        template_manager.is_ontology_subfield = (
-            lambda field_name: ontology_fields_mapping.get(field_name)
+
+        template_manager.is_parent_field_multivalue = (
+            lambda field_name: multivalue_fields.get(field_name)
         )
 
         # and:
@@ -209,8 +210,8 @@ class WorksheetImporterTest(TestCase):
         self.assertEqual(1, len(json['genus_species']))
         self.assertEqual({'ontology': 'UO:000008', 'text': 'meter'}, json['genus_species'][0])
 
-    @patch('ingest.importer.importer.OntologyTracker')
-    def test_do_import_builds_from_template(self, ontology_tracker_constructor):
+    @patch('ingest.importer.importer.ObjectListTracker')
+    def test_do_import_builds_from_template(self, object_list_tracker_constructor):
         # given:
         mock_template_manager = MagicMock(name='template_manager')
         mock_template_manager.get_converter = MagicMock(return_value=Converter())
@@ -223,7 +224,7 @@ class WorksheetImporterTest(TestCase):
         mock_template_manager.create_template_node = lambda __: node_template
 
         # and:
-        ontology_tracker_constructor.return_value = MagicMock(name='ontology_tracker')
+        object_list_tracker_constructor.return_value = MagicMock(name='object_list_tracker')
 
         # and:
         importer = WorksheetImporter()

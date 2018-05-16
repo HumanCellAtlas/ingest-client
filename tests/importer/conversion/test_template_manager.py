@@ -124,30 +124,24 @@ class TemplateManagerTest(TestCase):
         self.assertIsInstance(converter, ListConverter)
         self.assertEqual(DataType.BOOLEAN, converter.base_type)
 
-    def test_is_ontology_subfield_true(self):
+    def test_is_parent_field_multivalue_true(self):
         # given:
 
         schema_template = SchemaTemplate()
         spec = {
             'multivalue': True,
-            'value_type': 'object',
-            'schema': {
-                'high_level_entity': 'module',
-                'domain_entity': 'ontology',
-                'module': 'species_ontology',
-                'url': 'https://schema.humancellatlas.org/module/ontology/5.0.0/species_ontology'
-            }
+            'value_type': 'object'
         }
         schema_template.lookup = MagicMock(name='lookup', return_value=spec)
         template_manager = TemplateManager(schema_template)
 
         # when:
-        is_ontology = template_manager.is_ontology_subfield('path.ontology_field.subfield')
+        is_parent_multivalue = template_manager.is_parent_field_multivalue('path.object_list_field.subfield')
 
         # then:
-        self.assertTrue(is_ontology)
+        self.assertTrue(is_parent_multivalue)
 
-    def test_is_ontology_subfield_false(self):
+    def test_is_parent_field_multivalue_false(self):
         # given:
 
         schema_template = SchemaTemplate()
@@ -159,22 +153,22 @@ class TemplateManagerTest(TestCase):
         template_manager = TemplateManager(schema_template)
 
         # when:
-        is_ontology = template_manager.is_ontology_subfield('path.ontology_field.subfield')
+        is_parent_multivalue = template_manager.is_parent_field_multivalue('path.object_list_field.subfield')
 
         # then:
-        self.assertFalse(is_ontology)
+        self.assertFalse(is_parent_multivalue)
 
-    def test_is_ontology_subfield_false_no_spec(self):
+    def test_is_parent_field_multivalue_no_spec(self):
         # given:
         schema_template = SchemaTemplate()
         schema_template.lookup = MagicMock(name='lookup', return_value=None)
         template_manager = TemplateManager(schema_template)
 
         # when:
-        is_ontology = template_manager.is_ontology_subfield('path.ontology_field.subfield')
+        is_parent_multivalue = template_manager.is_parent_field_multivalue('path.object_list_field.subfield')
 
         # then:
-        self.assertFalse(is_ontology)
+        self.assertFalse(is_parent_multivalue)
 
     def test_get_schema_type(self):
         # given
