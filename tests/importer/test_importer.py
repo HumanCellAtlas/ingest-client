@@ -10,7 +10,7 @@ from ingest.importer.conversion.data_converter import (
 from ingest.importer.conversion.template_manager import TemplateManager
 from ingest.importer.importer import WorksheetImporter, WorkbookImporter
 from ingest.importer.spreadsheet.ingest_workbook import IngestWorkbook
-from ingest.template.schematemplate import SchemaTemplate
+from ingest.template.schema_template import SchemaTemplate
 
 
 def _create_single_row_worksheet(worksheet_data:dict):
@@ -110,8 +110,11 @@ class WorksheetImporterTest(TestCase):
         }
 
         # and:
-        template_manager = TemplateManager(SchemaTemplate())
+        template_manager = TemplateManager(SchemaTemplate([]))
         template_manager.get_converter = lambda key: converter_mapping.get(key, Converter())
+        template_manager.is_parent_field_multivalue = MagicMock(return_value=False)
+        template_manager.get_schema_url = MagicMock(return_value='url')
+        template_manager.get_schema_type = MagicMock(return_value='type')
 
         # and:
         worksheet = self._create_test_worksheet()
@@ -174,8 +177,11 @@ class WorksheetImporterTest(TestCase):
 
     def test_do_import_with_object_list_fields(self):
         # given:
-        template_manager = TemplateManager(SchemaTemplate())
+        schema_list = []
+        template_manager = TemplateManager(SchemaTemplate(schema_list))
         template_manager.get_converter = MagicMock(return_value=Converter())
+        template_manager.get_schema_url = MagicMock(return_value='url')
+        template_manager.get_schema_type = MagicMock(return_value='type')
 
         # and:
         multivalue_fields = {
@@ -210,8 +216,9 @@ class WorksheetImporterTest(TestCase):
 
     def test_do_import_adds_metadata_info(self):
         # given:
-        mock_template_manager = TemplateManager(SchemaTemplate())
+        mock_template_manager = TemplateManager(SchemaTemplate([]))
         mock_template_manager.get_converter = MagicMock(return_value=Converter())
+        mock_template_manager.is_parent_field_multivalue = MagicMock(return_value=False)
 
         # and:
         # TODO merge get_schema_url with get_schema_type as predefined block of data

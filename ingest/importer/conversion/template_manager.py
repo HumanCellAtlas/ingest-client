@@ -4,7 +4,7 @@ from openpyxl.worksheet import Worksheet
 
 from ingest.importer.conversion.data_converter import ListConverter, DataType, CONVERTER_MAP
 from ingest.importer.data_node import DataNode
-from ingest.template.schematemplate import SchemaTemplate
+from ingest.template.schema_template import SchemaTemplate
 
 
 class TemplateManager:

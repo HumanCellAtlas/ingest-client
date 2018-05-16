@@ -7,11 +7,11 @@ from ingest.importer.conversion.data_converter import Converter, ListConverter, 
     IntegerConverter, BooleanConverter
 from ingest.importer.conversion.template_manager import TemplateManager
 from ingest.importer.data_node import DataNode
-from ingest.template.schematemplate import SchemaTemplate
+from ingest.template.schema_template import SchemaTemplate
 
 
 def _mock_schema_template_lookup(value_type='string', multivalue=False):
-    schema_template = SchemaTemplate()
+    schema_template = SchemaTemplate([])
     single_string_spec = {
         'value_type': value_type,
         'multivalue': multivalue
@@ -24,7 +24,7 @@ class TemplateManagerTest(TestCase):
 
     def test_create_template_node(self):
         # given:
-        schema_template = SchemaTemplate()
+        schema_template = SchemaTemplate([])
         schema_url = 'https://schema.humancellatlas.org/type/biomaterial/5.1.0/donor_organsim'
         tab_spec = {
             'schema': {
@@ -127,7 +127,7 @@ class TemplateManagerTest(TestCase):
     def test_is_parent_field_multivalue_true(self):
         # given:
 
-        schema_template = SchemaTemplate()
+        schema_template = SchemaTemplate([])
         spec = {
             'multivalue': True,
             'value_type': 'object'
@@ -144,7 +144,7 @@ class TemplateManagerTest(TestCase):
     def test_is_parent_field_multivalue_false(self):
         # given:
 
-        schema_template = SchemaTemplate()
+        schema_template = SchemaTemplate([])
         spec = {
             'multivalue': False,
             'value_type': 'string'
@@ -160,7 +160,7 @@ class TemplateManagerTest(TestCase):
 
     def test_is_parent_field_multivalue_no_spec(self):
         # given:
-        schema_template = SchemaTemplate()
+        schema_template = SchemaTemplate([])
         schema_template.lookup = MagicMock(name='lookup', return_value=None)
         template_manager = TemplateManager(schema_template)
 
@@ -172,7 +172,7 @@ class TemplateManagerTest(TestCase):
 
     def test_get_schema_type(self):
         # given
-        schema_template = SchemaTemplate()
+        schema_template = SchemaTemplate([])
         spec = {
             'schema': {
                 'high_level_entity': 'type',
@@ -193,7 +193,7 @@ class TemplateManagerTest(TestCase):
 
     def test_get_schema_url(self):
         # given
-        schema_template = SchemaTemplate()
+        schema_template = SchemaTemplate([])
         spec = {
             'schema': {
                 'high_level_entity': 'type',
