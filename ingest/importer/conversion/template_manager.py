@@ -72,7 +72,7 @@ def build(schemas) -> TemplateManager: ...
 
 class RowTemplate:
 
-    def __init__(self, *cell_conversions, default_values={}):
+    def __init__(self, cell_conversions, default_values={}):
         self.cell_conversion = cell_conversions
         self.default_values = default_values
 

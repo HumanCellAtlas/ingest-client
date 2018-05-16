@@ -213,7 +213,7 @@ class TemplateManagerTest(TestCase):
         self.assertEqual('https://schema.humancellatlas.org/type/biomaterial/5.0.0/donor_organism', url)
 
 
-class FakeStrategy(CellConversion):
+class FakeConversion(CellConversion):
 
     def __init__(self, field):
         self.field = field
@@ -226,8 +226,9 @@ class RowTemplateTest(TestCase):
 
     def test_do_import(self):
         # given:
-        row_template = RowTemplate(FakeStrategy('first_name'), FakeStrategy('last_name'),
-                                   FakeStrategy('address.city'), FakeStrategy('address.country'))
+        cell_conversions = [FakeConversion('first_name'), FakeConversion('last_name'),
+                            FakeConversion('address.city'), FakeConversion('address.country')]
+        row_template = RowTemplate(cell_conversions)
 
         # and:
         workbook = Workbook()
@@ -261,8 +262,8 @@ class RowTemplateTest(TestCase):
         }
 
         # and:
-        row_template = RowTemplate(FakeStrategy('name'), FakeStrategy('description'),
-                                   default_values=default_values)
+        cell_conversions = [FakeConversion('name'), FakeConversion('description')]
+        row_template = RowTemplate(cell_conversions, default_values=default_values)
 
         # and:
         workbook = Workbook()
