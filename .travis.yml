@@ -14,7 +14,7 @@ after_script:
   - coverage xml
   - if [[ "$TRAVIS_PULL_REQUEST" == "false" && "$TRAVIS_PYTHON_VERSION" == "3.6" ]]; then ./cc-test-reporter after-build --exit-code $TRAVIS_TEST_RESULT; fi
 notifications:
-  slack: humancellatlas: VpHVbri4SQhHvnYQ5abP8t5f
+  - slack: humancellatlas:VpHVbri4SQhHvnYQ5abP8t5f
 env:
   global:
     - CC_TEST_REPORTER_ID=af7b8795f745aa23f884031d04c2f8f15fc2048270e28e9d3f38ccf0b43538e3
