@@ -31,12 +31,25 @@ class WorkbookImporterTest(TestCase):
     @patch.object(template_manager, 'build')
     def test_do_import(self, template_manager_build, worksheet_importer_constructor):
         # given: set up template manager
+        key_label_map = {
+            'Project': 'project',
+            'Cell Suspension': 'cell_suspension'
+        }
+
+        domain_entity_map = {
+            'project': 'project',
+            'cell_suspension': 'biomaterial'
+        }
+
         mock_template_manager = MagicMock()
+        mock_template_manager.get_concrete_entity_of_tab = lambda key: key_label_map.get(key)
+        mock_template_manager.get_domain_entity = lambda key: domain_entity_map.get(key)
+
         template_manager_build.return_value = mock_template_manager
 
         # and: set up worksheet importer
         worksheet_importer = WorksheetImporter()
-        expected_json_list = self._fake_worksheet_import(worksheet_importer, mock_template_manager)
+        expected_json = self._fake_worksheet_import(worksheet_importer, mock_template_manager)
 
         # and: set up workbook
         workbook = Workbook()
@@ -49,15 +62,19 @@ class WorkbookImporterTest(TestCase):
         workbook_importer = WorkbookImporter()
 
         # when:
-        actual_json_list = workbook_importer.do_import(ingest_workbook)
+        workbook_output = workbook_importer.do_import(ingest_workbook)
 
         # then:
         template_manager_build.assert_called_with(schema_list)
 
         # and:
-        self.assertEqual(3, len(actual_json_list))
-        for expected_json in expected_json_list:
-            self.assertTrue(expected_json in actual_json_list, f'{expected_json} not in list')
+        self.assertEqual(2, len(list(workbook_output.keys())))
+        self.assertEqual(['project', 'biomaterial'], list(workbook_output.keys()))
+        self.assertEqual(2, len(list(workbook_output['project'].keys())))
+        self.assertEqual(expected_json['project'], workbook_output['project'])
+        self.assertEqual(expected_json['biomaterial'], workbook_output['biomaterial'])
+
+
 
     def _mock_get_schemas(self, ingest_workbook):
         schema_base_url = 'https://schema.humancellatlas.org'
@@ -76,20 +93,24 @@ class WorkbookImporterTest(TestCase):
         ])
 
     def _fake_worksheet_import(self, worksheet_importer:WorksheetImporter, mock_template_manager):
-        projects = [
-            {'short_name': 'project 1', 'description': 'first project'},
-            {'short_name': 'project 2', 'description': 'second project'}
-        ]
+        projects = {
+            'project 1': {'short_name': 'project 1', 'description': 'first project'},
+            'project 2': {'short_name': 'project 2', 'description': 'second project'}
+        }
 
-        cell_suspensions = [
-            {'biomaterial_id': 'cell_suspension_101', 'biomaterial_name': 'cell suspension'}
-        ]
+        cell_suspensions = {
+            'cell_suspension_101': {'biomaterial_id': 'cell_suspension_101', 'biomaterial_name': 'cell suspension'}
+        }
 
         worksheet_iterator = iter([projects, cell_suspensions])
         worksheet_importer.do_import = (
             lambda __, tm: worksheet_iterator.__next__() if tm is mock_template_manager else []
         )
-        return projects + cell_suspensions
+
+        return {
+            'project': projects,
+            'biomaterial': cell_suspensions
+        }
 
 
 class WorksheetImporterTest(TestCase):
@@ -109,25 +130,35 @@ class WorksheetImporterTest(TestCase):
             'project.is_submitted': boolean_converter
         }
 
+        concrete_entity_map = {
+            'project.project_core.project_shortname': 'project',
+            'biomaterial.project_core.project_shortname': 'biomaterial',
+        }
+
         # and:
         mock_template_manager = MagicMock(name='template_manager')
         mock_template_manager.create_template_node = lambda __: DataNode()
         mock_template_manager.get_converter = lambda key: converter_mapping.get(key, Converter())
         mock_template_manager.is_parent_field_multivalue = lambda __: False
+        mock_template_manager.is_identifier_field = (
+            lambda header_name: True if header_name == 'project.project_core.project_shortname' else False
+        )
+        mock_template_manager.get_concrete_entity_of_column = lambda key: concrete_entity_map.get(key)
+        mock_template_manager.get_concrete_entity_of_tab = lambda key: 'project'
 
         # and:
         worksheet = self._create_test_worksheet()
 
         # when:
-        json_list = worksheet_importer.do_import(worksheet, mock_template_manager, 'project')
+        rows_by_id = worksheet_importer.do_import(worksheet, mock_template_manager)
 
         # then:
-        self.assertEqual(2, len(json_list))
-        json = json_list[0]
+        self.assertEqual(2, len(list(rows_by_id.keys())))
+        json = rows_by_id['Tissue stability']['content']
 
         # and:
-        self.assertTrue(2, len(json_list))
-        self.assertEqual('Tissue stability 2', json_list[1]['project_core']['project_shortname'])
+        json2 = rows_by_id['Tissue stability 2']['content']
+        self.assertEqual('Tissue stability 2', json2['project_core']['project_shortname'])
 
         project_core = json['project_core']
         self.assertEqual('Tissue stability', project_core['project_shortname'])
@@ -181,6 +212,14 @@ class WorksheetImporterTest(TestCase):
         template_manager.get_converter = MagicMock(return_value=Converter())
         template_manager.get_schema_url = MagicMock(return_value='url')
         template_manager.get_schema_type = MagicMock(return_value='type')
+        template_manager.is_identifier_field = (
+            lambda header_name: True if header_name == 'project.id_column' else False
+        )
+        concrete_entity_map = {
+            'project.id_column': 'project'
+        }
+        template_manager.get_concrete_entity_of_column = lambda key: concrete_entity_map.get(key)
+        template_manager.get_concrete_entity_of_tab = lambda key: 'project'
 
         # and:
         multivalue_fields = {
@@ -195,18 +234,19 @@ class WorksheetImporterTest(TestCase):
         # and:
         worksheet = _create_single_row_worksheet({
             'A': ('project.genus_species.ontology', 'UO:000008'),
-            'B': ('project.genus_species.text', 'meter')
+            'B': ('project.genus_species.text', 'meter'),
+            'C': ('project.id_column', 'id'),
         })
 
         # and:
         worksheet_importer = WorksheetImporter()
 
         # when:
-        json_list = worksheet_importer.do_import(worksheet, template_manager, 'project')
+        rows_by_id = worksheet_importer.do_import(worksheet, template_manager)
 
         # then:
-        self.assertEqual(1, len(json_list))
-        json = json_list[0]
+        self.assertEqual(1, len(rows_by_id))
+        json = rows_by_id['id']['content']
 
         # and:
         self.assertTrue(type(json['genus_species']) is list)
@@ -220,6 +260,14 @@ class WorksheetImporterTest(TestCase):
         mock_template_manager = MagicMock(name='template_manager')
         mock_template_manager.get_converter = MagicMock(return_value=Converter())
         mock_template_manager.is_parent_field_multivalue = MagicMock(return_value=False)
+        mock_template_manager.is_identifier_field = (
+            lambda header_name: True if header_name == 'project.short_name' else False
+        )
+        concrete_entity_map = {
+            'project.short_name': 'project'
+        }
+        mock_template_manager.get_concrete_entity_of_column = lambda key: concrete_entity_map.get(key)
+        mock_template_manager.get_concrete_entity_of_tab = lambda key: 'project'
 
         # and:
         node_template = DataNode()
@@ -241,11 +289,11 @@ class WorksheetImporterTest(TestCase):
         })
 
         # when:
-        json_list = importer.do_import(worksheet, mock_template_manager, 'project')
+        rows_by_id = importer.do_import(worksheet, mock_template_manager)
 
         # then:
-        self.assertEqual(1, len(json_list))
-        json = json_list[0]
+        self.assertEqual(1, len(list(rows_by_id.keys())))
+        json = rows_by_id['Project']['content']
 
         # and:
         self.assertEqual('https://schemas.sample.com/test', json.get('describedBy'))

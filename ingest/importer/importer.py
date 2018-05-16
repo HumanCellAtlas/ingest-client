@@ -11,12 +11,15 @@ class WorkbookImporter:
         self.worksheet_importer = WorksheetImporter()
 
     def do_import(self, workbook: IngestWorkbook):
-        pre_ingest_json_list = []
+        pre_ingest_json_map = {}
+
         tm = template_manager.build(workbook.get_schemas())
         for worksheet in workbook.importable_worksheets():
             json_list = self.worksheet_importer.do_import(worksheet, tm)
-            pre_ingest_json_list.extend(json_list)
-        return pre_ingest_json_list
+            concrete_entity = tm.get_concrete_entity_of_tab(worksheet.title)
+            domain_entity = tm.get_domain_entity(concrete_entity)
+            pre_ingest_json_map[domain_entity] = json_list
+        return pre_ingest_json_map
 
 
 class WorksheetImporter:
@@ -24,11 +27,17 @@ class WorksheetImporter:
     def __init__(self):
         pass
 
-    def do_import(self, worksheet, template:TemplateManager, entity):
-        json_list = []
+    def do_import(self, worksheet, template:TemplateManager):
+        concrete_entity = template.get_concrete_entity_of_tab(worksheet.title)
+
+        rows_by_id = {}
         for row in self._get_data_rows(worksheet):
             node = template.create_template_node(worksheet)
             object_list_tracker = ObjectListTracker()
+            row_id = None
+
+            links = []
+
             for cell in row:
                 # TODO preprocess headers so that cells can be converted without having to always
                 # check the header
@@ -49,13 +58,34 @@ class WorksheetImporter:
 
                 node[field_chain] = data
 
+                cell_concrete_entity = self._get_concrete_entity(template, header_name)
+
+                if template.is_identifier_field(header_name):
+                    if concrete_entity == cell_concrete_entity:
+                        row_id = data
+                    else: # this is a link column
+                        link_domain_entity = template.get_domain_entity(concrete_entity=cell_concrete_entity)
+                        links.append({
+                            'entity': link_domain_entity,
+                            'id': data
+                        })
+
             object_list_fields = object_list_tracker.get_object_list_fields()
             for field_chain in object_list_fields:
                 node[field_chain] = object_list_tracker.get_value_by_field(field_chain)
 
-            json_list.append(node.as_dict())
+            if not row_id:
+                title = worksheet.title
+                row_index = row[0].row  # get first cell row index
 
-        return json_list
+                raise NoUniqueIdFoundError(title, row_index)
+
+            rows_by_id[row_id] = {
+                'content': node.as_dict(),
+                'links': links
+            }
+
+        return rows_by_id
 
     def _get_data_rows(self, worksheet):
         return worksheet.iter_rows(row_offset=3, max_row=(worksheet.max_row - 3))
@@ -67,6 +97,9 @@ class WorksheetImporter:
     def _get_field_chain(self, header_name):
         match = re.search('(\w+\.){1}(?P<field_chain>.*)', header_name)
         return match.group('field_chain')
+
+    def _get_concrete_entity(self, template_manager, header_name):
+        return template_manager.get_concrete_entity_of_column(header_name)
 
 
 class ObjectListTracker(object):
@@ -96,3 +129,13 @@ class ObjectListTracker(object):
 
     def get_value_by_field(self, field):
         return [self.ontology_values[field]]
+
+
+class NoUniqueIdFoundError(Exception):
+    def __init__(self, worksheet_title, row_index):
+        message = f'No unique id found for row {row_index} in {worksheet_title} worksheet tab'
+        super(NoUniqueIdFoundError, self).__init__(message)
+
+        self.worksheet_title = worksheet_title
+        self.row_index = row_index
+

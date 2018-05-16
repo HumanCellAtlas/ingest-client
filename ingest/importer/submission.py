@@ -97,7 +97,6 @@ class IngestSubmitter(object):
 
 
 class InvalidEntityLink(Exception):
-
     def __init__(self, from_entity, to_entity):
         self.from_entity = from_entity
         self.to_entity = to_entity

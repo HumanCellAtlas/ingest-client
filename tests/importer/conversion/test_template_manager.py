@@ -11,7 +11,7 @@ from ingest.template.schema_template import SchemaTemplate
 
 
 def _mock_schema_template_lookup(value_type='string', multivalue=False):
-    schema_template = SchemaTemplate([])
+    schema_template = MagicMock(name='schema_template')
     single_string_spec = {
         'value_type': value_type,
         'multivalue': multivalue
@@ -24,7 +24,7 @@ class TemplateManagerTest(TestCase):
 
     def test_create_template_node(self):
         # given:
-        schema_template = SchemaTemplate([])
+        schema_template = MagicMock(name='schema_template')
         schema_url = 'https://schema.humancellatlas.org/type/biomaterial/5.1.0/donor_organsim'
         tab_spec = {
             'schema': {
@@ -127,7 +127,7 @@ class TemplateManagerTest(TestCase):
     def test_is_parent_field_multivalue_true(self):
         # given:
 
-        schema_template = SchemaTemplate([])
+        schema_template = MagicMock(name='schema_template')
         spec = {
             'multivalue': True,
             'value_type': 'object'
@@ -144,7 +144,7 @@ class TemplateManagerTest(TestCase):
     def test_is_parent_field_multivalue_false(self):
         # given:
 
-        schema_template = SchemaTemplate([])
+        schema_template = MagicMock(name='schema_template')
         spec = {
             'multivalue': False,
             'value_type': 'string'
@@ -160,7 +160,7 @@ class TemplateManagerTest(TestCase):
 
     def test_is_parent_field_multivalue_no_spec(self):
         # given:
-        schema_template = SchemaTemplate([])
+        schema_template = MagicMock(name='schema_template')
         schema_template.lookup = MagicMock(name='lookup', return_value=None)
         template_manager = TemplateManager(schema_template)
 
@@ -172,7 +172,7 @@ class TemplateManagerTest(TestCase):
 
     def test_get_schema_type(self):
         # given
-        schema_template = SchemaTemplate([])
+        schema_template = MagicMock(name='schema_template')
         spec = {
             'schema': {
                 'high_level_entity': 'type',
@@ -185,15 +185,14 @@ class TemplateManagerTest(TestCase):
         template_manager = TemplateManager(schema_template)
 
         # when:
-        domain_entity = template_manager.get_schema_type('cell_suspension')
+        domain_entity = template_manager.get_domain_entity('cell_suspension')
 
         # then:
         self.assertEqual('biomaterial', domain_entity)
 
-
     def test_get_schema_url(self):
         # given
-        schema_template = SchemaTemplate([])
+        schema_template = MagicMock(name='schema_template')
         spec = {
             'schema': {
                 'high_level_entity': 'type',
@@ -206,7 +205,84 @@ class TemplateManagerTest(TestCase):
         template_manager = TemplateManager(schema_template)
 
         # when:
-        url = template_manager.get_schema_url('cell_suspension.path.field')
+        url = template_manager.get_schema_url('cell_suspension')
 
         # then:
         self.assertEqual('https://schema.humancellatlas.org/type/biomaterial/5.0.0/donor_organism', url)
+
+    def test_get_entity_of_tab(self):
+        # given
+
+        key_label_map = {
+            'Project': 'project',
+            'Donor': 'donor',
+            'Specimen from organism': 'specimen_from_organism'
+        }
+
+        fake_tabs_config = MagicMock(name='tabs_config')
+        fake_tabs_config.get_key_for_label = lambda key: key_label_map.get(key)
+
+        schema_template = MagicMock(name='schema_template')
+        schema_template.get_tabs_config = MagicMock(return_value=fake_tabs_config)
+
+        template_manager = TemplateManager(schema_template)
+
+        # when:
+        entity = template_manager.get_concrete_entity_of_tab('Specimen from organism')
+
+        # then:
+        self.assertEqual('specimen_from_organism', entity)
+
+    def test_is_identifier_field_true(self):
+        # given
+        spec = {
+            'multivalue': False,
+            'required': True,
+            'user_friendly': 'Biomaterial ID',
+            'description': 'A unique ID for this biomaterial.',
+            'example': None,
+            'value_type': 'string',
+            'identifiable': True
+        }
+
+        schema_template = MagicMock(name='schema_template')
+        schema_template.lookup = MagicMock(name='lookup', return_value=spec)
+
+        template_manager = TemplateManager(schema_template)
+
+        # when:
+        is_id = template_manager.is_identifier_field('header_name')
+
+        # then:
+        self.assertTrue(is_id)
+
+    def test_is_identifier_field_false(self):
+        # given
+        spec = {
+            'user_friendly': 'Biomaterial Name',
+        }
+
+        schema_template = MagicMock(name='schema_template')
+        schema_template.lookup = MagicMock(name='lookup', return_value=spec)
+
+        template_manager = TemplateManager(schema_template)
+
+        # when:
+        is_id = template_manager.is_identifier_field('header_name')
+
+        # then:
+        self.assertFalse(is_id)
+
+    def test_get_concrete_entity_of_column(self):
+        schema_template = MagicMock(name='schema_template')
+        template_manager = TemplateManager(schema_template)
+
+        concrete_entity = template_manager.get_concrete_entity_of_column('cell_suspension.id_column')
+        self.assertEqual('cell_suspension', concrete_entity)
+
+        concrete_entity = template_manager.get_concrete_entity_of_column('cell_suspension.id_column.any_column')
+        self.assertEqual('cell_suspension', concrete_entity)
+
+        concrete_entity = template_manager.get_concrete_entity_of_column('donor.id_column')
+        self.assertEqual('donor', concrete_entity)
+

@@ -56,7 +56,7 @@ class TemplateManager:
         # TODO must query schema endpoint in core to get the latest version
         return schema.get('url') if schema else None
 
-    def get_schema_type(self, concrete_entity):
+    def get_domain_entity(self, concrete_entity):
         schema = self._get_schema(concrete_entity)
         return schema.get('domain_entity') if schema else None
 
@@ -64,6 +64,18 @@ class TemplateManager:
         spec = self.template.lookup(concrete_entity)
         return spec.get('schema') if spec else None
 
+    def get_concrete_entity_of_tab(self, tab_name):
+        tabs_config = self.template.get_tabs_config()
+        return tabs_config.get_key_for_label(tab_name)
+
+    def is_identifier_field(self, header_name):
+        spec = self.template.lookup(header_name)
+        return spec.get('identifiable')
+
+    def get_concrete_entity_of_column(self, header_name):
+        match = re.search('(?P<concrete_entity>\w+)(\.\w+)*', header_name)
+        concrete_entity = match.group('concrete_entity')
+        return concrete_entity
 
 # TODO implement this
 def build(schemas) -> TemplateManager: ...
