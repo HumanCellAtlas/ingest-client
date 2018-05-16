@@ -23,3 +23,4 @@ class DirectCellConversionTest(TestCase):
         # then:
         user = data_node.as_dict().get('user')
         self.assertIsNotNone(user)
+        self.assertEqual(27, user.get('age'))
