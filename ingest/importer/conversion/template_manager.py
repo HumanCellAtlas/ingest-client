@@ -72,12 +72,13 @@ def build(schemas) -> TemplateManager: ...
 
 class RowTemplate:
 
-    def __init__(self, *strategies):
-        self.strategies = strategies
+    def __init__(self, *cell_conversions, default_values={}):
+        self.cell_conversion = cell_conversions
+        self.default_values = default_values
 
     def do_import(self, row):
-        data_node = DataNode()
+        data_node = DataNode(defaults=self.default_values)
         for index, cell in enumerate(row):
-            strategy:CellConversion = self.strategies[index]
-            strategy.apply(data_node, cell.value)
+            conversion:CellConversion = self.cell_conversion[index]
+            conversion.apply(data_node, cell.value)
         return data_node.as_dict()

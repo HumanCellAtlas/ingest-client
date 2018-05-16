@@ -3,8 +3,8 @@ import copy
 
 class DataNode:
 
-    def __init__(self):
-        self.node = {}
+    def __init__(self, defaults={}):
+        self.node = copy.deepcopy(defaults)
 
     def __setitem__(self, key, value):
         field_chain = key.split('.')

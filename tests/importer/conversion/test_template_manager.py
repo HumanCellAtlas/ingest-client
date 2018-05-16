@@ -251,3 +251,29 @@ class RowTemplateTest(TestCase):
         self.assertIsNotNone(address)
         self.assertEqual('Manila', address.get('city'))
         self.assertEqual('Philippines', address.get('country'))
+
+    def test_do_import_with_default_values(self):
+        # given:
+        schema_url = 'https://sample.com/list_of_things'
+        default_values = {
+            'describedBy': schema_url,
+            'extra_field': 'extra field'
+        }
+
+        # and:
+        row_template = RowTemplate(FakeStrategy('name'), FakeStrategy('description'),
+                                   default_values=default_values)
+
+        # and:
+        workbook = Workbook()
+        worksheet = workbook.create_sheet('list_of_things')
+        worksheet['A1'] = 'pen'
+        worksheet['B1'] = 'a thing used for writing'
+        row = list(worksheet.rows)[0]
+
+        # when:
+        result = row_template.do_import(row)
+
+        # then:
+        self.assertEqual(schema_url, result.get('describedBy'))
+        self.assertEqual('extra field', result.get('extra_field'))
