@@ -20,6 +20,9 @@ class TemplateManager:
         data_node['schema_type'] = tab_spec['schema']['domain_entity']
         return data_node
 
+    def create_row_template(self, worksheet):
+        return {}
+
     def get_converter(self, header_name):
         column_spec = self.template.lookup(header_name)
         default_converter = CONVERTER_MAP[DataType.STRING]

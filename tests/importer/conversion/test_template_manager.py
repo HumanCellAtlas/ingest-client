@@ -51,6 +51,29 @@ class TemplateManagerTest(TestCase):
         self.assertEqual(schema_url, data.get('describedBy'))
         self.assertEqual('biomaterial', data.get('schema_type'))
 
+    def test_create_row_template(self):
+        # given:
+        schema_template = MagicMock(name='schema_template')
+        column_spec = {
+            'value_type': 'string',
+            'multivalue': False
+        }
+        schema_template.get_key_for_label = lambda: column_spec
+
+        # and:
+        workbook = Workbook()
+        worksheet = workbook.create_sheet('sample')
+        worksheet['A4'] = 'user.profile.first_name'
+
+        # and:
+        template_manager = TemplateManager(schema_template)
+
+        # when:
+        row_template = template_manager.create_row_template(worksheet)
+
+        # then:
+        self.assertIsNotNone(row_template)
+
     def test_get_converter_for_string(self):
         # given:
         schema_template = _mock_schema_template_lookup()
