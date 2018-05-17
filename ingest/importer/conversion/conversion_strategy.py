@@ -9,25 +9,21 @@ SPLIT_FIELD_REGEX = '(?P<parent>\w*(\.\w*)*)\.(?P<target>\w*)'
 
 class CellConversion(object):
 
+    def __init__(self, field, converter: Converter):
+        self.field = field
+        self.converter = converter
+
     @abstractmethod
     def apply(self, data_node:DataNode, cell_data): ...
 
 
 class DirectCellConversion(CellConversion):
 
-    def __init__(self, field, converter:Converter):
-        self.field = field
-        self.converter = converter
-
     def apply(self, data_node:DataNode, cell_data):
         data_node[self.field] = self.converter.convert(cell_data)
 
 
 class ListElementCellConversion(CellConversion):
-
-    def __init__(self, field, converter:Converter):
-        self.field = field
-        self.converter = converter
 
     def apply(self, data_node:DataNode, cell_data):
         parent_path, target_field = self._split_field_chain()
