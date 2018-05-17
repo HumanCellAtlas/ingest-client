@@ -40,3 +40,7 @@ class DataNodeTest(TestCase):
         # and:
         self.assertEqual('Manila', data_node['address.city'])
         self.assertEqual('Philippines', data_node['address.country'])
+
+        # and:
+        # TODO this should probably throw exception instead, indicating path does not exist
+        self.assertIsNone(data_node['address.path.does.not.exist'])

@@ -25,7 +25,10 @@ class DataNode:
         field_chain = key.split(FIELD_SEPARATOR)
         current_node = self.node[field_chain[0]]
         for field in field_chain[1:]:
-            current_node = current_node.get(field)
+            if current_node is None:
+                break
+            else:
+                current_node = current_node.get(field)
         return current_node
 
     def as_dict(self):
