@@ -6,7 +6,8 @@ from openpyxl import Workbook
 from ingest.importer.conversion.conversion_strategy import CellConversion, DirectCellConversion
 from ingest.importer.conversion.data_converter import Converter, ListConverter, DataType, \
     IntegerConverter, BooleanConverter
-from ingest.importer.conversion.template_manager import TemplateManager, RowTemplate
+from ingest.importer.conversion.template_manager import TemplateManager, RowTemplate, \
+    ColumnSpecification
 from ingest.importer.data_node import DataNode
 from ingest.template.schema_template import SchemaTemplate
 
@@ -383,3 +384,19 @@ class RowTemplateTest(TestCase):
         # then:
         self.assertEqual(schema_url, result.get('describedBy'))
         self.assertEqual('extra field', result.get('extra_field'))
+
+
+class ColumnSpecificationTest(TestCase):
+
+    def test_construct_from_raw_spec(self):
+        # given:
+        raw_spec = {
+            'value_type': 'string',
+            'multivalue': False
+        }
+
+        # when:
+        column_spec = ColumnSpecification(raw_spec)
+
+        # then:
+        self.assertEqual(DataType.STRING, column_spec.data_type)

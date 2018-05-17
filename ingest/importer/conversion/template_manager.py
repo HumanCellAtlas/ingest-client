@@ -84,6 +84,7 @@ class TemplateManager:
         concrete_entity = match.group('concrete_entity')
         return concrete_entity
 
+
 # TODO implement this
 def build(schemas) -> TemplateManager: ...
 
@@ -100,3 +101,9 @@ class RowTemplate:
             conversion:CellConversion = self.cell_conversions[index]
             conversion.apply(data_node, cell.value)
         return data_node.as_dict()
+
+
+class ColumnSpecification:
+
+    def __init__(self, raw_spec):
+        self.data_type = DataType.STRING
