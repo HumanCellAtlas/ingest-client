@@ -44,3 +44,8 @@ class ListElementCellConversionTest(TestCase):
         # then:
         list_of_things = data_node.as_dict().get('list_of_things')
         self.assertIsNotNone(list_of_things)
+        self.assertEqual(1, len(list_of_things))
+
+        # and:
+        thing = list_of_things[0]
+        self.assertEqual('sample - converted', thing.get('name'))
