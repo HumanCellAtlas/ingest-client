@@ -41,6 +41,7 @@ class SchemaTemplate:
 
         self._tab_config  = TabConfig(init=self._template)
         if tab_config:
+            # override the default tab config if one is supplied
             self._tab_config = tab_config
 
 
@@ -50,7 +51,6 @@ class SchemaTemplate:
         given a list of URLs to JSON schema files
         return a SchemaTemplate object
         """
-
         for uri in list_of_schema_urls:
             with urllib.request.urlopen(uri) as url:
                 data = json.loads(url.read().decode())
@@ -76,7 +76,6 @@ class SchemaTemplate:
 
     def append_column_to_tab(self, property_key):
         level_one = self._get_level_one(property_key)
-
         for i, tab in enumerate(self._template["tabs"]):
             if level_one in tab:
                 self._template["tabs"][i][level_one]["columns"].append(property_key)
@@ -134,12 +133,18 @@ class SchemaParser:
     """A schema parser provides functions for
     accessing objects in a JSON schema"""
     def __init__(self, template):
+
+        # always ignore these
         self.properties_to_ignore = \
             ["describedBy", "schema_version", "schema_type"]
+
         self.schema_template = template
+
         self._required = []
+
         # todo identifiable should be in the schema - hard coded here for now
         self._identifiable = ["biomaterial_id", "process_id", "protocol_id", "file_name"]
+
         self._key_lookup = {}
 
     def _load_schema(self, json_schema):
@@ -165,12 +170,8 @@ class SchemaParser:
         tab_info = {property.schema.module : {"display_name": tab_display, "columns" : []}}
 
         self.schema_template.append_tab(tab_info)
-        # self.schema_template.meta_data_properties[endpoint] = {}
         self.schema_template.put(property.schema.module, property)
 
-        # self.schema_template.meta_data_properties[property.schema.module] = property
-
-        # path = self._get_path(endpoint, property.schema.module)
         self._recursive_fill_properties(property.schema.module, data)
 
         self.schema_template.set_label_mappings(self._key_lookup)
@@ -195,7 +196,7 @@ class SchemaParser:
 
     def _extract_property(self, data, *args, **kwargs):
 
-        dic = {"multivalue": False, "required" : False, "user_friendly" : None, "description": None, "example" : None}
+        dic = {"multivalue": False, "required" : False, "user_friendly" : None, "description": None, "example" : None, "value_type": "string"}
 
         if "type" in data:
             dic["value_type"] = data["type"]
@@ -213,7 +214,7 @@ class SchemaParser:
                 dic["identifiable"] = True
 
 
-        if 'key' in kwargs:
+        if 'key' in kwargs and "object" != dic["value_type"]:
             self.schema_template.append_column_to_tab(kwargs.get('key'))
 
         if schema:

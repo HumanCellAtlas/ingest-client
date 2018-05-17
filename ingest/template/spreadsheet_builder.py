@@ -45,14 +45,33 @@ def _build(outputfile, template, schema_urls):
 
 
             for cols in detail["columns"]:
-                uf = template.lookup(cols+".user_friendly")
-                if not uf:
-                    uf = cols
-                desc = template.lookup(cols+".description")
-                if not desc:
-                    desc = ""
+                uf = cols
 
-                required = template.lookup(cols+".required")
+                try:
+                    uf = template.lookup(cols+".user_friendly") if template.lookup(cols+".user_friendly") else cols
+                except :
+                    print ("No property for "+cols)
+
+                desc = ""
+                try:
+                    desc = template.lookup(cols+".description") if template.lookup(cols+".description") else ""
+                except:
+                    print ("No for "+cols)
+
+                required = False
+                try:
+                    required = template.lookup(cols+".required") if template.lookup(cols+".required") else False
+                except:
+                    print ("No property for "+cols)
+
+                # set the example
+                example_text = ""
+                try:
+                    example_text = "e.g. " + str(template.lookup(cols + ".example")) if template.lookup(cols + ".example") else ""
+                except:
+                    print ("No property for "+cols)
+
+
                 hf = header_format
                 if required:
                     hf= required_header_format
@@ -60,14 +79,12 @@ def _build(outputfile, template, schema_urls):
                 # set the description
                 worksheet.write(0, col_number, desc, desc_format)
 
+
                 # set the user friendly name
                 worksheet.write(1, col_number, uf, hf)
                 worksheet.set_column(col_number, col_number, len(uf))
 
-                # set the example
-                example_text = ""
-                if template.lookup(cols+".example"):
-                    example_text = "e.g. "+str(template.lookup(cols+".example"))
+
                 worksheet.write(2, col_number, example_text)
 
                 # set the key
