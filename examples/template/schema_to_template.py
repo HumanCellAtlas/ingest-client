@@ -1,8 +1,7 @@
 #!/usr/bin/env python
 
 
-import ingest.template.schematemplate as schematemplate
-from ingest.template.template_tabs import TabParser
+from ingest.template.schema_template import SchemaTemplate
 
 schemas = [
     "https://schema.humancellatlas.org/type/project/5.1.0/project",
@@ -20,12 +19,13 @@ schemas = [
     "https://schema.humancellatlas.org/type/protocol/sequencing/5.1.0/sequencing_protocol",
 ]
 
-template = schematemplate.get_template_from_schemas_by_url(schemas)
+template = SchemaTemplate(schemas)
 
 # get key from user friendly name
 
-tabs = TabParser().load_template("tabs_human_10x.yaml")
-print (template.get_key_for_label("Biomaterial name", tab="Cell suspension", tabs_config=tabs))
+# tabs = TabConfig().load("tabs_human_10x.yaml")
+
+print (template.get_key_for_label("Biomaterial name", tab="Cell suspension"))
 
 # lookup where to submit this entity
 
