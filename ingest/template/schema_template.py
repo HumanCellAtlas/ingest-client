@@ -65,7 +65,7 @@ class SchemaTemplate:
             return self.get(self._template["meta_data_properties"], key)
         except:
             raise UnknownKeyException(
-                "Can't map the key to a known JSON schema property")
+                "Can't map the key to a known JSON schema property: " + str(key))
             return None
 
     def get_template(self):
@@ -117,7 +117,7 @@ class SchemaTemplate:
                     return column_key
         except:
             raise UnknownKeyException(
-                "Can't map the key to a known JSON schema property: "+column)
+                "Can't map the key to a known JSON schema property: " + str(column))
 
     def _get_level_one(self, key):
         return key.split('.')[0]
