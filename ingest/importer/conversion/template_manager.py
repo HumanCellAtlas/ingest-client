@@ -20,8 +20,10 @@ class TemplateManager:
         data_node['schema_type'] = tab_spec['schema']['domain_entity']
         return data_node
 
-    def create_row_template(self, worksheet):
-        return {}
+    def create_row_template(self, worksheet:Worksheet):
+        for row in worksheet.iter_rows(row_offset=3, max_row=1):
+            header_row = row
+        return RowTemplate([CellConversion(header_row[0].value, None)])
 
     def get_converter(self, header_name):
         column_spec = self.template.lookup(header_name)

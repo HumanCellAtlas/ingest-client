@@ -69,10 +69,15 @@ class TemplateManagerTest(TestCase):
         template_manager = TemplateManager(schema_template)
 
         # when:
-        row_template = template_manager.create_row_template(worksheet)
+        row_template:RowTemplate = template_manager.create_row_template(worksheet)
 
         # then:
         self.assertIsNotNone(row_template)
+        self.assertEqual(1, len(row_template.cell_conversions))
+
+        # and:
+        conversion:CellConversion = row_template.cell_conversions[0]
+        self.assertEqual('user.profile.first_name', conversion.field)
 
     def test_get_converter_for_string(self):
         # given:
