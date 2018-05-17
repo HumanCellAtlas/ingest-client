@@ -5,7 +5,8 @@ from mock import MagicMock
 from ingest.importer.conversion import conversion_strategy
 from ingest.importer.conversion.conversion_strategy import DirectCellConversion, \
     ListElementCellConversion, ColumnSpecification, CellConversion
-from ingest.importer.conversion.data_converter import DataType, Converter, IntegerConverter
+from ingest.importer.conversion.data_converter import DataType, Converter, IntegerConverter, \
+    BooleanConverter
 from ingest.importer.data_node import DataNode
 
 
@@ -42,6 +43,18 @@ class ModuleTest(TestCase):
         self.assertIsInstance(strategy, DirectCellConversion)
         self.assertEqual('item.count', strategy.field)
         self.assertIsInstance(strategy.converter, IntegerConverter)
+
+    def test_determine_strategy_for_boolean(self):
+        # given:
+        column_spec = _mock_column_spec(field_name='alarm.repeating', data_type=DataType.BOOLEAN)
+
+        # when:
+        strategy:CellConversion = conversion_strategy.determine_strategy(column_spec)
+
+        # then:
+        self.assertIsInstance(strategy, DirectCellConversion)
+        self.assertEqual('alarm.repeating', strategy.field)
+        self.assertIsInstance(strategy.converter, BooleanConverter)
 
 
 class ColumnSpecificationTest(TestCase):
