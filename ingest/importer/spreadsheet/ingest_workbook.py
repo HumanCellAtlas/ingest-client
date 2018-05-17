@@ -1,8 +1,8 @@
 from openpyxl import Workbook
 
-SCHEMAS_WORKSHEET = 'schemas'
-PROJECT_WORKSHEET = 'project'
-CONTACT_WORKSHEET = 'contact'
+SCHEMAS_WORKSHEET = 'Schemas'
+PROJECT_WORKSHEET = 'Project'
+CONTACT_WORKSHEET = 'Contact'
 
 # TODO think of a better name
 SPECIAL_TABS = [SCHEMAS_WORKSHEET, PROJECT_WORKSHEET, CONTACT_WORKSHEET]
