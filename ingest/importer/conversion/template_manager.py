@@ -14,14 +14,15 @@ class TemplateManager:
     def __init__(self, template:SchemaTemplate):
         self.template = template
 
-    def create_template_node(self, worksheet:Worksheet):
-        tab_spec = self.template.get_tab_spec(worksheet.title)
+    def create_template_node(self, worksheet: Worksheet):
+        concrete_entity = self.get_concrete_entity_of_tab(worksheet.title)
+        schema = self._get_schema(concrete_entity)
         data_node = DataNode()
-        data_node['describedBy'] = tab_spec['schema']['url']
-        data_node['schema_type'] = tab_spec['schema']['domain_entity']
+        data_node['describedBy'] = schema['url']
+        data_node['schema_type'] = schema['domain_entity']
         return data_node
 
-    def create_row_template(self, worksheet:Worksheet):
+    def create_row_template(self, worksheet: Worksheet):
         for row in worksheet.iter_rows(row_offset=3, max_row=1):
             header_row = row
         return RowTemplate([DirectCellConversion(header_row[0].value, Converter())])
@@ -54,8 +55,12 @@ class TemplateManager:
         )
 
     def _get_parent_field(self, header_name):
-        match = re.search('(?P<field_chain>.*)(\.\w+)', header_name)
-        parent_field = match.group('field_chain')
+        try:
+            match = re.search('(?P<field_chain>.*)(\.\w+)', header_name)
+            parent_field = match.group('field_chain')
+        except:
+            raise ParentFieldNotFound(header_name)
+
         return parent_field
 
     def get_schema_url(self, concrete_entity):
@@ -65,15 +70,26 @@ class TemplateManager:
 
     def get_domain_entity(self, concrete_entity):
         schema = self._get_schema(concrete_entity)
-        return schema.get('domain_entity') if schema else None
+        domain_entity = schema.get('domain_entity') if schema else None
+
+        match = re.search('(?P<domain_entity>\w+)(\/*)', domain_entity)
+        domain_entity = match.group('domain_entity')
+
+        return domain_entity
 
     def _get_schema(self, concrete_entity):
         spec = self.template.lookup(concrete_entity)
         return spec.get('schema') if spec else None
 
     def get_concrete_entity_of_tab(self, tab_name):
-        tabs_config = self.template.get_tabs_config()
-        return tabs_config.get_key_for_label(tab_name)
+
+        try:
+            tabs_config = self.template.get_tabs_config()
+            concrete_entity = tabs_config.get_key_for_label(tab_name)
+        except:
+            return None
+
+        return concrete_entity
 
     def is_identifier_field(self, header_name):
         spec = self.template.lookup(header_name)
@@ -84,8 +100,21 @@ class TemplateManager:
         concrete_entity = match.group('concrete_entity')
         return concrete_entity
 
-# TODO implement this
-def build(schemas) -> TemplateManager: ...
+    def get_key_for_label(self, header_name, tab_name):
+        key = None
+
+        try:
+            key = self.template.get_key_for_label(header_name, tab_name)
+        except:
+            print(f'{header_name} in "{tab_name}" tab is not found in schema template')
+
+        return key
+
+
+def build(schemas) -> TemplateManager:
+    template = SchemaTemplate(schemas)
+    template_mgr = TemplateManager(template)
+    return template_mgr
 
 
 class RowTemplate:
@@ -100,3 +129,11 @@ class RowTemplate:
             conversion:CellConversion = self.cell_conversions[index]
             conversion.apply(data_node, cell.value)
         return data_node.as_dict()
+
+
+class ParentFieldNotFound(Exception):
+    def __init__(self, header_name):
+        message = f'{header_name} has no parent field'
+        super(ParentFieldNotFound, self).__init__(message)
+
+        self.header_name = header_name
