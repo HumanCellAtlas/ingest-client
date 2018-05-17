@@ -1,7 +1,8 @@
 import re
 from abc import abstractmethod
 
-from ingest.importer.conversion.data_converter import Converter, DataType
+from ingest.importer.conversion.data_converter import Converter
+from ingest.importer.conversion.data_converter import DataType
 from ingest.importer.data_node import DataNode
 
 SPLIT_FIELD_REGEX = '(?P<parent>\w*(\.\w*)*)\.(?P<target>\w*)'
@@ -62,3 +63,7 @@ class ListElementCellConversion(CellConversion):
         else:
             target_object = parent[0]
         return target_object
+
+
+def determine_strategy(column_spec:ColumnSpecification):
+    return {}

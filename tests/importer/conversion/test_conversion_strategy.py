@@ -2,10 +2,27 @@ from unittest import TestCase
 
 from mock import MagicMock
 
+from ingest.importer.conversion import conversion_strategy
 from ingest.importer.conversion.conversion_strategy import DirectCellConversion, \
     ListElementCellConversion, ColumnSpecification
 from ingest.importer.conversion.data_converter import DataType
 from ingest.importer.data_node import DataNode
+
+
+class ModuleTest(TestCase):
+
+    def test_determine_strategy_for_string(self):
+        # given:
+        string_column_spec:ColumnSpecification = MagicMock('column_spec')
+        string_column_spec.data_type = DataType.STRING
+        string_column_spec.is_multivalue = lambda: False
+
+        # when:
+        strategy = conversion_strategy.determine_strategy(string_column_spec)
+
+        # then:
+        self.assertIsNotNone(strategy)
+
 
 class ColumnSpecificationTest(TestCase):
 
