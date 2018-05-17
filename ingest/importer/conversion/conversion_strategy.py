@@ -1,10 +1,25 @@
 import re
 from abc import abstractmethod
 
-from ingest.importer.conversion.data_converter import Converter
+from ingest.importer.conversion.data_converter import Converter, DataType
 from ingest.importer.data_node import DataNode
 
 SPLIT_FIELD_REGEX = '(?P<parent>\w*(\.\w*)*)\.(?P<target>\w*)'
+
+
+class ColumnSpecification:
+
+    def __init__(self, raw_spec, parent=None):
+        self.data_type = DataType.find(raw_spec.get('value_type'))
+        self.multivalue = bool(raw_spec.get('multivalue'))
+        if parent is not None:
+            self.field_of_list_member = bool(parent.get('multivalue'))
+
+    def is_multivalue(self):
+        return self.multivalue
+
+    def is_field_of_list_member(self):
+        return self.field_of_list_member
 
 
 class CellConversion(object):

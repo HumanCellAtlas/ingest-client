@@ -6,10 +6,8 @@ from openpyxl import Workbook
 from ingest.importer.conversion.conversion_strategy import CellConversion, DirectCellConversion
 from ingest.importer.conversion.data_converter import Converter, ListConverter, DataType, \
     IntegerConverter, BooleanConverter
-from ingest.importer.conversion.template_manager import TemplateManager, RowTemplate, \
-    ColumnSpecification
+from ingest.importer.conversion.template_manager import TemplateManager, RowTemplate
 from ingest.importer.data_node import DataNode
-from ingest.template.schema_template import SchemaTemplate
 
 
 def _mock_schema_template_lookup(value_type='string', multivalue=False):
@@ -384,56 +382,3 @@ class RowTemplateTest(TestCase):
         # then:
         self.assertEqual(schema_url, result.get('describedBy'))
         self.assertEqual('extra field', result.get('extra_field'))
-
-
-class ColumnSpecificationTest(TestCase):
-
-    def test_construct_from_raw_spec(self):
-        # given:
-        raw_string_spec = {
-            'value_type': 'string',
-            'multivalue': False
-        }
-
-        # and:
-        raw_int_array_spec = {
-            'value_type': 'integer',
-            'multivalue': True
-        }
-
-        # when:
-        string_column_spec = ColumnSpecification(raw_string_spec)
-        int_array_column_spec = ColumnSpecification(raw_int_array_spec)
-
-        # then:
-        self.assertEqual(DataType.STRING, string_column_spec.data_type)
-        self.assertFalse(string_column_spec.is_multivalue())
-
-        # and:
-        self.assertEqual(DataType.INTEGER, int_array_column_spec.data_type)
-        self.assertTrue(int_array_column_spec.is_multivalue())
-
-    def test_construct_from_raw_spec_with_parent_spec(self):
-        # given:
-        raw_spec = {
-            'value_type': 'boolean',
-            'multivalue': True
-        }
-
-        # and:
-        raw_single_value_parent_spec = {
-            'multivalue': False
-        }
-
-        # and:
-        raw_multi_value_parent_spec = {
-            'multivalue': True
-        }
-
-        # when:
-        single_column_spec = ColumnSpecification(raw_spec, parent=raw_single_value_parent_spec)
-        multi_column_spec = ColumnSpecification(raw_spec, parent=raw_multi_value_parent_spec)
-
-        # then:
-        self.assertFalse(single_column_spec.is_field_of_list_member())
-        self.assertTrue(multi_column_spec.is_field_of_list_member())
