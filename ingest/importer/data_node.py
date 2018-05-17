@@ -19,5 +19,8 @@ class DataNode:
             current_node = current_node[field]
         return current_node
 
+    def __getitem__(self, item):
+        return self.node.get(item)
+
     def as_dict(self):
         return copy.deepcopy(self.node)

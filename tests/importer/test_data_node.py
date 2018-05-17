@@ -17,3 +17,21 @@ class DataNodeTest(TestCase):
         dict = node.as_dict()
         self.assertEqual('value', dict['path']['to']['node'])
         self.assertEqual(347, dict['path']['to']['nested']['field'])
+
+    def test___getitem__(self):
+        # given:
+        defaults = {
+            'first_name': 'Juan',
+            'last_name': 'dela Cruz',
+            'age': 39,
+            'address': {
+                'city': 'Manila',
+                'country': 'Philippines'
+            }
+        }
+
+        # and:
+        node = DataNode(defaults=defaults)
+
+        # expect:
+        self.assertEqual('Juan', node['first_name'])
