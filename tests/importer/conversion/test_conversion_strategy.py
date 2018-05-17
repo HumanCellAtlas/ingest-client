@@ -68,3 +68,8 @@ class ListElementCellConversionTest(TestCase):
         # then:
         basket = data_node.as_dict().get('user').get('basket')
         self.assertEqual(1, len(basket))
+
+        # and:
+        current_element = basket[0]
+        self.assertEqual(3, current_element.get('quantity'))
+        self.assertEqual('apple - converted', current_element.get('product_name'))

@@ -34,4 +34,12 @@ class ListElementCellConversion(CellConversion):
         parent_path = match.group('parent')
         target_field = match.group('target')
         data = self.converter.convert(cell_data)
-        data_node[parent_path] = [{target_field: data}]
+
+        parent = data_node[parent_path]
+        if parent is None:
+            target_object = {}
+            parent = [target_object]
+            data_node[parent_path] = parent
+        else:
+            target_object = parent[0]
+        target_object[target_field] = data
