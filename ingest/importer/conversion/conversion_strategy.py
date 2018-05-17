@@ -30,11 +30,19 @@ class ListElementCellConversion(CellConversion):
         self.converter = converter
 
     def apply(self, data_node:DataNode, cell_data):
+        parent_path, target_field = self._split_field_chain()
+        target_object = self._determine_target_object(data_node, parent_path)
+        data = self.converter.convert(cell_data)
+        target_object[target_field] = data
+
+    def _split_field_chain(self):
         match = re.search(SPLIT_FIELD_REGEX, self.field)
         parent_path = match.group('parent')
         target_field = match.group('target')
-        data = self.converter.convert(cell_data)
+        return parent_path, target_field
 
+    @staticmethod
+    def _determine_target_object(data_node, parent_path):
         parent = data_node[parent_path]
         if parent is None:
             target_object = {}
@@ -42,4 +50,4 @@ class ListElementCellConversion(CellConversion):
             data_node[parent_path] = parent
         else:
             target_object = parent[0]
-        target_object[target_field] = data
+        return target_object
