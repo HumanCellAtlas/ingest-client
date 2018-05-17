@@ -41,6 +41,12 @@ class DataNodeTest(TestCase):
         self.assertEqual('Manila', data_node['address.city'])
         self.assertEqual('Philippines', data_node['address.country'])
 
-        # and:
+    def test___getitem___non_existent_path(self):
+        # given:
+        defaults = {'product': {'name': 'biscuit', 'id': '123'}}
+        data_node = DataNode(defaults=defaults)
+
+        # expect:
         # TODO this should probably throw exception instead, indicating path does not exist
-        self.assertIsNone(data_node['address.path.does.not.exist'])
+        self.assertIsNone(data_node['product.path.does.not.exist'])
+        self.assertIsNone(data_node['simply.does.not.exist'])

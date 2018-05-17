@@ -23,7 +23,7 @@ class DataNode:
 
     def __getitem__(self, key):
         field_chain = key.split(FIELD_SEPARATOR)
-        current_node = self.node[field_chain[0]]
+        current_node = self.node.get(field_chain[0])
         for field in field_chain[1:]:
             if current_node is None:
                 break
