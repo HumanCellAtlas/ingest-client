@@ -9,14 +9,19 @@ from ingest.importer.conversion.data_converter import DataType, Converter
 from ingest.importer.data_node import DataNode
 
 
+def _mock_column_spec(field_name='field_name', data_type=DataType.STRING, multivalue=False):
+    column_spec: ColumnSpecification = MagicMock('column_spec')
+    column_spec.field_name = field_name
+    column_spec.data_type = data_type
+    column_spec.is_multivalue = lambda: multivalue
+    return column_spec
+
+
 class ModuleTest(TestCase):
 
     def test_determine_strategy_for_string(self):
         # given:
-        column_spec:ColumnSpecification = MagicMock('column_spec')
-        column_spec.field_name = 'user.first_name'
-        column_spec.data_type = DataType.STRING
-        column_spec.is_multivalue = lambda: False
+        column_spec = _mock_column_spec(field_name='user.first_name')
 
         # when:
         strategy:CellConversion = conversion_strategy.determine_strategy(column_spec)
