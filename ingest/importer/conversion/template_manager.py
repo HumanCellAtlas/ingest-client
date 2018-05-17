@@ -2,8 +2,9 @@ import re
 
 from openpyxl.worksheet import Worksheet
 
-from ingest.importer.conversion.conversion_strategy import CellConversion
-from ingest.importer.conversion.data_converter import ListConverter, DataType, CONVERTER_MAP
+from ingest.importer.conversion.conversion_strategy import CellConversion, DirectCellConversion
+from ingest.importer.conversion.data_converter import ListConverter, DataType, CONVERTER_MAP, \
+    Converter
 from ingest.importer.data_node import DataNode
 from ingest.template.schematemplate import SchemaTemplate
 
@@ -23,7 +24,7 @@ class TemplateManager:
     def create_row_template(self, worksheet:Worksheet):
         for row in worksheet.iter_rows(row_offset=3, max_row=1):
             header_row = row
-        return RowTemplate([CellConversion(header_row[0].value, None)])
+        return RowTemplate([DirectCellConversion(header_row[0].value, Converter())])
 
     def get_converter(self, header_name):
         column_spec = self.template.lookup(header_name)

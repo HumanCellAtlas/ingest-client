@@ -3,7 +3,7 @@ from unittest import TestCase
 from mock import MagicMock
 from openpyxl import Workbook
 
-from ingest.importer.conversion.conversion_strategy import CellConversion
+from ingest.importer.conversion.conversion_strategy import CellConversion, DirectCellConversion
 from ingest.importer.conversion.data_converter import Converter, ListConverter, DataType, \
     IntegerConverter, BooleanConverter
 from ingest.importer.conversion.template_manager import TemplateManager, RowTemplate
@@ -77,7 +77,9 @@ class TemplateManagerTest(TestCase):
 
         # and:
         conversion:CellConversion = row_template.cell_conversions[0]
+        self.assertIsInstance(conversion, DirectCellConversion)
         self.assertEqual('user.profile.first_name', conversion.field)
+        self.assertIsInstance(conversion.converter, Converter)
 
     def test_get_converter_for_string(self):
         # given:
