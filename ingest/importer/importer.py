@@ -37,6 +37,7 @@ class WorksheetImporter:
             row_id = None
 
             links = []
+            links_map = {}
 
             for cell in row:
                 # TODO preprocess headers so that cells can be converted without having to always
@@ -63,12 +64,18 @@ class WorksheetImporter:
                 if template.is_identifier_field(header_name):
                     if concrete_entity == cell_concrete_entity:
                         row_id = data
-                    else: # this is a link column
+                    else:  # this is a link column
                         link_domain_entity = template.get_domain_entity(concrete_entity=cell_concrete_entity)
+
                         links.append({
                             'entity': link_domain_entity,
                             'id': data
                         })
+
+                        if not links_map.get(link_domain_entity):
+                            links_map[link_domain_entity] = []
+
+                        links_map[link_domain_entity].append(data)
 
             object_list_fields = object_list_tracker.get_object_list_fields()
             for field_chain in object_list_fields:
@@ -82,7 +89,7 @@ class WorksheetImporter:
 
             rows_by_id[row_id] = {
                 'content': node.as_dict(),
-                'links': links
+                'links_by_entity': links_map
             }
 
         return rows_by_id
