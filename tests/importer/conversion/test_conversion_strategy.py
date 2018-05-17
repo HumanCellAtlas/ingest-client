@@ -91,8 +91,8 @@ class ColumnSpecificationTest(TestCase):
         }
 
         # when:
-        single_column_spec = ColumnSpecification(raw_spec, parent=raw_single_value_parent_spec)
-        multi_column_spec = ColumnSpecification(raw_spec, parent=raw_multi_value_parent_spec)
+        single_column_spec = ColumnSpecification('', raw_spec, parent=raw_single_value_parent_spec)
+        multi_column_spec = ColumnSpecification('', raw_spec, parent=raw_multi_value_parent_spec)
 
         # then:
         self.assertFalse(single_column_spec.is_field_of_list_member())
