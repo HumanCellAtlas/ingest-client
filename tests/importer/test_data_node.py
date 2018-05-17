@@ -31,7 +31,12 @@ class DataNodeTest(TestCase):
         }
 
         # and:
-        node = DataNode(defaults=defaults)
+        data_node = DataNode(defaults=defaults)
 
         # expect:
-        self.assertEqual('Juan', node['first_name'])
+        self.assertEqual('Juan', data_node['first_name'])
+        self.assertEqual(39, data_node['age'])
+
+        # and:
+        self.assertEqual('Manila', data_node['address.city'])
+        self.assertEqual('Philippines', data_node['address.country'])

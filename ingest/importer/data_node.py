@@ -1,5 +1,7 @@
 import copy
 
+FIELD_SEPARATOR = '.'
+
 
 class DataNode:
 
@@ -7,7 +9,7 @@ class DataNode:
         self.node = copy.deepcopy(defaults)
 
     def __setitem__(self, key, value):
-        field_chain = key.split('.')
+        field_chain = key.split(FIELD_SEPARATOR)
         target_node = self._determine_node(field_chain)
         target_node[field_chain[-1]] = value
 
@@ -19,8 +21,12 @@ class DataNode:
             current_node = current_node[field]
         return current_node
 
-    def __getitem__(self, item):
-        return self.node.get(item)
+    def __getitem__(self, key):
+        field_chain = key.split(FIELD_SEPARATOR)
+        current_node = self.node[field_chain[0]]
+        for field in field_chain[1:]:
+            current_node = current_node.get(field)
+        return current_node
 
     def as_dict(self):
         return copy.deepcopy(self.node)
