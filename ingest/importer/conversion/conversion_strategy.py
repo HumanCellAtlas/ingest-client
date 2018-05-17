@@ -67,4 +67,4 @@ class ListElementCellConversion(CellConversion):
 
 
 def determine_strategy(column_spec:ColumnSpecification):
-    return {}
+    return DirectCellConversion('user.first_name', Converter())
