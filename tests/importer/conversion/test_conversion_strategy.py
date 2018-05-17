@@ -40,14 +40,16 @@ class ColumnSpecificationTest(TestCase):
         }
 
         # when:
-        string_column_spec = ColumnSpecification(raw_string_spec)
-        int_array_column_spec = ColumnSpecification(raw_int_array_spec)
+        string_column_spec = ColumnSpecification('user.name', raw_string_spec)
+        int_array_column_spec = ColumnSpecification('numbers', raw_int_array_spec)
 
         # then:
+        self.assertEqual('user.name', string_column_spec.field_name)
         self.assertEqual(DataType.STRING, string_column_spec.data_type)
         self.assertFalse(string_column_spec.is_multivalue())
 
         # and:
+        self.assertEqual('numbers', int_array_column_spec.field_name)
         self.assertEqual(DataType.INTEGER, int_array_column_spec.data_type)
         self.assertTrue(int_array_column_spec.is_multivalue())
 
