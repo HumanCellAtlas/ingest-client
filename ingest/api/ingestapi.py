@@ -120,7 +120,7 @@ class IngestApi:
             self.submission_links[submissionUrl] = json.loads(r.text)["_links"]
             return submissionUrl
         except requests.exceptions.RequestException as err:
-            self.logger.error("Request failed: ", err)
+            self.logger.error("Request failed: " + str(err))
             raise
 
     def finishSubmission(self, submissionUrl):
