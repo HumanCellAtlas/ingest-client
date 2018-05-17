@@ -106,4 +106,8 @@ class RowTemplate:
 class ColumnSpecification:
 
     def __init__(self, raw_spec):
-        self.data_type = DataType.STRING
+        self.data_type = DataType.find(raw_spec.get('value_type'))
+        self.multivalue = bool(raw_spec.get('multivalue'))
+
+    def is_multivalue(self):
+        return self.multivalue

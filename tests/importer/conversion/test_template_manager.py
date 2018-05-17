@@ -390,13 +390,25 @@ class ColumnSpecificationTest(TestCase):
 
     def test_construct_from_raw_spec(self):
         # given:
-        raw_spec = {
+        raw_string_spec = {
             'value_type': 'string',
             'multivalue': False
         }
 
+        # and:
+        raw_int_array_spec = {
+            'value_type': 'integer',
+            'multivalue': True
+        }
+
         # when:
-        column_spec = ColumnSpecification(raw_spec)
+        string_column_spec = ColumnSpecification(raw_string_spec)
+        int_array_column_spec = ColumnSpecification(raw_int_array_spec)
 
         # then:
-        self.assertEqual(DataType.STRING, column_spec.data_type)
+        self.assertEqual(DataType.STRING, string_column_spec.data_type)
+        self.assertFalse(string_column_spec.is_multivalue())
+
+        # and:
+        self.assertEqual(DataType.INTEGER, int_array_column_spec.data_type)
+        self.assertTrue(int_array_column_spec.is_multivalue())
