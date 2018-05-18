@@ -15,9 +15,9 @@ class SubmissionTest(TestCase):
         # given
         ingest.api.ingestapi.requests.get = MagicMock()
         mock_ingest_api = IngestApi()
-        mock_ingest_api.createSubmission = lambda: 'submission_url'
+        mock_ingest_api.createSubmission = lambda token: 'submission_url'
 
-        submission = Submission(mock_ingest_api)
+        submission = Submission(mock_ingest_api, token='token')
         submission_url = submission.get_submission_url()
 
         self.assertEqual('submission_url', submission_url)
@@ -54,7 +54,7 @@ class SubmissionTest(TestCase):
         mock_ingest_api.createSubmission = MagicMock(return_value='submission_url')
         mock_ingest_api.createEntity = MagicMock(return_value=new_entity_mock_response)
 
-        submission = Submission(mock_ingest_api)
+        submission = Submission(mock_ingest_api, token='token')
 
         entity = Entity(id='id', type='biomaterial', content={})
         entity = submission.add_entity(entity)
@@ -71,13 +71,15 @@ class IngestSubmitterTest(TestCase):
         mock_ingest_api.createSubmission = MagicMock(return_value='submission_url')
         new_entity_mock_response = {'key': 'value'}
         mock_ingest_api.createEntity = MagicMock(return_value=new_entity_mock_response)
+        mock_ingest_api.createFile = MagicMock(return_value=new_entity_mock_response)
+        mock_ingest_api.linkEntity = MagicMock()
 
         spreadsheet_json = self._create_spreadsheet_json()
 
         mock_template_manager = MagicMock(name='template_manager')
 
         submitter = IngestSubmitter(mock_ingest_api, mock_template_manager)
-        submission = submitter.submit(spreadsheet_json)
+        submission = submitter.submit(spreadsheet_json, token='token')
 
         self.assertTrue(submission)
         self.assertTrue(submission.get_entity('biomaterial', 'biomaterial_id_1').ingest_json)
@@ -125,14 +127,16 @@ class IngestSubmitterTest(TestCase):
                     },
                     'links_by_entity': {
                         'biomaterial': ['biomaterial_id_2'],
-                        'process': ['process_id_2', 'process_id_3']
+                        'process': ['process_id_2']
                     }
                 },
             },
             'file': {
                 'file_id_1': {
                     'content': {
-                        'key': 'file_1'
+                        'file_core': {
+                            'file_name': 'file_name'
+                        }
                     },
                     'links_by_entity': {
                         'biomaterial': ['biomaterial_id_3']

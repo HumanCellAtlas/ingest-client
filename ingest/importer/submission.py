@@ -1,3 +1,6 @@
+import json
+
+
 class Entity(object):
     def __init__(self, type, id, content, links_by_entity=None, direct_links=None):
         self.type = type
@@ -31,9 +34,9 @@ class Submission(object):
         },
     }
 
-    def __init__(self, ingest_api):
+    def __init__(self, ingest_api, token):
         self.ingest_api = ingest_api
-        self.submission_url = self.ingest_api.createSubmission()
+        self.submission_url = self.ingest_api.createSubmission('')
         self.metadata_dict = {}
 
     def get_submission_url(self):
@@ -41,7 +44,16 @@ class Submission(object):
 
     def add_entity(self, entity: Entity):
         link_name = self.ENTITY_LINK[entity.type]
-        response = self.ingest_api.createEntity(self.submission_url, entity.content, link_name)
+
+        response = None
+
+        # TODO: how to get filename?!!!
+        if entity.type == 'file':
+            file_name = entity.content['file_core']['file_name']
+            response = self.ingest_api.createFile(self.submission_url, file_name, json.dumps(entity.content))
+        else:
+            response = self.ingest_api.createEntity(self.submission_url, json.dumps(entity.content), link_name)
+
         entity.ingest_json = response
         self.metadata_dict[entity.type + '.' + entity.id] = entity
 
@@ -87,14 +99,23 @@ class IngestSubmitter(object):
                 entities_by_type[entity_type][entity_id] = entity
         return entities_by_type
 
-    def submit(self, spreadsheet_json):
-        entities_map = self.generate_entities_dict(spreadsheet_json)
+    def submit(self, spreadsheet_json, token):
+        entities_dict_by_type = self.generate_entities_dict(spreadsheet_json)
 
-        submission = Submission(self.ingest_api)
+        submission = Submission(self.ingest_api, token)
 
-        for entity_type, entities_dict in entities_map.items():
+        for entity_type, entities_dict in entities_dict_by_type.items():
             for entity_id, entity in entities_dict.items():
                 submission.add_entity(entity)
+
+        entity_linker = EntityLinker(entities_dict_by_type, self.template_manager)
+        entities_dict_by_type = entity_linker.generate_direct_links()
+
+        for entity_type, entities_dict in entities_dict_by_type.items():
+            for entity_id, entity in entities_dict.items():
+                for link in entity.direct_links:
+                    to_entity = entities_dict_by_type[link['entity']][link['id']]
+                    submission.link_entity(entity, to_entity)
 
         return submission
 
@@ -106,6 +127,7 @@ class EntityLinker(object):
         self.template_manager = template_manager
         self.process_id_ctr = 0
 
+    # TODO Refactor
     def generate_direct_links(self):
         entities_dict_by_type = self.entities_dict_by_type
 
@@ -247,7 +269,7 @@ class LinkedEntityNotFound(Exception):
 
 class MultipleProcessesFound(Exception):
     def __init__(self, from_entity, process_ids):
-        message = f'Only one link to process is allowed for a {from_entity.type} in the spreadsheet.'
+        message = f'Multiple processes are linked {from_entity.type} in the spreadsheet: {process_ids}.'
         super(MultipleProcessesFound, self).__init__(message)
 
         self.process_ids = process_ids
