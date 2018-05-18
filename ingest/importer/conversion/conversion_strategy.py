@@ -24,7 +24,7 @@ class ColumnSpecification:
         return self.field_of_list_member
 
     def determine_converter(self):
-        return []
+        return Converter()
 
     @staticmethod
     def build(field_name, data_type=DataType.UNDEFINED, multivalue=False):

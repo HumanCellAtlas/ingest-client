@@ -152,7 +152,7 @@ class ColumnSpecificationTest(TestCase):
         converter = column_spec.determine_converter()
 
         # then:
-        self.assertIsNotNone(converter)
+        self.assertIsInstance(converter, Converter)
 
 
 class DirectCellConversionTest(TestCase):
