@@ -1,8 +1,10 @@
 from unittest import TestCase
 
-from mock import MagicMock
+from mock import MagicMock, patch
 from openpyxl import Workbook
 
+from ingest.importer.conversion import conversion_strategy
+from ingest.importer.conversion.column_specification import ColumnSpecification
 from ingest.importer.conversion.conversion_strategy import CellConversion, DirectCellConversion
 from ingest.importer.conversion.data_converter import Converter, ListConverter, DataType, \
     IntegerConverter, BooleanConverter
@@ -50,35 +52,46 @@ class TemplateManagerTest(TestCase):
         self.assertEqual(schema_url, data.get('describedBy'))
         self.assertEqual('biomaterial', data.get('schema_type'))
 
-    def test_create_row_template(self):
+    @patch.object(ColumnSpecification, 'build_raw')
+    @patch.object(conversion_strategy, 'determine_strategy')
+    def test_create_row_template(self, determine_strategy, build_raw):
         # given:
         schema_template = MagicMock(name='schema_template')
-        column_spec = {
-            'value_type': 'string',
-            'multivalue': False
+
+        # and:
+        column_spec = MagicMock('column_spec')
+        build_raw.return_value = column_spec
+
+        # and: set up raw spec
+        raw_spec = MagicMock('raw_spec')
+        raw_parent_spec = MagicMock('raw_parent_spec')
+        spec_map = {
+            'user.profile.first_name': raw_spec,
+            'user.profile': raw_parent_spec
         }
-        schema_template.get_key_for_label = lambda: column_spec
+        schema_template.get_key_for_label = lambda key: spec_map.get(key, None)
+
+        # and:
+        strategy = MagicMock('conversion')
+        determine_strategy.return_value = strategy
 
         # and:
         workbook = Workbook()
         worksheet = workbook.create_sheet('sample')
         worksheet['A4'] = 'user.profile.first_name'
 
-        # and:
-        template_manager = TemplateManager(schema_template)
-
         # when:
+        template_manager = TemplateManager(schema_template)
         row_template:RowTemplate = template_manager.create_row_template(worksheet)
 
         # then:
-        self.assertIsNotNone(row_template)
-        self.assertEqual(1, len(row_template.cell_conversions))
+        build_raw.assert_called_with('user.profile.first_name', raw_spec, parent=raw_parent_spec)
+        determine_strategy.assert_called_with(column_spec)
 
         # and:
-        conversion:CellConversion = row_template.cell_conversions[0]
-        self.assertIsInstance(conversion, DirectCellConversion)
-        self.assertEqual('user.profile.first_name', conversion.field)
-        self.assertIsInstance(conversion.converter, Converter)
+        self.assertIsNotNone(row_template)
+        self.assertEqual(1, len(row_template.cell_conversions))
+        self.assertTrue(strategy in row_template.cell_conversions)
 
     def test_get_converter_for_string(self):
         # given:

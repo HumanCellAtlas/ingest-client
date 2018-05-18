@@ -3,6 +3,8 @@ import re
 import copy
 from openpyxl.worksheet import Worksheet
 
+from ingest.importer.conversion import utils, conversion_strategy
+from ingest.importer.conversion.column_specification import ColumnSpecification
 from ingest.importer.conversion.conversion_strategy import CellConversion, DirectCellConversion
 from ingest.importer.conversion.data_converter import ListConverter, DataType, CONVERTER_MAP, \
     Converter
@@ -25,7 +27,14 @@ class TemplateManager:
     def create_row_template(self, worksheet:Worksheet):
         for row in worksheet.iter_rows(row_offset=3, max_row=1):
             header_row = row
-        return RowTemplate([DirectCellConversion(header_row[0].value, Converter())])
+        cell = header_row[0]
+        header = cell.value
+        parent_path, __ = utils.split_field_chain(header)
+        raw_spec = self.template.get_key_for_label(header)
+        raw_parent_spec = self.template.get_key_for_label(parent_path)
+        column_spec = ColumnSpecification.build_raw(header, raw_spec, parent=raw_parent_spec)
+        strategy = conversion_strategy.determine_strategy(column_spec)
+        return RowTemplate([strategy])
 
     # TODO deprecate this! Logic is now moved to ColumnSpecification
     def get_converter(self, header_name):
