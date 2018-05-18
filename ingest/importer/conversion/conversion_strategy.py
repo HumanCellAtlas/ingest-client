@@ -83,11 +83,7 @@ class ListElementCellConversion(CellConversion):
 
 
 def determine_strategy(column_spec:ColumnSpecification):
-    if not column_spec.is_multivalue():
-        converter = CONVERTER_MAP.get(column_spec.data_type)
-    else:
-        converter = ListConverter(column_spec.data_type)
-
+    converter = column_spec.determine_converter()
     if column_spec.is_field_of_list_member():
         strategy = ListElementCellConversion(column_spec.field_name, converter)
     else:

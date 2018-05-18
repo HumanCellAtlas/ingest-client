@@ -10,19 +10,21 @@ from ingest.importer.conversion.data_converter import DataType, Converter, Integ
 from ingest.importer.data_node import DataNode
 
 
-def _mock_column_spec(field_name='field_name', data_type=DataType.STRING, multivalue=False):
+def _mock_column_spec(field_name='field_name', data_type=DataType.STRING, multivalue=False,
+                      field_of_list_member=False, converter=None):
     column_spec: ColumnSpecification = MagicMock('column_spec')
     column_spec.field_name = field_name
-    column_spec.data_type = data_type
-    column_spec.is_multivalue = lambda: multivalue
+    column_spec.determine_converter = lambda: converter
+    column_spec.is_field_of_list_member = lambda: field_of_list_member
     return column_spec
 
 
 class ModuleTest(TestCase):
 
-    def test_determine_strategy_for_string(self):
+    def test_determine_strategy_for_direct_conversion(self):
         # given:
-        column_spec = _mock_column_spec(field_name='user.first_name')
+        converter = MagicMock('converter')
+        column_spec = _mock_column_spec(field_name='user.first_name', converter=converter)
 
         # when:
         strategy:CellConversion = conversion_strategy.determine_strategy(column_spec)
@@ -30,56 +32,13 @@ class ModuleTest(TestCase):
         # then:
         self.assertIsInstance(strategy, DirectCellConversion)
         self.assertEqual('user.first_name', strategy.field)
-        self.assertIsInstance(strategy.converter, Converter)
-
-    def test_determine_strategy_for_integer(self):
-        # given:
-        column_spec = _mock_column_spec(field_name='item.count', data_type=
-        DataType.INTEGER)
-
-        # when:
-        strategy:CellConversion = conversion_strategy.determine_strategy(column_spec)
-
-        # then:
-        self.assertIsInstance(strategy, DirectCellConversion)
-        self.assertEqual('item.count', strategy.field)
-        self.assertIsInstance(strategy.converter, IntegerConverter)
-
-    def test_determine_strategy_for_boolean(self):
-        # given:
-        column_spec = _mock_column_spec(field_name='alarm.repeating', data_type=DataType.BOOLEAN)
-
-        # when:
-        strategy:CellConversion = conversion_strategy.determine_strategy(column_spec)
-
-        # then:
-        self.assertIsInstance(strategy, DirectCellConversion)
-        self.assertEqual('alarm.repeating', strategy.field)
-        self.assertIsInstance(strategy.converter, BooleanConverter)
-
-    def test_determine_strategy_for_multivalue_types(self):
-        # expect:
-        self._assert_correct_strategy_for_multivalue_type(DataType.STRING)
-        self._assert_correct_strategy_for_multivalue_type(DataType.INTEGER)
-        self._assert_correct_strategy_for_multivalue_type(DataType.BOOLEAN)
-
-    def _assert_correct_strategy_for_multivalue_type(self, data_type:DataType):
-        # given:
-        column_spec = _mock_column_spec(field_name='items', data_type=data_type, multivalue=True)
-
-        # when:
-        strategy:CellConversion = conversion_strategy.determine_strategy(column_spec)
-
-        # then:
-        self.assertIsInstance(strategy, DirectCellConversion)
-        self.assertEqual('items', strategy.field)
-        self.assertIsInstance(strategy.converter, ListConverter)
-        self.assertEqual(data_type, strategy.converter.base_type)
+        self.assertEqual(converter, strategy.converter)
 
     def test_determine_strategy_for_field_of_list_element(self):
         # given:
-        column_spec = _mock_column_spec(field_name='member.field.list', data_type=DataType.INTEGER)
-        column_spec.is_field_of_list_member = lambda: True
+        converter = MagicMock('converter')
+        column_spec = _mock_column_spec(field_name='member.field.list', converter=converter,
+                                        field_of_list_member=True)
 
         # when:
         strategy:CellConversion = conversion_strategy.determine_strategy(column_spec)
@@ -87,7 +46,7 @@ class ModuleTest(TestCase):
         # then:
         self.assertIsInstance(strategy, ListElementCellConversion)
         self.assertEqual('member.field.list', strategy.field)
-        self.assertIsInstance(strategy.converter, IntegerConverter)
+        self.assertEqual(converter, strategy.converter)
 
 
 class ColumnSpecificationTest(TestCase):
