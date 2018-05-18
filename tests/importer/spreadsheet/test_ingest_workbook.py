@@ -12,7 +12,7 @@ class IngestWorkbookTest(TestCase):
         workbook = Workbook()
 
         # and:
-        schemas_sheet = workbook.create_sheet('schemas')
+        schemas_sheet = workbook.create_sheet('Schemas')
         schemas_sheet['A1'] = 'schema'
 
         # and:
@@ -40,9 +40,9 @@ class IngestWorkbookTest(TestCase):
         workbook = Workbook()
 
         # and:
-        importable_names = ['Project', 'Organ From Donor', 'Cell Suspension']
+        importable_names = ['Organ From Donor', 'Cell Suspension']
         expected_worksheets = [workbook.create_sheet(name) for name in importable_names]
-        workbook.create_sheet('schemas')
+        workbook.create_sheet('Schemas')
 
         # and:
         default_worksheet = workbook.get_sheet_by_name('Sheet')

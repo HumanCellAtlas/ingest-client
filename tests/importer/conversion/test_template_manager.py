@@ -26,16 +26,24 @@ class TemplateManagerTest(TestCase):
 
     def test_create_template_node(self):
         # given:
+        tab_config = MagicMock(name='tab_config')
+        tab_config.get_key_for_label = MagicMock(return_value='concrete_entity')
+
         schema_template = MagicMock(name='schema_template')
+        schema_template.get_tabs_config = MagicMock(return_value=tab_config)
+
         schema_url = 'https://schema.humancellatlas.org/type/biomaterial/5.1.0/donor_organsim'
-        tab_spec = {
-            'schema': {
-                'domain_entity': 'biomaterial',
-                'url': schema_url
+
+        lookup_map = {
+            'concrete_entity': {
+                'schema': {
+                    'domain_entity': 'biomaterial',
+                    'url': schema_url
+                }
             }
         }
-        # TODO define get_tab_spec in SchemaTemplate
-        schema_template.get_tab_spec = lambda title: tab_spec if title == 'Donor' else None
+
+        schema_template.lookup = lambda key: lookup_map.get(key)
 
         # and:
         template_manager = TemplateManager(schema_template)
