@@ -149,6 +149,7 @@ class ColumnSpecificationTest(TestCase):
         self._assert_correct_converter_single_value(DataType.STRING, Converter)
         self._assert_correct_converter_single_value(DataType.INTEGER, IntegerConverter)
         self._assert_correct_converter_single_value(DataType.BOOLEAN, BooleanConverter)
+        self._assert_correct_converter_single_value(DataType.UNDEFINED, Converter)
 
     def _assert_correct_converter_single_value(self, data_type:DataType, expected_converter_type):
         # given:
