@@ -1,7 +1,7 @@
 import re
 from abc import abstractmethod
 
-from ingest.importer.conversion.data_converter import Converter, CONVERTER_MAP
+from ingest.importer.conversion.data_converter import Converter, CONVERTER_MAP, ListConverter
 from ingest.importer.conversion.data_converter import DataType
 from ingest.importer.data_node import DataNode
 
@@ -67,5 +67,8 @@ class ListElementCellConversion(CellConversion):
 
 
 def determine_strategy(column_spec:ColumnSpecification):
-    converter = CONVERTER_MAP.get(column_spec.data_type)
+    if not column_spec.is_multivalue():
+        converter = CONVERTER_MAP.get(column_spec.data_type)
+    else:
+        converter = ListConverter(column_spec.data_type)
     return DirectCellConversion(column_spec.field_name, converter)

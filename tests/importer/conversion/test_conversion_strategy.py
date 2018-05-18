@@ -6,7 +6,7 @@ from ingest.importer.conversion import conversion_strategy
 from ingest.importer.conversion.conversion_strategy import DirectCellConversion, \
     ListElementCellConversion, ColumnSpecification, CellConversion
 from ingest.importer.conversion.data_converter import DataType, Converter, IntegerConverter, \
-    BooleanConverter
+    BooleanConverter, ListConverter
 from ingest.importer.data_node import DataNode
 
 
@@ -34,7 +34,8 @@ class ModuleTest(TestCase):
 
     def test_determine_strategy_for_integer(self):
         # given:
-        column_spec = _mock_column_spec(field_name='item.count', data_type=DataType.INTEGER)
+        column_spec = _mock_column_spec(field_name='item.count', data_type=
+        DataType.INTEGER)
 
         # when:
         strategy:CellConversion = conversion_strategy.determine_strategy(column_spec)
@@ -55,6 +56,19 @@ class ModuleTest(TestCase):
         self.assertIsInstance(strategy, DirectCellConversion)
         self.assertEqual('alarm.repeating', strategy.field)
         self.assertIsInstance(strategy.converter, BooleanConverter)
+
+    def test_determine_strategy_for_multivalue_string(self):
+        # given:
+        multi_string_spec = _mock_column_spec(field_name='items', multivalue=True)
+
+        # when:
+        multi_string = conversion_strategy.determine_strategy(multi_string_spec)
+
+        # then:
+        self.assertIsInstance(multi_string, DirectCellConversion)
+        self.assertEqual('items', multi_string.field)
+        self.assertIsInstance(multi_string.converter, ListConverter)
+        self.assertEqual(DataType.STRING, multi_string.converter.base_type)
 
 
 class ColumnSpecificationTest(TestCase):
