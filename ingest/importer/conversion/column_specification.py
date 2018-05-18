@@ -24,10 +24,6 @@ class ColumnSpecification:
         return converter
 
     @staticmethod
-    def build(field_name, data_type=DataType.UNDEFINED, multivalue=False):
-        return ColumnSpecification(field_name, data_type, multivalue=multivalue)
-
-    @staticmethod
     def build_raw(field_name, raw_spec, parent=None):
         data_type = DataType.find(raw_spec.get('value_type'))
         multivalue = bool(raw_spec.get('multivalue'))

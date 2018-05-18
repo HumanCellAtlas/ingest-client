@@ -34,7 +34,7 @@ class ColumnSpecificationTest(TestCase):
         self.assertEqual(DataType.INTEGER, int_array_column_spec.data_type)
         self.assertTrue(int_array_column_spec.is_multivalue())
 
-    def test_construct_from_raw_spec_with_parent_spec(self):
+    def test_build_raw_spec_with_parent_spec(self):
         # given:
         raw_spec = {
             'value_type': 'boolean',
@@ -70,7 +70,7 @@ class ColumnSpecificationTest(TestCase):
 
     def _assert_correct_converter_single_value(self, data_type:DataType, expected_converter_type):
         # given:
-        column_spec = ColumnSpecification.build('field', data_type=data_type)
+        column_spec = ColumnSpecification('field', data_type)
 
         # when:
         converter = column_spec.determine_converter()
@@ -87,7 +87,7 @@ class ColumnSpecificationTest(TestCase):
 
     def _assert_correct_converter_multivalue(self, data_type):
         # given:
-        column_spec = ColumnSpecification.build('field', data_type=data_type, multivalue=True)
+        column_spec = ColumnSpecification('field', data_type, multivalue=True)
 
         # when:
         converter = column_spec.determine_converter()
