@@ -82,6 +82,7 @@ class TestSchemaTemplate(TestCase):
         template = self.get_template_for_json(data=data)
 
         tabs = template.get_tabs_config()
+        self.assertEqual("donor_organism", tabs.get_key_for_label("donor_organism"))
         self.assertEqual("donor_organism", tabs.get_key_for_label("Donor organism"))
 
 
