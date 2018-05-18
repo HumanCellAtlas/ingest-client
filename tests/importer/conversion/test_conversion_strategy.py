@@ -57,18 +57,24 @@ class ModuleTest(TestCase):
         self.assertEqual('alarm.repeating', strategy.field)
         self.assertIsInstance(strategy.converter, BooleanConverter)
 
-    def test_determine_strategy_for_multivalue_string(self):
+    def test_determine_strategy_for_multivalue_types(self):
+        # expect:
+        self._assert_correct_strategy_for_multivalue_type(DataType.STRING)
+        self._assert_correct_strategy_for_multivalue_type(DataType.INTEGER)
+        self._assert_correct_strategy_for_multivalue_type(DataType.BOOLEAN)
+
+    def _assert_correct_strategy_for_multivalue_type(self, data_type:DataType):
         # given:
-        multi_string_spec = _mock_column_spec(field_name='items', multivalue=True)
+        column_spec = _mock_column_spec(field_name='items', data_type=data_type, multivalue=True)
 
         # when:
-        multi_string = conversion_strategy.determine_strategy(multi_string_spec)
+        strategy:CellConversion = conversion_strategy.determine_strategy(column_spec)
 
         # then:
-        self.assertIsInstance(multi_string, DirectCellConversion)
-        self.assertEqual('items', multi_string.field)
-        self.assertIsInstance(multi_string.converter, ListConverter)
-        self.assertEqual(DataType.STRING, multi_string.converter.base_type)
+        self.assertIsInstance(strategy, DirectCellConversion)
+        self.assertEqual('items', strategy.field)
+        self.assertIsInstance(strategy.converter, ListConverter)
+        self.assertEqual(data_type, strategy.converter.base_type)
 
 
 class ColumnSpecificationTest(TestCase):
