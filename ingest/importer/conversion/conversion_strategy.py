@@ -2,7 +2,7 @@ import re
 from abc import abstractmethod
 
 from ingest.importer.conversion.data_converter import Converter
-from ingest.importer.conversion.template import ColumnSpecification
+from ingest.importer.conversion.column_specification import ColumnSpecification
 from ingest.importer.data_node import DataNode
 
 SPLIT_FIELD_REGEX = '(?P<parent>\w*(\.\w*)*)\.(?P<target>\w*)'

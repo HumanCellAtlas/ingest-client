@@ -5,7 +5,7 @@ from mock import MagicMock
 from ingest.importer.conversion import conversion_strategy
 from ingest.importer.conversion.conversion_strategy import DirectCellConversion, \
     ListElementCellConversion, CellConversion
-from ingest.importer.conversion.template import ColumnSpecification
+from ingest.importer.conversion.column_specification import ColumnSpecification
 from ingest.importer.conversion.data_converter import DataType
 from ingest.importer.data_node import DataNode
 
