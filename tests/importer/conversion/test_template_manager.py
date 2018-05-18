@@ -1,6 +1,6 @@
 from unittest import TestCase
 
-from mock import MagicMock, patch
+from mock import MagicMock, patch, call
 from openpyxl import Workbook
 
 from ingest.importer.conversion import conversion_strategy
@@ -59,39 +59,51 @@ class TemplateManagerTest(TestCase):
         schema_template = MagicMock(name='schema_template')
 
         # and:
-        column_spec = MagicMock('column_spec')
-        build_raw.return_value = column_spec
+        name_column_spec = MagicMock('name_column_spec')
+        numbers_column_spec = MagicMock('numbers_column_spec')
+        build_raw.side_effect = [name_column_spec, numbers_column_spec]
 
         # and: set up raw spec
-        raw_spec = MagicMock('raw_spec')
-        raw_parent_spec = MagicMock('raw_parent_spec')
+        name_spec = MagicMock('name_spec')
+        name_parent_spec = MagicMock('name_parent_spec')
+        numbers_spec = MagicMock('numbers_spec')
+
+        # and:
         spec_map = {
-            'user.profile.first_name': raw_spec,
-            'user.profile': raw_parent_spec
+            'user.profile.first_name': name_spec,
+            'user.profile': name_parent_spec,
+            'numbers': numbers_spec
         }
         schema_template.get_key_for_label = lambda key: spec_map.get(key, None)
 
         # and:
-        strategy = MagicMock('conversion')
-        determine_strategy.return_value = strategy
+        name_strategy = MagicMock('name_strategy')
+        numbers_strategy = MagicMock('numbers_strategy')
+        determine_strategy.side_effect = [name_strategy, numbers_strategy]
 
-        # and:
+        # and: prepare worksheet
         workbook = Workbook()
         worksheet = workbook.create_sheet('sample')
         worksheet['A4'] = 'user.profile.first_name'
+        worksheet['B4'] = 'numbers'
 
         # when:
         template_manager = TemplateManager(schema_template)
         row_template:RowTemplate = template_manager.create_row_template(worksheet)
 
         # then:
-        build_raw.assert_called_with('user.profile.first_name', raw_spec, parent=raw_parent_spec)
-        determine_strategy.assert_called_with(column_spec)
+        expected_calls = [
+            call('user.profile.first_name', name_spec, parent=name_parent_spec),
+            call('numbers', numbers_spec, parent=None)
+        ]
+        build_raw.assert_has_calls(expected_calls)
+        determine_strategy.assert_has_calls([call(name_column_spec), call(numbers_column_spec)])
 
         # and:
         self.assertIsNotNone(row_template)
-        self.assertEqual(1, len(row_template.cell_conversions))
-        self.assertTrue(strategy in row_template.cell_conversions)
+        self.assertEqual(2, len(row_template.cell_conversions))
+        self.assertTrue(name_strategy in row_template.cell_conversions)
+        self.assertTrue(numbers_strategy in row_template.cell_conversions)
 
     def test_get_converter_for_string(self):
         # given:
