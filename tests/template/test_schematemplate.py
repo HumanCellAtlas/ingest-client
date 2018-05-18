@@ -78,7 +78,7 @@ class TestSchemaTemplate(TestCase):
                 template.lookup('foo')
 
     def test_get_tab_name(self):
-        data = '{"id" : "' + self.dummyProjectUri + '", "properties": {"foo": "bar"} }'
+        data = '{"id" : "' + self.dummyProjectUri + '", "properties": {"foo_bar": {"user_friendly" : "Foo bar"}} }'
         template = self.get_template_for_json(data=data)
 
         tabs = template.get_tabs_config()
