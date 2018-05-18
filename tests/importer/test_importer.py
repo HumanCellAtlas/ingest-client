@@ -307,6 +307,6 @@ class IngestImporterTest(TestCase):
     def test_import_spreadsheet(self):
         spreadsheet_file = BASE_PATH + '/metadata_spleen_new_protocols.xlsx'
 
-        submission = IngestImporter.import_spreadsheet(spreadsheet_file, 'token')
+        submission = IngestImporter.import_spreadsheet(spreadsheet_file, 'submissionurl')
 
         self.assertTrue(submission)

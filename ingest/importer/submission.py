@@ -35,9 +35,9 @@ class Submission(object):
         },
     }
 
-    def __init__(self, ingest_api, token):
+    def __init__(self, ingest_api, submission_url):
         self.ingest_api = ingest_api
-        self.submission_url = self.ingest_api.createSubmission(token)
+        self.submission_url = submission_url
         self.metadata_dict = {}
 
     def get_submission_url(self):
@@ -95,12 +95,12 @@ class IngestSubmitter(object):
                 entities_by_type[entity_type][entity_id] = entity
         return entities_by_type
 
-    def submit(self, spreadsheet_json, token):
+    def submit(self, spreadsheet_json, submission_url):
         entities_dict_by_type = self.generate_entities_dict(spreadsheet_json)
         entity_linker = EntityLinker(entities_dict_by_type, self.template_manager)
         entities_dict_by_type = entity_linker.generate_direct_links()
 
-        submission = Submission(self.ingest_api, token)
+        submission = Submission(self.ingest_api, submission_url)
 
         for entity_type, entities_dict in entities_dict_by_type.items():
             for entity_id, entity in entities_dict.items():

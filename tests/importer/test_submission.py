@@ -14,10 +14,9 @@ class SubmissionTest(TestCase):
     def test_new_submission(self):
         # given
         ingest.api.ingestapi.requests.get = MagicMock()
-        mock_ingest_api = IngestApi()
-        mock_ingest_api.createSubmission = lambda token: 'submission_url'
+        mock_ingest_api = MagicMock(name='ingest_api')
 
-        submission = Submission(mock_ingest_api, token='token')
+        submission = Submission(mock_ingest_api, submission_url='submission_url')
         submission_url = submission.get_submission_url()
 
         self.assertEqual('submission_url', submission_url)
@@ -49,12 +48,11 @@ class SubmissionTest(TestCase):
         }
 
         ingest.api.ingestapi.requests.get = MagicMock()
-        mock_ingest_api = IngestApi()
+        mock_ingest_api = MagicMock(name='ingest_api')
         mock_ingest_api.load_root = MagicMock()
-        mock_ingest_api.createSubmission = MagicMock(return_value='submission_url')
         mock_ingest_api.createEntity = MagicMock(return_value=new_entity_mock_response)
 
-        submission = Submission(mock_ingest_api, token='token')
+        submission = Submission(mock_ingest_api, submission_url='url')
 
         entity = Entity(id='id', type='biomaterial', content={})
         entity = submission.add_entity(entity)
@@ -68,7 +66,6 @@ class IngestSubmitterTest(TestCase):
         ingest.api.ingestapi.requests.get = MagicMock()
         mock_ingest_api = IngestApi()
         mock_ingest_api.load_root = MagicMock()
-        mock_ingest_api.createSubmission = MagicMock(return_value='submission_url')
         new_entity_mock_response = {'key': 'value'}
         mock_ingest_api.createEntity = MagicMock(return_value=new_entity_mock_response)
         mock_ingest_api.createFile = MagicMock(return_value=new_entity_mock_response)
@@ -80,7 +77,7 @@ class IngestSubmitterTest(TestCase):
         mock_template_manager.get_schema_url = MagicMock(return_value='url')
 
         submitter = IngestSubmitter(mock_ingest_api, mock_template_manager)
-        submission = submitter.submit(spreadsheet_json, token='token')
+        submission = submitter.submit(spreadsheet_json, submission_url='url')
 
         self.assertTrue(submission)
         self.assertTrue(submission.get_entity('biomaterial', 'biomaterial_id_1').ingest_json)
