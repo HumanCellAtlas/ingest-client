@@ -1,11 +1,9 @@
-import re
 from abc import abstractmethod
 
 from ingest.importer.conversion.data_converter import Converter
 from ingest.importer.conversion.column_specification import ColumnSpecification
+from ingest.importer.conversion.utils import split_field_chain
 from ingest.importer.data_node import DataNode
-
-SPLIT_FIELD_REGEX = '(?P<parent>\w*(\.\w*)*)\.(?P<target>\w*)'
 
 
 class CellConversion(object):
@@ -27,16 +25,10 @@ class DirectCellConversion(CellConversion):
 class ListElementCellConversion(CellConversion):
 
     def apply(self, data_node:DataNode, cell_data):
-        parent_path, target_field = self._split_field_chain()
+        parent_path, target_field = split_field_chain(self.field)
         target_object = self._determine_target_object(data_node, parent_path)
         data = self.converter.convert(cell_data)
         target_object[target_field] = data
-
-    def _split_field_chain(self):
-        match = re.search(SPLIT_FIELD_REGEX, self.field)
-        parent_path = match.group('parent')
-        target_field = match.group('target')
-        return parent_path, target_field
 
     @staticmethod
     def _determine_target_object(data_node, parent_path):
