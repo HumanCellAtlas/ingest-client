@@ -3,18 +3,17 @@ from ingest.importer.conversion.data_converter import DataType, CONVERTER_MAP, L
 
 class ColumnSpecification:
 
-    def __init__(self, field_name, raw_spec, parent=None):
+    def __init__(self, field_name, data_type, multivalue=False, multivalue_parent=False):
         self.field_name = field_name
-        self.data_type = DataType.find(raw_spec.get('value_type'))
-        self.multivalue = bool(raw_spec.get('multivalue'))
-        if parent is not None:
-            self.field_of_list_element = bool(parent.get('multivalue'))
+        self.data_type = data_type
+        self.multivalue = multivalue
+        self.multivalue_parent = multivalue_parent
 
     def is_multivalue(self):
         return self.multivalue
 
     def is_field_of_list_element(self):
-        return self.field_of_list_element
+        return self.multivalue_parent
 
     def determine_converter(self):
         if not self.multivalue:
@@ -26,8 +25,12 @@ class ColumnSpecification:
 
     @staticmethod
     def build(field_name, data_type=DataType.UNDEFINED, multivalue=False):
-        raw_spec = {
-            'value_type': data_type.value,
-            'multivalue': multivalue
-        }
-        return ColumnSpecification(field_name, raw_spec)
+        return ColumnSpecification(field_name, data_type, multivalue=multivalue)
+
+    @staticmethod
+    def build_raw(field_name, raw_spec, parent=None):
+        data_type = DataType.find(raw_spec.get('value_type'))
+        multivalue = bool(raw_spec.get('multivalue'))
+        multivalue_parent = bool(parent.get('multivalue')) if parent != None else False
+        return ColumnSpecification(field_name, data_type, multivalue=multivalue,
+                                   multivalue_parent=multivalue_parent)

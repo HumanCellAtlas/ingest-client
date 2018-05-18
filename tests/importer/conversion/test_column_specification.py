@@ -7,7 +7,7 @@ from ingest.importer.conversion.data_converter import DataType, Converter, Integ
 
 class ColumnSpecificationTest(TestCase):
 
-    def test_construct_from_raw_spec(self):
+    def test_build_raw(self):
         # given:
         raw_string_spec = {
             'value_type': 'string',
@@ -21,8 +21,8 @@ class ColumnSpecificationTest(TestCase):
         }
 
         # when:
-        string_column_spec = ColumnSpecification('user.name', raw_string_spec)
-        int_array_column_spec = ColumnSpecification('numbers', raw_int_array_spec)
+        string_column_spec = ColumnSpecification.build_raw('user.name', raw_string_spec)
+        int_array_column_spec = ColumnSpecification.build_raw('numbers', raw_int_array_spec)
 
         # then:
         self.assertEqual('user.name', string_column_spec.field_name)
@@ -52,8 +52,10 @@ class ColumnSpecificationTest(TestCase):
         }
 
         # when:
-        single_column_spec = ColumnSpecification('', raw_spec, parent=raw_single_value_parent_spec)
-        multi_column_spec = ColumnSpecification('', raw_spec, parent=raw_multi_value_parent_spec)
+        single_column_spec = ColumnSpecification.build_raw('', raw_spec,
+                                                           parent=raw_single_value_parent_spec)
+        multi_column_spec = ColumnSpecification.build_raw('', raw_spec,
+                                                          parent=raw_multi_value_parent_spec)
 
         # then:
         self.assertFalse(single_column_spec.is_field_of_list_element())
