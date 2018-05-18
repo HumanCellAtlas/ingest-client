@@ -10,6 +10,7 @@ crcmod==1.7
 dcplib==1.1.0
 docutils==0.14
 et-xmlfile==1.0.1
+flake8==3.5.0
 future==0.16.0
 google-auth==1.4.1
 google-auth-oauthlib==0.2.0
@@ -22,6 +23,7 @@ jsonpointer==1.14
 jsonref==0.1
 jsonschema==2.6.0
 MarkupSafe==1.0
+mccabe==0.6.1
 mock==2.0.0
 nose==1.3.7
 oauthlib==2.0.7
@@ -30,6 +32,8 @@ pbr==4.0.2
 puremagic==1.3
 pyasn1==0.4.2
 pyasn1-modules==0.2.1
+pycodestyle==2.3.1
+pyflakes==1.6.0
 python-dateutil==2.7.2
 PyYAML==3.12
 requests==2.18.4
@@ -40,4 +44,4 @@ setuptools-scm==2.0.0
 six==1.11.0
 tweak==0.6.7
 urllib3==1.22
-PyYAML==3.12
+XlsxWriter==1.0.4

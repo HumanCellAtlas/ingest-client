@@ -22,6 +22,11 @@ schemas = [
     "https://schema.humancellatlas.org/type/protocol/5.1.0/protocol",
     "https://schema.humancellatlas.org/type/protocol/biomaterial/5.1.0/biomaterial_collection_protocol",
     "https://schema.humancellatlas.org/type/protocol/sequencing/5.1.0/sequencing_protocol",
+    "https://schema.humancellatlas.org/type/process/1.0.0/process"
 ]
 
-spreadsheet_builder.generate_spreadsheet("human_10x.xlsx", "tabs_human_10x.yaml", schemas)
+spreadsheet_builder.generate_spreadsheet("human_10x.xlsx", tabs_template="tabs_human_10x.yaml", schema_urls=schemas)
+
+spreadsheet_builder.generate_spreadsheet("human_10x_new_protocols.xlsx", tabs_template="tabs_human_10x_new_protocols.yaml", schema_urls=schemas)
+
+spreadsheet_builder.generate_spreadsheet("generic.xlsx", schema_urls=schemas)

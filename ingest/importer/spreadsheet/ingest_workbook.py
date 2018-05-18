@@ -1,7 +1,11 @@
 from openpyxl import Workbook
 
-SCHEMAS_WORKSHEET = 'schemas'
+SCHEMAS_WORKSHEET = 'Schemas'
+PROJECT_WORKSHEET = 'Project'
+CONTACT_WORKSHEET = 'Contact'
 
+# TODO think of a better name
+SPECIAL_TABS = [SCHEMAS_WORKSHEET, PROJECT_WORKSHEET, CONTACT_WORKSHEET]
 
 class IngestWorkbook:
 
@@ -18,5 +22,5 @@ class IngestWorkbook:
 
     def importable_worksheets(self):
         importable_names = [name for name in self.workbook.get_sheet_names() if
-                            (not name == SCHEMAS_WORKSHEET)]
+                            (not name in SPECIAL_TABS)]
         return [self.workbook.get_sheet_by_name(name) for name in importable_names]
