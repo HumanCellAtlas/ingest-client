@@ -22,6 +22,7 @@ class TestSchemaTemplate(TestCase):
     def setUp(self):
         self.longMessage = True
         self.dummyProjectUri = "https://schema.humancellatlas.org/type/project/5.1.0/project"
+        self.dummyProjectUri = "https://schema.humancellatlas.org/type/biomaterial/5.1.0/donor_organism"
         pass
 
     # def test_load_schema(self):
@@ -76,6 +77,12 @@ class TestSchemaTemplate(TestCase):
         with self.assertRaises(UnknownKeyException):
                 template.lookup('foo')
 
+    def test_get_tab_name(self):
+        data = '{"id" : "' + self.dummyProjectUri + '", "properties": {"foo": "bar"} }'
+        template = self.get_template_for_json(data=data)
+
+        tabs = template.get_tabs_config()
+        self.assertEqual("donor_organism", tabs.get_key_for_label("Donor organism"))
 
 
     def test_get_domain_entity_from_url(self):
