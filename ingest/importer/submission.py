@@ -37,7 +37,7 @@ class Submission(object):
 
     def __init__(self, ingest_api, token):
         self.ingest_api = ingest_api
-        self.submission_url = self.ingest_api.createSubmission('')
+        self.submission_url = self.ingest_api.createSubmission(token)
         self.metadata_dict = {}
 
     def get_submission_url(self):
@@ -64,13 +64,7 @@ class Submission(object):
         key = entity_type + '.' + id
         return self.metadata_dict[key]
 
-    # TODO Fix process to output biomaterial linking - from entity is the biomaterial and to_entity is the process
-    def link_entity(self, from_entity, to_entity):
-        if from_entity.type in self.RELATION_LINK and to_entity.type in self.RELATION_LINK[from_entity.type]:
-            relationship = self.RELATION_LINK[from_entity.type][to_entity.type]
-        else:
-            raise InvalidEntityIngestLink(from_entity, to_entity)
-
+    def link_entity(self, from_entity, to_entity, relationship):
         self.ingest_api.linkEntity(from_entity.ingest_json, to_entity.ingest_json, relationship)
 
 
@@ -116,9 +110,8 @@ class IngestSubmitter(object):
             for entity_id, entity in entities_dict.items():
                 for link in entity.direct_links:
                     to_entity = entities_dict_by_type[link['entity']][link['id']]
-
                     try:
-                        submission.link_entity(entity, to_entity)
+                        submission.link_entity(entity, to_entity, relationship=link['relationship'])
                     except Exception as link_error:
                         print(f'a {entity.type} with {entity.id} could not be linked to {to_entity.type} with id {to_entity.id}')
 
@@ -147,7 +140,8 @@ class EntityLinker(object):
                 for link_entity_type, link_entity_ids in links_by_entity.items():
                     for link_entity_id in link_entity_ids:
                         if not entities_dict_by_type.get(link_entity_type) or not entities_dict_by_type[link_entity_type].get(link_entity_id):
-                            raise LinkedEntityNotFound(from_entity, link_entity_type, link_entity_id)
+                            if not link_entity_type == 'process':  # it is expected that no processes are defined in any tab, these will be created later
+                                raise LinkedEntityNotFound(from_entity, link_entity_type, link_entity_id)
 
                         to_entity = entities_dict_by_type[link_entity_type].get(link_entity_id)
                         if not self._is_valid_spreadsheet_link(from_entity.type, to_entity.type):
@@ -171,16 +165,18 @@ class EntityLinker(object):
                         linking_process = self._create_empty_process(empty_process_id)
 
                     # link output of process
-                    linking_process.direct_links.append({
-                        'entity': from_entity.type,
-                        'id': from_entity.id
+                    from_entity.direct_links.append({
+                        'entity': linking_process.type,
+                        'id': linking_process.id,
+                        'relationship': 'derivedByProcesses'
                     })
 
                     # apply all protocols to the linking process
                     for linked_protocol_id in linked_protocol_ids:
                         linking_process.direct_links.append({
                             'entity': 'protocol',
-                            'id': linked_protocol_id
+                            'id': linked_protocol_id,
+                            'relationship': 'protocols'
                         })
 
                     # add process to overall list
@@ -197,7 +193,8 @@ class EntityLinker(object):
                         linked_biomaterial_entity = entities_dict_by_type['biomaterial'][linked_biomaterial_id]
                         linked_biomaterial_entity.direct_links.append({
                             'entity': linking_process.type,
-                            'id':  linking_process.id
+                            'id':  linking_process.id,
+                            'relationship': 'inputToProcesses'
                         })
 
                     # file-file
@@ -205,7 +202,8 @@ class EntityLinker(object):
                         linked_file_entity = entities_dict_by_type['file'][linked_file_id]
                         linked_file_entity.direct_links.append({
                             'entity': linking_process.type,
-                            'id': linking_process.id
+                            'id': linking_process.id,
+                            'relationship': 'inputToProcesses'
                         })
 
         return entities_dict_by_type

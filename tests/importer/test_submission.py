@@ -240,7 +240,8 @@ class EntityLinkerTest(TestCase):
                     'direct_links': [
                         {
                             'entity': 'process',
-                            'id': 'process_id_1'
+                            'id': 'process_id_1',
+                            'relationship': 'inputToProcesses'
                         }
                     ]
                 },
@@ -250,7 +251,14 @@ class EntityLinkerTest(TestCase):
                     },
                     'links_by_entity': {
                         'biomaterial': ['biomaterial_id_1'],
-                    }
+                    },
+                    'direct_links': [
+                        {
+                            'entity': 'process',
+                            'id': 'process_id_1',
+                            'relationship': 'derivedByProcesses'
+                        }
+                    ]
                 }
             },
             'process': {
@@ -260,16 +268,14 @@ class EntityLinkerTest(TestCase):
                     },
                     'direct_links': [
                         {
-                            'entity': 'biomaterial',
-                            'id': 'biomaterial_id_2'
+                            'entity': 'protocol',
+                            'id': 'protocol_id_1',
+                            'relationship': 'protocols'
                         },
                         {
                             'entity': 'protocol',
-                            'id': 'protocol_id_1'
-                        },
-                        {
-                            'entity': 'protocol',
-                            'id': 'protocol_id_2'
+                            'id': 'protocol_id_2',
+                            'relationship': 'protocols'
                         }
                     ]
                 }
@@ -346,7 +352,8 @@ class EntityLinkerTest(TestCase):
                     'direct_links': [
                         {
                             'entity': 'process',
-                            'id': 'empty_process_id_1'
+                            'id': 'empty_process_id_1',
+                            'relationship': 'inputToProcesses'
                         }
                     ]
                 },
@@ -356,7 +363,14 @@ class EntityLinkerTest(TestCase):
                     },
                     'links_by_entity': {
                         'biomaterial': ['biomaterial_id_1'],
-                    }
+                    },
+                    'direct_links': [
+                        {
+                            'entity': 'process',
+                            'id': 'empty_process_id_1',
+                            'relationship': 'derivedByProcesses'
+                        }
+                    ]
                 }
             },
             'process': {
@@ -366,16 +380,14 @@ class EntityLinkerTest(TestCase):
                     },
                     'direct_links': [
                         {
-                            'entity': 'biomaterial',
-                            'id': 'biomaterial_id_2'
+                            'entity': 'protocol',
+                            'id': 'protocol_id_1',
+                            'relationship': 'protocols'
                         },
                         {
                             'entity': 'protocol',
-                            'id': 'protocol_id_1'
-                        },
-                        {
-                            'entity': 'protocol',
-                            'id': 'protocol_id_2'
+                            'id': 'protocol_id_2',
+                            'relationship': 'protocols'
                         }
                     ]
                 }
@@ -399,8 +411,6 @@ class EntityLinkerTest(TestCase):
         entity_linker = EntityLinker(entities_dict_by_type, self.mocked_template_manager)
         output = entity_linker.generate_direct_links()
 
-
-
         self._assert_equal_direct_links(expected_json, output)
 
     def test_generate_direct_links_file_to_file_no_process(self):
@@ -446,7 +456,8 @@ class EntityLinkerTest(TestCase):
                     'direct_links': [
                         {
                             'entity': 'process',
-                            'id': 'empty_process_id_1'
+                            'id': 'empty_process_id_1',
+                            'relationship': 'inputToProcesses'
                         }
                     ]
                 },
@@ -456,105 +467,14 @@ class EntityLinkerTest(TestCase):
                     },
                     'links_by_entity': {
                         'file': ['file_id_1'],
-                    }
-                }
-            },
-            'process': {
-                'empty_process_id_1': {
-                    'content': {
-                        'key': 'process_1'
-                    },
-                    'direct_links': [
-                        {
-                            'entity': 'file',
-                            'id': 'file_id_2'
-                        },
-                        {
-                            'entity': 'protocol',
-                            'id': 'protocol_id_1'
-                        },
-                        {
-                            'entity': 'protocol',
-                            'id': 'protocol_id_2'
-                        }
-                    ]
-                }
-            },
-            'protocol': {
-                'protocol_id_1': {
-                    'content': {
-                        'key': 'protocol_1'
-                    }
-                },
-                'protocol_id_2': {
-                    'content': {
-                        'key': 'protocol_2'
-                    }
-                }
-            }
-        }
-
-        entities_dict_by_type = IngestSubmitter.generate_entities_dict(spreadsheet_json)
-
-        entity_linker = EntityLinker(entities_dict_by_type)
-        output = entity_linker.generate_direct_links()
-
-        self._assert_equal_direct_links(expected_json, output)
-
-    def test_generate_direct_links_file_to_file_no_process(self):
-        # given
-        spreadsheet_json = {
-            'file': {
-                'file_id_1': {
-                    'content': {
-                        'key': 'file_1'
-                    }
-                },
-                'file_id_2': {
-                    'content': {
-                        'key': 'file_2'
-                    },
-                    'links_by_entity': {
-                        'file': ['file_id_1'],
-                        'protocol': ['protocol_id_1', 'protocol_id_2']
-                    }
-
-                }
-            },
-            'protocol': {
-                'protocol_id_1': {
-                    'content': {
-                        'key': 'protocol_1'
-                    }
-                },
-                'protocol_id_2': {
-                    'content': {
-                        'key': 'protocol_2'
-                    }
-                }
-            }
-        }
-
-        expected_json = {
-            'file': {
-                'file_id_1': {
-                    'content': {
-                        'key': 'file_1'
                     },
                     'direct_links': [
                         {
                             'entity': 'process',
-                            'id': 'empty_process_id_1'
+                            'id': 'empty_process_id_1',
+                            'relationship': 'derivedByProcesses'
                         }
                     ]
-                },
-                'file_id_2': {
-                    'content': {
-                        'key': 'file_2'
-                    },
-                    'links_by_entity': {
-                        'file': ['file_id_1'],
-                    }
                 }
             },
             'process': {
@@ -564,16 +484,14 @@ class EntityLinkerTest(TestCase):
                     },
                     'direct_links': [
                         {
-                            'entity': 'file',
-                            'id': 'file_id_2'
+                            'entity': 'protocol',
+                            'id': 'protocol_id_1',
+                            'relationship': 'protocols'
                         },
                         {
                             'entity': 'protocol',
-                            'id': 'protocol_id_1'
-                        },
-                        {
-                            'entity': 'protocol',
-                            'id': 'protocol_id_2'
+                            'id': 'protocol_id_2',
+                            'relationship': 'protocols'
                         }
                     ]
                 }
@@ -650,7 +568,8 @@ class EntityLinkerTest(TestCase):
                     'direct_links': [
                         {
                             'entity': 'process',
-                            'id': 'process_id_1'
+                            'id': 'process_id_1',
+                            'relationship': 'inputToProcesses'
                         }
                     ]
                 },
@@ -660,7 +579,14 @@ class EntityLinkerTest(TestCase):
                     },
                     'links_by_entity': {
                         'file': ['file_id_1'],
-                    }
+                    },
+                    'direct_links': [
+                        {
+                            'entity': 'process',
+                            'id': 'process_id_1',
+                            'relationship': 'derivedByProcesses'
+                        },
+                    ]
                 }
             },
             'process': {
@@ -670,16 +596,14 @@ class EntityLinkerTest(TestCase):
                     },
                     'direct_links': [
                         {
-                            'entity': 'file',
-                            'id': 'file_id_2'
+                            'entity': 'protocol',
+                            'id': 'protocol_id_1',
+                            'relationship': 'protocols'
                         },
                         {
                             'entity': 'protocol',
-                            'id': 'protocol_id_1'
-                        },
-                        {
-                            'entity': 'protocol',
-                            'id': 'protocol_id_2'
+                            'id': 'protocol_id_2',
+                            'relationship': 'protocols'
                         }
                     ]
                 }
@@ -757,7 +681,8 @@ class EntityLinkerTest(TestCase):
                     'direct_links': [
                         {
                             'entity': 'process',
-                            'id': 'process_id_1'
+                            'id': 'process_id_1',
+                            'relationship': 'inputToProcesses'
                         }
                     ]
                 }
@@ -766,7 +691,14 @@ class EntityLinkerTest(TestCase):
                 'file_id_1': {
                     'content': {
                         'key': 'file_1'
-                    }
+                    },
+                    'direct_links': [
+                        {
+                            'entity': 'process',
+                            'id': 'process_id_1',
+                            'relationship': 'derivedByProcesses'
+                        }
+                    ]
                 },
             },
             'process': {
@@ -776,16 +708,14 @@ class EntityLinkerTest(TestCase):
                     },
                     'direct_links': [
                         {
-                            'entity': 'file',
-                            'id': 'file_id_1'
+                            'entity': 'protocol',
+                            'id': 'protocol_id_1',
+                            'relationship': 'protocols'
                         },
                         {
                             'entity': 'protocol',
-                            'id': 'protocol_id_1'
-                        },
-                        {
-                            'entity': 'protocol',
-                            'id': 'protocol_id_2'
+                            'id': 'protocol_id_2',
+                            'relationship': 'protocols'
                         }
                     ]
                 }
