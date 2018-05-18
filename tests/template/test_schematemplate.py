@@ -22,7 +22,7 @@ class TestSchemaTemplate(TestCase):
     def setUp(self):
         self.longMessage = True
         self.dummyProjectUri = "https://schema.humancellatlas.org/type/project/5.1.0/project"
-        self.dummyProjectUri = "https://schema.humancellatlas.org/type/biomaterial/5.1.0/donor_organism"
+        self.dummyDonorUri = "https://schema.humancellatlas.org/type/biomaterial/5.1.0/donor_organism"
         pass
 
     # def test_load_schema(self):
@@ -78,7 +78,7 @@ class TestSchemaTemplate(TestCase):
                 template.lookup('foo')
 
     def test_get_tab_name(self):
-        data = '{"id" : "' + self.dummyProjectUri + '", "properties": {"foo_bar": {"user_friendly" : "Foo bar"}} }'
+        data = '{"id" : "' + self.dummyDonorUri + '", "properties": {"foo_bar": {"user_friendly" : "Foo bar"}} }'
         template = self.get_template_for_json(data=data)
 
         tabs = template.get_tabs_config()
