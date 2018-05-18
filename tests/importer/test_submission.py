@@ -77,6 +77,7 @@ class IngestSubmitterTest(TestCase):
         spreadsheet_json = self._create_spreadsheet_json()
 
         mock_template_manager = MagicMock(name='template_manager')
+        mock_template_manager.get_schema_url = MagicMock(return_value='url')
 
         submitter = IngestSubmitter(mock_ingest_api, mock_template_manager)
         submission = submitter.submit(spreadsheet_json, token='token')

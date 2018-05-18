@@ -83,11 +83,9 @@ class WorksheetImporter:
             for cell in row:
                 # TODO preprocess headers so that cells can be converted without having to always
                 # check the header
-                header_name = self._get_header_name(cell, worksheet)
+                header_key = self._get_header_name(cell, worksheet)
 
                 cell_value = cell.value
-
-                header_key = template.get_key_for_label(header_name, worksheet.title)
 
                 # TODO log warnings, confirm what to do if header name is not in schema template
                 if header_key is None or cell_value is None:

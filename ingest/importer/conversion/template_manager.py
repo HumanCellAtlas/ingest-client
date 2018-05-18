@@ -1,5 +1,7 @@
 import re
 
+import ingest.template.schema_template as schema_template
+
 from openpyxl.worksheet import Worksheet
 
 from ingest.importer.conversion.conversion_strategy import CellConversion, DirectCellConversion
@@ -28,7 +30,8 @@ class TemplateManager:
         return RowTemplate([DirectCellConversion(header_row[0].value, Converter())])
 
     def get_converter(self, header_name):
-        column_spec = self.template.lookup(header_name)
+        column_spec = self.lookup(header_name)
+
         default_converter = CONVERTER_MAP[DataType.STRING]
 
         if not column_spec:
@@ -48,7 +51,7 @@ class TemplateManager:
 
     def is_parent_field_multivalue(self, header_name):
         parent_field = self._get_parent_field(header_name)
-        column_spec = self.template.lookup(parent_field)
+        column_spec = self.lookup(parent_field)
 
         return column_spec and column_spec.get('multivalue') and (
             column_spec.get('value_type') and column_spec.get('value_type') == 'object'
@@ -78,7 +81,7 @@ class TemplateManager:
         return domain_entity
 
     def _get_schema(self, concrete_entity):
-        spec = self.template.lookup(concrete_entity)
+        spec = self.lookup(concrete_entity)
         return spec.get('schema') if spec else None
 
     def get_concrete_entity_of_tab(self, tab_name):
@@ -87,12 +90,13 @@ class TemplateManager:
             tabs_config = self.template.get_tabs_config()
             concrete_entity = tabs_config.get_key_for_label(tab_name)
         except:
+            print(f'No entity found for tab {tab_name}')
             return None
 
         return concrete_entity
 
     def is_identifier_field(self, header_name):
-        spec = self.template.lookup(header_name)
+        spec = self.lookup(header_name)
         return spec.get('identifiable')
 
     def get_concrete_entity_of_column(self, header_name):
@@ -110,6 +114,16 @@ class TemplateManager:
 
         return key
 
+    def lookup(self, header_name):
+        spec = None
+
+        try:
+            spec = self.template.lookup(header_name)
+        except schema_template.UnknownKeyException:
+            print(f'schema_template.UnknownKeyException: Could not lookup {header_name} in template.')
+            return {}
+
+        return spec
 
 def build(schemas) -> TemplateManager:
     template = SchemaTemplate(schemas)

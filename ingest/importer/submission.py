@@ -101,6 +101,8 @@ class IngestSubmitter(object):
 
     def submit(self, spreadsheet_json, token):
         entities_dict_by_type = self.generate_entities_dict(spreadsheet_json)
+        entity_linker = EntityLinker(entities_dict_by_type, self.template_manager)
+        entities_dict_by_type = entity_linker.generate_direct_links()
 
         submission = Submission(self.ingest_api, token)
 
@@ -108,14 +110,15 @@ class IngestSubmitter(object):
             for entity_id, entity in entities_dict.items():
                 submission.add_entity(entity)
 
-        entity_linker = EntityLinker(entities_dict_by_type, self.template_manager)
-        entities_dict_by_type = entity_linker.generate_direct_links()
-
         for entity_type, entities_dict in entities_dict_by_type.items():
             for entity_id, entity in entities_dict.items():
                 for link in entity.direct_links:
                     to_entity = entities_dict_by_type[link['entity']][link['id']]
-                    submission.link_entity(entity, to_entity)
+
+                    try:
+                        submission.link_entity(entity, to_entity)
+                    except Exception as link_error:
+                        print(f'a {entity.type} with {entity.id} could not be linked to {to_entity.type} with id {to_entity.id}')
 
         return submission
 
@@ -142,7 +145,7 @@ class EntityLinker(object):
                 for link_entity_type, link_entity_ids in links_by_entity.items():
                     for link_entity_id in link_entity_ids:
                         if not entities_dict_by_type.get(link_entity_type) or not entities_dict_by_type[link_entity_type].get(link_entity_id):
-                            raise LinkedEntityNotFound(link_entity_type, link_entity_id)
+                            raise LinkedEntityNotFound(from_entity, link_entity_type, link_entity_id)
 
                         to_entity = entities_dict_by_type[link_entity_type].get(link_entity_id)
                         if not self._is_valid_spreadsheet_link(from_entity.type, to_entity.type):
@@ -260,10 +263,11 @@ class InvalidLinkInSpreadsheet(Exception):
 
 
 class LinkedEntityNotFound(Exception):
-    def __init__(self, entity, id):
-        message = f'A {entity} with id, "{id}", is not found in the spreadsheet.'
+    def __init__(self, from_entity, entity_type, id):
+        message = f'A link from a {from_entity.type} with id {from_entity.id} to a {entity_type} with id, ' \
+                  f'"{id}", is not found in the spreadsheet.'
         super(LinkedEntityNotFound, self).__init__(message)
-        self.entity = entity
+        self.entity = entity_type
         self.id = id
 
 
