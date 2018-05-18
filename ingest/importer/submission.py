@@ -20,6 +20,7 @@ class Submission(object):
         'protocol': 'protocols'
     }
 
+
     RELATION_LINK = {
         'biomaterial': {
             'process': 'inputToProcesses'
@@ -63,6 +64,7 @@ class Submission(object):
         key = entity_type + '.' + id
         return self.metadata_dict[key]
 
+    # TODO Fix process to output biomaterial linking - from entity is the biomaterial and to_entity is the process
     def link_entity(self, from_entity, to_entity):
         if from_entity.type in self.RELATION_LINK and to_entity.type in self.RELATION_LINK[from_entity.type]:
             relationship = self.RELATION_LINK[from_entity.type][to_entity.type]

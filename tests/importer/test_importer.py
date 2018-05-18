@@ -303,6 +303,7 @@ class WorksheetImporterTest(TestCase):
 
 class IngestImporterTest(TestCase):
 
+    @unittest.skip
     def test_import_spreadsheet(self):
         spreadsheet_file = BASE_PATH + '/metadata_spleen_new_protocols.xlsx'
 
