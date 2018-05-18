@@ -25,18 +25,25 @@ class TemplateManager:
         return data_node
 
     def create_row_template(self, worksheet:Worksheet):
-        for row in worksheet.iter_rows(row_offset=3, max_row=1):
-            header_row = row
+        header_row = self._get_header_row(worksheet)
         cell_conversions = []
         for cell in header_row:
             header = cell.value
-            parent_path, __ = utils.split_field_chain(header)
-            raw_spec = self.template.get_key_for_label(header)
-            raw_parent_spec = self.template.get_key_for_label(parent_path)
-            column_spec = ColumnSpecification.build_raw(header, raw_spec, parent=raw_parent_spec)
+            column_spec = self._define_column_spec(header)
             strategy = conversion_strategy.determine_strategy(column_spec)
             cell_conversions.append(strategy)
         return RowTemplate(cell_conversions)
+
+    def _get_header_row(self, worksheet):
+        for row in worksheet.iter_rows(row_offset=3, max_row=1):
+            header_row = row
+        return header_row
+
+    def _define_column_spec(self, header):
+        parent_path, __ = utils.split_field_chain(header)
+        raw_spec = self.template.get_key_for_label(header)
+        raw_parent_spec = self.template.get_key_for_label(parent_path)
+        return ColumnSpecification.build_raw(header, raw_spec, parent=raw_parent_spec)
 
     # TODO deprecate this! Logic is now moved to ColumnSpecification
     def get_converter(self, header_name):
