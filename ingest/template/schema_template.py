@@ -66,7 +66,6 @@ class SchemaTemplate:
         except:
             raise UnknownKeyException(
                 "Can't map the key to a known JSON schema property: " + str(key))
-            return None
 
     def get_template(self):
         return self._template["meta_data_properties"]
@@ -194,7 +193,7 @@ class SchemaParser:
 
     def _extract_property(self, data, *args, **kwargs):
 
-        dic = {"multivalue": False, "required" : False, "user_friendly" : None, "description": None, "example" : None, "value_type": "string"}
+        dic = {"multivalue": False, "required" : False, "identifiable": False, "user_friendly" : None, "description": None, "example" : None, "value_type": "string"}
 
         if "type" in data:
             dic["value_type"] = data["type"]
@@ -227,9 +226,6 @@ class SchemaParser:
             if "user_friendly" in data:
                 dic["user_friendly"] = data["user_friendly"]
                 self._update_label_to_key_map(data["user_friendly"], kwargs.get("key"))
-
-
-
 
         if "description" in data:
             dic["description"] = data["description"]
@@ -282,14 +278,6 @@ class SchemaParser:
 
     def get_module_from_url(self, url):
         return url.rsplit('/', 1)[-1]
-
-    def get_core_type_from_url(self, url):
-        pattern = re.compile("http[s]://[^/]*/type/([^/]*)/.*")
-        match = pattern.search(url).group(1)
-
-        if match == "process":
-            return match + "es"
-        return match + "s"
 
     def _get_schema_properties_from_object(self, object):
 
