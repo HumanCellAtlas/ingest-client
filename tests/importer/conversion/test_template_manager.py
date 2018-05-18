@@ -5,7 +5,7 @@ from openpyxl import Workbook
 
 from ingest.importer.conversion import conversion_strategy
 from ingest.importer.conversion.column_specification import ColumnSpecification
-from ingest.importer.conversion.conversion_strategy import CellConversion, DirectCellConversion
+from ingest.importer.conversion.conversion_strategy import CellConversion
 from ingest.importer.conversion.data_converter import Converter, ListConverter, DataType, \
     IntegerConverter, BooleanConverter
 from ingest.importer.conversion.template_manager import TemplateManager, RowTemplate
