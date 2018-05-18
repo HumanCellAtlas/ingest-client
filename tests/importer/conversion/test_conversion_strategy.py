@@ -161,6 +161,17 @@ class ColumnSpecificationTest(TestCase):
         # then:
         self.assertIsInstance(converter, expected_converter_type)
 
+    def test_determine_converter_for_multivalue_type(self):
+        # given:
+        column_spec = ColumnSpecification.build('field', data_type=DataType.STRING, multivalue=True)
+
+        # when:
+        converter = column_spec.determine_converter()
+
+        # then:
+        self.assertIsInstance(converter, ListConverter)
+        self.assertEqual(DataType.STRING, converter.base_type)
+
 
 class DirectCellConversionTest(TestCase):
 
