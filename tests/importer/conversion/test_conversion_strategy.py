@@ -76,6 +76,19 @@ class ModuleTest(TestCase):
         self.assertIsInstance(strategy.converter, ListConverter)
         self.assertEqual(data_type, strategy.converter.base_type)
 
+    def test_determine_strategy_for_field_of_list_element(self):
+        # given:
+        column_spec = _mock_column_spec(field_name='member.field.list', data_type=DataType.INTEGER)
+        column_spec.is_field_of_list_member = lambda: True
+
+        # when:
+        strategy:CellConversion = conversion_strategy.determine_strategy(column_spec)
+
+        # then:
+        self.assertIsInstance(strategy, ListElementCellConversion)
+        self.assertEqual('member.field.list', strategy.field)
+        self.assertIsInstance(strategy.converter, IntegerConverter)
+
 
 class ColumnSpecificationTest(TestCase):
 

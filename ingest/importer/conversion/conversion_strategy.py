@@ -71,4 +71,9 @@ def determine_strategy(column_spec:ColumnSpecification):
         converter = CONVERTER_MAP.get(column_spec.data_type)
     else:
         converter = ListConverter(column_spec.data_type)
-    return DirectCellConversion(column_spec.field_name, converter)
+
+    if column_spec.is_field_of_list_member():
+        strategy = ListElementCellConversion(column_spec.field_name, converter)
+    else:
+        strategy = DirectCellConversion(column_spec.field_name, converter)
+    return strategy
