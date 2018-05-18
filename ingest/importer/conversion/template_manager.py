@@ -26,6 +26,7 @@ class TemplateManager:
             header_row = row
         return RowTemplate([DirectCellConversion(header_row[0].value, Converter())])
 
+    # TODO deprecate this! Logic is now moved to ColumnSpecification
     def get_converter(self, header_name):
         column_spec = self.template.lookup(header_name)
         default_converter = CONVERTER_MAP[DataType.STRING]

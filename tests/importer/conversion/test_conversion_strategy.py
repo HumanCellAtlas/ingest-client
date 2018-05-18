@@ -162,15 +162,22 @@ class ColumnSpecificationTest(TestCase):
         self.assertIsInstance(converter, expected_converter_type)
 
     def test_determine_converter_for_multivalue_type(self):
+        # expect:
+        self._assert_correct_converter_multivalue(DataType.STRING)
+        self._assert_correct_converter_multivalue(DataType.INTEGER)
+        self._assert_correct_converter_multivalue(DataType.BOOLEAN)
+        self._assert_correct_converter_multivalue(DataType.UNDEFINED)
+
+    def _assert_correct_converter_multivalue(self, data_type):
         # given:
-        column_spec = ColumnSpecification.build('field', data_type=DataType.STRING, multivalue=True)
+        column_spec = ColumnSpecification.build('field', data_type=data_type, multivalue=True)
 
         # when:
         converter = column_spec.determine_converter()
 
         # then:
         self.assertIsInstance(converter, ListConverter)
-        self.assertEqual(DataType.STRING, converter.base_type)
+        self.assertEqual(data_type, converter.base_type)
 
 
 class DirectCellConversionTest(TestCase):

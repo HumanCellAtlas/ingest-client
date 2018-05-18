@@ -28,7 +28,7 @@ class ColumnSpecification:
             default_converter = CONVERTER_MAP.get(DataType.STRING)
             converter = CONVERTER_MAP.get(self.data_type, default_converter)
         else:
-            converter = ListConverter()
+            converter = ListConverter(self.data_type)
         return converter
 
     @staticmethod
