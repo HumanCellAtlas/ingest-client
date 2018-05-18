@@ -85,6 +85,10 @@ class TestSchemaTemplate(TestCase):
         self.assertEqual("donor_organism", tabs.get_key_for_label("donor_organism"))
         self.assertEqual("donor_organism", tabs.get_key_for_label("Donor organism"))
 
+    def test_lookup_key_in_tab(self):
+        data = '{"id" : "' + self.dummyDonorUri + '", "properties": {"human_specific": {"properties" : {"ethnicity" : {"properties" : {"text" : {}}}}}} }'
+        template = self.get_template_for_json(data=data)
+        template.get_key_for_label("donor_organism.human_specific.ethnicity.text", tab="Donor organism")
 
     def test_get_domain_entity_from_url(self):
         template = SchemaTemplate([])

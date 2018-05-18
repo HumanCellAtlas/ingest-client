@@ -217,9 +217,17 @@ class SchemaParser:
         if schema:
             dic["schema"] = schema
 
-        if "user_friendly" in data:
-            dic["user_friendly"] = data["user_friendly"]
-            self._update_key_to_label(data["user_friendly"], kwargs)
+
+        # put the user friendly to key in the lookup table
+        if 'key' in kwargs:
+
+            self._update_label_to_key_map(kwargs.get("key"), kwargs.get("key"))
+
+            if "user_friendly" in data:
+                dic["user_friendly"] = data["user_friendly"]
+                self._update_label_to_key_map(data["user_friendly"], kwargs.get("key"))
+
+
 
 
         if "description" in data:
@@ -230,19 +238,19 @@ class SchemaParser:
 
         return doctict.DotDict(dic)
 
-    def _update_key_to_label(self, label, kwargs ):
+    def _update_label_to_key_map(self, label, key ):
         values = []
-        if 'key' in kwargs:
-            if label.lower() not in self._key_lookup:
-                values =  [ kwargs.get("key") ]
-            else:
-                values = self._key_lookup[label.lower()]
-                values.append(kwargs.get("key"))
+        if label.lower() not in self._key_lookup:
+            values =  [ key ]
+        else:
+            values = self._key_lookup[label.lower()]
+            values.append(key)
 
-            if kwargs.get("key") not in self._key_lookup:
-                self._key_lookup[kwargs.get("key")] = [kwargs.get("key")]
+        if key not in self._key_lookup:
+            self._key_lookup[key] = [key]
 
-            self._key_lookup[label.lower()] = list(set(values))
+        self._key_lookup[label.lower()] = list(set(values))
+
 
     def _get_schema_from_object(self, data):
         """
