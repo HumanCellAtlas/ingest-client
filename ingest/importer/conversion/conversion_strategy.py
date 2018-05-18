@@ -23,6 +23,17 @@ class ColumnSpecification:
     def is_field_of_list_member(self):
         return self.field_of_list_member
 
+    def determine_converter(self):
+        return []
+
+    @staticmethod
+    def build(field_name, data_type=DataType.UNDEFINED, multivalue=False):
+        raw_spec = {
+            'value_type': data_type.value,
+            'multivalue': multivalue
+        }
+        return ColumnSpecification(field_name, raw_spec)
+
 
 class CellConversion(object):
 

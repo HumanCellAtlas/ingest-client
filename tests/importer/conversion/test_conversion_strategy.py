@@ -144,6 +144,16 @@ class ColumnSpecificationTest(TestCase):
         self.assertFalse(single_column_spec.is_field_of_list_member())
         self.assertTrue(multi_column_spec.is_field_of_list_member())
 
+    def test_determine_converter_for_string(self):
+        # given:
+        column_spec = ColumnSpecification.build('field', data_type=DataType.STRING)
+
+        # when:
+        converter = column_spec.determine_converter()
+
+        # then:
+        self.assertIsNotNone(converter)
+
 
 class DirectCellConversionTest(TestCase):
 
