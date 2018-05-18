@@ -15,7 +15,7 @@ def _mock_column_spec(field_name='field_name', data_type=DataType.STRING, multiv
     column_spec: ColumnSpecification = MagicMock('column_spec')
     column_spec.field_name = field_name
     column_spec.determine_converter = lambda: converter
-    column_spec.is_field_of_list_member = lambda: field_of_list_member
+    column_spec.is_field_of_list_element = lambda: field_of_list_member
     return column_spec
 
 
@@ -100,8 +100,8 @@ class ColumnSpecificationTest(TestCase):
         multi_column_spec = ColumnSpecification('', raw_spec, parent=raw_multi_value_parent_spec)
 
         # then:
-        self.assertFalse(single_column_spec.is_field_of_list_member())
-        self.assertTrue(multi_column_spec.is_field_of_list_member())
+        self.assertFalse(single_column_spec.is_field_of_list_element())
+        self.assertTrue(multi_column_spec.is_field_of_list_element())
 
     def test_determine_converter_for_single_value(self):
         # expect:

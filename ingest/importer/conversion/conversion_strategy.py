@@ -15,13 +15,13 @@ class ColumnSpecification:
         self.data_type = DataType.find(raw_spec.get('value_type'))
         self.multivalue = bool(raw_spec.get('multivalue'))
         if parent is not None:
-            self.field_of_list_member = bool(parent.get('multivalue'))
+            self.field_of_list_element = bool(parent.get('multivalue'))
 
     def is_multivalue(self):
         return self.multivalue
 
-    def is_field_of_list_member(self):
-        return self.field_of_list_member
+    def is_field_of_list_element(self):
+        return self.field_of_list_element
 
     def determine_converter(self):
         if not self.multivalue:
@@ -84,7 +84,7 @@ class ListElementCellConversion(CellConversion):
 
 def determine_strategy(column_spec:ColumnSpecification):
     converter = column_spec.determine_converter()
-    if column_spec.is_field_of_list_member():
+    if column_spec.is_field_of_list_element():
         strategy = ListElementCellConversion(column_spec.field_name, converter)
     else:
         strategy = DirectCellConversion(column_spec.field_name, converter)
