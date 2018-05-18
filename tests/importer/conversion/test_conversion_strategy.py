@@ -144,15 +144,21 @@ class ColumnSpecificationTest(TestCase):
         self.assertFalse(single_column_spec.is_field_of_list_member())
         self.assertTrue(multi_column_spec.is_field_of_list_member())
 
-    def test_determine_converter_for_string(self):
+    def test_determine_converter_for_single_value(self):
+        # expect:
+        self._assert_correct_converter_single_value(DataType.STRING, Converter)
+        self._assert_correct_converter_single_value(DataType.INTEGER, IntegerConverter)
+        self._assert_correct_converter_single_value(DataType.BOOLEAN, BooleanConverter)
+
+    def _assert_correct_converter_single_value(self, data_type:DataType, expected_converter_type):
         # given:
-        column_spec = ColumnSpecification.build('field', data_type=DataType.STRING)
+        column_spec = ColumnSpecification.build('field', data_type=data_type)
 
         # when:
         converter = column_spec.determine_converter()
 
         # then:
-        self.assertIsInstance(converter, Converter)
+        self.assertIsInstance(converter, expected_converter_type)
 
 
 class DirectCellConversionTest(TestCase):
