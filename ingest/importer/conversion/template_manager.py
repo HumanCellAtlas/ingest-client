@@ -1,5 +1,6 @@
 import re
 
+import copy
 from openpyxl.worksheet import Worksheet
 
 from ingest.importer.conversion.conversion_strategy import CellConversion, DirectCellConversion
@@ -94,7 +95,7 @@ class RowTemplate:
 
     def __init__(self, cell_conversions, default_values={}):
         self.cell_conversions = cell_conversions
-        self.default_values = default_values
+        self.default_values = copy.deepcopy(default_values)
 
     def do_import(self, row):
         data_node = DataNode(defaults=self.default_values)
