@@ -66,7 +66,6 @@ class SchemaTemplate:
         except:
             raise UnknownKeyException(
                 "Can't map the key to a known JSON schema property")
-            return None
 
     def get_template(self):
         return self._template["meta_data_properties"]
@@ -108,9 +107,7 @@ class SchemaTemplate:
     def get_key_for_label(self, column, tab):
 
         try:
-
             tab_key = self._tab_config.get_key_for_label(tab)
-
             for column_key  in self._parser.key_lookup(column.lower()):
                 if tab_key == self._get_level_one(column_key):
                     return column_key
@@ -161,7 +158,7 @@ class SchemaParser:
         self._collect_required_properties(data)
 
         property = self._extract_property(data)
-        if "type" not in property.schema.high_level_entity:
+        if not property.schema or "type" not in property.schema.high_level_entity:
             raise RootSchemaException(
                 "Schema must start with a root submittable type schema")
 
