@@ -18,6 +18,7 @@ BASE_PATH = os.path.dirname(__file__)
 
 HEADER_IDX_STR = 4
 
+
 def _create_single_row_worksheet(worksheet_data: dict):
     workbook = Workbook()
     worksheet = workbook.create_sheet()
@@ -152,40 +153,40 @@ class WorksheetImporterTest(TestCase):
 
         # then:
         self.assertEqual(2, len(list(rows_by_id.keys())))
-        json = rows_by_id['Tissue stability']['content']
+        tissue_stability_json = rows_by_id['Tissue stability']['content']
 
         # and:
-        json2 = rows_by_id['Tissue stability 2']['content']
-        self.assertEqual('Tissue stability 2', json2['project_core']['project_shortname'])
+        spleen_json = rows_by_id['Spleen Project']['content']
+        self.assertEqual('Spleen Project', spleen_json['project_core']['project_shortname'])
 
-        project_core = json['project_core']
+        project_core = tissue_stability_json['project_core']
         self.assertEqual('Tissue stability', project_core['project_shortname'])
         self.assertEqual('Ischaemic sensitivity of human tissue by single cell RNA seq.',
                          project_core['project_title'])
 
         # and:
-        self.assertEqual(2, len(json['miscellaneous']))
-        self.assertEqual(['extra', 'details'], json['miscellaneous'])
+        self.assertEqual(2, len(tissue_stability_json['miscellaneous']))
+        self.assertEqual(['extra', 'details'], tissue_stability_json['miscellaneous'])
 
         # and:
-        self.assertEqual(7, json['contributor_count'])
+        self.assertEqual(7, tissue_stability_json['contributor_count'])
 
         # and:
-        self.assertEqual('Juan Dela Cruz||John Doe', json['contributors'])
+        self.assertEqual('Juan Dela Cruz||John Doe', tissue_stability_json['contributors'])
 
         # and:
-        self.assertEqual([1, 2, 3], json['numbers'])
+        self.assertEqual([1, 2, 3], tissue_stability_json['numbers'])
 
         # and:
-        self.assertEqual(True, json['is_active'])
-        self.assertEqual(False, json['is_submitted'])
+        self.assertEqual(True, tissue_stability_json['is_active'])
+        self.assertEqual(False, tissue_stability_json['is_submitted'])
 
     def _create_test_worksheet(self):
         workbook = Workbook()
         worksheet = workbook.create_sheet('Project')
         worksheet[f'A{HEADER_IDX_STR}'] = 'project.project_core.project_shortname'
         worksheet['A6'] = 'Tissue stability'
-        worksheet['A7'] = 'Tissue stability 2'
+        worksheet['A7'] = 'Spleen Project'
         worksheet[f'B{HEADER_IDX_STR}'] = 'project.project_core.project_title'
         worksheet['B6'] = 'Ischaemic sensitivity of human tissue by single cell RNA seq.'
         worksheet[f'C{HEADER_IDX_STR}'] = 'project.miscellaneous'
