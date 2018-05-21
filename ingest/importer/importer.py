@@ -104,7 +104,7 @@ class WorksheetImporter:
                 converter = template.get_converter(header_key)
                 data = converter.convert(cell_value)
 
-                node[field_chain] = data
+
 
                 cell_concrete_entity = self._get_concrete_entity(template, header_key)
 
@@ -123,6 +123,10 @@ class WorksheetImporter:
                             links_map[link_domain_entity] = []
 
                         links_map[link_domain_entity].append(data)
+
+                        continue  # do not add in content json
+
+                node[field_chain] = data
 
             object_list_fields = object_list_tracker.get_object_list_fields()
             for field_chain in object_list_fields:

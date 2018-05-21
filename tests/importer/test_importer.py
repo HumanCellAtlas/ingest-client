@@ -300,6 +300,72 @@ class WorksheetImporterTest(TestCase):
         self.assertEqual('an extra field', json.get('extra_field'))
         self.assertEqual('0.0.1', json.get('version'))
 
+    @patch('ingest.importer.importer.ObjectListTracker')
+    def test_do_import_with_links(self, object_list_tracker_constructor):
+        # given:
+
+        mock_template_manager = MagicMock(name='template_manager')
+        mock_template_manager.get_converter = MagicMock(return_value=Converter())
+        mock_template_manager.is_parent_field_multivalue = MagicMock(return_value=False)
+
+        identifier_field_map = {
+            'project.short_name': True,
+            'cell_suspension.cell_suspension_id': True
+        }
+
+        mock_template_manager.is_identifier_field = (
+            lambda header_name: identifier_field_map.get(header_name)
+        )
+        concrete_entity_map = {
+            'project.short_name': 'project',
+            'cell_suspension.cell_suspension_id': 'cell_suspension'
+        }
+        mock_template_manager.get_concrete_entity_of_column = lambda key: concrete_entity_map.get(key)
+        mock_template_manager.get_concrete_entity_of_tab = lambda key: 'project'
+
+        domain_entity_map = {
+            'project': 'project',
+            'cell_suspension': 'biomaterial'
+        }
+
+        mock_template_manager.get_domain_entity = lambda concrete_entity: domain_entity_map.get(concrete_entity)
+
+        mock_template_manager.get_key_for_label = MagicMock(side_effect=lambda key, tab: key)
+
+        # and:
+        node_template = DataNode()
+        node_template['describedBy'] = 'https://schemas.sample.com/test'
+        node_template['extra_field'] = 'an extra field'
+        node_template['version'] = '0.0.1'
+        mock_template_manager.create_template_node = lambda __: node_template
+
+        # and:
+        object_list_tracker_constructor.return_value = MagicMock(name='object_list_tracker')
+
+        # and:
+        importer = WorksheetImporter()
+
+        # and:
+        worksheet = _create_single_row_worksheet({
+            'A': ('project.short_name', 'Project id'),
+            'B': ('project.description', 'This is a project'),
+            'C': ('cell_suspension.cell_suspension_id', 'cell_suspension_id')
+        })
+
+        # when:
+        rows_by_id = importer.do_import(worksheet, mock_template_manager)
+
+        # then:
+        self.assertEqual(1, len(list(rows_by_id.keys())))
+        links = rows_by_id['Project id']['links_by_entity']
+        content = rows_by_id['Project id']['content']
+
+        # and:
+        self.assertTrue(links.get('biomaterial'), 'Must have a link to a biomaterial')
+        self.assertEqual(1, len(links.get('biomaterial')))
+        self.assertEqual('cell_suspension_id', links.get('biomaterial')[0])
+        self.assertFalse(content.get('cell_suspension_id'), 'Must not contain link field value in the content object.')
+
 
 class IngestImporterTest(TestCase):
 
