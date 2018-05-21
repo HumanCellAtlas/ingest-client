@@ -16,7 +16,7 @@ from ingest.importer.spreadsheet.ingest_workbook import IngestWorkbook
 
 BASE_PATH = os.path.dirname(__file__)
 
-HEADER_IDX_STR = 4
+HEADER_ROW = 4
 
 
 def _create_single_row_worksheet(worksheet_data: dict):
@@ -25,7 +25,7 @@ def _create_single_row_worksheet(worksheet_data: dict):
 
     for column, data in worksheet_data.items():
         key, value = data
-        worksheet[f'{column}{HEADER_IDX_STR}'] = key
+        worksheet[f'{column}{HEADER_ROW}'] = key
         worksheet[f'{column}6'] = value
 
     return worksheet
@@ -184,22 +184,22 @@ class WorksheetImporterTest(TestCase):
     def _create_test_worksheet(self):
         workbook = Workbook()
         worksheet = workbook.create_sheet('Project')
-        worksheet[f'A{HEADER_IDX_STR}'] = 'project.project_core.project_shortname'
+        worksheet[f'A{HEADER_ROW}'] = 'project.project_core.project_shortname'
         worksheet['A6'] = 'Tissue stability'
         worksheet['A7'] = 'Spleen Project'
-        worksheet[f'B{HEADER_IDX_STR}'] = 'project.project_core.project_title'
+        worksheet[f'B{HEADER_ROW}'] = 'project.project_core.project_title'
         worksheet['B6'] = 'Ischaemic sensitivity of human tissue by single cell RNA seq.'
-        worksheet[f'C{HEADER_IDX_STR}'] = 'project.miscellaneous'
+        worksheet[f'C{HEADER_ROW}'] = 'project.miscellaneous'
         worksheet['C6'] = 'extra||details'
-        worksheet[f'D{HEADER_IDX_STR}'] = 'project.contributor_count'
+        worksheet[f'D{HEADER_ROW}'] = 'project.contributor_count'
         worksheet['D6'] = 7
-        worksheet[f'E{HEADER_IDX_STR}'] = 'project.contributors'
+        worksheet[f'E{HEADER_ROW}'] = 'project.contributors'
         worksheet['E6'] = 'Juan Dela Cruz||John Doe'
-        worksheet[f'F{HEADER_IDX_STR}'] = 'project.numbers'
+        worksheet[f'F{HEADER_ROW}'] = 'project.numbers'
         worksheet['F6'] = '1||2||3'
-        worksheet[f'G{HEADER_IDX_STR}'] = 'project.is_active'
+        worksheet[f'G{HEADER_ROW}'] = 'project.is_active'
         worksheet['G6'] = 'Yes'
-        worksheet[f'H{HEADER_IDX_STR}'] = 'project.is_submitted'
+        worksheet[f'H{HEADER_ROW}'] = 'project.is_submitted'
         worksheet['H6'] = 'No'
 
         return worksheet
