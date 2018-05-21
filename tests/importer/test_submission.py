@@ -207,13 +207,6 @@ class EntityLinkerTest(TestCase):
 
                 }
             },
-            'process': {
-                'process_id_1': {
-                    'content': {
-                        'key': 'process_1'
-                    }
-                }
-            },
             'protocol': {
                 'protocol_id_1': {
                     'content': {
@@ -535,13 +528,6 @@ class EntityLinkerTest(TestCase):
 
                 }
             },
-            'process': {
-                'process_id_1': {
-                    'content': {
-                        'key': 'process_1'
-                    }
-                }
-            },
             'protocol': {
                 'protocol_id_1': {
                     'content': {
@@ -648,13 +634,6 @@ class EntityLinkerTest(TestCase):
                     }
                 }
             },
-            'process': {
-                'process_id_1': {
-                    'content': {
-                        'key': 'process_1'
-                    }
-                }
-            },
             'protocol': {
                 'protocol_id_1': {
                     'content': {
@@ -748,7 +727,6 @@ class EntityLinkerTest(TestCase):
                     },
                     'links_by_entity': {
                         'biomaterial': ['biomaterial_id_1'],
-                        'process': ['process_id_1'],
                         'protocol': ['protocol_id_1', 'protocol_id_2']
                     }
                 }

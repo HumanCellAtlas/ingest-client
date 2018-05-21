@@ -20,7 +20,6 @@ class Submission(object):
         'protocol': 'protocols'
     }
 
-
     RELATION_LINK = {
         'biomaterial': {
             'process': 'inputToProcesses'
@@ -143,9 +142,10 @@ class EntityLinker(object):
                             if not link_entity_type == 'process':  # it is expected that no processes are defined in any tab, these will be created later
                                 raise LinkedEntityNotFound(from_entity, link_entity_type, link_entity_id)
 
-                        to_entity = entities_dict_by_type[link_entity_type].get(link_entity_id)
-                        if not self._is_valid_spreadsheet_link(from_entity.type, to_entity.type):
-                            raise InvalidLinkInSpreadsheet(from_entity, to_entity)
+                        if not link_entity_type == 'process':
+                            to_entity = entities_dict_by_type[link_entity_type].get(link_entity_id)
+                            if not self._is_valid_spreadsheet_link(from_entity.type, to_entity.type):
+                                raise InvalidLinkInSpreadsheet(from_entity, to_entity)
 
                         if link_entity_type == 'process' and not len(link_entity_ids) == 1:
                             raise MultipleProcessesFound(from_entity, link_entity_ids)
@@ -159,10 +159,26 @@ class EntityLinker(object):
                     linking_process = None
 
                     if linked_process_ids:
-                        linking_process = entities_dict_by_type['process'][linked_process_ids[0]]
+                        group_process_id = linked_process_ids[0]
+
+                        if entities_dict_by_type.get('process') and entities_dict_by_type['process'].get(group_process_id):
+                            linking_process = entities_dict_by_type['process'][group_process_id]
+
+                        if not linking_process:
+                            linking_process = self._create_empty_process(group_process_id)
+
                     else:
                         empty_process_id = self._generate_empty_process_id()
                         linking_process = self._create_empty_process(empty_process_id)
+
+                    # add process to overall list
+                    process_entities_map = entities_dict_by_type.get('process')
+                    if not process_entities_map:
+                        entities_dict_by_type['process'] = {}
+                        process_entities_map = entities_dict_by_type.get('process')
+
+                    process_entities_map[linking_process.id] = linking_process
+
 
                     # link output of process
                     from_entity.direct_links.append({
@@ -178,14 +194,6 @@ class EntityLinker(object):
                             'id': linked_protocol_id,
                             'relationship': 'protocols'
                         })
-
-                    # add process to overall list
-                    process_entities_map = entities_dict_by_type.get('process')
-                    if not process_entities_map:
-                        entities_dict_by_type['process'] = {}
-                        process_entities_map = entities_dict_by_type.get('process')
-
-                    process_entities_map[linking_process.id] = linking_process
 
                     # biomaterial-biomaterial
                     # file-biomaterial
