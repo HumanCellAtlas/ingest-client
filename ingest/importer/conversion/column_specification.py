@@ -6,7 +6,8 @@ from ingest.importer.conversion.data_converter import DataType, CONVERTER_MAP, L
 class ConversionType(Enum):
     UNDEFINED = 0,
     MEMBER_FIELD = 1,
-    FIELD_OF_LIST_ELEMENT = 2
+    FIELD_OF_LIST_ELEMENT = 2,
+    IDENTITY = 3
 
 
 class ColumnSpecification:
@@ -29,12 +30,13 @@ class ColumnSpecification:
         return self.identity
 
     def get_conversion_type(self):
-        type = ConversionType.UNDEFINED
-        if (self.multivalue_parent):
-            type = ConversionType.FIELD_OF_LIST_ELEMENT
+        if self.multivalue_parent:
+            conversion_type = ConversionType.FIELD_OF_LIST_ELEMENT
+        elif self.identity:
+            conversion_type = ConversionType.IDENTITY
         else:
-            type = ConversionType.MEMBER_FIELD
-        return type
+            conversion_type = ConversionType.MEMBER_FIELD
+        return conversion_type
 
     def determine_converter(self):
         if not self.multivalue:

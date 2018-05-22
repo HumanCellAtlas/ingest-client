@@ -106,10 +106,18 @@ class ColumnSpecificationTest(TestCase):
         # expect:
         self.assertEqual(ConversionType.MEMBER_FIELD, column_spec.get_conversion_type())
 
-    def test_conversion_type_field_of_list_element(self):
+    def test_get_conversion_type_field_of_list_element(self):
         # given:
         column_spec = ColumnSpecification('product_name', 'store_schema', DataType.STRING,
                                           multivalue_parent=True)
 
         # expect:
         self.assertEqual(ConversionType.FIELD_OF_LIST_ELEMENT, column_spec.get_conversion_type())
+
+    def test_get_conversion_type(self):
+        # given:
+        column_spec = ColumnSpecification('product.product_id', 'product', DataType.STRING,
+                                          identity=True)
+
+        # expect:
+        self.assertEqual(ConversionType.IDENTITY, column_spec.get_conversion_type())
