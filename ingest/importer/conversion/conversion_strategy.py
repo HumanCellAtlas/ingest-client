@@ -48,6 +48,12 @@ class IdentityCellConversion(CellConversion):
         data_node['_object_id'] = self.converter.convert(cell_data)
 
 
+class LinkedIdentityCellConversion(CellConversion):
+
+    def apply(self, data_node: DataNode, cell_data):
+        data_node['_links'] = []
+
+
 def determine_strategy(column_spec: ColumnSpecification):
     converter = column_spec.determine_converter()
     if column_spec.is_field_of_list_element():
@@ -55,3 +61,4 @@ def determine_strategy(column_spec: ColumnSpecification):
     else:
         strategy = DirectCellConversion(column_spec.field_name, converter)
     return strategy
+
