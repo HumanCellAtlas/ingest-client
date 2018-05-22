@@ -49,6 +49,20 @@ class ModuleTest(TestCase):
         self.assertEqual('member.field.list', strategy.field)
         self.assertEqual(converter, strategy.converter)
 
+    def test_determine_strategy_for_identity_field(self):
+        # given:
+        converter = MagicMock('converter')
+        column_spec = _mock_column_spec(field_name='user.user_id', converter=converter,
+                                        conversion_type=ConversionType.IDENTITY)
+
+        # when:
+        strategy: CellConversion = conversion_strategy.determine_strategy(column_spec)
+
+        # then:
+        self.assertIsInstance(strategy, IdentityCellConversion)
+        self.assertEqual('user.user_id', strategy.field)
+        self.assertEqual(converter, strategy.converter)
+
 
 class DirectCellConversionTest(TestCase):
 
