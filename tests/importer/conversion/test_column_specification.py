@@ -11,7 +11,8 @@ class ColumnSpecificationTest(TestCase):
         # given:
         raw_string_spec = {
             'value_type': 'string',
-            'multivalue': False
+            'multivalue': False,
+            'identifiable': True
         }
 
         # and:
@@ -28,11 +29,13 @@ class ColumnSpecificationTest(TestCase):
         self.assertEqual('user.name', string_column_spec.field_name)
         self.assertEqual(DataType.STRING, string_column_spec.data_type)
         self.assertFalse(string_column_spec.is_multivalue())
+        self.assertTrue(string_column_spec.is_identity())
 
         # and:
         self.assertEqual('numbers', int_array_column_spec.field_name)
         self.assertEqual(DataType.INTEGER, int_array_column_spec.data_type)
         self.assertTrue(int_array_column_spec.is_multivalue())
+        self.assertFalse(int_array_column_spec.is_identity())
 
     def test_build_raw_spec_with_parent_spec(self):
         # given:
