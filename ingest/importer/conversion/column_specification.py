@@ -1,4 +1,10 @@
+from enum import Enum
+
 from ingest.importer.conversion.data_converter import DataType, CONVERTER_MAP, ListConverter
+
+
+class ConversionType(Enum):
+    MEMBER_FIELD = 1
 
 
 class ColumnSpecification:
@@ -19,6 +25,9 @@ class ColumnSpecification:
 
     def is_identity(self):
         return self.identity
+
+    def get_conversion_type(self):
+        return ConversionType.MEMBER_FIELD
 
     def determine_converter(self):
         if not self.multivalue:

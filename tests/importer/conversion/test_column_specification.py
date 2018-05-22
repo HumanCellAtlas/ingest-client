@@ -1,6 +1,6 @@
 from unittest import TestCase
 
-from ingest.importer.conversion.column_specification import ColumnSpecification
+from ingest.importer.conversion.column_specification import ColumnSpecification, ConversionType
 from ingest.importer.conversion.data_converter import DataType, Converter, IntegerConverter, \
     BooleanConverter, ListConverter
 
@@ -98,3 +98,10 @@ class ColumnSpecificationTest(TestCase):
         # then:
         self.assertIsInstance(converter, ListConverter)
         self.assertEqual(data_type, converter.base_type)
+
+    def test_get_conversion_type_member_field(self):
+        # given:
+        column_spec = ColumnSpecification('user.name', 'profile', DataType.STRING)
+
+        # expect:
+        self.assertEqual(ConversionType.MEMBER_FIELD, column_spec.get_conversion_type())
