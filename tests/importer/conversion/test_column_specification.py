@@ -22,8 +22,9 @@ class ColumnSpecificationTest(TestCase):
         }
 
         # when:
-        string_column_spec = ColumnSpecification.build_raw('user.name', raw_string_spec)
-        int_array_column_spec = ColumnSpecification.build_raw('numbers', raw_int_array_spec)
+        string_column_spec = ColumnSpecification.build_raw('user.name', 'user', raw_string_spec)
+        int_array_column_spec = ColumnSpecification.build_raw('sample.numbers', 'user',
+                                                              raw_int_array_spec)
 
         # then:
         self.assertEqual('user.name', string_column_spec.field_name)
@@ -32,7 +33,7 @@ class ColumnSpecificationTest(TestCase):
         self.assertTrue(string_column_spec.is_identity())
 
         # and:
-        self.assertEqual('numbers', int_array_column_spec.field_name)
+        self.assertEqual('sample.numbers', int_array_column_spec.field_name)
         self.assertEqual(DataType.INTEGER, int_array_column_spec.data_type)
         self.assertTrue(int_array_column_spec.is_multivalue())
         self.assertFalse(int_array_column_spec.is_identity())
@@ -55,9 +56,9 @@ class ColumnSpecificationTest(TestCase):
         }
 
         # when:
-        single_column_spec = ColumnSpecification.build_raw('', raw_spec,
+        single_column_spec = ColumnSpecification.build_raw('', '', raw_spec,
                                                            parent=raw_single_value_parent_spec)
-        multi_column_spec = ColumnSpecification.build_raw('', raw_spec,
+        multi_column_spec = ColumnSpecification.build_raw('', '', raw_spec,
                                                           parent=raw_multi_value_parent_spec)
 
         # then:
@@ -73,7 +74,7 @@ class ColumnSpecificationTest(TestCase):
 
     def _assert_correct_converter_single_value(self, data_type:DataType, expected_converter_type):
         # given:
-        column_spec = ColumnSpecification('field', data_type)
+        column_spec = ColumnSpecification('field', 'object_type', data_type)
 
         # when:
         converter = column_spec.determine_converter()
@@ -90,7 +91,7 @@ class ColumnSpecificationTest(TestCase):
 
     def _assert_correct_converter_multivalue(self, data_type):
         # given:
-        column_spec = ColumnSpecification('field', data_type, multivalue=True)
+        column_spec = ColumnSpecification('field', 'object_type', data_type, multivalue=True)
 
         # when:
         converter = column_spec.determine_converter()

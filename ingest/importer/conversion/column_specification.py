@@ -57,10 +57,10 @@ class ColumnSpecification:
         return converter
 
     @staticmethod
-    def build_raw(field_name, raw_spec, parent=None):
+    def build_raw(field_name, object_type, raw_spec, parent=None):
         data_type = DataType.find(raw_spec.get('value_type'))
         multivalue = bool(raw_spec.get('multivalue'))
         multivalue_parent = bool(parent.get('multivalue')) if parent != None else False
         identity: bool = bool(raw_spec.get('identifiable'))
-        return ColumnSpecification(field_name, data_type, multivalue=multivalue,
+        return ColumnSpecification(field_name, object_type, data_type, multivalue=multivalue,
                                    multivalue_parent=multivalue_parent, identity=identity)
