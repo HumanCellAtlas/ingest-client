@@ -1,7 +1,7 @@
 from abc import abstractmethod
 
 from ingest.importer.conversion.data_converter import Converter
-from ingest.importer.conversion.column_specification import ColumnSpecification
+from ingest.importer.conversion.column_specification import ColumnSpecification, ConversionType
 from ingest.importer.conversion.utils import split_field_chain
 from ingest.importer.data_node import DataNode
 
@@ -74,10 +74,12 @@ class LinkedIdentityCellConversion(CellConversion):
 
 
 def determine_strategy(column_spec: ColumnSpecification):
+    field_name = column_spec.field_name
     converter = column_spec.determine_converter()
-    if column_spec.is_field_of_list_element():
-        strategy = ListElementCellConversion(column_spec.field_name, converter)
-    else:
-        strategy = DirectCellConversion(column_spec.field_name, converter)
+    conversion_type = column_spec.get_conversion_type()
+    if ConversionType.MEMBER_FIELD == conversion_type:
+        strategy = DirectCellConversion(field_name, converter)
+    elif ConversionType.FIELD_OF_LIST_ELEMENT == conversion_type:
+        strategy = ListElementCellConversion(field_name, converter)
     return strategy
 

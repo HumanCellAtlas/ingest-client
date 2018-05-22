@@ -5,17 +5,17 @@ from mock import MagicMock
 from ingest.importer.conversion import conversion_strategy
 from ingest.importer.conversion.conversion_strategy import DirectCellConversion, \
     ListElementCellConversion, CellConversion, IdentityCellConversion, LinkedIdentityCellConversion
-from ingest.importer.conversion.column_specification import ColumnSpecification
+from ingest.importer.conversion.column_specification import ColumnSpecification, ConversionType
 from ingest.importer.conversion.data_converter import DataType
 from ingest.importer.data_node import DataNode
 
 
-def _mock_column_spec(field_name='field_name', data_type=DataType.STRING, multivalue=False,
-                      field_of_list_member=False, converter=None):
+def _mock_column_spec(field_name='field_name', converter=None,
+                      conversion_type=ConversionType.UNDEFINED):
     column_spec: ColumnSpecification = MagicMock('column_spec')
     column_spec.field_name = field_name
     column_spec.determine_converter = lambda: converter
-    column_spec.is_field_of_list_element = lambda: field_of_list_member
+    column_spec.get_conversion_type = lambda: conversion_type
     return column_spec
 
 
@@ -24,7 +24,8 @@ class ModuleTest(TestCase):
     def test_determine_strategy_for_direct_conversion(self):
         # given:
         converter = MagicMock('converter')
-        column_spec = _mock_column_spec(field_name='user.first_name', converter=converter)
+        column_spec = _mock_column_spec(field_name='user.first_name', converter=converter,
+                                        conversion_type=ConversionType.MEMBER_FIELD)
 
         # when:
         strategy:CellConversion = conversion_strategy.determine_strategy(column_spec)
@@ -38,7 +39,7 @@ class ModuleTest(TestCase):
         # given:
         converter = MagicMock('converter')
         column_spec = _mock_column_spec(field_name='member.field.list', converter=converter,
-                                        field_of_list_member=True)
+                                        conversion_type=ConversionType.FIELD_OF_LIST_ELEMENT)
 
         # when:
         strategy:CellConversion = conversion_strategy.determine_strategy(column_spec)
