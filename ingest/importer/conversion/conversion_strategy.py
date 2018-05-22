@@ -58,7 +58,7 @@ class LinkedIdentityCellConversion(CellConversion):
 
     def _get_linked_ids(self, data_node):
         links = self._get_links(data_node)
-        linked_ids = links[self.field]
+        linked_ids = links.get(self.field)
         if not linked_ids:
             linked_ids = []
             links[self.field] = linked_ids
