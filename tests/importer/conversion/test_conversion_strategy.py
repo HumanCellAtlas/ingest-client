@@ -4,7 +4,7 @@ from mock import MagicMock
 
 from ingest.importer.conversion import conversion_strategy
 from ingest.importer.conversion.conversion_strategy import DirectCellConversion, \
-    ListElementCellConversion, CellConversion
+    ListElementCellConversion, CellConversion, IdentityCellConversion
 from ingest.importer.conversion.column_specification import ColumnSpecification
 from ingest.importer.conversion.data_converter import DataType
 from ingest.importer.data_node import DataNode
@@ -115,3 +115,20 @@ class ListElementCellConversionTest(TestCase):
         current_element = basket[0]
         self.assertEqual(3, current_element.get('quantity'))
         self.assertEqual('apple - converted', current_element.get('product_name'))
+
+
+class IdentityCellConversionTest(TestCase):
+
+    def test_apply(self):
+        # given:
+        converter = _create_mock_string_converter()
+        cell_conversion = IdentityCellConversion('product_id', converter)
+
+        # and:
+        data_node = DataNode()
+
+        # when:
+        cell_conversion.apply(data_node, 'product_no_144')
+
+        # then:
+        self.assertIsNotNone(data_node['product_no_144'])
