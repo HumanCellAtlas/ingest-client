@@ -45,7 +45,7 @@ class ListElementCellConversion(CellConversion):
 class IdentityCellConversion(CellConversion):
 
     def apply(self, data_node: DataNode, cell_data):
-        data_node['product_no_144'] = []
+        data_node['_object_id'] = self.converter.convert(cell_data)
 
 
 def determine_strategy(column_spec: ColumnSpecification):

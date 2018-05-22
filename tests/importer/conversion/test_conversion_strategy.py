@@ -131,4 +131,4 @@ class IdentityCellConversionTest(TestCase):
         cell_conversion.apply(data_node, 'product_no_144')
 
         # then:
-        self.assertIsNotNone(data_node['product_no_144'])
+        self.assertEqual(data_node['_object_id'], 'product_no_144 - converted')
