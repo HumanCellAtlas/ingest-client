@@ -5,6 +5,8 @@ from ingest.importer.conversion.column_specification import ColumnSpecification
 from ingest.importer.conversion.utils import split_field_chain
 from ingest.importer.data_node import DataNode
 
+LINKS_FIELD = '_links'
+
 
 class CellConversion(object):
 
@@ -51,9 +53,24 @@ class IdentityCellConversion(CellConversion):
 class LinkedIdentityCellConversion(CellConversion):
 
     def apply(self, data_node: DataNode, cell_data):
-        data_node['_links'] = {
-            self.field: [self.converter.convert(cell_data)]
-        }
+        linked_ids = self._get_linked_ids(data_node)
+        linked_ids.append(self.converter.convert(cell_data))
+
+    def _get_linked_ids(self, data_node):
+        links = self._get_links(data_node)
+        linked_ids = links[self.field]
+        if not linked_ids:
+            linked_ids = []
+            links[self.field] = linked_ids
+        return linked_ids
+
+    @staticmethod
+    def _get_links(data_node):
+        links = data_node[LINKS_FIELD]
+        if not links:
+            links = {}
+            data_node[LINKS_FIELD] = links
+        return links
 
 
 def determine_strategy(column_spec: ColumnSpecification):

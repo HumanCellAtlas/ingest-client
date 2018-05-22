@@ -155,3 +155,27 @@ class LinkedIdentityCellConversionTest(TestCase):
         items = links.get('items')
         self.assertEqual(1, len(items))
         self.assertTrue('item_no_29 - converted' in items)
+
+    def test_apply_with_previous_entry(self):
+        # given:
+        converter = _create_mock_string_converter()
+        cell_conversion = LinkedIdentityCellConversion('items', converter)
+
+        # and:
+        data_node = DataNode()
+        items = ['item_no_56', 'item_no_199']
+        data_node['_links'] = {'items': items}
+
+        # when:
+        cell_conversion.apply(data_node, 'item_no_721')
+
+        # then:
+        actual_items = data_node['_links']['items']
+        self.assertEqual(3, len(actual_items))
+
+        # and:
+        expected_ids = [id for id in items]
+        expected_ids.append('item_no_721 - converted')
+        for expected_id in expected_ids:
+            self.assertTrue(expected_id in actual_items, f'[{expected_id}] not in list.')
+
