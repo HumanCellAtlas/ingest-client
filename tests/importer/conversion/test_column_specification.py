@@ -114,10 +114,17 @@ class ColumnSpecificationTest(TestCase):
         # expect:
         self.assertEqual(ConversionType.FIELD_OF_LIST_ELEMENT, column_spec.get_conversion_type())
 
-    def test_get_conversion_type(self):
+    def test_get_conversion_type_identity(self):
         # given:
         column_spec = ColumnSpecification('product.product_id', 'product', DataType.STRING,
                                           identity=True)
 
         # expect:
         self.assertEqual(ConversionType.IDENTITY, column_spec.get_conversion_type())
+
+    def test_get_conversion_type_linked_identity(self):
+        # given:
+        column_spec = ColumnSpecification('account.number', 'user', DataType.STRING, identity=True)
+
+        # expect:
+        self.assertEqual(ConversionType.LINKED_IDENTITY, column_spec.get_conversion_type())

@@ -1,20 +1,25 @@
+import re
 from enum import Enum
 
 from ingest.importer.conversion.data_converter import DataType, CONVERTER_MAP, ListConverter
+
+CONCRETE_ENTITY_PATTERN = '(?P<concrete_entity>\w+)(\.\w+)*'
 
 
 class ConversionType(Enum):
     UNDEFINED = 0,
     MEMBER_FIELD = 1,
     FIELD_OF_LIST_ELEMENT = 2,
-    IDENTITY = 3
+    IDENTITY = 3,
+    LINKED_IDENTITY = 4
 
 
 class ColumnSpecification:
 
-    def __init__(self, field_name, data_type, multivalue=False, multivalue_parent=False,
-                 identity: bool=False):
+    def __init__(self, field_name, object_type, data_type, multivalue=False,
+                 multivalue_parent=False, identity: bool=False):
         self.field_name = field_name
+        self.object_type = object_type
         self.data_type = data_type
         self.multivalue = multivalue
         self.multivalue_parent = multivalue_parent
@@ -33,7 +38,12 @@ class ColumnSpecification:
         if self.multivalue_parent:
             conversion_type = ConversionType.FIELD_OF_LIST_ELEMENT
         elif self.identity:
-            conversion_type = ConversionType.IDENTITY
+            match = re.search(CONCRETE_ENTITY_PATTERN, self.field_name)
+            entity_type = match.group('concrete_entity')
+            if entity_type == self.object_type:
+                conversion_type = ConversionType.IDENTITY
+            else:
+                conversion_type = ConversionType.LINKED_IDENTITY
         else:
             conversion_type = ConversionType.MEMBER_FIELD
         return conversion_type
