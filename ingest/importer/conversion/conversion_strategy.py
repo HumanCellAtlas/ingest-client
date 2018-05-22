@@ -51,7 +51,9 @@ class IdentityCellConversion(CellConversion):
 class LinkedIdentityCellConversion(CellConversion):
 
     def apply(self, data_node: DataNode, cell_data):
-        data_node['_links'] = []
+        data_node['_links'] = {
+            self.field: [self.converter.convert(cell_data)]
+        }
 
 
 def determine_strategy(column_spec: ColumnSpecification):

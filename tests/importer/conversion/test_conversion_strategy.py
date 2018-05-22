@@ -148,4 +148,10 @@ class LinkedIdentityCellConversionTest(TestCase):
         cell_conversion.apply(data_node, 'item_no_29')
 
         # then:
-        self.assertIsNotNone(data_node['_links'])
+        links = data_node['_links']
+        self.assertIsNotNone(links)
+
+        # and:
+        items = links.get('items')
+        self.assertEqual(1, len(items))
+        self.assertTrue('item_no_29 - converted' in items)
