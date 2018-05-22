@@ -11,8 +11,10 @@ from ingest.api.ingestapi import IngestApi
 
 class IngestImporter:
 
-    @staticmethod
-    def import_spreadsheet(file_path, token):
+    def __init__(self, ingest_api):
+        self.ingest_api = ingest_api
+
+    def import_spreadsheet(self, file_path, submission_url, dry_run=False):
         workbook = openpyxl.load_workbook(filename=file_path)
         ingest_workbook = IngestWorkbook(workbook)
         schemas = ingest_workbook.get_schemas()
@@ -20,13 +22,12 @@ class IngestImporter:
         template_mgr = template_manager.build(schemas)
         workbook_importer = WorkbookImporter(template_mgr)
         spreadsheet_json = workbook_importer.do_import(ingest_workbook)
-        ingest_api = IngestApi()
 
-
-
-        submitter = IngestSubmitter(ingest_api, template_mgr)
-
-        submission = submitter.submit(spreadsheet_json, token)
+        submission = None
+        if not dry_run:
+            submitter = IngestSubmitter(self.ingest_api, template_mgr)
+            submission = submitter.submit(spreadsheet_json, submission_url)
+            print(f'Submission in {submission_url} is done!')
 
         return submission
 
@@ -103,14 +104,14 @@ class WorksheetImporter:
                 converter = template.get_converter(header_key)
                 data = converter.convert(cell_value)
 
-                node[field_chain] = data
-
                 cell_concrete_entity = self._get_concrete_entity(template, header_key)
+
 
                 if template.is_identifier_field(header_key):
                     if concrete_entity == cell_concrete_entity:
                         row_id = data
                     else:  # this is a link column
+
                         link_domain_entity = template.get_domain_entity(concrete_entity=cell_concrete_entity)
 
                         links.append({
@@ -122,6 +123,10 @@ class WorksheetImporter:
                             links_map[link_domain_entity] = []
 
                         links_map[link_domain_entity].append(data)
+
+                        continue  # do not add in content json
+
+                node[field_chain] = data
 
             object_list_fields = object_list_tracker.get_object_list_fields()
             for field_chain in object_list_fields:
