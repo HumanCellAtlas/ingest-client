@@ -6,6 +6,7 @@ from unittest import TestCase
 from mock import MagicMock, patch
 from openpyxl import Workbook
 
+from ingest.api.ingestapi import IngestApi
 from ingest.importer.conversion import template_manager
 from ingest.importer.conversion.data_converter import (
     Converter, ListConverter, BooleanConverter, DataType
@@ -371,8 +372,9 @@ class IngestImporterTest(TestCase):
 
     @unittest.skip
     def test_import_spreadsheet(self):
+
         spreadsheet_file = BASE_PATH + '/metadata_spleen_new_protocols.xlsx'
 
-        submission = IngestImporter.import_spreadsheet(spreadsheet_file, 'submissionurl')
+        submission = IngestImporter(MagicMock()).import_spreadsheet(file_path=spreadsheet_file, submission_url=None, dry_run=True)
 
         self.assertTrue(submission)

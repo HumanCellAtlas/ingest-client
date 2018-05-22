@@ -104,14 +104,14 @@ class WorksheetImporter:
                 converter = template.get_converter(header_key)
                 data = converter.convert(cell_value)
 
-
-
                 cell_concrete_entity = self._get_concrete_entity(template, header_key)
+
 
                 if template.is_identifier_field(header_key):
                     if concrete_entity == cell_concrete_entity:
                         row_id = data
                     else:  # this is a link column
+
                         link_domain_entity = template.get_domain_entity(concrete_entity=cell_concrete_entity)
 
                         links.append({
