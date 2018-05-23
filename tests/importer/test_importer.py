@@ -119,19 +119,17 @@ class WorksheetImporterTest(TestCase):
         row_template = MagicMock('row_template')
 
         # and:
-        john_doe = DataNode()
-        john_doe[f'{conversion_strategy.OBJECT_ID_FIELD}'] = 'profile_1'
+        john_doe_content = {'name': 'John Doe'}
+        john_doe_links = {}
+        john_doe = self._create_test_json('profile_1', john_doe_content, john_doe_links)
 
         # and:
-        expected_content = {'name': 'John Doe'}
-        john_doe[f'{conversion_strategy.CONTENT_FIELD}'] = expected_content
+        emma_jackson_content = {'name': 'Emma Jackson'}
+        emma_jackson_links = {'friends': ['profile_19', 'profile_8']}
+        emma_jackson = self._create_test_json('profile_2', emma_jackson_content, emma_jackson_links)
 
         # and:
-        expected_links = {}
-        john_doe[f'{conversion_strategy.LINKS_FIELD}'] = expected_links
-
-        # and:
-        row_template.do_import = MagicMock('import_row', return_value=john_doe)
+        row_template.do_import = MagicMock('import_row', side_effect=[john_doe, emma_jackson])
 
         # and:
         mock_template_manager = MagicMock('template_manager')
@@ -141,7 +139,8 @@ class WorksheetImporterTest(TestCase):
         # and:
         workbook = Workbook()
         worksheet = workbook.create_sheet('user_profile')
-        worksheet['A6'] = 'dummy'
+        worksheet['A6'] = 'john'
+        worksheet['A7'] = 'emma'
 
         # when:
         worksheet_importer = WorksheetImporter()
@@ -150,9 +149,22 @@ class WorksheetImporterTest(TestCase):
         # then:
         profile = result.get('profile')
         self.assertIsNotNone(profile)
+        self.assertEqual(2, len(profile.keys()))
 
         # and:
-        profile_1 = profile.get('profile_1')
+        self._assert_correct_profile(profile, 'profile_1', john_doe_content, john_doe_links)
+        self._assert_correct_profile(profile, 'profile_2', emma_jackson_content, emma_jackson_links)
+
+    @staticmethod
+    def _create_test_json(id, content, links):
+        test_json = DataNode()
+        test_json[f'{conversion_strategy.OBJECT_ID_FIELD}'] = id
+        test_json[f'{conversion_strategy.CONTENT_FIELD}'] = content
+        test_json[f'{conversion_strategy.LINKS_FIELD}'] = links
+        return test_json
+
+    def _assert_correct_profile(self, profile, profile_id, expected_content, expected_links):
+        profile_1 = profile.get(profile_id)
         self.assertIsNotNone(profile_1)
         self.assertEqual(expected_content, profile_1.get('content'))
         self.assertEqual(expected_links, profile_1.get('links_by_entity'))
