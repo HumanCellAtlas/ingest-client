@@ -63,6 +63,20 @@ class ModuleTest(TestCase):
         self.assertEqual('user.user_id', strategy.field)
         self.assertEqual(converter, strategy.converter)
 
+    def test_determine_strategy_for_linked_identity_field(self):
+        # given:
+        converter = MagicMock('converter')
+        column_spec = _mock_column_spec(field_name='product.product_id', converter=converter,
+                                        conversion_type=ConversionType.LINKED_IDENTITY)
+
+        # when:
+        strategy: CellConversion = conversion_strategy.determine_strategy(column_spec)
+
+        # then:
+        self.assertIsInstance(strategy, LinkedIdentityCellConversion)
+        self.assertEqual('product.product_id', strategy.field)
+        self.assertEqual(converter, strategy.converter)
+
 
 class DirectCellConversionTest(TestCase):
 

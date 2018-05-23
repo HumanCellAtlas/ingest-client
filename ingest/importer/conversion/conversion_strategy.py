@@ -83,6 +83,8 @@ def determine_strategy(column_spec: ColumnSpecification):
         strategy = ListElementCellConversion(field_name, converter)
     elif ConversionType.IDENTITY == conversion_type:
         strategy = IdentityCellConversion(field_name, converter)
+    elif ConversionType.LINKED_IDENTITY == conversion_type:
+        strategy = LinkedIdentityCellConversion(field_name, converter)
     else:
         strategy = None
     return strategy
