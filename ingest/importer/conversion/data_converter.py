@@ -57,9 +57,7 @@ class BooleanConverter(Converter):
 
 CONVERTER_MAP = {
 
-    # TODO define actual converter for string?
-    # This is because some cells may be numeric, etc. but need to be treated as string
-    DataType.STRING: Converter(),
+    DataType.STRING: StringConverter(),
     DataType.INTEGER: IntegerConverter(),
     DataType.BOOLEAN: BooleanConverter()
 

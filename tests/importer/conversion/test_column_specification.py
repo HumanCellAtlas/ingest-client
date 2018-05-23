@@ -2,7 +2,7 @@ from unittest import TestCase
 
 from ingest.importer.conversion.column_specification import ColumnSpecification, ConversionType
 from ingest.importer.conversion.data_converter import DataType, Converter, IntegerConverter, \
-    BooleanConverter, ListConverter
+    BooleanConverter, ListConverter, StringConverter
 
 
 class ColumnSpecificationTest(TestCase):
@@ -67,7 +67,7 @@ class ColumnSpecificationTest(TestCase):
 
     def test_determine_converter_for_single_value(self):
         # expect:
-        self._assert_correct_converter_single_value(DataType.STRING, Converter)
+        self._assert_correct_converter_single_value(DataType.STRING, StringConverter)
         self._assert_correct_converter_single_value(DataType.INTEGER, IntegerConverter)
         self._assert_correct_converter_single_value(DataType.BOOLEAN, BooleanConverter)
         self._assert_correct_converter_single_value(DataType.UNDEFINED, Converter)
