@@ -22,58 +22,33 @@ def _mock_column_spec(field_name='field_name', converter=None,
 class ModuleTest(TestCase):
 
     def test_determine_strategy_for_direct_conversion(self):
-        # given:
-        converter = MagicMock('converter')
-        column_spec = _mock_column_spec(field_name='user.first_name', converter=converter,
-                                        conversion_type=ConversionType.MEMBER_FIELD)
-
-        # when:
-        strategy:CellConversion = conversion_strategy.determine_strategy(column_spec)
-
-        # then:
-        self.assertIsInstance(strategy, DirectCellConversion)
-        self.assertEqual('user.first_name', strategy.field)
-        self.assertEqual(converter, strategy.converter)
+        # expect:
+        self._assert_correct_strategy(ConversionType.MEMBER_FIELD, DirectCellConversion)
 
     def test_determine_strategy_for_field_of_list_element(self):
-        # given:
-        converter = MagicMock('converter')
-        column_spec = _mock_column_spec(field_name='member.field.list', converter=converter,
-                                        conversion_type=ConversionType.FIELD_OF_LIST_ELEMENT)
-
-        # when:
-        strategy:CellConversion = conversion_strategy.determine_strategy(column_spec)
-
-        # then:
-        self.assertIsInstance(strategy, ListElementCellConversion)
-        self.assertEqual('member.field.list', strategy.field)
-        self.assertEqual(converter, strategy.converter)
+        # expect:
+        self._assert_correct_strategy(ConversionType.FIELD_OF_LIST_ELEMENT,
+                                      ListElementCellConversion)
 
     def test_determine_strategy_for_identity_field(self):
-        # given:
-        converter = MagicMock('converter')
-        column_spec = _mock_column_spec(field_name='user.user_id', converter=converter,
-                                        conversion_type=ConversionType.IDENTITY)
-
-        # when:
-        strategy: CellConversion = conversion_strategy.determine_strategy(column_spec)
-
-        # then:
-        self.assertIsInstance(strategy, IdentityCellConversion)
-        self.assertEqual('user.user_id', strategy.field)
-        self.assertEqual(converter, strategy.converter)
+        # expect:
+        self._assert_correct_strategy(ConversionType.IDENTITY, IdentityCellConversion)
 
     def test_determine_strategy_for_linked_identity_field(self):
+        # expect:
+        self._assert_correct_strategy(ConversionType.LINKED_IDENTITY, LinkedIdentityCellConversion)
+
+    def _assert_correct_strategy(self, conversion_type, strategy_class):
         # given:
         converter = MagicMock('converter')
         column_spec = _mock_column_spec(field_name='product.product_id', converter=converter,
-                                        conversion_type=ConversionType.LINKED_IDENTITY)
+                                        conversion_type=conversion_type)
 
         # when:
         strategy: CellConversion = conversion_strategy.determine_strategy(column_spec)
 
         # then:
-        self.assertIsInstance(strategy, LinkedIdentityCellConversion)
+        self.assertIsInstance(strategy, strategy_class)
         self.assertEqual('product.product_id', strategy.field)
         self.assertEqual(converter, strategy.converter)
 
