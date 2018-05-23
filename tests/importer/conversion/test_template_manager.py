@@ -177,46 +177,6 @@ class TemplateManagerTest(TestCase):
         # then:
         self.assertEqual('specimen_from_organism', entity)
 
-    def test_is_identifier_field_true(self):
-        # given
-        spec = {
-            'multivalue': False,
-            'required': True,
-            'user_friendly': 'Biomaterial ID',
-            'description': 'A unique ID for this biomaterial.',
-            'example': None,
-            'value_type': 'string',
-            'identifiable': True
-        }
-
-        schema_template = MagicMock(name='schema_template')
-        schema_template.lookup = MagicMock(name='lookup', return_value=spec)
-
-        template_manager = TemplateManager(schema_template)
-
-        # when:
-        is_id = template_manager.is_identifier_field('header_name')
-
-        # then:
-        self.assertTrue(is_id)
-
-    def test_is_identifier_field_false(self):
-        # given
-        spec = {
-            'user_friendly': 'Biomaterial Name',
-        }
-
-        schema_template = MagicMock(name='schema_template')
-        schema_template.lookup = MagicMock(name='lookup', return_value=spec)
-
-        template_manager = TemplateManager(schema_template)
-
-        # when:
-        is_id = template_manager.is_identifier_field('header_name')
-
-        # then:
-        self.assertFalse(is_id)
-
     def test_get_concrete_entity_of_column(self):
         schema_template = MagicMock(name='schema_template')
         template_manager = TemplateManager(schema_template)

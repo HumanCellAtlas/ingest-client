@@ -74,10 +74,6 @@ class TemplateManager:
 
         return concrete_entity
 
-    def is_identifier_field(self, header_name):
-        spec = self.lookup(header_name)
-        return spec.get('identifiable')
-
     def get_concrete_entity_of_column(self, header_name):
         match = re.search('(?P<concrete_entity>\w+)(\.\w+)*', header_name)
         concrete_entity = match.group('concrete_entity')
