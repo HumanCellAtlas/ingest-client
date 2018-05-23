@@ -4,7 +4,8 @@ from mock import MagicMock
 
 from ingest.importer.conversion import conversion_strategy
 from ingest.importer.conversion.conversion_strategy import DirectCellConversion, \
-    ListElementCellConversion, CellConversion, IdentityCellConversion, LinkedIdentityCellConversion
+    ListElementCellConversion, CellConversion, IdentityCellConversion, LinkedIdentityCellConversion, \
+    DoNothing
 from ingest.importer.conversion.column_specification import ColumnSpecification, ConversionType
 from ingest.importer.conversion.data_converter import DataType
 from ingest.importer.data_node import DataNode
@@ -51,6 +52,18 @@ class ModuleTest(TestCase):
         self.assertIsInstance(strategy, strategy_class)
         self.assertEqual('product.product_id', strategy.field)
         self.assertEqual(converter, strategy.converter)
+
+    def test_determine_strategy_for_unknown_type(self):
+        # given:
+        converter = MagicMock('converter')
+        column_spec = _mock_column_spec(field_name='product.product_id', converter=converter,
+                                        conversion_type=ConversionType.UNDEFINED)
+
+        # when:
+        strategy: CellConversion = conversion_strategy.determine_strategy(column_spec)
+
+        # then:
+        self.assertIsInstance(strategy, DoNothing)
 
 
 class DirectCellConversionTest(TestCase):

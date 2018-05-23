@@ -73,6 +73,15 @@ class LinkedIdentityCellConversion(CellConversion):
         return links
 
 
+class DoNothing(CellConversion):
+
+    def __init__(self):
+        super(DoNothing, self).__init__('', Converter())
+
+    def apply(self, data_node: DataNode, cell_data):
+        pass
+
+
 def determine_strategy(column_spec: ColumnSpecification):
     field_name = column_spec.field_name
     converter = column_spec.determine_converter()
@@ -86,6 +95,6 @@ def determine_strategy(column_spec: ColumnSpecification):
     elif ConversionType.LINKED_IDENTITY == conversion_type:
         strategy = LinkedIdentityCellConversion(field_name, converter)
     else:
-        strategy = None
+        strategy = DoNothing()
     return strategy
 
