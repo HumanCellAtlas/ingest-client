@@ -13,9 +13,8 @@ import json, os, requests, logging, uuid
 
 class IngestApi:
     def __init__(self, url=None):
-        formatter = logging.Formatter(
-            '[%(filename)s:%(lineno)s - %(funcName)20s() ] %(asctime)s - %(name)s - %(levelname)s - %(message)s')
-        logging.basicConfig(formatter=formatter)
+        format = '[%(filename)s:%(lineno)s - %(funcName)20s() ] %(asctime)s - %(name)s - %(levelname)s - %(message)s'
+        logging.basicConfig(format=format)
         logging.getLogger("requests").setLevel(logging.WARNING)
         self.logger = logging.getLogger(__name__)
 
@@ -120,7 +119,7 @@ class IngestApi:
             self.submission_links[submissionUrl] = json.loads(r.text)["_links"]
             return submissionUrl
         except requests.exceptions.RequestException as err:
-            self.logger.error("Request failed: ", err)
+            self.logger.error("Request failed: " + str(err))
             raise
 
     def finishSubmission(self, submissionUrl):

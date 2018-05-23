@@ -8,18 +8,20 @@ from openpyxl.utils.exceptions import InvalidFileException
 __author__ = "jupp"
 __license__ = "Apache 2.0"
 
-import json, os
+import json
 import logging
+import os
+
 import ingest.utils.token_util as token_util
 
-
 from openpyxl import load_workbook
-from ingest.api.ingestapi import IngestApi
-
 from optparse import OptionParser
 
 from itertools import chain
 from collections import defaultdict
+
+from ingest.api.ingestapi import IngestApi
+from ingest.importer.spreadsheetUploadError import SpreadsheetUploadError
 
 
 # these are spreadsheet fields that can be a list
@@ -131,7 +133,7 @@ class SpreadsheetSubmission:
         # todo - the logging code below doesn't work in python 3 - we should upgrade this
         formatter = logging.Formatter(
             '[%(filename)s:%(lineno)s - %(funcName)20s() ] %(asctime)s - %(name)s - %(levelname)s - %(message)s')
-        logging.basicConfig(formatter=formatter, level=logging.INFO)
+        # logging.basicConfig(formatter=formatter, level=logging.INFO)
         self.logger = logging.getLogger(__name__)
 
         self.dryrun = dry
@@ -312,6 +314,14 @@ class SpreadsheetSubmission:
     def completeSubmission(self):
         self.ingest_api.finishSubmission()
 
+    def submit2(self, pathToSpreadsheet, submissionUrl, token=None, project_id=None):
+        try:
+            self._process2(pathToSpreadsheet, submissionUrl, token, project_id)
+        except Exception as e:
+            self.logger.error("Error:"+str(e))
+            self.logger.error("Exception occurred processing spreadsheet", exc_info=e)
+            raise e
+
     def submit(self, pathToSpreadsheet, submissionUrl, token=None, project_id=None):
         try:
             self._process(pathToSpreadsheet, submissionUrl, token, project_id)
@@ -329,163 +339,124 @@ class SpreadsheetSubmission:
             tmpFile.write(json.dumps(object, indent=4))
             tmpFile.close()
 
-    def _process(self, pathToSpreadsheet, submissionUrl, token, existing_project_id):
+    def _get_sheet(self, wb, name):
+        if name in wb.sheetnames:
+            return wb[name]
+        else:
+            return wb.create_sheet()
 
+    def _process(self, pathToSpreadsheet, submissionUrl, token, existing_project_id):
         # parse the spreadsheet
         try:
             wb = load_workbook(filename=pathToSpreadsheet)
         except InvalidFileException:
             raise SpreadsheetUploadError(400, "The uploaded file is not a valid XLSX spreadsheet", "")
-        # This code section deals with cases where the project has already been submitted
-        # ASSUMPTION: now additional project information (publications, contributors etc) is added via
-        # the spreadsheet if the project already exists
 
-        projectSheet = wb.create_sheet()
-        projectPubsSheet = wb.create_sheet()
-        contributorSheet = wb.create_sheet()
+        # TODO support for piecemeal submissions (if an existing project id is supplied by the user
+
         empty_wrapper_id = 1
         empty_sampling_id = 1
 
-        if existing_project_id is None:
-            projectSheet = wb.get_sheet_by_name("project")
 
-            if "project.publications" in wb.sheetnames:
-                projectPubsSheet = wb.get_sheet_by_name("project.publications")
-            if "contact" in wb.sheetnames:
-                contributorSheet = wb.get_sheet_by_name("contact")
-
-        specimenSheet = wb.create_sheet()
-        donorSheet = wb.create_sheet()
-        cellSuspensionSheet = wb.create_sheet()
-        familialRelationshipSheet = wb.create_sheet()
-
-        if "specimen_from_organism" in wb.sheetnames:
-            specimenSheet = wb.get_sheet_by_name("specimen_from_organism")
-        if "donor_organism" in wb.sheetnames:
-            donorSheet = wb.get_sheet_by_name("donor_organism")
-        if "cell_suspension" in wb.sheetnames:
-            cellSuspensionSheet = wb.get_sheet_by_name("cell_suspension")
-        if "familial_relationship" in wb.sheetnames:
-            familialRelationshipSheet = wb.get_sheet_by_name("familial_relationship")
-
-        organoidSheet = wb.create_sheet()
-        if "organoid" in wb.sheetnames:
-            organoidSheet = wb.get_sheet_by_name("organoid")
-
-        clSheet = wb.create_sheet()
-        if "cell_line" in wb.sheetnames:
-            clSheet = wb.get_sheet_by_name("cell_line")
-
-        clPublicationSheet = wb.create_sheet()
-        if "cell_line.publications" in wb.sheetnames:
-            clPublicationSheet = wb.get_sheet_by_name("cell_line.publications")
-
-
-        protocolSheet = wb.create_sheet()
-        collectionSheet = wb.create_sheet()
-        dissociationSheet = wb.create_sheet()
-        enrichmentSheet = wb.create_sheet()
-        libraryPrepSheet = wb.create_sheet()
-        sequencingSheet = wb.create_sheet()
-        reagentsSheet = wb.create_sheet()
-        filesSheet = wb.create_sheet()
-
-        if "protocol" in wb.sheetnames:
-            protocolSheet = wb.get_sheet_by_name("protocol")
-        if "enrichment_process" in wb.sheetnames:
-            enrichmentSheet = wb.get_sheet_by_name("enrichment_process")
-        if "collection_process" in wb.sheetnames:
-            collectionSheet = wb.get_sheet_by_name("collection_process")
-        if "dissociation_process" in wb.sheetnames:
-            dissociationSheet = wb.get_sheet_by_name("dissociation_process")
-        if "library_preparation_process" in wb.sheetnames:
-            libraryPrepSheet = wb.get_sheet_by_name("library_preparation_process")
-        if "sequencing_process" in wb.sheetnames:
-            sequencingSheet = wb.get_sheet_by_name("sequencing_process")
-        if "purchased_reagents" in wb.sheetnames:
-            reagentsSheet = wb.get_sheet_by_name("purchased_reagents")
-        if "sequence_file" in wb.sheetnames:
-            filesSheet = wb.get_sheet_by_name("sequence_file")
-
+        # Project    --------------------------------------------
 
         # convert data in sheets back into dict + add the schema_type/describedBy boilerplate
-        project = self._multiRowToObjectFromSheet("project", projectSheet)
+        project = self._multiRowToObjectFromSheet("project", self._get_sheet(wb, "project"))
         if project:
             if len(project) == 1:
                 project = project[0]
                 project.update({"schema_type": "project",
                   "describedBy": schema_sheetname_mappings["project"]})
 
-        enrichment = self._multiRowToObjectFromSheet("enrichment_process", enrichmentSheet)
+
+        # Biomaterials -----------------------------------------
+
+        donors = self._multiRowToObjectFromSheet("donor_organism", self._get_sheet(wb, "donor_organism"))
+        if donors:
+            for do in donors:
+                do.update({"schema_type": "biomaterial",
+                           "describedBy": schema_sheetname_mappings["donor_organism"]})
+
+        specimens = self._multiRowToObjectFromSheet("specimen_from_organism",
+                                                    self._get_sheet(wb, "specimen_from_organism"))
+        if specimens:
+            for spec in specimens:
+                spec.update({"schema_type": "biomaterial",
+                             "describedBy": schema_sheetname_mappings["specimen_from_organism"]})
+        cell_suspension = self._multiRowToObjectFromSheet("cell_suspension", self._get_sheet(wb, "cell_suspension"))
+        if cell_suspension:
+            for cs in cell_suspension:
+                cs.update({"schema_type": "biomaterial",
+                           "describedBy": schema_sheetname_mappings["cell_suspension"]})
+        organoid = self._multiRowToObjectFromSheet("organoid", self._get_sheet(wb, "organoid"))
+        if organoid:
+            for org in organoid:
+                org.update({"schema_type": "biomaterial",
+                            "describedBy": schema_sheetname_mappings["organoid"]})
+        cell_line = self._multiRowToObjectFromSheet("cell_line", self._get_sheet(wb, "cell_line"))
+        if cell_line:
+            for cl in cell_line:
+                cl.update({"schema_type": "biomaterial",
+                           "describedBy": schema_sheetname_mappings["cell_line"]})
+
+        # Processes --------------------------------------------
+
+        enrichment = self._multiRowToObjectFromSheet("enrichment_process", self._get_sheet(wb, "enrichment_process"))
         if enrichment:
             for e in enrichment:
                 e.update({"schema_type": "process",
                           "describedBy": schema_sheetname_mappings["enrichment_process"]})
 
-        collection = self._multiRowToObjectFromSheet("collection_process", collectionSheet)
+        collection = self._multiRowToObjectFromSheet("collection_process", self._get_sheet(wb, "collection_process"))
         if collection:
             for c in collection:
                 c.update({"schema_type": "process",
                      "describedBy": schema_sheetname_mappings["collection_process"]})
 
-        dissociation = self._multiRowToObjectFromSheet("dissociation_process", dissociationSheet)
+        dissociation = self._multiRowToObjectFromSheet("dissociation_process", self._get_sheet(wb, "dissociation_process"))
         if dissociation:
             for d in dissociation:
                 d.update({"schema_type": "process",
                   "describedBy": schema_sheetname_mappings["dissociation_process"]})
 
-        reagents = self._multiRowToObjectFromSheet("purchased_reagents", reagentsSheet)
-        libraryPrep = self._multiRowToObjectFromSheet("library_preparation_process", libraryPrepSheet)
+        reagents = self._multiRowToObjectFromSheet("purchased_reagents", self._get_sheet(wb, "purchased_reagents"))
+        libraryPrep = self._multiRowToObjectFromSheet("library_preparation_process", self._get_sheet(wb, "library_preparation_process"))
         if libraryPrep:
             for lp in libraryPrep:
                 lp.update({"schema_type": "process",
                     "describedBy": schema_sheetname_mappings["library_preparation_process"]})
-        sequencing = self._multiRowToObjectFromSheet("sequencing_process", sequencingSheet)
+        sequencing = self._multiRowToObjectFromSheet("sequencing_process", self._get_sheet(wb, "sequencing_process"))
         if sequencing:
             for s in sequencing:
                 s.update({"schema_type": "process",
                   "describedBy": schema_sheetname_mappings["sequencing_process"]})
 
-        protocols = self._multiRowToObjectFromSheet("protocol", protocolSheet)
+        # Protocols --------------------------------------------
+
+        protocols = self._multiRowToObjectFromSheet("protocol", self._get_sheet(wb, "protocol"))
         if protocols:
             for prot in protocols:
                 prot.update({"schema_type": "protocol",
                   "describedBy": schema_sheetname_mappings["protocol"]})
-        donors = self._multiRowToObjectFromSheet("donor_organism", donorSheet)
-        if donors:
-            for do in donors:
-                do.update({"schema_type": "biomaterial",
-                  "describedBy": schema_sheetname_mappings["donor_organism"]})
-        familialRelationships = self._multiRowToObjectFromSheet("familial_relationship", familialRelationshipSheet)
-        publications = self._multiRowToObjectFromSheet("project.publications", projectPubsSheet)
-        contributors = self._multiRowToObjectFromSheet("contributor", contributorSheet)
 
-        specimens = self._multiRowToObjectFromSheet("specimen_from_organism", specimenSheet)
-        if specimens:
-            for spec in specimens:
-                spec.update({"schema_type": "biomaterial",
-                  "describedBy": schema_sheetname_mappings["specimen_from_organism"]})
-        cell_suspension = self._multiRowToObjectFromSheet("cell_suspension", cellSuspensionSheet)
-        if cell_suspension:
-            for cs in cell_suspension:
-                cs.update({"schema_type": "biomaterial",
-                     "describedBy": schema_sheetname_mappings["cell_suspension"]})
-        organoid = self._multiRowToObjectFromSheet("organoid", organoidSheet)
-        if organoid:
-            for org in organoid:
-                org.update({"schema_type": "biomaterial",
-                  "describedBy": schema_sheetname_mappings["organoid"]})
-        cell_line = self._multiRowToObjectFromSheet("cell_line", clSheet)
-        if cell_line:
-            for cl in cell_line:
-                cl.update({"schema_type": "biomaterial",
-                  "describedBy": schema_sheetname_mappings["cell_line"]})
-        cell_line_publications = self._multiRowToObjectFromSheet("cell_line.publications", clPublicationSheet)
-        files = self._multiRowToObjectFromSheet("sequence_file", filesSheet)
+        # Files --------------------------------------------
+
+        files = self._multiRowToObjectFromSheet("sequence_file", self._get_sheet(wb, "sequence_file"))
         if files:
             for f in files:
                 f.update({"schema_type": "file",
                  "describedBy": schema_sheetname_mappings["sequence_file"]})
+
+        # Others --------------------------------------------
+
+        familialRelationships = self._multiRowToObjectFromSheet("familial_relationship",
+                                                                self._get_sheet(wb, "familial_relationship"))
+        publications = self._multiRowToObjectFromSheet("project.publications",
+                                                       self._get_sheet(wb, "project.publications"))
+        contributors = self._multiRowToObjectFromSheet("contributor", self._get_sheet(wb, "contact"))
+
+        cell_line_publications = self._multiRowToObjectFromSheet("cell_line.publications", self._get_sheet(wb, "cell_line.publications"))
+
 
 
         biomaterials = []
@@ -510,14 +481,19 @@ class SpreadsheetSubmission:
             token = "Bearer " + token_util.get_token()
             submissionUrl = self.createSubmission(token)
 
+        linksList = []
+
+
         # post objects to the Ingest API after some basic validation
         if existing_project_id is None:
             self.logger.info("Creating a new project for the submission")
             if "project_shortname" not in project["project_core"]:
                 raise ValueError('Project must have an id attribute')
+
             projectId = project["project_core"]["project_shortname"]
 
-             # embedd contact & publication into into project for now
+
+            # embedd contact & publication into into project for now
             pubs = []
             for index, publication in enumerate(publications):
                 if "project_core" in publication and "project_shortname" in publication["project_core"] and publication["project_core"]["project_shortname"] == projectId:
@@ -525,6 +501,7 @@ class SpreadsheetSubmission:
                 else:
                     raise ValueError('Publication must reference the correct project shortname')
                 pubs.append(publication)
+
             project["publications"] = pubs
 
             cont = []
@@ -697,6 +674,8 @@ class SpreadsheetSubmission:
                 biomaterialIngest = self.ingest_api.createBiomaterial(submissionUrl, json.dumps(biomaterial))
                 self.ingest_api.linkEntity(biomaterialIngest, projectIngest, "projects") # correct
                 biomaterialMap[biomaterial["biomaterial_core"]["biomaterial_id"]] = biomaterialIngest
+            else:
+                linksList.append("biomaterial_" + str(biomaterial_id) + "-project_" + str(projectId))
 
         # create has_input_biomaterial links between biomaterials separately to make sure all biomaterials are submitted
         for index, biomaterial_id in enumerate(biomaterialMap.keys()):
@@ -725,7 +704,11 @@ class SpreadsheetSubmission:
                             if biomaterial_id not in biomaterial_proc_outputs:
                                 biomaterial_proc_outputs[biomaterial_id] = []
                             biomaterial_proc_inputs[biomaterial_id].append(process_id)
-
+            else:
+                if "has_input_biomaterial" in biomaterialMap[biomaterial_id]:
+                    linksList.append(
+                        "biomaterial_" + str(biomaterial_id) + "-hasInputBiomaterial_" + str(
+                            biomaterialMap[biomaterial_id]["biomaterial_core"]["has_input_biomaterial"]))
         filesMap={}
         for index, file in enumerate(files):
             if "file_name" not in file["file_core"]:
@@ -839,6 +822,525 @@ class SpreadsheetSubmission:
 
                 for protocol_id in process_protocols:
                     self.ingest_api.linkEntity(processIngest, protocolMap[protocol_id], "protocols")
+            else:
+                linksList.append("process_" + str(process["process_core"]["process_id"]) + "-project_" + str(projectId))
+
+                for biomaterial in proc_input_biomaterials:
+                    linksList.append(
+                        "process_" + str(process["process_core"]["process_id"]) + "-biomaterial_" + str(biomaterial))
+
+                for file in output_files:
+                    linksList.append("process_" + str(process["process_core"]["process_id"]) + "-file_" + str(file))
+
+            self.dumpJsonToFile(linksList, projectId, "dry_run_links")
+
+        self.logger.info("All done!")
+        wb.close()
+        return submissionUrl
+
+    def _process2(self, pathToSpreadsheet, submissionUrl, token, existing_project_id):
+        # parse the spreadsheet
+        try:
+            wb = load_workbook(filename=pathToSpreadsheet)
+        except InvalidFileException:
+            raise SpreadsheetUploadError(400, "The uploaded file is not a valid XLSX spreadsheet", "")
+
+        # TODO support for piecemeal submissions (if an existing project id is supplied by the user
+
+        empty_wrapper_id = 1
+        empty_sampling_id = 1
+
+
+        # Project    --------------------------------------------
+
+        # convert data in sheets back into dict + add the schema_type/describedBy boilerplate
+        project = self._multiRowToObjectFromSheet("project", self._get_sheet(wb, "project"))
+        if project:
+            if len(project) == 1:
+                project = project[0]
+                project.update({"schema_type": "project",
+                  "describedBy": schema_sheetname_mappings["project"]})
+
+
+        # Biomaterials -----------------------------------------
+
+        donors = self._multiRowToObjectFromSheet("donor_organism", self._get_sheet(wb, "donor_organism"))
+        if donors:
+            for do in donors:
+                do.update({"schema_type": "biomaterial",
+                           "describedBy": schema_sheetname_mappings["donor_organism"]})
+
+        specimens = self._multiRowToObjectFromSheet("specimen_from_organism",
+                                                    self._get_sheet(wb, "specimen_from_organism"))
+        if specimens:
+            for spec in specimens:
+                spec.update({"schema_type": "biomaterial",
+                             "describedBy": schema_sheetname_mappings["specimen_from_organism"]})
+        cell_suspension = self._multiRowToObjectFromSheet("cell_suspension", self._get_sheet(wb, "cell_suspension"))
+        if cell_suspension:
+            for cs in cell_suspension:
+                cs.update({"schema_type": "biomaterial",
+                           "describedBy": schema_sheetname_mappings["cell_suspension"]})
+        organoid = self._multiRowToObjectFromSheet("organoid", self._get_sheet(wb, "organoid"))
+        if organoid:
+            for org in organoid:
+                org.update({"schema_type": "biomaterial",
+                            "describedBy": schema_sheetname_mappings["organoid"]})
+        cell_line = self._multiRowToObjectFromSheet("cell_line", self._get_sheet(wb, "cell_line"))
+        if cell_line:
+            for cl in cell_line:
+                cl.update({"schema_type": "biomaterial",
+                           "describedBy": schema_sheetname_mappings["cell_line"]})
+
+        # Processes --------------------------------------------
+
+        enrichment = self._multiRowToObjectFromSheet("enrichment_process", self._get_sheet(wb, "enrichment_process"))
+        if enrichment:
+            for e in enrichment:
+                e.update({"schema_type": "process",
+                          "describedBy": schema_sheetname_mappings["enrichment_process"]})
+
+        collection = self._multiRowToObjectFromSheet("collection_process", self._get_sheet(wb, "collection_process"))
+        if collection:
+            for c in collection:
+                c.update({"schema_type": "process",
+                     "describedBy": schema_sheetname_mappings["collection_process"]})
+
+        dissociation = self._multiRowToObjectFromSheet("dissociation_process", self._get_sheet(wb, "dissociation_process"))
+        if dissociation:
+            for d in dissociation:
+                d.update({"schema_type": "process",
+                  "describedBy": schema_sheetname_mappings["dissociation_process"]})
+
+        reagents = self._multiRowToObjectFromSheet("purchased_reagents", self._get_sheet(wb, "purchased_reagents"))
+        libraryPrep = self._multiRowToObjectFromSheet("library_preparation_process", self._get_sheet(wb, "library_preparation_process"))
+        if libraryPrep:
+            for lp in libraryPrep:
+                lp.update({"schema_type": "process",
+                    "describedBy": schema_sheetname_mappings["library_preparation_process"]})
+        sequencing = self._multiRowToObjectFromSheet("sequencing_process", self._get_sheet(wb, "sequencing_process"))
+        if sequencing:
+            for s in sequencing:
+                s.update({"schema_type": "process",
+                  "describedBy": schema_sheetname_mappings["sequencing_process"]})
+
+        # Protocols --------------------------------------------
+
+        protocols = self._multiRowToObjectFromSheet("protocol", self._get_sheet(wb, "protocol"))
+        if protocols:
+            for prot in protocols:
+                prot.update({"schema_type": "protocol",
+                  "describedBy": schema_sheetname_mappings["protocol"]})
+
+        # Files --------------------------------------------
+
+        files = self._multiRowToObjectFromSheet("sequence_file", self._get_sheet(wb, "sequence_file"))
+        if files:
+            for f in files:
+                f.update({"schema_type": "file",
+                 "describedBy": schema_sheetname_mappings["sequence_file"]})
+
+        # Others --------------------------------------------
+
+        familialRelationships = self._multiRowToObjectFromSheet("familial_relationship",
+                                                                self._get_sheet(wb, "familial_relationship"))
+        publications = self._multiRowToObjectFromSheet("project.publications",
+                                                       self._get_sheet(wb, "project.publications"))
+        contributors = self._multiRowToObjectFromSheet("contributor", self._get_sheet(wb, "contact"))
+
+        cell_line_publications = self._multiRowToObjectFromSheet("cell_line.publications", self._get_sheet(wb, "cell_line.publications"))
+
+
+
+        biomaterials = []
+        biomaterials.extend(donors)
+        biomaterials.extend(specimens)
+        biomaterials.extend(cell_suspension)
+        biomaterials.extend(organoid)
+        biomaterials.extend(cell_line)
+
+        processes = []
+        processes.extend(collection)
+        processes.extend(dissociation)
+        processes.extend(enrichment)
+        processes.extend(libraryPrep)
+        processes.extend(sequencing)
+
+        chained_processes = []
+
+        # creating submission
+        #
+        if not self.dryrun and not submissionUrl:
+            token = "Bearer " + token_util.get_token()
+            submissionUrl = self.createSubmission(token)
+
+        linksList = []
+
+
+        # post objects to the Ingest API after some basic validation
+        if existing_project_id is None:
+            self.logger.info("Creating a new project for the submission")
+            if "project_shortname" not in project["project_core"]:
+                raise ValueError('Project must have an id attribute')
+
+            projectId = project["project_core"]["project_shortname"]
+
+
+            # embedd contact & publication into into project for now
+            pubs = []
+            for index, publication in enumerate(publications):
+                if "project_core" in publication and "project_shortname" in publication["project_core"] and publication["project_core"]["project_shortname"] == projectId:
+                    del publication["project_core"]
+                else:
+                    raise ValueError('Publication must reference the correct project shortname')
+                pubs.append(publication)
+
+            project["publications"] = pubs
+
+            cont = []
+            for index, contributor in enumerate(contributors):
+                if "project_core" in contributor and "project_shortname" in contributor["project_core"] and contributor["project_core"]["project_shortname"] == projectId:
+                    del contributor["project_core"]
+                else:
+                    raise ValueError('Contributor must reference the correct project shortname')
+                cont.append(contributor)
+            project["contributors"] = cont
+
+            self.dumpJsonToFile(project, projectId, "project")
+
+            projectIngest = None
+            if not self.dryrun:
+                projectIngest = self.ingest_api.createProject(submissionUrl, json.dumps(project), token)
+
+        else:
+            if not self.dryrun:
+                self.logger.info("Retrieving existing project: " + existing_project_id)
+                projectIngest = self.ingest_api.getProjectById(existing_project_id)
+                submissionEnvelope = self.ingest_api.getSubmissionEnvelope(submissionUrl)
+                self.ingest_api.linkEntity(projectIngest, submissionEnvelope, "submissionEnvelopes") # correct
+            else:
+                projectIngest = {"content" :
+                                     {"project_core":
+                                     {"project_shortname" : "dummy_project_id"}}}
+
+            projectId = projectIngest["content"]["project_core"]["project_shortname"]
+
+            self.dumpJsonToFile(projectIngest, projectId, "existing_project")
+
+
+        protocolMap = {}
+        for index, protocol in enumerate(protocols):
+            if "protocol_id" not in protocol["protocol_core"]:
+                raise ValueError('Protocol must have an id attribute')
+
+            self.dumpJsonToFile(protocol, projectId, "protocol_" + str(index))
+            protocolMap[protocol["protocol_core"]["protocol_id"]] = protocol
+            if not self.dryrun:
+                protocolIngest = self.ingest_api.createProtocol(submissionUrl, json.dumps(protocol))
+                protocolMap[protocol["protocol_core"]["protocol_id"]] = protocolIngest
+
+
+        biomaterialMap = {}
+        for index, biomaterial in enumerate(biomaterials):
+            if "biomaterial_id" not in biomaterial["biomaterial_core"]:
+                raise ValueError('Biomaterial must have an id attribute')
+            biomaterialMap[biomaterial["biomaterial_core"]["biomaterial_id"]] = biomaterial
+
+            if "ncbi_taxon_id" in biomaterial["biomaterial_core"] and "genus_species" in biomaterial:
+                if not isinstance(biomaterial["genus_species"],list):
+                    biomaterial["genus_species"]["ontology"] = "NCBITaxon:" + str(biomaterial["biomaterial_core"]["ncbi_taxon_id"])
+                elif isinstance(biomaterial["genus_species"],list) and len(biomaterial["genus_species"])==1:
+                    biomaterial["genus_species"][0]["ontology"] = "NCBITaxon:" + str(biomaterial["biomaterial_core"]["ncbi_taxon_id"][0])
+
+
+        # add dependent information to various biomaterial types
+
+        for publication in cell_line_publications:
+            if "biomaterial_id" in publication["biomaterial_core"]:
+                bio_id = publication["biomaterial_core"]["biomaterial_id"]
+                del publication["biomaterial_core"]
+
+                if "publications" not in biomaterialMap[bio_id]:
+                    biomaterialMap[bio_id]["publications"] = []
+                biomaterialMap[bio_id]["publications"].append(publication)
+
+        for familialRel in familialRelationships:
+            if "biomaterial_id" in familialRel["biomaterial_core"]:
+                bio_id = familialRel["biomaterial_core"]["biomaterial_id"]
+                del familialRel["biomaterial_core"]
+
+                if "familial_relationship" not in biomaterialMap[bio_id]:
+                    biomaterialMap[bio_id]["familial_relationship"] = []
+                biomaterialMap[bio_id]["familial_relationship"].append(familialRel)
+
+
+
+
+        # build the process map from the different types of process infromation
+        processMap = {}
+        chainedProcessMap = {}
+        for index, process in enumerate(processes):
+            if "process_id" not in process["process_core"]:
+                raise ValueError('Process must have an id attribute')
+            processMap[process["process_core"]["process_id"]] = process
+
+        for reagent in reagents:
+            if "process_id" in reagent["process_core"]:
+                process_id = reagent["process_core"]["process_id"]
+                del reagent["process_core"]
+
+                if "process_reagents" not in processMap[process_id]:
+                    processMap[process_id]["process_reagents"] = []
+                processMap[process_id]["process_reagents"].append(reagents)
+
+        # submit biomaterials to ingest and link to project and protocols
+        biomaterials_with_procs = []
+        proc_input_biomaterials = {}
+        biomaterial_proc_inputs = {}
+        proc_output_biomaterials = {}
+        biomaterial_proc_outputs = {}
+        procs_wrapped_by = {}
+        for index, biomaterial_id in enumerate(biomaterialMap.keys()):
+            biomaterial = biomaterialMap[biomaterial_id]
+            if "has_input_biomaterial" in biomaterial["biomaterial_core"]:
+                if biomaterial["biomaterial_core"]["has_input_biomaterial"] not in biomaterialMap.keys():
+                    raise ValueError('Biomaterial '+ str(biomaterial_id) +' references another biomaterial '+ str(biomaterial["biomaterial_core"]["has_input_biomaterial"]) +' that isn\'t in the spraedsheet')
+
+            if "process_ids" in biomaterial:
+                biomaterials_with_procs.append(biomaterial_id)
+                # do we have multiple chained protocols? If so, create or reuse a 'wrapper'
+                wrapper_process = {}
+                if len(biomaterial["process_ids"]) > 1:
+                    process_ids_field = str(biomaterial["process_ids"])
+                    if process_ids_field in procs_wrapped_by:
+                        wrapper_process = procs_wrapped_by[process_ids_field]
+                    else:
+                        wrapper_process = self._emptyProcessObject("wrapper", empty_wrapper_id)
+                        empty_wrapper_id += 1
+                        procs_wrapped_by[process_ids_field] = wrapper_process
+                        processMap[wrapper_process["process_core"]["process_id"]] = wrapper_process
+                        processMap[wrapper_process["process_core"]["process_id"]]["chained_process_ids"] = []
+
+                for process_id in biomaterial["process_ids"]:
+                    if process_id not in processMap.keys():
+                        raise ValueError(
+                         'A biomaterial references a process ' + process_id + ' that isn\'t in the biomaterials worksheet')
+
+                    if biomaterial_id not in biomaterial_proc_inputs:
+                        biomaterial_proc_inputs[biomaterial_id] = []
+
+                    # do we have a wrapper process?
+                    if wrapper_process:
+                        # link this process to the wrapper
+                        wrapper_id = wrapper_process["process_core"]["process_id"]
+                        if "biomaterial_ids" not in processMap[wrapper_id]:
+                            processMap[wrapper_id]["biomaterial_ids"] = []
+
+                        processMap[wrapper_id]["chained_process_ids"].append(process_id)
+                        if process_id not in chainedProcessMap:
+                            chainedProcessMap[process_id] = []
+                        if wrapper_id not in chainedProcessMap[process_id]:
+                            chainedProcessMap[process_id].append(wrapper_id)
+
+                        # link input or output biomaterials to the wrapper (i.e. indirectly)
+                        if biomaterial_id not in processMap[wrapper_id]["biomaterial_ids"]:
+                            processMap[wrapper_id]["biomaterial_ids"].append(biomaterial_id)
+                        if wrapper_id not in proc_input_biomaterials:
+                            proc_input_biomaterials[wrapper_id] = []
+                        if biomaterial_id not in proc_input_biomaterials[wrapper_id]:
+                            proc_input_biomaterials[wrapper_id].append(biomaterial_id)
+                        if wrapper_id not in biomaterial_proc_inputs[biomaterial_id]:
+                            biomaterial_proc_inputs[biomaterial_id].append(wrapper_id)
+                    else:
+                        # link processes to input and output directly
+                        if "biomaterial_ids" not in processMap[process_id]:
+                            processMap[process_id]["biomaterial_ids"] = []
+
+                        processMap[process_id]["biomaterial_ids"].append(biomaterial["biomaterial_core"]["biomaterial_id"])
+                        if process_id not in proc_input_biomaterials:
+                            proc_input_biomaterials[process_id] = []
+                        if biomaterial_id not in proc_input_biomaterials[process_id]:
+                            proc_input_biomaterials[process_id].append(biomaterial_id)
+                        if process_id not in biomaterial_proc_inputs[biomaterial_id]:
+                            biomaterial_proc_inputs[biomaterial_id].append(process_id)
+                del biomaterial["process_ids"]
+
+            self.dumpJsonToFile(biomaterial, projectId, "biomaterial_" + str(index))
+            if not self.dryrun:
+                biomaterialIngest = self.ingest_api.createBiomaterial(submissionUrl, json.dumps(biomaterial))
+                self.ingest_api.linkEntity(biomaterialIngest, projectIngest, "projects") # correct
+                biomaterialMap[biomaterial["biomaterial_core"]["biomaterial_id"]] = biomaterialIngest
+            else:
+                linksList.append("biomaterial_" + str(biomaterial_id) + "-project_" + str(projectId))
+
+        # create has_input_biomaterial links between biomaterials separately to make sure all biomaterials are submitted
+        for index, biomaterial_id in enumerate(biomaterialMap.keys()):
+            if not self.dryrun:
+                if "has_input_biomaterial" in biomaterialMap[biomaterial_id]['content']["biomaterial_core"]:
+                    # retrieve biomaterials from map
+                    output_biomaterial = biomaterialMap[biomaterial_id]
+                    input_biomaterial = biomaterialMap[biomaterialMap[biomaterial_id]['content']["biomaterial_core"]["has_input_biomaterial"]]
+
+                    # if the input biomaterial declares the process, we will link later
+                    if input_biomaterial['content']['biomaterial_core']['biomaterial_id'] not in biomaterials_with_procs:
+                        # else create sampling process to link biomaterials
+                        sampling_process = self._emptyProcessObject("sampling", empty_sampling_id)
+                        empty_sampling_id += 1
+                        sampling_process_ingest = self.ingest_api.createProcess(submissionUrl, json.dumps(sampling_process))
+
+                        # link process to input biomaterials
+                        self.ingest_api.linkEntity(input_biomaterial, sampling_process_ingest, "inputToProcesses")
+                        # link process to output biomaterials
+                        self.ingest_api.linkEntity(output_biomaterial, sampling_process_ingest, "derivedByProcesses")
+                    else:
+                        for process_id in biomaterial_proc_inputs[input_biomaterial['content']['biomaterial_core']['biomaterial_id']]:
+                            if process_id not in proc_output_biomaterials:
+                                proc_output_biomaterials[process_id] = []
+                            proc_output_biomaterials[process_id].append(biomaterial_id)
+                            if biomaterial_id not in biomaterial_proc_outputs:
+                                biomaterial_proc_outputs[biomaterial_id] = []
+                            biomaterial_proc_inputs[biomaterial_id].append(process_id)
+            else:
+                if "has_input_biomaterial" in biomaterialMap[biomaterial_id]:
+                    linksList.append(
+                        "biomaterial_" + str(biomaterial_id) + "-hasInputBiomaterial_" + str(
+                            biomaterialMap[biomaterial_id]["biomaterial_core"]["has_input_biomaterial"]))
+
+
+
+
+
+
+        filesMap={}
+        for index, file in enumerate(files):
+            if "file_name" not in file["file_core"]:
+                raise ValueError('Files must have a name')
+            if "process_id" not in file:
+                raise ValueError('Files must be linked to a process')
+            process = file["process_id"]
+            del file["process_id"]
+            del file["biomaterial_id"]
+            filesMap[file["file_core"]["file_name"]] = file
+
+            # is the process referred to from this file wrapped by another process?
+            if process in chainedProcessMap:
+                for wrapper_process in chainedProcessMap[process]:
+                    if "files" not in processMap[wrapper_process]:
+                        processMap[wrapper_process]["files"] = []
+                    processMap[wrapper_process]["files"].append(file["file_core"]["file_name"])
+            else:
+                if "files" not in processMap[process]:
+                    processMap[process]["files"] = []
+                processMap[process]["files"].append(file["file_core"]["file_name"])
+
+            self.dumpJsonToFile(file, projectId, "files_" + str(index))
+            if not self.dryrun:
+                fileIngest = self.ingest_api.createFile(submissionUrl, file["file_core"]["file_name"], json.dumps(file))
+                filesMap[file["file_core"]["file_name"]] = fileIngest
+
+
+
+
+
+        # create all the chained processes first, these will be referred to by wrapper processes
+        chained_process_ingest_map = {}
+        for index, chained_process in enumerate(chainedProcessMap.keys()):
+            if chained_process not in processMap:
+                raise ValueError('A chained process was not found in the process sheet - ' + str(chained_process))
+            if not self.dryrun:
+                chained_process_protocols = []
+                if "protocol_ids" in processMap[chained_process]:
+                    for protocol_id in processMap[chained_process]["protocol_ids"]:
+                        if protocol_id not in protocolMap:
+                            raise ValueError('An process references a protocol '+protocol_id+' that isn\'t in one of the protocol worksheets')
+                        chained_process_protocols.append(protocolMap[protocol_id])
+                    del processMap[chained_process]["protocol_ids"]
+
+                chained_process_ingest = self.ingest_api.createProcess(submissionUrl, json.dumps(processMap[chained_process]))
+                chained_process_ingest_map[chained_process] = chained_process_ingest
+                for protocol in chained_process_protocols:
+                    self.ingest_api.linkEntity(chained_process_ingest, protocol, "protocols")
+
+
+
+        for index, process in enumerate(processMap.values()):
+            if "process_id" not in process["process_core"]:
+                raise ValueError('Each process must have an id attribute' + str(process))
+
+            output_files=[]
+            if "files" in process:
+                for file in process["files"]:
+                    if file not in filesMap:
+                        raise ValueError('Process references file '+file+' that isn\'t defined in the files sheet')
+                output_files = process["files"]
+                del process["files"]
+
+            output_biomaterials = []
+            if "biomaterial_ids" not in process:
+                # this is allowed if this is a chained process
+                if process["process_core"]["process_id"] not in chainedProcessMap:
+                    raise ValueError("Every process must reference a biomaterial using the biomaterial_id attribute")
+            else:
+                for biomaterial_id in process["biomaterial_ids"]:
+                    if biomaterial_id not in biomaterialMap:
+                        raise ValueError('An process references a biomaterial '+biomaterial_id+' that isn\'t in one of the biomaterials worksheets')
+                output_biomaterials = process["biomaterial_ids"]
+                del process["biomaterial_ids"]
+
+            chained_processes=[]
+            if "chained_process_ids" in process:
+                for chained_process_id in process["chained_process_ids"]:
+                    if not self.dryrun:
+                        chained_processes.append(chained_process_ingest_map[chained_process_id])
+                del process["chained_process_ids"]
+
+            process_protocols = []
+            if "protocol_ids" in process:
+                for protocol_id in process["protocol_ids"]:
+                    if protocol_id not in protocolMap:
+                        raise ValueError('An process references a protocol '+protocol_id+' that isn\'t in one of the protocol worksheets')
+                process_protocols = process["protocol_ids"]
+                del process["protocol_ids"]
+
+            self.dumpJsonToFile(process, projectId, "process_" + str(index))
+            if not self.dryrun:
+
+                process_id = process["process_core"]["process_id"]
+
+                if process_id in chained_process_ingest_map:
+                    processIngest = chained_process_ingest_map[process_id]
+                else:
+                    processIngest = self.ingest_api.createProcess(submissionUrl, json.dumps(process))
+
+                self.ingest_api.linkEntity(processIngest, projectIngest, "projects") # correct
+
+                if process["process_core"]["process_id"] in proc_input_biomaterials:
+                    for biomaterial_id in proc_input_biomaterials[process["process_core"]["process_id"]]:
+                        self.ingest_api.linkEntity(biomaterialMap[biomaterial_id], processIngest, "inputToProcesses")
+
+                if process["process_core"]["process_id"] in proc_output_biomaterials:
+                    for biomaterial_id in proc_output_biomaterials[process["process_core"]["process_id"]]:
+                        self.ingest_api.linkEntity(biomaterialMap[biomaterial_id], processIngest, "derivedByProcesses")
+
+                for file in output_files:
+                    self.ingest_api.linkEntity(filesMap[file], processIngest, "derivedByProcesses") # correct
+
+                for chained_process in chained_processes:
+                    self.ingest_api.linkEntity(processIngest, chained_process, "chainedProcesses")  # correct
+
+                for protocol_id in process_protocols:
+                    self.ingest_api.linkEntity(processIngest, protocolMap[protocol_id], "protocols")
+            else:
+                linksList.append("process_" + str(process["process_core"]["process_id"]) + "-project_" + str(projectId))
+
+                for biomaterial in proc_input_biomaterials:
+                    linksList.append(
+                        "process_" + str(process["process_core"]["process_id"]) + "-biomaterial_" + str(biomaterial))
+
+                for file in output_files:
+                    linksList.append("process_" + str(process["process_core"]["process_id"]) + "-file_" + str(file))
+
+            self.dumpJsonToFile(linksList, projectId, "dry_run_links")
 
         self.logger.info("All done!")
         wb.close()
@@ -847,18 +1349,17 @@ class SpreadsheetSubmission:
 if __name__ == '__main__':
     parser = OptionParser()
     parser.add_option("-p", "--path", dest="path",
-                      help="path to HCA example data bundles", metavar="FILE")
-    parser.add_option("-d", "--dry", help="doa dry run without submitting to ingest", action="store_true", default=False)
+                      help="path to spreadsheet", metavar="FILE")
+    parser.add_option("-d", "--dry", help="do a dry run without submitting to ingest", action="store_true", default=False)
     parser.add_option("-o", "--output", dest="output",
                       help="output directory where to dump json files submitted to ingest", metavar="FILE", default=None)
     parser.add_option("-i", "--id", dest="project_id",
                       help="The project_id for an existing submission", default=None)
     parser.add_option("-v", "--version", dest="schema_version", help="Metadata schema version", default=None)
 
-
     (options, args) = parser.parse_args()
     if not options.path:
-        print ("You must supply path to the HCA bundles directory")
+        print ("You must supply path to the spreadsheet")
         exit(2)
     submission = SpreadsheetSubmission(options.dry, options.output, options.schema_version)
     submission.submit(options.path, None, None, options.project_id)
