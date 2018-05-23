@@ -66,21 +66,22 @@ class TemplateManagerTest(TestCase):
         # given:
         schema_template = MagicMock(name='schema_template')
 
-        # and:
+        # and: set up column spec
         name_column_spec = MagicMock('name_column_spec')
         numbers_column_spec = MagicMock('numbers_column_spec')
         build_raw.side_effect = [name_column_spec, numbers_column_spec]
 
         # and: set up raw spec
-        name_spec = MagicMock('name_spec')
-        name_parent_spec = MagicMock('name_parent_spec')
-        numbers_spec = MagicMock('numbers_spec')
+        name_raw_spec = MagicMock('name_raw_spec')
+        name_raw_parent_spec = MagicMock('name_raw_parent_spec')
+        numbers_raw_spec = MagicMock('numbers_raw_spec')
 
+        # TODO move the logic of creating the column spec to SchemaTemplate
         # and:
         spec_map = {
-            'user.profile.first_name': name_spec,
-            'user.profile': name_parent_spec,
-            'numbers': numbers_spec
+            'user.profile.first_name': name_raw_spec,
+            'user.profile': name_raw_parent_spec,
+            'numbers': numbers_raw_spec
         }
         schema_template.get_key_for_label = lambda key: spec_map.get(key, None)
 
@@ -101,8 +102,8 @@ class TemplateManagerTest(TestCase):
 
         # then:
         expected_calls = [
-            call('user.profile.first_name', name_spec, parent=name_parent_spec),
-            call('numbers', numbers_spec, parent=None)
+            call('user.profile.first_name', name_raw_spec, parent=name_raw_parent_spec),
+            call('numbers', numbers_raw_spec, parent=None)
         ]
         build_raw.assert_has_calls(expected_calls)
         determine_strategy.assert_has_calls([call(name_column_spec), call(numbers_column_spec)])
