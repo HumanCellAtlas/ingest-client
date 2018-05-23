@@ -6,6 +6,7 @@ from ingest.importer.conversion.column_specification import ColumnSpecification,
 from ingest.importer.conversion.utils import split_field_chain
 from ingest.importer.data_node import DataNode
 
+OBJECT_ID_FIELD = '_object_id'
 CONTENT_FIELD = '_content'
 LINKS_FIELD = '_links'
 
@@ -51,7 +52,7 @@ class ListElementCellConversion(CellConversion):
 class IdentityCellConversion(CellConversion):
 
     def apply(self, data_node: DataNode, cell_data):
-        data_node['_object_id'] = self.converter.convert(cell_data)
+        data_node[OBJECT_ID_FIELD] = self.converter.convert(cell_data)
 
 
 class LinkedIdentityCellConversion(CellConversion):

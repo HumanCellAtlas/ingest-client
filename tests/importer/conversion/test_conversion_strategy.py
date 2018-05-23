@@ -160,7 +160,8 @@ class IdentityCellConversionTest(TestCase):
         cell_conversion.apply(data_node, 'product_no_144')
 
         # then:
-        self.assertEqual(data_node['_object_id'], 'product_no_144 - converted')
+        expected_id = 'product_no_144 - converted'
+        self.assertEqual(data_node[conversion_strategy.OBJECT_ID_FIELD], expected_id)
 
 
 class LinkedIdentityCellConversionTest(TestCase):
