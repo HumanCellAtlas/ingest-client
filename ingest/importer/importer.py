@@ -68,76 +68,9 @@ class WorksheetImporter:
 
     # TODO Refactor
     def do_import(self, worksheet, template:TemplateManager):
-        concrete_entity = template.get_concrete_entity_of_tab(worksheet.title)
-
-        # TODO if tab is not recognized, should we ignore it?
-        if concrete_entity is None:
-            return {}
-
         rows_by_id = {}
         for row in self._get_data_rows(worksheet):
-            node = template.create_template_node(worksheet)
-            object_list_tracker = ObjectListTracker()
-            row_id = None
-
-            links = []
-            links_map = {}
-
-            for cell in row:
-                # TODO preprocess headers so that cells can be converted without having to always
-                # check the header
-                header_key = self._get_header_name(cell, worksheet)
-
-                cell_value = cell.value
-
-                # TODO log warnings, confirm what to do if header name is not in schema template
-                if header_key is None or cell_value is None:
-                    continue
-
-                field_chain = self._get_field_chain(header_key)
-
-                if template.is_parent_field_multivalue(header_key):
-                    object_list_tracker.track_value(field_chain, cell_value)
-                    continue
-
-                converter = template.get_converter(header_key)
-                data = converter.convert(cell_value)
-
-                node[field_chain] = data
-
-                cell_concrete_entity = self._get_concrete_entity(template, header_key)
-
-                if template.is_identifier_field(header_key):
-                    if concrete_entity == cell_concrete_entity:
-                        row_id = data
-                    else:  # this is a link column
-                        link_domain_entity = template.get_domain_entity(concrete_entity=cell_concrete_entity)
-
-                        links.append({
-                            'entity': link_domain_entity,
-                            'id': data
-                        })
-
-                        if not links_map.get(link_domain_entity):
-                            links_map[link_domain_entity] = []
-
-                        links_map[link_domain_entity].append(data)
-
-            object_list_fields = object_list_tracker.get_object_list_fields()
-            for field_chain in object_list_fields:
-                node[field_chain] = object_list_tracker.get_value_by_field(field_chain)
-
-            if not row_id:
-                title = worksheet.title
-                row_index = row[0].row  # get first cell row index
-
-                raise NoUniqueIdFoundError(title, row_index)
-
-            rows_by_id[row_id] = {
-                'content': node.as_dict(),
-                'links_by_entity': links_map
-            }
-
+            pass
         return rows_by_id
 
     def _get_data_rows(self, worksheet):

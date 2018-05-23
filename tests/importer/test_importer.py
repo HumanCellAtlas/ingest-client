@@ -6,6 +6,7 @@ from unittest import TestCase
 from mock import MagicMock, patch
 from openpyxl import Workbook
 
+from ingest.importer.conversion import conversion_strategy
 from ingest.importer.conversion import template_manager
 from ingest.importer.conversion.data_converter import (
     Converter, ListConverter, BooleanConverter, DataType
@@ -113,96 +114,31 @@ class WorkbookImporterTest(TestCase):
 
 class WorksheetImporterTest(TestCase):
 
-    # TODO refactor this
     def test_do_import(self):
         # given:
-        worksheet_importer = WorksheetImporter()
+        row_template = MagicMock('row_template')
 
         # and:
-        boolean_converter = BooleanConverter()
-        converter_mapping = {
-            'project.project_core.project_shortname': Converter(),
-            'project.miscellaneous': ListConverter(),
-            'project.numbers': ListConverter(data_type=DataType.INTEGER),
-            'project.is_active': boolean_converter,
-            'project.is_submitted': boolean_converter
-        }
-
-        concrete_entity_map = {
-            'project.project_core.project_shortname': 'project',
-            'biomaterial.project_core.project_shortname': 'biomaterial',
-        }
+        john_doe = DataNode()
+        john_doe[f'{conversion_strategy.OBJECT_ID_FIELD}'] = 'profile_1'
+        john_doe[f'{conversion_strategy.CONTENT_FIELD}'] = {'name': 'John Doe'}
+        john_doe[f'{conversion_strategy.LINKS_FIELD}'] = {}
+        row_template.do_import = MagicMock('import_row', return_value=john_doe)
 
         # and:
-        mock_template_manager = MagicMock(name='template_manager')
-        mock_template_manager.create_template_node = lambda __: DataNode()
-        mock_template_manager.get_converter = lambda key: converter_mapping.get(key, Converter())
-        mock_template_manager.is_parent_field_multivalue = lambda __: False
-        mock_template_manager.is_identifier_field = (
-            lambda header_name: True if header_name == 'project.project_core.project_shortname' else False
-        )
-        mock_template_manager.get_concrete_entity_of_column = lambda key: concrete_entity_map.get(key)
-        mock_template_manager.get_concrete_entity_of_tab = lambda key: 'project'
-        mock_template_manager.get_key_for_label = MagicMock(side_effect=lambda key, tab: key)
+        template_manager = MagicMock('template_manager')
+        template_manager.create_row_template = MagicMock(return_value=row_template)
 
         # and:
-        worksheet = self._create_test_worksheet()
+        workbook = Workbook()
+        worksheet = workbook.create_sheet('user_profile')
 
         # when:
-        rows_by_id = worksheet_importer.do_import(worksheet, mock_template_manager)
+        worksheet_importer = WorksheetImporter()
+        result = worksheet_importer.do_import(worksheet, template_manager)
 
         # then:
-        self.assertEqual(2, len(list(rows_by_id.keys())))
-        tissue_stability_json = rows_by_id['Tissue stability']['content']
-
-        # and:
-        spleen_json = rows_by_id['Spleen Project']['content']
-        self.assertEqual('Spleen Project', spleen_json['project_core']['project_shortname'])
-
-        project_core = tissue_stability_json['project_core']
-        self.assertEqual('Tissue stability', project_core['project_shortname'])
-        self.assertEqual('Ischaemic sensitivity of human tissue by single cell RNA seq.',
-                         project_core['project_title'])
-
-        # and:
-        self.assertEqual(2, len(tissue_stability_json['miscellaneous']))
-        self.assertEqual(['extra', 'details'], tissue_stability_json['miscellaneous'])
-
-        # and:
-        self.assertEqual(7, tissue_stability_json['contributor_count'])
-
-        # and:
-        self.assertEqual('Juan Dela Cruz||John Doe', tissue_stability_json['contributors'])
-
-        # and:
-        self.assertEqual([1, 2, 3], tissue_stability_json['numbers'])
-
-        # and:
-        self.assertEqual(True, tissue_stability_json['is_active'])
-        self.assertEqual(False, tissue_stability_json['is_submitted'])
-
-    def _create_test_worksheet(self):
-        workbook = Workbook()
-        worksheet = workbook.create_sheet('Project')
-        worksheet[f'A{HEADER_ROW}'] = 'project.project_core.project_shortname'
-        worksheet['A6'] = 'Tissue stability'
-        worksheet['A7'] = 'Spleen Project'
-        worksheet[f'B{HEADER_ROW}'] = 'project.project_core.project_title'
-        worksheet['B6'] = 'Ischaemic sensitivity of human tissue by single cell RNA seq.'
-        worksheet[f'C{HEADER_ROW}'] = 'project.miscellaneous'
-        worksheet['C6'] = 'extra||details'
-        worksheet[f'D{HEADER_ROW}'] = 'project.contributor_count'
-        worksheet['D6'] = 7
-        worksheet[f'E{HEADER_ROW}'] = 'project.contributors'
-        worksheet['E6'] = 'Juan Dela Cruz||John Doe'
-        worksheet[f'F{HEADER_ROW}'] = 'project.numbers'
-        worksheet['F6'] = '1||2||3'
-        worksheet[f'G{HEADER_ROW}'] = 'project.is_active'
-        worksheet['G6'] = 'Yes'
-        worksheet[f'H{HEADER_ROW}'] = 'project.is_submitted'
-        worksheet['H6'] = 'No'
-
-        return worksheet
+        self.assertIsNotNone(result)
 
     def test_do_import_with_object_list_fields(self):
         # given:
