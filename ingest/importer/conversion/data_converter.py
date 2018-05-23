@@ -27,7 +27,10 @@ class Converter:
 
 
 class StringConverter(Converter):
-    pass
+
+    def convert(self, data):
+        return str(data)
+
 
 class IntegerConverter(Converter):
 
