@@ -1,7 +1,7 @@
 import re
 import openpyxl
 
-from ingest.importer.conversion import template_manager
+from ingest.importer.conversion import template_manager, conversion_strategy
 from ingest.importer.conversion.template_manager import TemplateManager
 from ingest.importer.spreadsheet.ingest_workbook import IngestWorkbook
 from ingest.importer.submission import IngestSubmitter
@@ -66,12 +66,19 @@ class WorksheetImporter:
     def __init__(self):
         pass
 
-    # TODO Refactor
     def do_import(self, worksheet, template:TemplateManager):
-        rows_by_id = {}
+        entity_type = template.get_concrete_entity_of_tab(worksheet.title)
+        records = {}
+        pre_ingest_entry = {entity_type: records}
+        row_template = template.create_row_template(worksheet)
         for row in self._get_data_rows(worksheet):
-            pass
-        return rows_by_id
+            # TODO row_template.do_import should return a structured abstraction
+            json = row_template.do_import(row)
+            records[json[conversion_strategy.OBJECT_ID_FIELD]] = {
+                'content': json[conversion_strategy.CONTENT_FIELD],
+                'links_by_entity': json[conversion_strategy.LINKS_FIELD]
+            }
+        return pre_ingest_entry
 
     def _get_data_rows(self, worksheet):
         return worksheet.iter_rows(row_offset=self.START_ROW_IDX, max_row=(worksheet.max_row - self.START_ROW_IDX))

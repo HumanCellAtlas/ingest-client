@@ -121,24 +121,42 @@ class WorksheetImporterTest(TestCase):
         # and:
         john_doe = DataNode()
         john_doe[f'{conversion_strategy.OBJECT_ID_FIELD}'] = 'profile_1'
-        john_doe[f'{conversion_strategy.CONTENT_FIELD}'] = {'name': 'John Doe'}
-        john_doe[f'{conversion_strategy.LINKS_FIELD}'] = {}
+
+        # and:
+        expected_content = {'name': 'John Doe'}
+        john_doe[f'{conversion_strategy.CONTENT_FIELD}'] = expected_content
+
+        # and:
+        expected_links = {}
+        john_doe[f'{conversion_strategy.LINKS_FIELD}'] = expected_links
+
+        # and:
         row_template.do_import = MagicMock('import_row', return_value=john_doe)
 
         # and:
-        template_manager = MagicMock('template_manager')
-        template_manager.create_row_template = MagicMock(return_value=row_template)
+        mock_template_manager = MagicMock('template_manager')
+        mock_template_manager.create_row_template = MagicMock(return_value=row_template)
+        mock_template_manager.get_concrete_entity_of_tab = MagicMock(return_value='profile')
 
         # and:
         workbook = Workbook()
         worksheet = workbook.create_sheet('user_profile')
+        worksheet['A6'] = 'dummy'
 
         # when:
         worksheet_importer = WorksheetImporter()
-        result = worksheet_importer.do_import(worksheet, template_manager)
+        result = worksheet_importer.do_import(worksheet, mock_template_manager)
 
         # then:
-        self.assertIsNotNone(result)
+        profile = result.get('profile')
+        self.assertIsNotNone(profile)
+
+        # and:
+        profile_1 = profile.get('profile_1')
+        self.assertIsNotNone(profile_1)
+        self.assertEqual(expected_content, profile_1.get('content'))
+        self.assertEqual(expected_links, profile_1.get('links_by_entity'))
+
 
     def test_do_import_with_object_list_fields(self):
         # given:
