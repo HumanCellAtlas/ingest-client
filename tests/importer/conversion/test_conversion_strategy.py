@@ -81,7 +81,7 @@ class DirectCellConversionTest(TestCase):
         cell_conversion.apply(data_node, '27')
 
         # then:
-        content = data_node.as_dict().get('_content')
+        content = data_node.as_dict().get(conversion_strategy.CONTENT_FIELD)
         self.assertIsNotNone(content)
 
         # and:
@@ -108,7 +108,11 @@ class ListElementCellConversionTest(TestCase):
         cell_conversion.apply(data_node, 'sample')
 
         # then:
-        list_of_things = data_node.as_dict().get('list_of_things')
+        content = data_node.as_dict().get(conversion_strategy.CONTENT_FIELD)
+        self.assertIsNotNone(content)
+
+        # and:
+        list_of_things = content.get('list_of_things')
         self.assertIsNotNone(list_of_things)
         self.assertEqual(1, len(list_of_things))
 
@@ -123,13 +127,17 @@ class ListElementCellConversionTest(TestCase):
 
         # and:
         data_node = DataNode()
-        data_node['user.basket'] = [{'quantity': 3}]
+        data_node[f'{conversion_strategy.CONTENT_FIELD}.user.basket'] = [{'quantity': 3}]
 
         # when:
         cell_conversion.apply(data_node, 'apple')
 
         # then:
-        basket = data_node.as_dict().get('user').get('basket')
+        content = data_node.as_dict().get(conversion_strategy.CONTENT_FIELD)
+        self.assertIsNotNone(content)
+
+        # and:
+        basket = content.get('user').get('basket')
         self.assertEqual(1, len(basket))
 
         # and:
