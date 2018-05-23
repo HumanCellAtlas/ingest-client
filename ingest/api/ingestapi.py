@@ -13,9 +13,8 @@ import json, os, requests, logging, uuid
 
 class IngestApi:
     def __init__(self, url=None):
-        formatter = logging.Formatter(
-            '[%(filename)s:%(lineno)s - %(funcName)20s() ] %(asctime)s - %(name)s - %(levelname)s - %(message)s')
-        logging.basicConfig(formatter=formatter)
+        format = '[%(filename)s:%(lineno)s - %(funcName)20s() ] %(asctime)s - %(name)s - %(levelname)s - %(message)s'
+        logging.basicConfig(format=format)
         logging.getLogger("requests").setLevel(logging.WARNING)
         self.logger = logging.getLogger(__name__)
 

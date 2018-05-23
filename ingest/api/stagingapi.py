@@ -45,13 +45,19 @@ class StagingApi:
 
     def createStagingArea(self, submissionId):
         base = urljoin(self.url, self.apiversion + '/area/' + submissionId)
-        r = requests.post(base, headers=self.header)
-        if r.status_code == requests.codes.created:
-            print ("Waiting 10 seconds for IAM policy to take effect..."),
-            sleep(10)
-            print ("staging area created!:" + base)
-            return json.loads(r.text)
 
+        num_retries = 5
+        retry_wait_time = 15
+        for i in range(0, num_retries):
+            r = requests.post(base, headers=self.header)
+            if 200 <= r.status_code < 300:
+                print ("Waiting 10 seconds for IAM policy to take effect..."),
+                sleep(10)
+                print ("staging area created!:" + base)
+                return json.loads(r.text)
+            else:
+                self.logger.info("Received non-2XX response creating a staging URN, retrying in " + str(retry_wait_time) + " seconds")
+                sleep(retry_wait_time)
         raise ValueError('Can\'t create staging area for sub id:' + submissionId + ', Error:' + r.text)
 
     def deleteStagingArea(self, submissionId):

@@ -1,15 +1,13 @@
 import os
 import unittest
-
 from unittest import TestCase
 
 from mock import MagicMock, patch
 from openpyxl import Workbook
 
 from ingest.importer.conversion import conversion_strategy
-from ingest.importer.conversion import template_manager
 from ingest.importer.conversion.data_converter import (
-    Converter, ListConverter, BooleanConverter, DataType
+    Converter
 )
 from ingest.importer.data_node import DataNode
 from ingest.importer.importer import WorksheetImporter, WorkbookImporter, IngestImporter
@@ -174,8 +172,9 @@ class IngestImporterTest(TestCase):
 
     @unittest.skip
     def test_import_spreadsheet(self):
+
         spreadsheet_file = BASE_PATH + '/metadata_spleen_new_protocols.xlsx'
 
-        submission = IngestImporter.import_spreadsheet(spreadsheet_file, 'token')
+        submission = IngestImporter(MagicMock()).import_spreadsheet(file_path=spreadsheet_file, submission_url=None, dry_run=True)
 
         self.assertTrue(submission)

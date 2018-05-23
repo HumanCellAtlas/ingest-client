@@ -11,8 +11,10 @@ from ingest.api.ingestapi import IngestApi
 
 class IngestImporter:
 
-    @staticmethod
-    def import_spreadsheet(file_path, token):
+    def __init__(self, ingest_api):
+        self.ingest_api = ingest_api
+
+    def import_spreadsheet(self, file_path, submission_url, dry_run=False):
         workbook = openpyxl.load_workbook(filename=file_path)
         ingest_workbook = IngestWorkbook(workbook)
         schemas = ingest_workbook.get_schemas()
@@ -20,13 +22,12 @@ class IngestImporter:
         template_mgr = template_manager.build(schemas)
         workbook_importer = WorkbookImporter(template_mgr)
         spreadsheet_json = workbook_importer.do_import(ingest_workbook)
-        ingest_api = IngestApi()
 
-
-
-        submitter = IngestSubmitter(ingest_api, template_mgr)
-
-        submission = submitter.submit(spreadsheet_json, token)
+        submission = None
+        if not dry_run:
+            submitter = IngestSubmitter(self.ingest_api, template_mgr)
+            submission = submitter.submit(spreadsheet_json, submission_url)
+            print(f'Submission in {submission_url} is done!')
 
         return submission
 
