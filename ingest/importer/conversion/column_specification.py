@@ -1,7 +1,7 @@
 import re
 from enum import Enum
 
-from ingest.importer.conversion import utils
+from ingest.importer.conversion import utils, data_converter
 from ingest.importer.conversion.data_converter import DataType, CONVERTER_MAP, ListConverter
 
 
@@ -48,8 +48,7 @@ class ColumnSpecification:
 
     def determine_converter(self):
         if not self.multivalue:
-            default_converter = CONVERTER_MAP.get(DataType.STRING)
-            converter = CONVERTER_MAP.get(self.data_type, default_converter)
+            converter = CONVERTER_MAP.get(self.data_type, data_converter.DEFAULT)
         else:
             converter = ListConverter(self.data_type)
         return converter
