@@ -46,27 +46,6 @@ class TemplateManager:
         raw_parent_spec = self.template.get_key_for_label(parent_path)
         return ColumnSpecification.build_raw(header, raw_spec, parent=raw_parent_spec)
 
-    # TODO deprecate this! Logic is now moved to ColumnSpecification
-    def get_converter(self, header_name):
-        column_spec = self.lookup(header_name)
-
-        default_converter = CONVERTER_MAP[DataType.STRING]
-
-        if not column_spec:
-            return default_converter
-
-        data_type = self._resolve_data_type(column_spec)
-        if column_spec.get('multivalue', False):
-            converter = ListConverter(data_type=data_type)
-        else:
-            converter = CONVERTER_MAP.get(data_type, default_converter)
-        return converter
-
-    def _resolve_data_type(self, column_spec):
-        value_type = column_spec.get('value_type')
-        data_type = DataType.find(value_type)
-        return data_type
-
     def is_parent_field_multivalue(self, header_name):
         parent_field = self._get_parent_field(header_name)
         column_spec = self.lookup(parent_field)
