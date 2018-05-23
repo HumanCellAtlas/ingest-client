@@ -71,3 +71,6 @@ class ListConverter(Converter):
         value = data.split('||')
         value = [self.converter.convert(elem) for elem in value]
         return value
+
+
+DEFAULT = Converter()

@@ -1,5 +1,6 @@
 from abc import abstractmethod
 
+from ingest.importer.conversion import data_converter
 from ingest.importer.conversion.data_converter import Converter
 from ingest.importer.conversion.column_specification import ColumnSpecification, ConversionType
 from ingest.importer.conversion.utils import split_field_chain
@@ -76,7 +77,7 @@ class LinkedIdentityCellConversion(CellConversion):
 class DoNothing(CellConversion):
 
     def __init__(self):
-        super(DoNothing, self).__init__('', Converter())
+        super(DoNothing, self).__init__('', data_converter.DEFAULT)
 
     def apply(self, data_node: DataNode, cell_data):
         pass
