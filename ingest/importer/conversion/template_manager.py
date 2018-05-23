@@ -24,12 +24,13 @@ class TemplateManager:
         data_node['schema_type'] = schema['domain_entity']
         return data_node
 
-    def create_row_template(self, worksheet:Worksheet):
+    def create_row_template(self, worksheet: Worksheet):
+        tab_name = worksheet.title
         header_row = self._get_header_row(worksheet)
         cell_conversions = []
         for cell in header_row:
             header = cell.value
-            column_spec = self._define_column_spec(header)
+            column_spec = self._define_column_spec(header, tab_name)
             strategy = conversion_strategy.determine_strategy(column_spec)
             cell_conversions.append(strategy)
         return RowTemplate(cell_conversions)
@@ -40,10 +41,10 @@ class TemplateManager:
             header_row = row
         return header_row
 
-    def _define_column_spec(self, header):
+    def _define_column_spec(self, header, tab_name):
         parent_path, __ = utils.split_field_chain(header)
-        raw_spec = self.template.get_key_for_label(header)
-        raw_parent_spec = self.template.get_key_for_label(parent_path)
+        raw_spec = self.template.get_key_for_label(header, tab_name)
+        raw_parent_spec = self.template.get_key_for_label(parent_path, tab_name)
         return ColumnSpecification.build_raw(header, raw_spec, parent=raw_parent_spec)
 
     def get_schema_url(self, concrete_entity):
