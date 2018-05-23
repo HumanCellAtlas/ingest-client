@@ -46,23 +46,6 @@ class TemplateManager:
         raw_parent_spec = self.template.get_key_for_label(parent_path)
         return ColumnSpecification.build_raw(header, raw_spec, parent=raw_parent_spec)
 
-    def is_parent_field_multivalue(self, header_name):
-        parent_field = self._get_parent_field(header_name)
-        column_spec = self.lookup(parent_field)
-
-        return column_spec and column_spec.get('multivalue') and (
-            column_spec.get('value_type') and column_spec.get('value_type') == 'object'
-        )
-
-    def _get_parent_field(self, header_name):
-        try:
-            match = re.search('(?P<field_chain>.*)(\.\w+)', header_name)
-            parent_field = match.group('field_chain')
-        except:
-            raise ParentFieldNotFound(header_name)
-
-        return parent_field
-
     def get_schema_url(self, concrete_entity):
         schema = self._get_schema(concrete_entity)
         # TODO must query schema endpoint in core to get the latest version
@@ -82,7 +65,6 @@ class TemplateManager:
         return spec.get('schema') if spec else None
 
     def get_concrete_entity_of_tab(self, tab_name):
-
         try:
             tabs_config = self.template.get_tabs_config()
             concrete_entity = tabs_config.get_key_for_label(tab_name)

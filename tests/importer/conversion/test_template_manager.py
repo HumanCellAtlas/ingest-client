@@ -114,52 +114,6 @@ class TemplateManagerTest(TestCase):
         self.assertTrue(name_strategy in row_template.cell_conversions)
         self.assertTrue(numbers_strategy in row_template.cell_conversions)
 
-    def test_is_parent_field_multivalue_true(self):
-        # given:
-
-        schema_template = MagicMock(name='schema_template')
-        spec = {
-            'multivalue': True,
-            'value_type': 'object'
-        }
-        schema_template.lookup = MagicMock(name='lookup', return_value=spec)
-        template_manager = TemplateManager(schema_template)
-
-        # when:
-        is_parent_multivalue = template_manager.is_parent_field_multivalue('path.object_list_field.subfield')
-
-        # then:
-        self.assertTrue(is_parent_multivalue)
-
-    def test_is_parent_field_multivalue_false(self):
-        # given:
-
-        schema_template = MagicMock(name='schema_template')
-        spec = {
-            'multivalue': False,
-            'value_type': 'string'
-        }
-        schema_template.lookup = MagicMock(name='lookup', return_value=spec)
-        template_manager = TemplateManager(schema_template)
-
-        # when:
-        is_parent_multivalue = template_manager.is_parent_field_multivalue('path.object_list_field.subfield')
-
-        # then:
-        self.assertFalse(is_parent_multivalue)
-
-    def test_is_parent_field_multivalue_no_spec(self):
-        # given:
-        schema_template = MagicMock(name='schema_template')
-        schema_template.lookup = MagicMock(name='lookup', return_value=None)
-        template_manager = TemplateManager(schema_template)
-
-        # when:
-        is_parent_multivalue = template_manager.is_parent_field_multivalue('path.object_list_field.subfield')
-
-        # then:
-        self.assertFalse(is_parent_multivalue)
-
     def test_get_schema_type(self):
         # given
         schema_template = MagicMock(name='schema_template')
