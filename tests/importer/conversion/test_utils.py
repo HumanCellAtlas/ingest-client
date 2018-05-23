@@ -38,3 +38,5 @@ class ModuleTest(TestCase):
         self.assertEqual('user', utils.extract_root_field(single))
         self.assertEqual('account', utils.extract_root_field(double))
         self.assertEqual('product', utils.extract_root_field(triple))
+        self.assertEqual('', utils.extract_root_field(''))
+        self.assertIsNone(utils.extract_root_field(None))

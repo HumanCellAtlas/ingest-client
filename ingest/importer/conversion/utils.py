@@ -14,5 +14,8 @@ def split_field_chain(field):
 
 
 def extract_root_field(field_chain):
-    split = field_chain.split('.')
-    return split[0]
+    root_field = None
+    if field_chain is not None:
+        split = field_chain.split('.')
+        root_field = split[0]
+    return root_field
