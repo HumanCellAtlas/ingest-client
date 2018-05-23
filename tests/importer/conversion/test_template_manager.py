@@ -177,19 +177,6 @@ class TemplateManagerTest(TestCase):
         # then:
         self.assertEqual('specimen_from_organism', entity)
 
-    def test_get_concrete_entity_of_column(self):
-        schema_template = MagicMock(name='schema_template')
-        template_manager = TemplateManager(schema_template)
-
-        concrete_entity = template_manager.get_concrete_entity_of_column('cell_suspension.id_column')
-        self.assertEqual('cell_suspension', concrete_entity)
-
-        concrete_entity = template_manager.get_concrete_entity_of_column('cell_suspension.id_column.any_column')
-        self.assertEqual('cell_suspension', concrete_entity)
-
-        concrete_entity = template_manager.get_concrete_entity_of_column('donor.id_column')
-        self.assertEqual('donor', concrete_entity)
-
 
 class FakeConversion(CellConversion):
 

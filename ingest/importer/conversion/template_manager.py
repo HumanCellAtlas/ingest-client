@@ -35,7 +35,8 @@ class TemplateManager:
             cell_conversions.append(strategy)
         return RowTemplate(cell_conversions)
 
-    def _get_header_row(self, worksheet):
+    @staticmethod
+    def _get_header_row(worksheet):
         for row in worksheet.iter_rows(row_offset=3, max_row=1):
             header_row = row
         return header_row
@@ -71,27 +72,16 @@ class TemplateManager:
         except:
             print(f'No entity found for tab {tab_name}')
             return None
-
-        return concrete_entity
-
-    def get_concrete_entity_of_column(self, header_name):
-        match = re.search('(?P<concrete_entity>\w+)(\.\w+)*', header_name)
-        concrete_entity = match.group('concrete_entity')
         return concrete_entity
 
     def get_key_for_label(self, header_name, tab_name):
-        key = None
-
         try:
             key = self.template.get_key_for_label(header_name, tab_name)
         except:
             print(f'{header_name} in "{tab_name}" tab is not found in schema template')
-
         return key
 
     def lookup(self, header_name):
-        spec = None
-
         try:
             spec = self.template.lookup(header_name)
         except schema_template.UnknownKeyException:
@@ -99,6 +89,7 @@ class TemplateManager:
             return {}
 
         return spec
+
 
 def build(schemas) -> TemplateManager:
     template = SchemaTemplate(schemas)

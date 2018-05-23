@@ -86,32 +86,8 @@ class WorksheetImporter:
         return records
 
     def _get_data_rows(self, worksheet):
-        return worksheet.iter_rows(row_offset=self.START_ROW_IDX, max_row=(worksheet.max_row - self.START_ROW_IDX))
-
-    # TODO do not use user friendly names for now
-    def _get_header_name(self, cell, worksheet):
-        header_name = self._get_key_header_name(cell, worksheet)
-        return header_name
-
-    def _get_user_friendly_header_name(self, cell, worksheet):
-        cell_template = '%s' + str(self.USER_FRIENDLY_HEADER_ROW_IDX)
-        header_coordinate = cell_template % (cell.column)
-        header_name = worksheet[header_coordinate].value
-        return header_name
-
-    def _get_key_header_name(self, cell, worksheet):
-        cell_template = '%s' + str(self.KEY_HEADER_ROW_IDX)
-        header_coordinate = cell_template % (cell.column)
-        header_name = worksheet[header_coordinate].value
-        return header_name
-
-    def _get_field_chain(self, header_name):
-        match = re.search('(\w+\.){1}(?P<field_chain>.*)', header_name)
-        field_chain = match.group('field_chain')
-        return field_chain
-
-    def _get_concrete_entity(self, template_manager, header_name):
-        return template_manager.get_concrete_entity_of_column(header_name)
+        return worksheet.iter_rows(row_offset=self.START_ROW_IDX,
+                                   max_row=(worksheet.max_row - self.START_ROW_IDX))
 
 
 class ObjectListTracker(object):
