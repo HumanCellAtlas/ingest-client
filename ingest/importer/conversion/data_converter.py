@@ -26,6 +26,9 @@ class Converter:
         return data
 
 
+class StringConverter(Converter):
+    pass
+
 class IntegerConverter(Converter):
 
     def convert(self, data):

@@ -1,8 +1,8 @@
 from unittest import TestCase
 
 from ingest.importer.conversion.data_converter import (
-    BooleanConverter, ListConverter, DataType, IntegerConverter
-)
+    BooleanConverter, ListConverter, DataType, IntegerConverter,
+    StringConverter)
 from ingest.importer.conversion.exceptions import InvalidBooleanValue
 
 
@@ -17,6 +17,16 @@ class DataTypeTest(TestCase):
     def test_find_not_found(self):
         # expect:
         self.assertEqual(DataType.UNDEFINED, DataType.find('does_not_exist'))
+
+
+class StringConverterTest(TestCase):
+
+    def test_convert(self):
+        # given:
+        converter = StringConverter()
+
+        # expect:
+        self.assertEqual('data', converter.convert('data'))
 
 
 class IntegerConverterTest(TestCase):
