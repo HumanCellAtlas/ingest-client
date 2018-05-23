@@ -1,6 +1,6 @@
 from abc import abstractmethod
 
-from ingest.importer.conversion import data_converter
+from ingest.importer.conversion import data_converter, utils
 from ingest.importer.conversion.data_converter import Converter
 from ingest.importer.conversion.column_specification import ColumnSpecification, ConversionType
 from ingest.importer.conversion.utils import split_field_chain
@@ -63,10 +63,11 @@ class LinkedIdentityCellConversion(CellConversion):
 
     def _get_linked_ids(self, data_node):
         links = self._get_links(data_node)
-        linked_ids = links.get(self.field)
+        entity_type = utils.extract_root_field(self.field)
+        linked_ids = links.get(entity_type)
         if not linked_ids:
             linked_ids = []
-            links[self.field] = linked_ids
+            links[entity_type] = linked_ids
         return linked_ids
 
     @staticmethod

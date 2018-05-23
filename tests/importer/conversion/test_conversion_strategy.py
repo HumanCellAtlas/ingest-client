@@ -169,7 +169,7 @@ class LinkedIdentityCellConversionTest(TestCase):
     def test_apply(self):
         # given:
         converter = _create_mock_string_converter()
-        cell_conversion = LinkedIdentityCellConversion('items', converter)
+        cell_conversion = LinkedIdentityCellConversion('item.item_id', converter)
 
         # and:
         data_node = DataNode()
@@ -178,29 +178,29 @@ class LinkedIdentityCellConversionTest(TestCase):
         cell_conversion.apply(data_node, 'item_no_29')
 
         # then:
-        links = data_node['_links']
+        links = data_node[conversion_strategy.LINKS_FIELD]
         self.assertIsNotNone(links)
 
         # and:
-        items = links.get('items')
+        items = links.get('item')
         self.assertEqual(1, len(items))
         self.assertTrue('item_no_29 - converted' in items)
 
     def test_apply_with_previous_entry(self):
         # given:
         converter = _create_mock_string_converter()
-        cell_conversion = LinkedIdentityCellConversion('items', converter)
+        cell_conversion = LinkedIdentityCellConversion('item.item_number', converter)
 
         # and:
         data_node = DataNode()
         items = ['item_no_56', 'item_no_199']
-        data_node['_links'] = {'items': items}
+        data_node[conversion_strategy.LINKS_FIELD] = {'item': items}
 
         # when:
         cell_conversion.apply(data_node, 'item_no_721')
 
         # then:
-        actual_items = data_node['_links']['items']
+        actual_items = data_node[conversion_strategy.LINKS_FIELD]['item']
         self.assertEqual(3, len(actual_items))
 
         # and:
