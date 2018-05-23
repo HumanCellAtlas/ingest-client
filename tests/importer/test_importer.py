@@ -6,9 +6,6 @@ from mock import MagicMock, patch
 from openpyxl import Workbook
 
 from ingest.importer.conversion import conversion_strategy
-from ingest.importer.conversion.data_converter import (
-    Converter
-)
 from ingest.importer.data_node import DataNode
 from ingest.importer.importer import WorksheetImporter, WorkbookImporter, IngestImporter
 from ingest.importer.spreadsheet.ingest_workbook import IngestWorkbook
