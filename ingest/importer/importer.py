@@ -66,10 +66,14 @@ class WorksheetImporter:
     def __init__(self):
         pass
 
-    def do_import(self, worksheet, template:TemplateManager):
+    def do_import(self, worksheet, template: TemplateManager):
+        records = self._import_records(worksheet, template)
         entity_type = template.get_concrete_entity_of_tab(worksheet.title)
-        records = {}
         pre_ingest_entry = {entity_type: records}
+        return pre_ingest_entry
+
+    def _import_records(self, worksheet, template: TemplateManager):
+        records = {}
         row_template = template.create_row_template(worksheet)
         for row in self._get_data_rows(worksheet):
             # TODO row_template.do_import should return a structured abstraction
@@ -78,7 +82,7 @@ class WorksheetImporter:
                 'content': json[conversion_strategy.CONTENT_FIELD],
                 'links_by_entity': json[conversion_strategy.LINKS_FIELD]
             }
-        return pre_ingest_entry
+        return records
 
     def _get_data_rows(self, worksheet):
         return worksheet.iter_rows(row_offset=self.START_ROW_IDX, max_row=(worksheet.max_row - self.START_ROW_IDX))
