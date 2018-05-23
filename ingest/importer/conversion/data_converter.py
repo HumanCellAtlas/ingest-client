@@ -23,6 +23,12 @@ class Converter:
 
     @abstractmethod
     def convert(self, data):
+        raise NotImplementedError()
+
+
+class DefaultConverter(Converter):
+
+    def convert(self, data):
         return data
 
 
@@ -77,4 +83,4 @@ class ListConverter(Converter):
         return value
 
 
-DEFAULT = Converter()
+DEFAULT = DefaultConverter()
