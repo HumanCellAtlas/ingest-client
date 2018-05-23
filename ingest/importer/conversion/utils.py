@@ -11,3 +11,8 @@ def split_field_chain(field):
         parent_path = match.group('parent')
         target_field = match.group('target')
     return parent_path, target_field
+
+
+def extract_root_field(field_chain):
+    split = field_chain.split('.')
+    return split[0]
