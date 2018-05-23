@@ -1,9 +1,8 @@
 import re
 from enum import Enum
 
+from ingest.importer.conversion import utils
 from ingest.importer.conversion.data_converter import DataType, CONVERTER_MAP, ListConverter
-
-CONCRETE_ENTITY_PATTERN = '(?P<concrete_entity>\w+)(\.\w+)*'
 
 
 class ConversionType(Enum):
@@ -38,8 +37,7 @@ class ColumnSpecification:
         if self.multivalue_parent:
             conversion_type = ConversionType.FIELD_OF_LIST_ELEMENT
         elif self.identity:
-            match = re.search(CONCRETE_ENTITY_PATTERN, self.field_name)
-            entity_type = match.group('concrete_entity')
+            entity_type = utils.extract_root_field(self.field_name)
             if entity_type == self.object_type:
                 conversion_type = ConversionType.IDENTITY
             else:
