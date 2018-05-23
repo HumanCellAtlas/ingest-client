@@ -81,7 +81,11 @@ class DirectCellConversionTest(TestCase):
         cell_conversion.apply(data_node, '27')
 
         # then:
-        user = data_node.as_dict().get('user')
+        content = data_node.as_dict().get('_content')
+        self.assertIsNotNone(content)
+
+        # and:
+        user = content.get('user')
         self.assertIsNotNone(user)
         self.assertEqual(27, user.get('age'))
 

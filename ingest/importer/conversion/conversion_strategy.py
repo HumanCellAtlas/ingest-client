@@ -6,6 +6,7 @@ from ingest.importer.conversion.column_specification import ColumnSpecification,
 from ingest.importer.conversion.utils import split_field_chain
 from ingest.importer.data_node import DataNode
 
+CONTENT_FIELD = '_content'
 LINKS_FIELD = '_links'
 
 
@@ -22,7 +23,8 @@ class CellConversion(object):
 class DirectCellConversion(CellConversion):
 
     def apply(self, data_node:DataNode, cell_data):
-        data_node[self.field] = self.converter.convert(cell_data)
+        structured_field = f'{CONTENT_FIELD}.{self.field}'
+        data_node[structured_field] = self.converter.convert(cell_data)
 
 
 class ListElementCellConversion(CellConversion):
