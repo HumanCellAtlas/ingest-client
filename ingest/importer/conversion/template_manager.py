@@ -7,7 +7,6 @@ import ingest.template.schema_template as schema_template
 from ingest.importer.conversion import utils, conversion_strategy
 from ingest.importer.conversion.column_specification import ColumnSpecification
 from ingest.importer.conversion.conversion_strategy import CellConversion
-from ingest.importer.conversion.data_converter import ListConverter, DataType, CONVERTER_MAP
 from ingest.importer.data_node import DataNode
 from ingest.template.schema_template import SchemaTemplate
 

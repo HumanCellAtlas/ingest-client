@@ -1,12 +1,11 @@
 import re
+
 import openpyxl
 
 from ingest.importer.conversion import template_manager, conversion_strategy
 from ingest.importer.conversion.template_manager import TemplateManager
 from ingest.importer.spreadsheet.ingest_workbook import IngestWorkbook
 from ingest.importer.submission import IngestSubmitter
-
-from ingest.api.ingestapi import IngestApi
 
 
 class IngestImporter:
