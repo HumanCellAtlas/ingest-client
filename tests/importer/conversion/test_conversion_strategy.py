@@ -171,6 +171,25 @@ class ListElementCellConversionTest(TestCase):
         self.assertEqual(3, current_element.get('quantity'))
         self.assertEqual('apple - converted', current_element.get('product_name'))
 
+    def test_apply_none_data(self):
+        # given:
+        converter = _create_mock_string_converter()
+        cell_conversion = ListElementCellConversion('user.name', converter)
+
+        # and:
+        data_node = DataNode(defaults={
+            conversion_strategy.CONTENT_FIELD: {
+                'user': [{'id': '65fd8'}]
+            }
+        })
+
+        # when:
+        cell_conversion.apply(data_node, None)
+
+        # then:
+        list_element = data_node[f'{conversion_strategy.CONTENT_FIELD}.user'][0]
+        self.assertTrue('name' not in list_element.keys(), '[name] should not be added to element.')
+
 
 class IdentityCellConversionTest(TestCase):
 

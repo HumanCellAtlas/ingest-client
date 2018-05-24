@@ -32,11 +32,12 @@ class DirectCellConversion(CellConversion):
 class ListElementCellConversion(CellConversion):
 
     def apply(self, data_node:DataNode, cell_data):
-        structured_field = f'{CONTENT_FIELD}.{self.field}'
-        parent_path, target_field = split_field_chain(structured_field)
-        target_object = self._determine_target_object(data_node, parent_path)
-        data = self.converter.convert(cell_data)
-        target_object[target_field] = data
+        if cell_data is not None:
+            structured_field = f'{CONTENT_FIELD}.{self.field}'
+            parent_path, target_field = split_field_chain(structured_field)
+            target_object = self._determine_target_object(data_node, parent_path)
+            data = self.converter.convert(cell_data)
+            target_object[target_field] = data
 
     @staticmethod
     def _determine_target_object(data_node, parent_path):
