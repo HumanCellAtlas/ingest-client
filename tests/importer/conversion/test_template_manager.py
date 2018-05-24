@@ -121,6 +121,32 @@ class TemplateManagerTest(TestCase):
         self.assertTrue(name_strategy in row_template.cell_conversions)
         self.assertTrue(numbers_strategy in row_template.cell_conversions)
 
+    @patch.object(conversion_strategy, 'determine_strategy')
+    def test_create_row_template_with_none_header(self, determine_strategy):
+        # given:
+        schema_template = MagicMock('schema_template')
+
+        # given:
+        do_nothing_strategy = FakeConversion('')
+        determine_strategy.return_value = do_nothing_strategy
+
+        # and:
+        workbook = Workbook()
+        worksheet = workbook.create_sheet('sample')
+        worksheet['A4'] = None
+
+        # when:
+        template_manager = TemplateManager(schema_template)
+        row_template = template_manager.create_row_template(worksheet)
+
+        # then:
+        determine_strategy.assert_called_with(None)
+        self.assertEqual(1, len(row_template.cell_conversions))
+
+        # and:
+        strategy = row_template.cell_conversions[0]
+        self.assertEqual(do_nothing_strategy, strategy)
+
     def test_get_schema_type(self):
         # given
         schema_template = MagicMock(name='schema_template')

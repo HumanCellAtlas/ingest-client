@@ -42,11 +42,16 @@ class TemplateManager:
         return header_row
 
     def _define_column_spec(self, header, tab_name):
-        parent_path, __ = utils.split_field_chain(header)
-        raw_spec = self.lookup(header)
-        raw_parent_spec = self.lookup(parent_path)
-        object_type = self.get_concrete_entity_of_tab(tab_name)
-        return ColumnSpecification.build_raw(header, object_type, raw_spec, parent=raw_parent_spec)
+        if header is not None:
+            parent_path, __ = utils.split_field_chain(header)
+            raw_spec = self.lookup(header)
+            raw_parent_spec = self.lookup(parent_path)
+            object_type = self.get_concrete_entity_of_tab(tab_name)
+            column_spec = ColumnSpecification.build_raw(header, object_type, raw_spec,
+                                                        parent=raw_parent_spec)
+        else:
+            column_spec = None
+        return column_spec
 
     def get_schema_url(self, concrete_entity):
         schema = self._get_schema(concrete_entity)
