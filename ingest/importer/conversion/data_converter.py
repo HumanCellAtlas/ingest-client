@@ -5,17 +5,20 @@ from ingest.importer.conversion.exceptions import InvalidBooleanValue
 
 
 class DataType(Enum):
+
     STRING = 'string'
     INTEGER = 'integer'
     BOOLEAN = 'boolean'
     UNDEFINED = 'undefined'
 
     @staticmethod
-    def find(value:str):
-        try:
-            data_type = DataType(value.lower())
-        except ValueError:
-            data_type = DataType.UNDEFINED
+    def find(value: str):
+        data_type = DataType.UNDEFINED
+        if value is not None:
+            try:
+                data_type = DataType(value.lower())
+            except ValueError:
+                pass
         return data_type
 
 
