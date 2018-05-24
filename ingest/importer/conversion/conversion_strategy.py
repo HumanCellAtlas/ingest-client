@@ -88,19 +88,23 @@ class DoNothing(CellConversion):
         pass
 
 
+DO_NOTHING = DoNothing()
+
+
 def determine_strategy(column_spec: ColumnSpecification):
-    field_name = column_spec.field_name
-    converter = column_spec.determine_converter()
-    conversion_type = column_spec.get_conversion_type()
-    if ConversionType.MEMBER_FIELD == conversion_type:
-        strategy = DirectCellConversion(field_name, converter)
-    elif ConversionType.FIELD_OF_LIST_ELEMENT == conversion_type:
-        strategy = ListElementCellConversion(field_name, converter)
-    elif ConversionType.IDENTITY == conversion_type:
-        strategy = IdentityCellConversion(field_name, converter)
-    elif ConversionType.LINKED_IDENTITY == conversion_type:
-        strategy = LinkedIdentityCellConversion(field_name, converter)
-    else:
-        strategy = DoNothing()
+    strategy = DO_NOTHING
+    if column_spec is not None:
+        field_name = column_spec.field_name
+        converter = column_spec.determine_converter()
+        conversion_type = column_spec.get_conversion_type()
+        if ConversionType.MEMBER_FIELD == conversion_type:
+            strategy = DirectCellConversion(field_name, converter)
+        elif ConversionType.FIELD_OF_LIST_ELEMENT == conversion_type:
+            strategy = ListElementCellConversion(field_name, converter)
+        elif ConversionType.IDENTITY == conversion_type:
+            strategy = IdentityCellConversion(field_name, converter)
+        elif ConversionType.LINKED_IDENTITY == conversion_type:
+            strategy = LinkedIdentityCellConversion(field_name, converter)
     return strategy
+
 

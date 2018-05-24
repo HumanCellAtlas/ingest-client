@@ -60,10 +60,12 @@ class ModuleTest(TestCase):
                                         conversion_type=ConversionType.UNDEFINED)
 
         # when:
-        strategy: CellConversion = conversion_strategy.determine_strategy(column_spec)
+        undefined_strategy: CellConversion = conversion_strategy.determine_strategy(column_spec)
+        none_strategy: CellConversion = conversion_strategy.determine_strategy(None)
 
         # then:
-        self.assertIsInstance(strategy, DoNothing)
+        self.assertIsInstance(undefined_strategy, DoNothing)
+        self.assertIsInstance(none_strategy, DoNothing)
 
 
 class DirectCellConversionTest(TestCase):
