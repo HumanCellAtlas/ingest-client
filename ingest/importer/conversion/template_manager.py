@@ -45,7 +45,8 @@ class TemplateManager:
         parent_path, __ = utils.split_field_chain(header)
         raw_spec = self.template.get_key_for_label(header, tab_name)
         raw_parent_spec = self.template.get_key_for_label(parent_path, tab_name)
-        return ColumnSpecification.build_raw(header, raw_spec, parent=raw_parent_spec)
+        object_type = self.get_concrete_entity_of_tab(tab_name)
+        return ColumnSpecification.build_raw(header, object_type, raw_spec, parent=raw_parent_spec)
 
     def get_schema_url(self, concrete_entity):
         schema = self._get_schema(concrete_entity)

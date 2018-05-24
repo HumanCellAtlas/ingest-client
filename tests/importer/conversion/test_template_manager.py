@@ -66,6 +66,12 @@ class TemplateManagerTest(TestCase):
         # given:
         schema_template = MagicMock(name='schema_template')
 
+        # and:
+        tabs_config = MagicMock('tabs_config')
+        object_type = 'sample_object'
+        tabs_config.get_key_for_label = MagicMock(return_value=object_type)
+        schema_template.get_tabs_config = MagicMock(return_value=tabs_config)
+
         # and: set up column spec
         name_column_spec = MagicMock('name_column_spec')
         numbers_column_spec = MagicMock('numbers_column_spec')
@@ -83,7 +89,7 @@ class TemplateManagerTest(TestCase):
             'user.profile': name_raw_parent_spec,
             'numbers': numbers_raw_spec
         }
-        schema_template.get_key_for_label = lambda key: spec_map.get(key, None)
+        schema_template.get_key_for_label = lambda key, __: spec_map.get(key, None)
 
         # and:
         name_strategy = MagicMock('name_strategy')
@@ -102,8 +108,9 @@ class TemplateManagerTest(TestCase):
 
         # then:
         expected_calls = [
-            call('user.profile.first_name', name_raw_spec, parent=name_raw_parent_spec),
-            call('numbers', numbers_raw_spec, parent=None)
+            call('user.profile.first_name', 'sample_object', name_raw_spec,
+                 parent=name_raw_parent_spec),
+            call('numbers', 'sample_object', numbers_raw_spec, parent=None)
         ]
         build_raw.assert_has_calls(expected_calls)
         determine_strategy.assert_has_calls([call(name_column_spec), call(numbers_column_spec)])
