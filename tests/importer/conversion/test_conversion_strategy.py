@@ -7,7 +7,7 @@ from ingest.importer.conversion.conversion_strategy import DirectCellConversion,
     ListElementCellConversion, CellConversion, IdentityCellConversion, LinkedIdentityCellConversion, \
     DoNothing
 from ingest.importer.conversion.column_specification import ColumnSpecification, ConversionType
-from ingest.importer.conversion.data_converter import DataType
+from ingest.importer.conversion.data_converter import DataType, StringConverter
 from ingest.importer.data_node import DataNode
 
 
@@ -90,6 +90,30 @@ class DirectCellConversionTest(TestCase):
         user = content.get('user')
         self.assertIsNotNone(user)
         self.assertEqual(27, user.get('age'))
+
+    def test_apply_none_data(self):
+        # given:
+        string_converter = StringConverter()
+        cell_conversion = DirectCellConversion('product.id', string_converter)
+
+        # when:
+        data_node = DataNode(defaults={
+            conversion_strategy.CONTENT_FIELD: {
+                'product': {
+                    'name': 'product name'
+                }
+            }
+        })
+        cell_conversion.apply(data_node, None)
+
+        # then:
+        content = data_node.as_dict().get(conversion_strategy.CONTENT_FIELD)
+        self.assertIsNotNone(content)
+
+        # and:
+        product = content.get('product')
+        self.assertIsNotNone(product)
+        self.assertTrue('id' not in product, '[id] not expected to be in product field')
 
 
 def _create_mock_string_converter():

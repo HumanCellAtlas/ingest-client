@@ -24,8 +24,9 @@ class CellConversion(object):
 class DirectCellConversion(CellConversion):
 
     def apply(self, data_node:DataNode, cell_data):
-        structured_field = f'{CONTENT_FIELD}.{self.field}'
-        data_node[structured_field] = self.converter.convert(cell_data)
+        if cell_data is not None:
+            structured_field = f'{CONTENT_FIELD}.{self.field}'
+            data_node[structured_field] = self.converter.convert(cell_data)
 
 
 class ListElementCellConversion(CellConversion):
