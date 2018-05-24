@@ -59,13 +59,17 @@ class IdentityCellConversion(CellConversion):
 
 class LinkedIdentityCellConversion(CellConversion):
 
+    def __init__(self, field, main_category, converter):
+        super(LinkedIdentityCellConversion, self).__init__(field, converter)
+        self.main_category = main_category
+
     def apply(self, data_node: DataNode, cell_data):
         linked_ids = self._get_linked_ids(data_node)
         linked_ids.append(self.converter.convert(cell_data))
 
     def _get_linked_ids(self, data_node):
         links = self._get_links(data_node)
-        entity_type = utils.extract_root_field(self.field)
+        entity_type = self.main_category
         linked_ids = links.get(entity_type)
         if not linked_ids:
             linked_ids = []
