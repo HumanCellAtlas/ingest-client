@@ -43,8 +43,8 @@ class TemplateManager:
 
     def _define_column_spec(self, header, tab_name):
         parent_path, __ = utils.split_field_chain(header)
-        raw_spec = self.template.get_key_for_label(header, tab_name)
-        raw_parent_spec = self.template.get_key_for_label(parent_path, tab_name)
+        raw_spec = self.lookup(header)
+        raw_parent_spec = self.lookup(parent_path)
         object_type = self.get_concrete_entity_of_tab(tab_name)
         return ColumnSpecification.build_raw(header, object_type, raw_spec, parent=raw_parent_spec)
 

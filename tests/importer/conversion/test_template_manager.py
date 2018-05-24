@@ -89,7 +89,7 @@ class TemplateManagerTest(TestCase):
             'user.profile': name_raw_parent_spec,
             'numbers': numbers_raw_spec
         }
-        schema_template.get_key_for_label = lambda key, __: spec_map.get(key, None)
+        schema_template.lookup = lambda key: spec_map.get(key, None)
 
         # and:
         name_strategy = MagicMock('name_strategy')
@@ -104,7 +104,7 @@ class TemplateManagerTest(TestCase):
 
         # when:
         template_manager = TemplateManager(schema_template)
-        row_template:RowTemplate = template_manager.create_row_template(worksheet)
+        row_template: RowTemplate = template_manager.create_row_template(worksheet)
 
         # then:
         expected_calls = [
