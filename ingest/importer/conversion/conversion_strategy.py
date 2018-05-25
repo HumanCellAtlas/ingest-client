@@ -52,11 +52,8 @@ class ListElementCellConversion(CellConversion):
             parent = [target_object]
             data_node[parent_path] = parent
         else:
+            target_object = parent[0]
 
-            try:
-                target_object = parent[0]
-            except:
-                pass
         return target_object
 
 
