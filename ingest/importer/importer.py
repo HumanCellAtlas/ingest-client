@@ -43,7 +43,6 @@ class WorkbookImporter:
         self.import_project(pre_ingest_json_map, workbook)
 
         for worksheet in workbook.importable_worksheets():
-            entities_dict = self.worksheet_importer.do_import(worksheet, self.template_mgr)
             concrete_entity = self.template_mgr.get_concrete_entity_of_tab(worksheet.title)
 
             # TODO what if the tab is not a valid entity?
@@ -53,6 +52,10 @@ class WorkbookImporter:
 
             domain_entity = self.template_mgr.get_domain_entity(concrete_entity)
 
+            if domain_entity is None:
+                continue
+
+            entities_dict = self.worksheet_importer.do_import(worksheet, self.template_mgr)
             if pre_ingest_json_map.get(domain_entity) is None:
                 pre_ingest_json_map[domain_entity] = {}
 
