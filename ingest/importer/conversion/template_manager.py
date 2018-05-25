@@ -99,7 +99,13 @@ class TemplateManager:
 
 
 def build(schemas) -> TemplateManager:
-    template = SchemaTemplate(list_of_schema_urls=schemas)
+    template = None
+
+    if not schemas:
+        template = SchemaTemplate()
+    else:
+        template = SchemaTemplate(list_of_schema_urls=schemas)
+
     template_mgr = TemplateManager(template)
     return template_mgr
 
