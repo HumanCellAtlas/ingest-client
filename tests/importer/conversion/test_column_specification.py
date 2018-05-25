@@ -7,7 +7,7 @@ from ingest.importer.conversion.data_converter import DataType, IntegerConverter
 
 class ColumnSpecificationTest(TestCase):
 
-    def test_build_raw(self):
+    def test_build_raw_single_type(self):
         # given:
         raw_string_spec = {
             'value_type': 'string',
@@ -15,17 +15,9 @@ class ColumnSpecificationTest(TestCase):
             'identifiable': True
         }
 
-        # and:
-        raw_int_array_spec = {
-            'value_type': 'integer',
-            'multivalue': True
-        }
-
         # when:
         string_column_spec = ColumnSpecification.build_raw('user.name', 'user', 'profile_entry',
                                                            raw_string_spec)
-        int_array_column_spec = ColumnSpecification.build_raw('sample.numbers', 'user',
-                                                              'profile_entry', raw_int_array_spec)
 
         # then:
         self.assertEqual('user.name', string_column_spec.field_name)
@@ -34,7 +26,18 @@ class ColumnSpecificationTest(TestCase):
         self.assertFalse(string_column_spec.is_multivalue())
         self.assertTrue(string_column_spec.is_identity())
 
-        # and:
+    def test_build_raw_multivalue(self):
+        # given:
+        raw_int_array_spec = {
+            'value_type': 'integer',
+            'multivalue': True
+        }
+
+        # when:
+        int_array_column_spec = ColumnSpecification.build_raw('sample.numbers', 'user',
+                                                              'profile_entry', raw_int_array_spec)
+
+        # then:
         self.assertEqual('sample.numbers', int_array_column_spec.field_name)
         self.assertEqual('profile_entry', int_array_column_spec.main_category)
         self.assertEqual(DataType.INTEGER, int_array_column_spec.data_type)
