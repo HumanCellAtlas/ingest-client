@@ -5,7 +5,7 @@ import openpyxl
 from ingest.importer.conversion import template_manager, conversion_strategy
 from ingest.importer.conversion.template_manager import TemplateManager
 from ingest.importer.spreadsheet.ingest_workbook import IngestWorkbook
-from ingest.importer.submission import IngestSubmitter
+from ingest.importer.submission import IngestSubmitter, EntitiesDictionaries, EntityLinker
 
 
 class IngestImporter:
@@ -22,10 +22,14 @@ class IngestImporter:
         workbook_importer = WorkbookImporter(template_mgr)
         spreadsheet_json = workbook_importer.do_import(ingest_workbook)
 
+        entities_dictionaries = EntitiesDictionaries(spreadsheet_json)
+        entity_linker = EntityLinker(template_mgr)
+        entities_dictionaries = entity_linker.process_links(entities_dictionaries)
+
         submission = None
         if not dry_run:
             submitter = IngestSubmitter(self.ingest_api, template_mgr)
-            submission = submitter.submit(spreadsheet_json, submission_url)
+            submission = submitter.submit(entities_dictionaries, submission_url)
             print(f'Submission in {submission_url} is done!')
 
         return submission
@@ -98,10 +102,7 @@ class WorksheetImporter:
             new_link_map = {}
 
             for concrete_entity, ids in link_map.items():
-                try:
-                    domain_entity = template.get_domain_entity(concrete_entity)
-                except:
-                    pass
+                domain_entity = template.get_domain_entity(concrete_entity)
 
                 if domain_entity is None:
                     continue
