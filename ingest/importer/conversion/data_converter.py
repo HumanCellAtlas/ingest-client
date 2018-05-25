@@ -44,7 +44,10 @@ class StringConverter(Converter):
 class IntegerConverter(Converter):
 
     def convert(self, data):
-        return int(data)
+        try:
+            return int(data)
+        except:
+            pass
 
 
 BOOLEAN_TABLE = {

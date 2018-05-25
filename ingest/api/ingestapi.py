@@ -29,12 +29,60 @@ class IngestApi:
         self.headers = {'Content-type': 'application/json'}
 
         self.submission_links = {}
+        self.token = None
         self.load_root()
+
+    def set_token(self, token):
+        self.token = token
 
     def load_root(self):
         if not self.ingest_api:
             reply = requests.get(self.url, headers=self.headers)
             self.ingest_api = reply.json()["_links"]
+
+    def _get_url_for_link(self, url, link_name):
+        r = requests.get(url, headers=self.headers)
+        if r.status_code == requests.codes.ok:
+            links = json.loads(r.text)["_links"]
+            if link_name in links:
+                return links[link_name]["href"]
+
+    def get_schemas(self, latest_only=True, high_level_entity=None, domain_entity=None, concrete_entity=None):
+        schema_url = self.get_schemas_url()
+        all_schemas = []
+        filtered_schemas = {}
+
+        if latest_only:
+            search_url = self._get_url_for_link(schema_url, "search")
+            r = requests.get(search_url, headers=self.headers)
+            if r.status_code == requests.codes.ok:
+                response_j = json.loads(r.text)
+                all_schemas = self.getRelatedEntities("latestSchemas", response_j, "schemas")
+        else:
+            all_schemas = self.getEntities(schema_url, "schemas")
+
+        if high_level_entity or domain_entity or concrete_entity:
+            for schema in all_schemas:
+                # todo hack until the schemas endpoint allows combined search and get latest schema
+                if high_level_entity:
+                    if "highLevelEntity" in schema and high_level_entity == schema["highLevelEntity"]:
+                        filtered_schemas[schema["_links"]["json-schema"]["href"]] = schema
+                if domain_entity:
+                    if "domainEntity" in schema and domain_entity == schema["domainEntity"]:
+                        filtered_schemas[schema["_links"]["json-schema"]["href"]] = schema
+                if concrete_entity:
+                    if "concreteEntity" in schema and concrete_entity == schema["concreteEntity"]:
+                        filtered_schemas[schema["_links"]["json-schema"]["href"]] = schema
+            return filtered_schemas.values()
+
+        return all_schemas
+
+
+
+    def get_schemas_url(self):
+        if "schemas" in self.ingest_api:
+            return self.ingest_api["schemas"]["href"].rsplit("{")[0]
+        return None
 
     def getSubmissions(self):
         params = {'sort': 'submissionDate,desc'}
@@ -201,8 +249,8 @@ class IngestApi:
     def _updateStatusToPending(self, submissionUrl):
         r = requests.patch(submissionUrl, data="{\"submissionStatus\" : \"Pending\"}", headers=self.headers)
 
-    def createProject(self, submissionUrl, jsonObject, token):
-        return self.createEntity(submissionUrl, jsonObject, "projects", token)
+    def createProject(self, submissionUrl, jsonObject):
+        return self.createEntity(submissionUrl, jsonObject, "projects", self.token)
 
     def createBiomaterial(self, submissionUrl, jsonObject):
         return self.createEntity(submissionUrl, jsonObject, "biomaterials")

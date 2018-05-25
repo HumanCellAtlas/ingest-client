@@ -1,5 +1,4 @@
 import copy
-import re
 
 from openpyxl.worksheet import Worksheet
 
@@ -64,11 +63,15 @@ class TemplateManager:
         return schema.get('url') if schema else None
 
     def get_domain_entity(self, concrete_entity):
-        schema = self._get_schema(concrete_entity)
-        domain_entity = schema.get('domain_entity') if schema else None
+        domain_entity = None
 
-        match = re.search('(?P<domain_entity>\w+)(\/*)', domain_entity)
-        domain_entity = match.group('domain_entity')
+        schema = self._get_schema(concrete_entity)
+
+        if schema:
+            domain_entity = schema.get('domain_entity', '')
+            subdomain = domain_entity.split('/')
+            if subdomain:
+                domain_entity = subdomain[0]
 
         return domain_entity
 
@@ -103,7 +106,7 @@ class TemplateManager:
 
 
 def build(schemas) -> TemplateManager:
-    template = SchemaTemplate(schemas)
+    template = SchemaTemplate(list_of_schema_urls=schemas)
     template_mgr = TemplateManager(template)
     return template_mgr
 

@@ -119,7 +119,7 @@ tabs:
         - protocol.protocol_core.protocol_id
         - protocol.protocol_core.protocol_name
         - protocol.protocol_core.protocol_description
-        - protocol.protocol_core.udocument
+        - protocol.protocol_core.document
         - protocol.protocol_type.text
         - protocol.protocol_type.ontology
   - sequence_file:

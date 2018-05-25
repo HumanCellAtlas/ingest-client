@@ -1,7 +1,7 @@
 import re
 from abc import abstractmethod
 
-from ingest.importer.conversion import data_converter, utils
+from ingest.importer.conversion import data_converter
 from ingest.importer.conversion.column_specification import ColumnSpecification, ConversionType
 from ingest.importer.conversion.data_converter import Converter
 from ingest.importer.conversion.utils import split_field_chain
@@ -55,7 +55,11 @@ class ListElementCellConversion(CellConversion):
             parent = [target_object]
             data_node[parent_path] = parent
         else:
-            target_object = parent[0]
+
+            try:
+                target_object = parent[0]
+            except:
+                pass
         return target_object
 
 
@@ -75,6 +79,8 @@ class LinkedIdentityCellConversion(CellConversion):
         self.main_category = main_category
 
     def apply(self, data_node: DataNode, cell_data):
+        if cell_data is None:
+            return
         linked_ids = self._get_linked_ids(data_node)
         linked_ids.append(self.converter.convert(cell_data))
 
@@ -124,5 +130,4 @@ def determine_strategy(column_spec: ColumnSpecification):
             strategy = LinkedIdentityCellConversion(field_name, column_spec.main_category,
                                                     converter)
     return strategy
-
 

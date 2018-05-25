@@ -40,8 +40,9 @@ class WorkbookImporter:
     def do_import(self, workbook: IngestWorkbook):
         pre_ingest_json_map = {}
 
+        self.import_project(pre_ingest_json_map, workbook)
+
         for worksheet in workbook.importable_worksheets():
-            entities_dict = self.worksheet_importer.do_import(worksheet, self.template_mgr)
             concrete_entity = self.template_mgr.get_concrete_entity_of_tab(worksheet.title)
 
             # TODO what if the tab is not a valid entity?
@@ -51,11 +52,26 @@ class WorkbookImporter:
 
             domain_entity = self.template_mgr.get_domain_entity(concrete_entity)
 
+            if domain_entity is None:
+                continue
+
+            entities_dict = self.worksheet_importer.do_import(worksheet, self.template_mgr)
             if pre_ingest_json_map.get(domain_entity) is None:
                 pre_ingest_json_map[domain_entity] = {}
 
             pre_ingest_json_map[domain_entity].update(entities_dict)
         return pre_ingest_json_map
+
+    def import_project(self, pre_ingest_json_map, workbook):
+        project_worksheet = workbook.get_project_worksheet()
+        project_importer = ProjectWorksheetImporter()
+        project_dict = project_importer.do_import(project_worksheet, self.template_mgr)
+        contact_worksheet = workbook.get_contact_worksheet()
+        contact_importer = ContactWorksheetImporter()
+        contacts = contact_importer.do_import(contact_worksheet, self.template_mgr)
+        project_record = list(project_dict.values())[0]
+        project_record['content']['contributors'] = list(map(lambda record: record['content']['contributors'][0], contacts))
+        pre_ingest_json_map['project'] = project_dict
 
 
 class WorksheetImporter:
@@ -63,14 +79,13 @@ class WorksheetImporter:
     USER_FRIENDLY_HEADER_ROW_IDX = 2
     START_ROW_IDX = 5
 
+    UNKNOWN_ID_PREFIX = '_unknown_'
+
     def __init__(self):
-        pass
+        self.unknown_id_ctr = 0
 
     def do_import(self, worksheet, template: TemplateManager):
-        records = self._import_records(worksheet, template)
-        entity_type = template.get_concrete_entity_of_tab(worksheet.title)
-        pre_ingest_entry = {entity_type: records}
-        return pre_ingest_entry
+        return self._import_records(worksheet, template)
 
     def _import_records(self, worksheet, template: TemplateManager):
         records = {}
@@ -78,51 +93,72 @@ class WorksheetImporter:
         for row in self._get_data_rows(worksheet):
             # TODO row_template.do_import should return a structured abstraction
             json = row_template.do_import(row)
-            records[json[conversion_strategy.OBJECT_ID_FIELD]] = {
+
+            link_map = json.get(conversion_strategy.LINKS_FIELD, {})
+            new_link_map = {}
+
+            for concrete_entity, ids in link_map.items():
+                try:
+                    domain_entity = template.get_domain_entity(concrete_entity)
+                except:
+                    pass
+
+                if domain_entity is None:
+                    continue
+
+                domain_entity_ids = new_link_map.get(domain_entity, [])
+
+                if len(domain_entity_ids) == 0:
+                    new_link_map[domain_entity] = domain_entity_ids
+
+                domain_entity_ids.extend(ids)
+
+            concrete_entity = template.get_concrete_entity_of_tab(worksheet.title)
+
+            json[conversion_strategy.CONTENT_FIELD]['describedBy'] = template.get_schema_url(concrete_entity)
+            json[conversion_strategy.CONTENT_FIELD]['schema_type'] = template.get_domain_entity(concrete_entity)
+
+            record_id = json.get(conversion_strategy.OBJECT_ID_FIELD, self._generate_id())
+
+            records[record_id] = {
                 'content': json[conversion_strategy.CONTENT_FIELD],
-                'links_by_entity': json[conversion_strategy.LINKS_FIELD]
+                'links_by_entity': new_link_map
             }
         return records
+
+    def _generate_id(self):
+        self.unknown_id_ctr = self.unknown_id_ctr + 1
+        return f'{self.UNKNOWN_ID_PREFIX}{self.unknown_id_ctr}'
 
     def _get_data_rows(self, worksheet):
         return worksheet.iter_rows(row_offset=self.START_ROW_IDX,
                                    max_row=(worksheet.max_row - self.START_ROW_IDX))
 
 
-class ObjectListTracker(object):
+class ProjectWorksheetImporter(WorksheetImporter):
 
-    def __init__(self):
-        self.ontology_values = {}
+    def do_import(self, worksheet, template: TemplateManager):
+        records = self._import_records(worksheet, template)
 
-    def _get_field(self, field_chain):
-        match = re.search('(?P<field_chain>.*)(\.\w+)', field_chain)
-        return match.group('field_chain')
+        if len(records.keys()) == 0:
+            raise NoProjectFound()
 
-    def _get_subfield(self, field_chain):
-        match = re.search('(.*)\.(?P<field>\w+)', field_chain)
-        return match.group('field')
+        if len(records.keys()) > 1:
+            raise MultipleProjectsFound()
 
-    def track_value(self, header_name, value):
-        subfield = self._get_subfield(header_name)
-        field = self._get_field(header_name)
-
-        if not self.ontology_values.get(field):
-            self.ontology_values[field] = {}
-
-        self.ontology_values[field][subfield] = value
-
-    def get_object_list_fields(self):
-        return self.ontology_values.keys()
-
-    def get_value_by_field(self, field):
-        return [self.ontology_values[field]]
+        return records
 
 
-class NoUniqueIdFoundError(Exception):
-    def __init__(self, worksheet_title, row_index):
-        message = f'No unique id found for row {row_index} in {worksheet_title} worksheet tab'
-        super(NoUniqueIdFoundError, self).__init__(message)
+class ContactWorksheetImporter(WorksheetImporter):
 
-        self.worksheet_title = worksheet_title
-        self.row_index = row_index
+    def do_import(self, worksheet, template: TemplateManager):
+        records = self._import_records(worksheet, template)
 
+        return list(records.values())
+
+class MultipleProjectsFound(Exception):
+    pass
+
+
+class NoProjectFound(Exception):
+    pass
