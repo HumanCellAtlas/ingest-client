@@ -2,7 +2,7 @@ from abc import abstractmethod
 
 from ingest.importer.conversion import data_converter, utils
 from ingest.importer.conversion.column_specification import ColumnSpecification, ConversionType
-from ingest.importer.conversion.data_converter import Converter
+from ingest.importer.conversion.data_converter import Converter, ListConverter
 from ingest.importer.conversion.utils import split_field_chain
 from ingest.importer.data_node import DataNode
 
@@ -71,12 +71,15 @@ class IdentityCellConversion(CellConversion):
 
 
 class LinkedIdentityCellConversion(CellConversion):
+    def __init__(self, field, converter: Converter):
+        self.field = field
+        self.converter = ListConverter()
 
     def apply(self, data_node: DataNode, cell_data):
         if cell_data is None:
             return
         linked_ids = self._get_linked_ids(data_node)
-        linked_ids.append(self.converter.convert(cell_data))
+        linked_ids.extend(self.converter.convert(cell_data))
 
     def _get_linked_ids(self, data_node):
         links = self._get_links(data_node)
