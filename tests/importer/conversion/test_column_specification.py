@@ -62,9 +62,9 @@ class ColumnSpecificationTest(TestCase):
         }
 
         # when:
-        single_column_spec = ColumnSpecification.build_raw('', '', raw_spec,
+        single_column_spec = ColumnSpecification.build_raw('', '', '', raw_spec,
                                                            parent=raw_single_value_parent_spec)
-        multi_column_spec = ColumnSpecification.build_raw('', '', raw_spec,
+        multi_column_spec = ColumnSpecification.build_raw('', '', '', raw_spec,
                                                           parent=raw_multi_value_parent_spec)
 
         # then:
@@ -80,7 +80,7 @@ class ColumnSpecificationTest(TestCase):
 
     def _assert_correct_converter_single_value(self, data_type:DataType, expected_converter_type):
         # given:
-        column_spec = ColumnSpecification('field', 'object_type', data_type)
+        column_spec = ColumnSpecification('field', 'object_type', 'main_category', data_type)
 
         # when:
         converter = column_spec.determine_converter()
@@ -97,7 +97,8 @@ class ColumnSpecificationTest(TestCase):
 
     def _assert_correct_converter_multivalue(self, data_type):
         # given:
-        column_spec = ColumnSpecification('field', 'object_type', data_type, multivalue=True)
+        column_spec = ColumnSpecification('field', 'object_type', 'main_category',
+                                          data_type, multivalue=True)
 
         # when:
         converter = column_spec.determine_converter()
@@ -108,30 +109,31 @@ class ColumnSpecificationTest(TestCase):
 
     def test_get_conversion_type_member_field(self):
         # given:
-        column_spec = ColumnSpecification('user.name', 'profile', DataType.STRING)
+        column_spec = ColumnSpecification('user.name', 'profile', 'user_data', DataType.STRING)
 
         # expect:
         self.assertEqual(ConversionType.MEMBER_FIELD, column_spec.get_conversion_type())
 
     def test_get_conversion_type_field_of_list_element(self):
         # given:
-        column_spec = ColumnSpecification('product_name', 'store_schema', DataType.STRING,
-                                          multivalue_parent=True)
+        column_spec = ColumnSpecification('product_name', 'store_schema', 'store_entity',
+                                          DataType.STRING, multivalue_parent=True)
 
         # expect:
         self.assertEqual(ConversionType.FIELD_OF_LIST_ELEMENT, column_spec.get_conversion_type())
 
     def test_get_conversion_type_identity(self):
         # given:
-        column_spec = ColumnSpecification('product.product_id', 'product', DataType.STRING,
-                                          identity=True)
+        column_spec = ColumnSpecification('product.product_id', 'product', 'store_entry',
+                                          DataType.STRING, identity=True)
 
         # expect:
         self.assertEqual(ConversionType.IDENTITY, column_spec.get_conversion_type())
 
     def test_get_conversion_type_linked_identity(self):
         # given:
-        column_spec = ColumnSpecification('account.number', 'user', DataType.STRING, identity=True)
+        column_spec = ColumnSpecification('account.number', 'user', 'profile_type',
+                                          DataType.STRING, identity=True)
 
         # expect:
         self.assertEqual(ConversionType.LINKED_IDENTITY, column_spec.get_conversion_type())

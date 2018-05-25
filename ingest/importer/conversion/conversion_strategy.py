@@ -110,7 +110,8 @@ def determine_strategy(column_spec: ColumnSpecification):
         elif ConversionType.IDENTITY == conversion_type:
             strategy = IdentityCellConversion(field_name, converter)
         elif ConversionType.LINKED_IDENTITY == conversion_type:
-            strategy = LinkedIdentityCellConversion(field_name, converter)
+            strategy = LinkedIdentityCellConversion(field_name, column_spec.main_category,
+                                                    converter)
     return strategy
 
 
