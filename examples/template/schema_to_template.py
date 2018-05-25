@@ -7,7 +7,7 @@ schemas = [
     "https://schema.humancellatlas.org/type/project/5.1.0/project",
     "https://schema.humancellatlas.org/type/biomaterial/5.1.0/cell_suspension",
     "https://schema.humancellatlas.org/type/biomaterial/5.1.0/specimen_from_organism",
-    "https://schema.humancellatlas.org/type/biomaterial/5.1.0/donor_organism",
+    "https://schema.humancellatlas.org/type/biomaterial/5.1.1/donor_organism",
     "https://schema.humancellatlas.org/type/file/5.1.0/sequence_file",
     "https://schema.humancellatlas.org/type/process/biomaterial_collection/5.1.0/collection_process",
     "https://schema.humancellatlas.org/type/process/biomaterial_collection/5.1.0/dissociation_process",
@@ -17,6 +17,7 @@ schemas = [
     "https://schema.humancellatlas.org/type/protocol/5.1.0/protocol",
     "https://schema.humancellatlas.org/type/protocol/biomaterial/5.1.0/biomaterial_collection_protocol",
     "https://schema.humancellatlas.org/type/protocol/sequencing/5.1.0/sequencing_protocol",
+    "https://schema.humancellatlas.org/type/process/1.0.0/process",
 ]
 
 template = SchemaTemplate(list_of_schema_urls=schemas)

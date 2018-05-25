@@ -27,3 +27,16 @@ class ModuleTest(TestCase):
         # and:
         self.assertEqual('user.address', triple_parent)
         self.assertEqual('city', triple_target)
+
+    def test_extract_root_field(self):
+        # given:
+        single = 'user'
+        double = 'account.number'
+        triple = 'product.item.id'
+
+        # expect:
+        self.assertEqual('user', utils.extract_root_field(single))
+        self.assertEqual('account', utils.extract_root_field(double))
+        self.assertEqual('product', utils.extract_root_field(triple))
+        self.assertEqual('', utils.extract_root_field(''))
+        self.assertIsNone(utils.extract_root_field(None))

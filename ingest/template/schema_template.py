@@ -284,12 +284,12 @@ class SchemaParser:
         return None
 
     def get_high_level_entity_from_url(self, url):
-        pattern = re.compile("http[s]://[^/]*/([^/]*)/")
+        pattern = re.compile("http[s]?://[^/]*/([^/]*)/")
         match = pattern.search(url)
         return match.group(1)
 
     def get_domain_entity_from_url(self, url):
-        pattern = re.compile("http[s]://[^/]*/[^/]*/(.*)/(\d+\.)?(\d+\.)?(\*|\d+)/.*")
+        pattern = re.compile("http[s]?://[^/]*/[^/]*/(?P<domain_entity>.*)/(((\d+\.)?(\d+\.)?(\*|\d+))|(latest))/.*")
         match = pattern.search(url)
         return match.group(1)
 

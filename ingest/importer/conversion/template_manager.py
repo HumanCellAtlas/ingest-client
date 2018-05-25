@@ -7,7 +7,6 @@ import ingest.template.schema_template as schema_template
 from ingest.importer.conversion import utils, conversion_strategy
 from ingest.importer.conversion.column_specification import ColumnSpecification
 from ingest.importer.conversion.conversion_strategy import CellConversion
-from ingest.importer.conversion.data_converter import ListConverter, DataType, CONVERTER_MAP
 from ingest.importer.data_node import DataNode
 from ingest.template.schema_template import SchemaTemplate
 
@@ -25,64 +24,31 @@ class TemplateManager:
         data_node['schema_type'] = schema['domain_entity']
         return data_node
 
-    def create_row_template(self, worksheet:Worksheet):
+    def create_row_template(self, worksheet: Worksheet):
+        tab_name = worksheet.title
         header_row = self._get_header_row(worksheet)
         cell_conversions = []
         for cell in header_row:
             header = cell.value
-            column_spec = self._define_column_spec(header)
+            column_spec = self._define_column_spec(header, tab_name)
             strategy = conversion_strategy.determine_strategy(column_spec)
             cell_conversions.append(strategy)
         return RowTemplate(cell_conversions)
 
-    def _get_header_row(self, worksheet):
+    @staticmethod
+    def _get_header_row(worksheet):
         for row in worksheet.iter_rows(row_offset=3, max_row=1):
             header_row = row
         return header_row
 
-    def _define_column_spec(self, header):
+    def _define_column_spec(self, header, tab_name):
+        if header is None:
+            return ColumnSpecification(None, None, None)
         parent_path, __ = utils.split_field_chain(header)
-        raw_spec = self.template.get_key_for_label(header)
-        raw_parent_spec = self.template.get_key_for_label(parent_path)
-        return ColumnSpecification.build_raw(header, raw_spec, parent=raw_parent_spec)
-
-    # TODO deprecate this! Logic is now moved to ColumnSpecification
-    def get_converter(self, header_name):
-        column_spec = self.lookup(header_name)
-
-        default_converter = CONVERTER_MAP[DataType.STRING]
-
-        if not column_spec:
-            return default_converter
-
-        data_type = self._resolve_data_type(column_spec)
-        if column_spec.get('multivalue', False):
-            converter = ListConverter(data_type=data_type)
-        else:
-            converter = CONVERTER_MAP.get(data_type, default_converter)
-        return converter
-
-    def _resolve_data_type(self, column_spec):
-        value_type = column_spec.get('value_type')
-        data_type = DataType.find(value_type)
-        return data_type
-
-    def is_parent_field_multivalue(self, header_name):
-        parent_field = self._get_parent_field(header_name)
-        column_spec = self.lookup(parent_field)
-
-        return column_spec and column_spec.get('multivalue') and (
-            column_spec.get('value_type') and column_spec.get('value_type') == 'object'
-        )
-
-    def _get_parent_field(self, header_name):
-        try:
-            match = re.search('(?P<field_chain>.*)(\.\w+)', header_name)
-            parent_field = match.group('field_chain')
-        except:
-            raise ParentFieldNotFound(header_name)
-
-        return parent_field
+        raw_spec = self.lookup(header)
+        raw_parent_spec = self.lookup(parent_path)
+        concrete_entity = self.get_concrete_entity_of_tab(tab_name)
+        return ColumnSpecification.build_raw(header, concrete_entity, raw_spec, parent=raw_parent_spec)
 
     def get_schema_url(self, concrete_entity):
         schema = self._get_schema(concrete_entity)
@@ -90,11 +56,15 @@ class TemplateManager:
         return schema.get('url') if schema else None
 
     def get_domain_entity(self, concrete_entity):
-        schema = self._get_schema(concrete_entity)
-        domain_entity = schema.get('domain_entity') if schema else None
+        domain_entity = None
 
-        match = re.search('(?P<domain_entity>\w+)(\/*)', domain_entity)
-        domain_entity = match.group('domain_entity')
+        schema = self._get_schema(concrete_entity)
+
+        if schema:
+            domain_entity = schema.get('domain_entity', '')
+            subdomain = domain_entity.split('/')
+            if subdomain:
+                domain_entity = subdomain[0]
 
         return domain_entity
 
@@ -103,38 +73,22 @@ class TemplateManager:
         return spec.get('schema') if spec else None
 
     def get_concrete_entity_of_tab(self, tab_name):
-
         try:
             tabs_config = self.template.get_tabs_config()
             concrete_entity = tabs_config.get_key_for_label(tab_name)
         except:
             print(f'No entity found for tab {tab_name}')
             return None
-
-        return concrete_entity
-
-    def is_identifier_field(self, header_name):
-        spec = self.lookup(header_name)
-        return spec.get('identifiable')
-
-    def get_concrete_entity_of_column(self, header_name):
-        match = re.search('(?P<concrete_entity>\w+)(\.\w+)*', header_name)
-        concrete_entity = match.group('concrete_entity')
         return concrete_entity
 
     def get_key_for_label(self, header_name, tab_name):
-        key = None
-
         try:
             key = self.template.get_key_for_label(header_name, tab_name)
         except:
             print(f'{header_name} in "{tab_name}" tab is not found in schema template')
-
         return key
 
     def lookup(self, header_name):
-        spec = None
-
         try:
             spec = self.template.lookup(header_name)
         except schema_template.UnknownKeyException:
@@ -142,6 +96,7 @@ class TemplateManager:
             return {}
 
         return spec
+
 
 def build(schemas) -> TemplateManager:
     template = SchemaTemplate(schemas)

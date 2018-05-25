@@ -149,6 +149,10 @@ class TestSchemaTemplate(TestCase):
         self.assertEqual("project", schema_parser.get_domain_entity_from_url(url))
         url = "https://schema.humancellatlas.org/type/foo/bar/5.1.0/project"
         self.assertEqual("foo/bar", schema_parser.get_domain_entity_from_url(url))
+        url = "https://schema.humancellatlas.org/type/foo/bar/latest/project"
+        self.assertEqual("foo/bar", schema_parser.get_domain_entity_from_url(url))
+        url = "https://schema.humancellatlas.org/type/foo/latest/project"
+        self.assertEqual("foo", schema_parser.get_domain_entity_from_url(url))
 
     def test_get_high_level_entity_from_url(self):
         template = SchemaTemplate([])
