@@ -206,7 +206,7 @@ class IdentityCellConversionTest(TestCase):
     def test_apply(self):
         # given:
         converter = _create_mock_string_converter()
-        cell_conversion = IdentityCellConversion('product_id', converter)
+        cell_conversion = IdentityCellConversion('product.product_id', converter)
 
         # and:
         data_node = DataNode()
@@ -217,6 +217,11 @@ class IdentityCellConversionTest(TestCase):
         # then:
         expected_id = 'product_no_144 - converted'
         self.assertEqual(data_node[conversion_strategy.OBJECT_ID_FIELD], expected_id)
+
+        # and: identity value should be in content
+        content = data_node[conversion_strategy.CONTENT_FIELD]
+        self.assertIsNotNone(content)
+        self.assertEqual(expected_id, content.get('product_id'))
 
 
 class LinkedIdentityCellConversionTest(TestCase):
