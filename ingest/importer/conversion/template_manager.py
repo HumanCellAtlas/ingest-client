@@ -47,8 +47,9 @@ class TemplateManager:
             raw_spec = self.lookup(header)
             raw_parent_spec = self.lookup(parent_path)
             object_type = self.get_concrete_entity_of_tab(tab_name)
-            column_spec = ColumnSpecification.build_raw(header, object_type, raw_spec,
-                                                        parent=raw_parent_spec)
+            main_category = self.get_domain_entity(object_type)
+            column_spec = ColumnSpecification.build_raw(header, object_type, main_category,
+                                                        raw_spec, parent=raw_parent_spec)
         else:
             column_spec = None
         return column_spec
