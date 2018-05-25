@@ -22,18 +22,21 @@ class ColumnSpecificationTest(TestCase):
         }
 
         # when:
-        string_column_spec = ColumnSpecification.build_raw('user.name', 'user', raw_string_spec)
+        string_column_spec = ColumnSpecification.build_raw('user.name', 'user', 'profile_entry',
+                                                           raw_string_spec)
         int_array_column_spec = ColumnSpecification.build_raw('sample.numbers', 'user',
-                                                              raw_int_array_spec)
+                                                              'profile_entry', raw_int_array_spec)
 
         # then:
         self.assertEqual('user.name', string_column_spec.field_name)
+        self.assertEqual('profile_entry', string_column_spec.main_category)
         self.assertEqual(DataType.STRING, string_column_spec.data_type)
         self.assertFalse(string_column_spec.is_multivalue())
         self.assertTrue(string_column_spec.is_identity())
 
         # and:
         self.assertEqual('sample.numbers', int_array_column_spec.field_name)
+        self.assertEqual('profile_entry', int_array_column_spec.main_category)
         self.assertEqual(DataType.INTEGER, int_array_column_spec.data_type)
         self.assertTrue(int_array_column_spec.is_multivalue())
         self.assertFalse(int_array_column_spec.is_identity())
