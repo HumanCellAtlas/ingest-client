@@ -36,7 +36,7 @@ class IngestWorkbook:
         worksheet = None
 
         if SCHEMAS_WORKSHEET in self.workbook.get_sheet_names():
-            worksheet = self.workbook.get_sheet_by_name(SCHEMAS_WORKSHEET.lower())
+            worksheet = self.workbook.get_sheet_by_name(SCHEMAS_WORKSHEET)
 
         if SCHEMAS_WORKSHEET.lower() in self.workbook.get_sheet_names():
             worksheet = self.workbook.get_sheet_by_name(SCHEMAS_WORKSHEET.lower())
