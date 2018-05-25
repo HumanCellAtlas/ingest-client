@@ -16,7 +16,14 @@ class CellConversion(object):
 
     def __init__(self, field, converter: Converter):
         self.field = field
+        self.applied_field = self._process_applied_field(field)
         self.converter = converter
+
+    @staticmethod
+    def _process_applied_field(field):
+        pattern = '(\w*\.){0,1}(?P<insert_field>.*)'
+        match = re.match(pattern, field)
+        return match.group('insert_field')
 
     @abstractmethod
     def apply(self, data_node:DataNode, cell_data): ...
@@ -24,12 +31,9 @@ class CellConversion(object):
 
 class DirectCellConversion(CellConversion):
 
-    def apply(self, data_node:DataNode, cell_data):
+    def apply(self, data_node: DataNode, cell_data):
         if cell_data is not None:
-            pattern = '(\w*\.){0,1}(?P<insert_field>.*)'
-            match = re.match(pattern, self.field)
-            insert_field = match.group('insert_field')
-            structured_field = f'{CONTENT_FIELD}.{insert_field}'
+            structured_field = f'{CONTENT_FIELD}.{self.applied_field}'
             data_node[structured_field] = self.converter.convert(cell_data)
 
 
@@ -37,7 +41,7 @@ class ListElementCellConversion(CellConversion):
 
     def apply(self, data_node:DataNode, cell_data):
         if cell_data is not None:
-            structured_field = f'{CONTENT_FIELD}.{self.field}'
+            structured_field = f'{CONTENT_FIELD}.{self.applied_field}'
             parent_path, target_field = split_field_chain(structured_field)
             target_object = self._determine_target_object(data_node, parent_path)
             data = self.converter.convert(cell_data)

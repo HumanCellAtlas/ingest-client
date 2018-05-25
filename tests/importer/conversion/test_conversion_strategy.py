@@ -137,7 +137,7 @@ class ListElementCellConversionTest(TestCase):
     def test_apply(self):
         # given:
         converter = _create_mock_string_converter()
-        cell_conversion = ListElementCellConversion('list_of_things.name', converter)
+        cell_conversion = ListElementCellConversion('stuff.list_of_things.name', converter)
 
         # when:
         data_node = DataNode()
@@ -159,7 +159,7 @@ class ListElementCellConversionTest(TestCase):
     def test_apply_previously_processed_field(self):
         # given:
         converter = _create_mock_string_converter()
-        cell_conversion = ListElementCellConversion('user.basket.product_name', converter)
+        cell_conversion = ListElementCellConversion('shop.user.basket.product_name', converter)
 
         # and:
         data_node = DataNode()
