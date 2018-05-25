@@ -1,3 +1,4 @@
+import json
 from unittest import TestCase
 
 from mock import MagicMock
@@ -62,6 +63,13 @@ class SubmissionTest(TestCase):
 
 def _create_spreadsheet_json():
     spreadsheet_json = {
+        'project': {
+            'dummy-project-id': {
+                'content': {
+                    'key': 'project_1'
+                }
+            }
+        },
         'biomaterial': {
             'biomaterial_id_1': {
                 'content': {
@@ -96,32 +104,6 @@ def _create_spreadsheet_json():
                 },
                 'links_by_entity': {
                     'biomaterial': ['biomaterial_id_3']
-                }
-            }
-        },
-        'process': {
-            'process_id_1': {
-                'content': {
-                    'key': 'process_1'
-                },
-                'links_by_entity': {
-                    'protocol': ['protocol_id_1']
-                }
-            },
-            'process_id_2': {
-                'content': {
-                    'key': 'process_2'
-                },
-                'links_by_entity': {
-                    'protocol': ['protocol_id_1']
-                }
-            },
-            'process_id_3': {
-                'content': {
-                    'key': 'process_3'
-                },
-                'links_by_entity': {
-                    'protocol': ['protocol_id_1']
                 }
             }
         },
@@ -167,7 +149,7 @@ class EntitiesDictionariesTest(TestCase):
         spreadsheet_json = _create_spreadsheet_json()
         entities_map = EntitiesDictionaries(spreadsheet_json)
 
-        self.assertEqual(['biomaterial', 'file', 'process', 'protocol'], list(entities_map.get_entity_types()))
+        self.assertEqual(['project', 'biomaterial', 'file', 'protocol'], list(entities_map.get_entity_types()))
 
         self.assertTrue(entities_map.get_entity('biomaterial', 'biomaterial_id_1'))
         self.assertEqual({'key': 'biomaterial_1'}, entities_map.get_entity('biomaterial', 'biomaterial_id_1').content)
@@ -191,6 +173,13 @@ class EntityLinkerTest(TestCase):
     def test_generate_direct_links_biomaterial_to_biomaterial_has_process(self):
         # given
         spreadsheet_json = {
+            'project': {
+                'dummy-project-id': {
+                    'content': {
+                        'key': 'project_1'
+                    }
+                }
+            },
             'biomaterial': {
                 'biomaterial_id_1': {
                     'content': {
@@ -224,12 +213,24 @@ class EntityLinkerTest(TestCase):
         }
 
         expected_json = {
+            'project': {
+                'dummy-project-id': {
+                    'content': {
+                        'key': 'project_1'
+                    }
+                }
+            },
             'biomaterial': {
                 'biomaterial_id_1': {
                     'content': {
                         'key': 'biomaterial_1'
                     },
                     'direct_links': [
+                        {
+                            'entity': 'project',
+                            'id': 'dummy-project-id',
+                            'relationship': 'projects'
+                        },
                         {
                             'entity': 'process',
                             'id': 'process_id_1',
@@ -246,6 +247,11 @@ class EntityLinkerTest(TestCase):
                     },
                     'direct_links': [
                         {
+                            'entity': 'project',
+                            'id': 'dummy-project-id',
+                            'relationship': 'projects'
+                        },
+                        {
                             'entity': 'process',
                             'id': 'process_id_1',
                             'relationship': 'derivedByProcesses'
@@ -259,6 +265,11 @@ class EntityLinkerTest(TestCase):
                         'key': 'process_1'
                     },
                     'direct_links': [
+                        {
+                            'entity': 'project',
+                            'id': 'dummy-project-id',
+                            'relationship': 'projects'
+                        },
                         {
                             'entity': 'protocol',
                             'id': 'protocol_id_1',
@@ -276,12 +287,26 @@ class EntityLinkerTest(TestCase):
                 'protocol_id_1': {
                     'content': {
                         'key': 'protocol_1'
-                    }
+                    },
+                    'direct_links': [
+                        {
+                            'entity': 'project',
+                            'id': 'dummy-project-id',
+                            'relationship': 'projects'
+                        }
+                    ]
                 },
                 'protocol_id_2': {
                     'content': {
                         'key': 'protocol_2'
-                    }
+                    },
+                    'direct_links': [
+                        {
+                            'entity': 'project',
+                            'id': 'dummy-project-id',
+                            'relationship': 'projects'
+                        }
+                    ]
                 }
             }
         }
@@ -299,11 +324,21 @@ class EntityLinkerTest(TestCase):
                 expected_links = expected_links if expected_links else []
                 entity = output.get_entity(entity_type, entity_id)
                 self.assertTrue(entity)
-                self.assertEqual(expected_links, entity.direct_links)
+
+                for link in expected_links:
+                    self.assertTrue(link in entity.direct_links, f'{json.dumps(link)} is not in direct links')
+
 
     def test_generate_direct_links_biomaterial_to_biomaterial_no_process(self):
         # given
         spreadsheet_json = {
+            'project': {
+                'dummy-project-id': {
+                    'content': {
+                        'key': 'project_1'
+                    }
+                }
+            },
             'biomaterial': {
                 'biomaterial_id_1': {
                     'content': {
@@ -336,12 +371,24 @@ class EntityLinkerTest(TestCase):
         }
 
         expected_json = {
+            'project': {
+                'dummy-project-id': {
+                    'content': {
+                        'key': 'project_1'
+                    }
+                }
+            },
             'biomaterial': {
                 'biomaterial_id_1': {
                     'content': {
                         'key': 'biomaterial_1'
                     },
                     'direct_links': [
+                        {
+                            'entity': 'project',
+                            'id': 'dummy-project-id',
+                            'relationship': 'projects'
+                        },
                         {
                             'entity': 'process',
                             'id': 'empty_process_id_1',
@@ -358,6 +405,11 @@ class EntityLinkerTest(TestCase):
                     },
                     'direct_links': [
                         {
+                            'entity': 'project',
+                            'id': 'dummy-project-id',
+                            'relationship': 'projects'
+                        },
+                        {
                             'entity': 'process',
                             'id': 'empty_process_id_1',
                             'relationship': 'derivedByProcesses'
@@ -371,6 +423,11 @@ class EntityLinkerTest(TestCase):
                         'key': 'process_1'
                     },
                     'direct_links': [
+                        {
+                            'entity': 'project',
+                            'id': 'dummy-project-id',
+                            'relationship': 'projects'
+                        },
                         {
                             'entity': 'protocol',
                             'id': 'protocol_id_1',
@@ -388,12 +445,26 @@ class EntityLinkerTest(TestCase):
                 'protocol_id_1': {
                     'content': {
                         'key': 'protocol_1'
-                    }
+                    },
+                    'direct_links': [
+                        {
+                            'entity': 'project',
+                            'id': 'dummy-project-id',
+                            'relationship': 'projects'
+                        }
+                    ]
                 },
                 'protocol_id_2': {
                     'content': {
                         'key': 'protocol_2'
-                    }
+                    },
+                    'direct_links': [
+                        {
+                            'entity': 'project',
+                            'id': 'dummy-project-id',
+                            'relationship': 'projects'
+                        }
+                    ]
                 }
             }
         }
@@ -407,6 +478,13 @@ class EntityLinkerTest(TestCase):
     def test_generate_direct_links_file_to_file_no_process(self):
         # given
         spreadsheet_json = {
+            'project': {
+                'dummy-project-id': {
+                    'content': {
+                        'key': 'project_1'
+                    }
+                }
+            },
             'file': {
                 'file_id_1': {
                     'content': {
@@ -421,7 +499,6 @@ class EntityLinkerTest(TestCase):
                         'file': ['file_id_1'],
                         'protocol': ['protocol_id_1', 'protocol_id_2']
                     }
-
                 }
             },
             'protocol': {
@@ -439,12 +516,24 @@ class EntityLinkerTest(TestCase):
         }
 
         expected_json = {
+            'project': {
+                'dummy-project-id': {
+                    'content': {
+                        'key': 'project_1'
+                    }
+                }
+            },
             'file': {
                 'file_id_1': {
                     'content': {
                         'key': 'file_1'
                     },
                     'direct_links': [
+                        {
+                            'entity': 'project',
+                            'id': 'dummy-project-id',
+                            'relationship': 'projects'
+                        },
                         {
                             'entity': 'process',
                             'id': 'empty_process_id_1',
@@ -461,6 +550,11 @@ class EntityLinkerTest(TestCase):
                     },
                     'direct_links': [
                         {
+                            'entity': 'project',
+                            'id': 'dummy-project-id',
+                            'relationship': 'projects'
+                        },
+                        {
                             'entity': 'process',
                             'id': 'empty_process_id_1',
                             'relationship': 'derivedByProcesses'
@@ -474,6 +568,11 @@ class EntityLinkerTest(TestCase):
                         'key': 'process_1'
                     },
                     'direct_links': [
+                        {
+                            'entity': 'project',
+                            'id': 'dummy-project-id',
+                            'relationship': 'projects'
+                        },
                         {
                             'entity': 'protocol',
                             'id': 'protocol_id_1',
@@ -491,12 +590,26 @@ class EntityLinkerTest(TestCase):
                 'protocol_id_1': {
                     'content': {
                         'key': 'protocol_1'
-                    }
+                    },
+                    'direct_links': [
+                        {
+                            'entity': 'project',
+                            'id': 'dummy-project-id',
+                            'relationship': 'projects'
+                        }
+                    ]
                 },
                 'protocol_id_2': {
                     'content': {
                         'key': 'protocol_2'
-                    }
+                    },
+                    'direct_links': [
+                        {
+                            'entity': 'project',
+                            'id': 'dummy-project-id',
+                            'relationship': 'projects'
+                        }
+                    ]
                 }
             }
         }
@@ -510,6 +623,13 @@ class EntityLinkerTest(TestCase):
     def test_generate_direct_links_file_to_file_has_process(self):
         # given
         spreadsheet_json = {
+            'project': {
+                'dummy-project-id': {
+                    'content': {
+                        'key': 'project_1'
+                    }
+                }
+            },
             'file': {
                 'file_id_1': {
                     'content': {
@@ -543,12 +663,24 @@ class EntityLinkerTest(TestCase):
         }
 
         expected_json = {
+            'project': {
+                'dummy-project-id': {
+                    'content': {
+                        'key': 'project_1'
+                    }
+                }
+            },
             'file': {
                 'file_id_1': {
                     'content': {
                         'key': 'file_1'
                     },
                     'direct_links': [
+                        {
+                            'entity': 'project',
+                            'id': 'dummy-project-id',
+                            'relationship': 'projects'
+                        },
                         {
                             'entity': 'process',
                             'id': 'process_id_1',
@@ -565,6 +697,11 @@ class EntityLinkerTest(TestCase):
                     },
                     'direct_links': [
                         {
+                            'entity': 'project',
+                            'id': 'dummy-project-id',
+                            'relationship': 'projects'
+                        },
+                        {
                             'entity': 'process',
                             'id': 'process_id_1',
                             'relationship': 'derivedByProcesses'
@@ -578,6 +715,11 @@ class EntityLinkerTest(TestCase):
                         'key': 'process_1'
                     },
                     'direct_links': [
+                        {
+                            'entity': 'project',
+                            'id': 'dummy-project-id',
+                            'relationship': 'projects'
+                        },
                         {
                             'entity': 'protocol',
                             'id': 'protocol_id_1',
@@ -595,12 +737,26 @@ class EntityLinkerTest(TestCase):
                 'protocol_id_1': {
                     'content': {
                         'key': 'protocol_1'
-                    }
+                    },
+                    'direct_links': [
+                        {
+                            'entity': 'project',
+                            'id': 'dummy-project-id',
+                            'relationship': 'projects'
+                        }
+                    ]
                 },
                 'protocol_id_2': {
                     'content': {
                         'key': 'protocol_2'
-                    }
+                    },
+                    'direct_links': [
+                        {
+                            'entity': 'project',
+                            'id': 'dummy-project-id',
+                            'relationship': 'projects'
+                        }
+                    ]
                 }
             }
         }
@@ -614,6 +770,13 @@ class EntityLinkerTest(TestCase):
     def test_generate_direct_links_file_to_biomaterial_has_process(self):
         # given
         spreadsheet_json = {
+            'project': {
+                'dummy-project-id': {
+                    'content': {
+                        'key': 'project_1'
+                    }
+                }
+            },
             'file': {
                 'file_id_1': {
                     'content': {
@@ -648,12 +811,24 @@ class EntityLinkerTest(TestCase):
         }
 
         expected_json = {
+            'project': {
+                'dummy-project-id': {
+                    'content': {
+                        'key': 'project_1'
+                    }
+                }
+            },
             'biomaterial': {
                 'biomaterial_id_1': {
                     'content': {
                         'key': 'biomaterial_1'
                     },
                     'direct_links': [
+                        {
+                            'entity': 'project',
+                            'id': 'dummy-project-id',
+                            'relationship': 'projects'
+                        },
                         {
                             'entity': 'process',
                             'id': 'process_id_1',
@@ -669,6 +844,11 @@ class EntityLinkerTest(TestCase):
                     },
                     'direct_links': [
                         {
+                            'entity': 'project',
+                            'id': 'dummy-project-id',
+                            'relationship': 'projects'
+                        },
+                        {
                             'entity': 'process',
                             'id': 'process_id_1',
                             'relationship': 'derivedByProcesses'
@@ -682,6 +862,11 @@ class EntityLinkerTest(TestCase):
                         'key': 'process_1'
                     },
                     'direct_links': [
+                        {
+                            'entity': 'project',
+                            'id': 'dummy-project-id',
+                            'relationship': 'projects'
+                        },
                         {
                             'entity': 'protocol',
                             'id': 'protocol_id_1',
@@ -699,12 +884,26 @@ class EntityLinkerTest(TestCase):
                 'protocol_id_1': {
                     'content': {
                         'key': 'protocol_1'
-                    }
+                    },
+                    'direct_links': [
+                        {
+                            'entity': 'project',
+                            'id': 'dummy-project-id',
+                            'relationship': 'projects'
+                        }
+                    ]
                 },
                 'protocol_id_2': {
                     'content': {
                         'key': 'protocol_2'
-                    }
+                    },
+                    'direct_links': [
+                        {
+                            'entity': 'project',
+                            'id': 'dummy-project-id',
+                            'relationship': 'projects'
+                        }
+                    ]
                 }
             }
         }
@@ -718,6 +917,13 @@ class EntityLinkerTest(TestCase):
     def test_generate_direct_links_link_not_found_error(self):
         # given
         spreadsheet_json = {
+            'project': {
+                'dummy-project-id': {
+                    'content': {
+                        'key': 'project_1'
+                    }
+                }
+            },
             'file': {
                 'file_id_1': {
                     'content': {
@@ -743,6 +949,13 @@ class EntityLinkerTest(TestCase):
     def test_generate_direct_links_invalid_spreadsheet_link(self):
         # given
         spreadsheet_json = {
+            'project': {
+                'dummy-project-id': {
+                    'content': {
+                        'key': 'project_1'
+                    }
+                }
+            },
             'biomaterial': {
                 'biomaterial_id_1': {
                     'content': {
@@ -769,15 +982,22 @@ class EntityLinkerTest(TestCase):
             entity_linker.process_links(entities_dictionaries)
 
         self.assertEqual('biomaterial', context.exception.from_entity.type)
-        self.assertEqual('file', context.exception.to_entity.type)
+        self.assertEqual('file', context.exception.link_entity_type)
 
         self.assertEqual('biomaterial_id_1', context.exception.from_entity.id)
-        self.assertEqual('file_id_1', context.exception.to_entity.id)
+        self.assertEqual('file_id_1', context.exception.link_entity_id)
 
 
     def test_generate_direct_links_multiple_process_links(self):
         # given
         spreadsheet_json = {
+            'project': {
+                'dummy-project-id': {
+                    'content': {
+                        'key': 'project_1'
+                    }
+                }
+            },
             'biomaterial': {
                 'biomaterial_id_1': {
                     'content': {

@@ -24,14 +24,21 @@ class CellConversion(object):
 class DirectCellConversion(CellConversion):
 
     def apply(self, data_node:DataNode, cell_data):
-        structured_field = f'{CONTENT_FIELD}.{self.field}'
+        if cell_data is None:
+            return
+
+        field_chain = utils.get_field_chain(self.field)
+        structured_field = f'{CONTENT_FIELD}.{field_chain}'
         data_node[structured_field] = self.converter.convert(cell_data)
 
 
 class ListElementCellConversion(CellConversion):
 
     def apply(self, data_node:DataNode, cell_data):
-        structured_field = f'{CONTENT_FIELD}.{self.field}'
+        if cell_data is None:
+            return
+        field_chain = utils.get_field_chain(self.field)
+        structured_field = f'{CONTENT_FIELD}.{field_chain}'
         parent_path, target_field = split_field_chain(structured_field)
         target_object = self._determine_target_object(data_node, parent_path)
         data = self.converter.convert(cell_data)
@@ -45,19 +52,32 @@ class ListElementCellConversion(CellConversion):
             parent = [target_object]
             data_node[parent_path] = parent
         else:
-            target_object = parent[0]
+
+            try:
+                target_object = parent[0]
+            except:
+                pass
         return target_object
 
 
 class IdentityCellConversion(CellConversion):
 
     def apply(self, data_node: DataNode, cell_data):
-        data_node[OBJECT_ID_FIELD] = self.converter.convert(cell_data)
+        if cell_data is None:
+            return
+        converted_data = self.converter.convert(cell_data)
+        data_node[OBJECT_ID_FIELD] = converted_data
+
+        field_chain = utils.get_field_chain(self.field)
+        structured_field = f'{CONTENT_FIELD}.{field_chain}'
+        data_node[structured_field] = converted_data
 
 
 class LinkedIdentityCellConversion(CellConversion):
 
     def apply(self, data_node: DataNode, cell_data):
+        if cell_data is None:
+            return
         linked_ids = self._get_linked_ids(data_node)
         linked_ids.append(self.converter.convert(cell_data))
 

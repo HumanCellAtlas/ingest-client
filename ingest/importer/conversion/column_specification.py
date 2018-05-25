@@ -4,6 +4,7 @@ from enum import Enum
 from ingest.importer.conversion import utils, data_converter
 from ingest.importer.conversion.data_converter import DataType, CONVERTER_MAP, ListConverter
 
+import unittest
 
 class ConversionType(Enum):
     UNDEFINED = 0,

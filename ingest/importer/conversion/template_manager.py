@@ -42,10 +42,13 @@ class TemplateManager:
         return header_row
 
     def _define_column_spec(self, header, tab_name):
+        if header is None:
+            return ColumnSpecification(None, None, None)
         parent_path, __ = utils.split_field_chain(header)
-        raw_spec = self.template.get_key_for_label(header, tab_name)
-        raw_parent_spec = self.template.get_key_for_label(parent_path, tab_name)
-        return ColumnSpecification.build_raw(header, raw_spec, parent=raw_parent_spec)
+        raw_spec = self.lookup(header)
+        raw_parent_spec = self.lookup(parent_path)
+        concrete_entity = self.get_concrete_entity_of_tab(tab_name)
+        return ColumnSpecification.build_raw(header, concrete_entity, raw_spec, parent=raw_parent_spec)
 
     def get_schema_url(self, concrete_entity):
         schema = self._get_schema(concrete_entity)
@@ -53,11 +56,15 @@ class TemplateManager:
         return schema.get('url') if schema else None
 
     def get_domain_entity(self, concrete_entity):
-        schema = self._get_schema(concrete_entity)
-        domain_entity = schema.get('domain_entity') if schema else None
+        domain_entity = None
 
-        match = re.search('(?P<domain_entity>\w+)(\/*)', domain_entity)
-        domain_entity = match.group('domain_entity')
+        schema = self._get_schema(concrete_entity)
+
+        if schema:
+            domain_entity = schema.get('domain_entity', '')
+            subdomain = domain_entity.split('/')
+            if subdomain:
+                domain_entity = subdomain[0]
 
         return domain_entity
 
