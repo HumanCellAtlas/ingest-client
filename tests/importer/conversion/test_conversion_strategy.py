@@ -86,7 +86,7 @@ class DirectCellConversionTest(TestCase):
         int_converter.convert = lambda __: 27
 
         # and:
-        cell_conversion = DirectCellConversion('user.age', int_converter)
+        cell_conversion = DirectCellConversion('profile.user.age', int_converter)
 
         # when:
         data_node = DataNode()

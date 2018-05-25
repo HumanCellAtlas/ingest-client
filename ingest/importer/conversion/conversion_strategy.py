@@ -1,3 +1,4 @@
+import re
 from abc import abstractmethod
 
 from ingest.importer.conversion import data_converter, utils
@@ -25,7 +26,10 @@ class DirectCellConversion(CellConversion):
 
     def apply(self, data_node:DataNode, cell_data):
         if cell_data is not None:
-            structured_field = f'{CONTENT_FIELD}.{self.field}'
+            pattern = '(\w*\.){0,1}(?P<insert_field>.*)'
+            match = re.match(pattern, self.field)
+            insert_field = match.group('insert_field')
+            structured_field = f'{CONTENT_FIELD}.{insert_field}'
             data_node[structured_field] = self.converter.convert(cell_data)
 
 
