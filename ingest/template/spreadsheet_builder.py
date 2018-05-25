@@ -10,96 +10,90 @@ from ingest.template import schema_template, tabs
 from ingest.template.tabs import TabConfig
 import xlsxwriter
 
-def generate_spreadsheet(outputfile, tabs_template=None, schema_urls=None):
-    template = None
 
-    if tabs_template:
+class SpreadsheetBuilder:
+    def __init__(self, output_file):
 
-        tabs_parser = TabConfig()
-        tabs = tabs_parser.load(tabs_template)
-        template = schema_template.SchemaTemplate(schema_urls, tab_config=tabs)
-    else:
-        template = schema_template.SchemaTemplate(schema_urls)
+        self.workbook = xlsxwriter.Workbook(output_file)
 
+        self.header_format = self.workbook.add_format({'bold': True, 'bg_color': '#D0D0D0'})
+        self.required_header_format = self.workbook.add_format({'bold': True, 'bg_color': 'yellow'})
+        self.desc_format = self.workbook.add_format({'font_color': 'light-grey', 'italic': True, 'text_wrap': True})
 
-    _build(outputfile, template, schema_urls)
+    def generate_workbook(self, tabs_template=None, schema_urls=None):
 
+        if tabs_template:
 
-def _build(outputfile, template, schema_urls):
+            tabs_parser = TabConfig()
+            tabs = tabs_parser.load(tabs_template)
+            template = schema_template.SchemaTemplate(list_of_schema_urls=schema_urls, tab_config=tabs)
+        else:
+            template = schema_template.SchemaTemplate(list_of_schema_urls=schema_urls)
 
-    tabs = template.get_tabs_config()
+        self._build(template)
+        return self
 
-    workbook = xlsxwriter.Workbook(outputfile)
+    def _get_value_for_column(self, template, col_name, property):
+        try:
+            uf = str(template.lookup(col_name + "."+property)) if template.lookup(col_name + "."+property) else col_name
+            return uf
+        except:
+            print("No property for " + col_name)
+            return ""
 
-    header_format = workbook.add_format({'bold': True, 'bg_color': '#D0D0D0'})
-    required_header_format = workbook.add_format({'bold': True, 'bg_color': 'yellow'})
-    desc_format = workbook.add_format({'font_color':'light-grey', 'italic': True, 'text_wrap':True})
-
-    for tab in tabs.lookup("tabs"):
-
-        for tab_name, detail in tab.items():
-
-            worksheet = workbook.add_worksheet(detail["display_name"])
-
-            col_number = 0
-
-
-            for cols in detail["columns"]:
-                uf = cols
-
-                try:
-                    uf = template.lookup(cols+".user_friendly") if template.lookup(cols+".user_friendly") else cols
-                except :
-                    print ("No property for "+cols)
-
-                desc = ""
-                try:
-                    desc = template.lookup(cols+".description") if template.lookup(cols+".description") else ""
-                except:
-                    print ("No for "+cols)
-
-                required = False
-                try:
-                    required = template.lookup(cols+".required") if template.lookup(cols+".required") else False
-                except:
-                    print ("No property for "+cols)
-
-                # set the example
-                example_text = ""
-                try:
-                    example_text = "e.g. " + str(template.lookup(cols + ".example")) if template.lookup(cols + ".example") else ""
-                except:
-                    print ("No property for "+cols)
+    def save_workbook(self):
+        self.workbook.close()
 
 
-                hf = header_format
-                if required:
-                    hf= required_header_format
 
-                # set the description
-                worksheet.write(0, col_number, desc, desc_format)
+    def _build(self, template):
 
+        tabs = template.get_tabs_config()
 
-                # set the user friendly name
-                worksheet.write(1, col_number, uf, hf)
-                worksheet.set_column(col_number, col_number, len(uf))
+        for tab in tabs.lookup("tabs"):
 
+            for tab_name, detail in tab.items():
 
-                worksheet.write(2, col_number, example_text)
+                worksheet = self.workbook.add_worksheet(detail["display_name"])
 
-                # set the key
-                worksheet.write(3, col_number, cols)
-
-                worksheet.write(4, 0, "Add your data below this line", header_format)
-
-                col_number+=1
+                col_number = 0
 
 
-    worksheet = workbook.add_worksheet("Schemas")
-    worksheet.write(0,0, "Schemas")
-    for index, url in enumerate(schema_urls):
-        worksheet.write(index+1, 0, url)
+                for cols in detail["columns"]:
+                    uf = self._get_value_for_column(template, cols, "user_friendly")
+                    desc = self._get_value_for_column(template, cols, "description")
+                    required = self._get_value_for_column(template, cols, "required")
+                    example_text = self._get_value_for_column(template, cols, "example")
 
-    workbook.close()
+                    hf = self.header_format
+                    if required:
+                        hf= self.required_header_format
+
+                    # set the description
+                    worksheet.write(0, col_number, desc, self.desc_format)
+
+
+                    # set the user friendly name
+                    worksheet.write(1, col_number, uf, hf)
+                    worksheet.set_column(col_number, col_number, len(uf))
+
+
+                    worksheet.write(2, col_number, example_text)
+
+                    # set the key
+                    worksheet.write(3, col_number, cols)
+
+                    worksheet.write(4, 0, "Add your data below this line", self.header_format)
+
+                    col_number+=1
+
+
+        worksheet = self.workbook.add_worksheet("Schemas")
+        worksheet.write(0,0, "Schemas")
+        for index, url in enumerate(template.get_schema_urls()):
+            worksheet.write(index+1, 0, url)
+
+
+        return self
 
 

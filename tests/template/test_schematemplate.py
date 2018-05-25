@@ -7,11 +7,11 @@ __author__ = "jupp"
 __license__ = "Apache 2.0"
 __date__ = "01/05/2018"
 
-import os
-import json
 import unittest
 from unittest import TestCase
 from unittest.mock import patch, MagicMock
+
+import tests.template.schema_mock_utils as schema_mock
 
 from ingest.template.schema_template import SchemaParser
 from ingest.template.schema_template import SchemaTemplate
@@ -25,20 +25,12 @@ class TestSchemaTemplate(TestCase):
         self.dummyDonorUri = "https://schema.humancellatlas.org/type/biomaterial/5.1.0/donor_organism"
         pass
 
-    @patch('urllib.request.urlopen')
-    def get_template_for_json(self, mock_urlopen, data="{}"):
-        cm = MagicMock()
-        cm.getcode.return_value = 200
-        cm.read.return_value = data.encode()
-        cm.__enter__.return_value = cm
-        mock_urlopen.return_value = cm
 
-        return SchemaTemplate(['test_url'])
 
     def test_schema_lookup(self):
 
         data='{"id" : "'+self.dummyProjectUri+'", "properties": {"foo": "bar"} }'
-        template = self.get_template_for_json(data=data)
+        template = schema_mock.get_template_for_json(data=data)
         self.assertEqual("project", template.lookup('project.schema.domain_entity'))
         self.assertEqual("project", template.lookup('project.schema.module'))
         self.assertEqual("type", template.lookup('project.schema.high_level_entity'))
@@ -46,24 +38,25 @@ class TestSchemaTemplate(TestCase):
     def test_no_root_schema(self):
         data = '{"properties": {"foo": "bar"} }'
         with self.assertRaises(RootSchemaException):
-            self.get_template_for_json(data=data)
+            schema_mock.get_template_for_json(data=data)
 
 
     def test_unknown_key_exception(self):
         data = '{"id" : "'+self.dummyProjectUri+'", "properties": {"foo": "bar"} }'
-        template = self.get_template_for_json(data=data)
+        template = schema_mock.get_template_for_json(data=data)
         with self.assertRaises(UnknownKeyException):
                 template.lookup('foo')
 
     def test_get_tab_name(self):
         data = '{"id" : "' + self.dummyDonorUri + '", "properties": {"foo_bar": {"user_friendly" : "Foo bar"}} }'
-        template = self.get_template_for_json(data=data)
+        template = schema_mock.get_template_for_json(data=data)
 
         tabs = template.get_tabs_config()
         self.assertEqual("donor_organism", tabs.get_key_for_label("donor_organism"))
         self.assertEqual("donor_organism", tabs.get_key_for_label("Donor organism"))
 
     def test_lookup_key_in_tab(self):
+<<<<<<< Updated upstream
         data = '{"id" : "' + self.dummyDonorUri + '", "properties": {"foo_bar": {"user_friendly" : "Foo bar"}} }'
         template = self.get_template_for_json(data=data)
 
@@ -143,6 +136,11 @@ class TestSchemaTemplate(TestCase):
         template = self.get_template_for_json(data=data)
 
         self.assertEqual("biomaterial", template.lookup("project.foo_bar.schema.domain_entity"))
+=======
+        data = '{"id" : "' + self.dummyDonorUri + '", "properties": {"human_specific": {"properties" : {"ethnicity" : {"properties" : {"text" : {}}}}}} }'
+        template = schema_mock.get_template_for_json(data=data)
+        template.get_key_for_label("donor_organism.human_specific.ethnicity.text", tab="Donor organism")
+>>>>>>> Stashed changes
 
     def test_get_domain_entity_from_url(self):
         template = SchemaTemplate([])

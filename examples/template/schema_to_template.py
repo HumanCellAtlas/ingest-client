@@ -19,7 +19,7 @@ schemas = [
     "https://schema.humancellatlas.org/type/protocol/sequencing/5.1.0/sequencing_protocol",
 ]
 
-template = SchemaTemplate(schemas)
+template = SchemaTemplate(list_of_schema_urls=schemas)
 
 # get key from user friendly name
 

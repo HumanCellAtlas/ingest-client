@@ -6,7 +6,15 @@ __author__ = "jupp"
 __license__ = "Apache 2.0"
 __date__ = "08/05/2018"
 
-import ingest.template.spreadsheet_builder as spreadsheet_builder
+from ingest.template.spreadsheet_builder import SpreadsheetBuilder
+
+
+# build a generic spreadsheet from the latest schemas
+spreadsheet_builder = SpreadsheetBuilder("generic.xlsx")
+spreadsheet_builder.generate_workbook()
+spreadsheet_builder.save_workbook()
+
+# build a spreadsheet given a spreadsheet layout given a set of schemas
 
 schemas = [
     "https://schema.humancellatlas.org/type/project/5.1.0/project",
@@ -25,8 +33,8 @@ schemas = [
     "https://schema.humancellatlas.org/type/process/1.0.0/process"
 ]
 
-spreadsheet_builder.generate_spreadsheet("human_10x.xlsx", tabs_template="tabs_human_10x.yaml", schema_urls=schemas)
+spreadsheet_builder = SpreadsheetBuilder("human_10x_new_protocols.xlsx")
+spreadsheet_builder.generate_workbook(tabs_template="tabs_human_10x.yaml", schema_urls=schemas)
+spreadsheet_builder.save_workbook()
 
-spreadsheet_builder.generate_spreadsheet("human_10x_new_protocols.xlsx", tabs_template="tabs_human_10x_new_protocols.yaml", schema_urls=schemas)
 
-spreadsheet_builder.generate_spreadsheet("generic.xlsx", schema_urls=schemas)
