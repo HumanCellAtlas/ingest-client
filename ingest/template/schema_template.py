@@ -28,7 +28,7 @@ class SchemaTemplate:
     """
     def __init__(self, ingest_api_url=None, list_of_schema_urls=None, tab_config=None):
 
-
+        # todo remove this hard coding to a default ingest API url
         self.ingest_api_url = ingest_api_url if ingest_api_url else "http://api.ingest.dev.data.humancellatlas.org"
         self._template = {
             "template_version" : "1.0.0",
