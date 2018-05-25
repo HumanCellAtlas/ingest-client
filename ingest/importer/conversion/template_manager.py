@@ -26,14 +26,19 @@ class TemplateManager:
 
     def create_row_template(self, worksheet: Worksheet):
         tab_name = worksheet.title
+        object_type = self.get_concrete_entity_of_tab(tab_name)
         header_row = self._get_header_row(worksheet)
         cell_conversions = []
         for cell in header_row:
             header = cell.value
-            column_spec = self._define_column_spec(header, tab_name)
+            column_spec = self._define_column_spec(header, object_type)
             strategy = conversion_strategy.determine_strategy(column_spec)
             cell_conversions.append(strategy)
-        return RowTemplate(cell_conversions)
+        default_values = {
+            'describedBy': self.get_schema_url(object_type),
+            'schema_type': object_type
+        }
+        return RowTemplate(cell_conversions, default_values=default_values)
 
     @staticmethod
     def _get_header_row(worksheet):
@@ -41,12 +46,11 @@ class TemplateManager:
             header_row = row
         return header_row
 
-    def _define_column_spec(self, header, tab_name):
+    def _define_column_spec(self, header, object_type):
         if header is not None:
             parent_path, __ = utils.split_field_chain(header)
             raw_spec = self.lookup(header)
             raw_parent_spec = self.lookup(parent_path)
-            object_type = self.get_concrete_entity_of_tab(tab_name)
             main_category = self.get_domain_entity(object_type)
             column_spec = ColumnSpecification.build_raw(header, object_type, main_category,
                                                         raw_spec, parent=raw_parent_spec)

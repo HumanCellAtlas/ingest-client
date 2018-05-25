@@ -123,14 +123,68 @@ class TemplateManagerTest(TestCase):
         self.assertTrue(name_strategy in row_template.cell_conversions)
         self.assertTrue(numbers_strategy in row_template.cell_conversions)
 
+    @patch.object(ColumnSpecification, 'build_raw')
+    @patch.object(conversion_strategy, 'determine_strategy')
+    def test_create_row_template_with_default_values(self, determine_strategy, build_raw):
+        # given:
+        schema_template = MagicMock('schema_template')
+
+        # and:
+        tabs_config = MagicMock('tabs_config')
+        tabs_config.get_key_for_label = MagicMock(return_value='profile_type')
+        schema_template.get_tabs_config = MagicMock(return_value=tabs_config)
+
+        # and:
+        schema = {'schema': {
+            'domain_entity': 'profile_type',
+            'url': 'http://schema.sample.com/profile'
+        }}
+        spec_map = {
+            'profile_type': schema
+        }
+        schema_template.lookup = lambda key: spec_map.get(key)
+
+        # and:
+        build_raw.return_value = MagicMock('column_spec')
+        determine_strategy.return_value = FakeConversion('')
+
+        # and:
+        workbook = Workbook()
+        worksheet = workbook.create_sheet('profile')
+        worksheet['A4'] = 'profile.name'
+
+        # when:
+        template_manager = TemplateManager(schema_template)
+        row_template = template_manager.create_row_template(worksheet)
+
+        # then:
+        default_values = row_template.default_values
+        self.assertEqual('http://schema.sample.com/profile', default_values.get('describedBy'))
+        self.assertEqual('profile_type', default_values.get('schema_type'))
+
     @patch.object(conversion_strategy, 'determine_strategy')
     def test_create_row_template_with_none_header(self, determine_strategy):
         # given:
         schema_template = MagicMock('schema_template')
 
-        # given:
+        # and:
         do_nothing_strategy = FakeConversion('')
         determine_strategy.return_value = do_nothing_strategy
+
+        # and:
+        tabs_config = MagicMock('tabs_config')
+        tabs_config.get_key_for_label = MagicMock(return_value='profile_type')
+        schema_template.get_tabs_config = MagicMock(return_value=tabs_config)
+
+        # and:
+        schema = {'schema': {
+            'domain_entity': 'profile_type',
+            'url': 'http://schema.sample.com/profile'
+        }}
+        spec_map = {
+            'profile_type': schema
+        }
+        schema_template.lookup = lambda key: spec_map.get(key)
 
         # and:
         workbook = Workbook()
