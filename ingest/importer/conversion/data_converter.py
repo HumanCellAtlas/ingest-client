@@ -12,6 +12,8 @@ class DataType(Enum):
 
     @staticmethod
     def find(value:str):
+        if value is None:
+            return DataType.UNDEFINED
         try:
             data_type = DataType(value.lower())
         except ValueError:
@@ -23,13 +25,28 @@ class Converter:
 
     @abstractmethod
     def convert(self, data):
+        raise NotImplementedError()
+
+
+class DefaultConverter(Converter):
+
+    def convert(self, data):
         return data
+
+
+class StringConverter(Converter):
+
+    def convert(self, data):
+        return str(data)
 
 
 class IntegerConverter(Converter):
 
     def convert(self, data):
-        return int(data)
+        try:
+            return int(data)
+        except:
+            pass
 
 
 BOOLEAN_TABLE = {
@@ -51,9 +68,7 @@ class BooleanConverter(Converter):
 
 CONVERTER_MAP = {
 
-    # TODO define actual converter for string?
-    # This is because some cells may be numeric, etc. but need to be treated as string
-    DataType.STRING: Converter(),
+    DataType.STRING: StringConverter(),
     DataType.INTEGER: IntegerConverter(),
     DataType.BOOLEAN: BooleanConverter()
 
@@ -73,4 +88,4 @@ class ListConverter(Converter):
         return value
 
 
-DEFAULT = Converter()
+DEFAULT = DefaultConverter()

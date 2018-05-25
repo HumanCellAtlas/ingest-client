@@ -13,6 +13,7 @@ from yaml import dump as yaml_dump
 from yaml import load as yaml_load
 from ingest.utils import doctict
 from ingest.template.tabs import TabConfig
+from ingest.api.ingestapi import IngestApi
 import json
 import jsonref
 import re
@@ -25,9 +26,10 @@ class SchemaTemplate:
     A schema template is a simplified view over
     JSON schema for the HCA metadata
     """
-    def __init__(self, list_of_schema_urls, tab_config=None):
+    def __init__(self, ingest_api_url=None, list_of_schema_urls=None, tab_config=None):
 
-
+        # todo remove this hard coding to a default ingest API url
+        self.ingest_api_url = ingest_api_url if ingest_api_url else "http://api.ingest.dev.data.humancellatlas.org"
         self._template = {
             "template_version" : "1.0.0",
             "created_date" : str(datetime.now()),
@@ -37,13 +39,28 @@ class SchemaTemplate:
         }
         self._parser = SchemaParser(self)
 
-        self._load(list_of_schema_urls)
+        if not list_of_schema_urls:
+            list_of_schema_urls = self.get_latest_submittable_schemas(self.ingest_api_url)
+            print ("Got schemas from ingest api " + "\n".join(list_of_schema_urls))
+
+        self.schema_urls = list_of_schema_urls
+        self._load(self.schema_urls)
 
         self._tab_config  = TabConfig(init=self._template)
         if tab_config:
             # override the default tab config if one is supplied
             self._tab_config = tab_config
 
+    def get_schema_urls (self):
+        return self.schema_urls
+
+    def get_latest_submittable_schemas(self, ingest_api_url):
+        ingest_api = IngestApi(url=ingest_api_url)
+        urls = []
+        for schema in ingest_api.get_schemas(high_level_entity="type", latest_only=True):
+            url = schema["_links"]["json-schema"]["href"]
+            urls.append(url)
+        return urls
 
 
     def _load(self, list_of_schema_urls):
@@ -267,12 +284,12 @@ class SchemaParser:
         return None
 
     def get_high_level_entity_from_url(self, url):
-        pattern = re.compile("http[s]://[^/]*/([^/]*)/")
+        pattern = re.compile("http[s]?://[^/]*/([^/]*)/")
         match = pattern.search(url)
         return match.group(1)
 
     def get_domain_entity_from_url(self, url):
-        pattern = re.compile("http[s]://[^/]*/[^/]*/(.*)/(\d+\.)?(\d+\.)?(\*|\d+)/.*")
+        pattern = re.compile("http[s]?://[^/]*/[^/]*/(?P<domain_entity>.*)/(((\d+\.)?(\d+\.)?(\*|\d+))|(latest))/.*")
         match = pattern.search(url)
         return match.group(1)
 
