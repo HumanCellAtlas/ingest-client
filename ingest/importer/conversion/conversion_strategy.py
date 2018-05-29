@@ -11,6 +11,8 @@ OBJECT_ID_FIELD = '_object_id'
 CONTENT_FIELD = '_content'
 LINKS_FIELD = '_links'
 
+_LIST_CONVERTER = ListConverter()
+
 
 class CellConversion(object):
 
@@ -72,7 +74,7 @@ class IdentityCellConversion(CellConversion):
 class LinkedIdentityCellConversion(CellConversion):
 
     def __init__(self, field, main_category):
-        super(LinkedIdentityCellConversion, self).__init__(field, ListConverter())
+        super(LinkedIdentityCellConversion, self).__init__(field, _LIST_CONVERTER)
         self.main_category = main_category
 
     def apply(self, data_node: DataNode, cell_data):
