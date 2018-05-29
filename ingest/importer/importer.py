@@ -89,9 +89,6 @@ class WorksheetImporter:
         self.unknown_id_ctr = 0
 
     def do_import(self, worksheet, template: TemplateManager):
-        return self._import_records(worksheet, template)
-
-    def _import_records(self, worksheet, template: TemplateManager):
         records = {}
         row_template = template.create_row_template(worksheet)
         for row in self._get_data_rows(worksheet):
