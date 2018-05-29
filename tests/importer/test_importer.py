@@ -110,8 +110,6 @@ class WorkbookImporterTest(TestCase):
 
 class WorksheetImporterTest(TestCase):
 
-    # TODO fixme
-    @unittest.skip
     def test_do_import(self):
         # given:
         row_template = MagicMock('row_template')
@@ -132,7 +130,6 @@ class WorksheetImporterTest(TestCase):
         # and:
         mock_template_manager = MagicMock('template_manager')
         mock_template_manager.create_row_template = MagicMock(return_value=row_template)
-        mock_template_manager.get_concrete_entity_of_tab = MagicMock(return_value='profile')
         mock_template_manager.get_schema_url = MagicMock(return_value='schem_url')
 
         # and:
@@ -143,14 +140,10 @@ class WorksheetImporterTest(TestCase):
 
         # when:
         worksheet_importer = WorksheetImporter()
-        result = worksheet_importer.do_import(worksheet, mock_template_manager)
+        profile = worksheet_importer.do_import(worksheet, mock_template_manager)
 
         # then:
-        profile = result.get('profile')
-        self.assertIsNotNone(profile)
         self.assertEqual(2, len(profile.keys()))
-
-        # and:
         self._assert_correct_profile(profile, 'profile_1', john_doe_content, john_doe_links)
         self._assert_correct_profile(profile, 'profile_2', emma_jackson_content, emma_jackson_links)
 
