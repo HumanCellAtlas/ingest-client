@@ -13,6 +13,7 @@ from ingest.importer.data_node import DataNode
 
 import unittest
 
+
 def _mock_schema_template_lookup(value_type='string', multivalue=False):
     schema_template = MagicMock(name='schema_template')
     single_string_spec = {
@@ -69,6 +70,12 @@ class TemplateManagerTest(TestCase):
         # given:
         schema_template = MagicMock(name='schema_template')
 
+        # and:
+        tabs_config = MagicMock('tabs_config')
+        object_type = 'sample_object'
+        tabs_config.get_key_for_label = MagicMock(return_value=object_type)
+        schema_template.get_tabs_config = MagicMock(return_value=tabs_config)
+
         # and: set up column spec
         name_column_spec = MagicMock('name_column_spec')
         numbers_column_spec = MagicMock('numbers_column_spec')
@@ -81,12 +88,14 @@ class TemplateManagerTest(TestCase):
 
         # TODO move the logic of creating the column spec to SchemaTemplate
         # and:
+        schema = {'schema': {'domain_entity': 'main_category/subdomain'}}
         spec_map = {
             'user.profile.first_name': name_raw_spec,
             'user.profile': name_raw_parent_spec,
-            'numbers': numbers_raw_spec
+            'numbers': numbers_raw_spec,
+            'sample_object': schema
         }
-        schema_template.get_key_for_label = lambda key: spec_map.get(key, None)
+        schema_template.lookup = lambda key: spec_map.get(key, None)
 
         # and:
         name_strategy = MagicMock('name_strategy')
@@ -101,12 +110,13 @@ class TemplateManagerTest(TestCase):
 
         # when:
         template_manager = TemplateManager(schema_template)
-        row_template:RowTemplate = template_manager.create_row_template(worksheet)
+        row_template: RowTemplate = template_manager.create_row_template(worksheet)
 
         # then:
         expected_calls = [
-            call('user.profile.first_name', name_raw_spec, parent=name_raw_parent_spec),
-            call('numbers', numbers_raw_spec, parent=None)
+            call('user.profile.first_name', 'sample_object', 'main_category', name_raw_spec,
+                 parent=name_raw_parent_spec),
+            call('numbers', 'sample_object', 'main_category', numbers_raw_spec, parent=None)
         ]
         build_raw.assert_has_calls(expected_calls)
         determine_strategy.assert_has_calls([call(name_column_spec), call(numbers_column_spec)])
@@ -116,6 +126,79 @@ class TemplateManagerTest(TestCase):
         self.assertEqual(2, len(row_template.cell_conversions))
         self.assertTrue(name_strategy in row_template.cell_conversions)
         self.assertTrue(numbers_strategy in row_template.cell_conversions)
+
+    @patch.object(ColumnSpecification, 'build_raw')
+    @patch.object(conversion_strategy, 'determine_strategy')
+    def test_create_row_template_with_default_values(self, determine_strategy, build_raw):
+        # given:
+        schema_template = MagicMock('schema_template')
+
+        # and:
+        schema_url = 'http://schema.sample.com/profile'
+        object_type = 'profile_type'
+        self._mock_schema_lookup(schema_template, schema_url=schema_url, object_type=object_type)
+
+        # and:
+        build_raw.return_value = MagicMock('column_spec')
+        determine_strategy.return_value = FakeConversion('')
+
+        # and:
+        workbook = Workbook()
+        worksheet = workbook.create_sheet('profile')
+        worksheet['A4'] = 'profile.name'
+
+        # when:
+        template_manager = TemplateManager(schema_template)
+        row_template = template_manager.create_row_template(worksheet)
+
+        # then:
+        default_values = row_template.default_values
+        self.assertEqual(schema_url, default_values.get('describedBy'))
+        self.assertEqual(object_type, default_values.get('schema_type'))
+
+    @patch.object(conversion_strategy, 'determine_strategy')
+    def test_create_row_template_with_none_header(self, determine_strategy):
+        # given:
+        schema_template = MagicMock('schema_template')
+
+        # and:
+        do_nothing_strategy = FakeConversion('')
+        determine_strategy.return_value = do_nothing_strategy
+
+        # and:
+        self._mock_schema_lookup(schema_template)
+
+        # and:
+        workbook = Workbook()
+        worksheet = workbook.create_sheet('sample')
+        worksheet['A4'] = None
+
+        # when:
+        template_manager = TemplateManager(schema_template)
+        row_template = template_manager.create_row_template(worksheet)
+
+        # then:
+        determine_strategy.assert_called_with(None)
+        self.assertEqual(1, len(row_template.cell_conversions))
+
+        # and:
+        strategy = row_template.cell_conversions[0]
+        self.assertEqual(do_nothing_strategy, strategy)
+
+    @staticmethod
+    def _mock_schema_lookup(schema_template, schema_url='', object_type=''):
+        tabs_config = MagicMock('tabs_config')
+        tabs_config.get_key_for_label = MagicMock(return_value=object_type)
+        schema_template.get_tabs_config = MagicMock(return_value=tabs_config)
+        # and:
+        schema = {'schema': {
+            'domain_entity': object_type,
+            'url': schema_url
+        }}
+        spec_map = {
+            object_type: schema
+        }
+        schema_template.lookup = lambda key: spec_map.get(key)
 
     def test_get_schema_type(self):
         # given
