@@ -109,6 +109,7 @@ class WorkbookImporterTest(TestCase):
 
 
 class WorksheetImporterTest(TestCase):
+
     # TODO fixme
     @unittest.skip
     def test_do_import(self):
@@ -170,7 +171,7 @@ class WorksheetImporterTest(TestCase):
 
 class IngestImporterTest(TestCase):
 
-    # TODO fixme
+    # TODO why is this hitting servers?
     @unittest.skip
     def test_import_spreadsheet(self):
 

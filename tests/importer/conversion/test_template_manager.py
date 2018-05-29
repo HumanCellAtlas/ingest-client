@@ -62,8 +62,6 @@ class TemplateManagerTest(TestCase):
         self.assertEqual(schema_url, data.get('describedBy'))
         self.assertEqual('biomaterial', data.get('schema_type'))
 
-    # TODO fixme
-    @unittest.skip
     @patch.object(ColumnSpecification, 'build_raw')
     @patch.object(conversion_strategy, 'determine_strategy')
     def test_create_row_template(self, determine_strategy, build_raw):

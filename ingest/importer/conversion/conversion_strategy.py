@@ -70,9 +70,6 @@ class IdentityCellConversion(CellConversion):
 
 
 class LinkedIdentityCellConversion(CellConversion):
-    def __init__(self, field, converter: Converter):
-        self.field = field
-        self.converter = ListConverter()
 
     def __init__(self, field, main_category, converter):
         super(LinkedIdentityCellConversion, self).__init__(field, converter)

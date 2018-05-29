@@ -82,8 +82,6 @@ class ModuleTest(TestCase):
 
 class DirectCellConversionTest(TestCase):
 
-    # TODO fixme
-    @unittest.skip
     def test_apply(self):
         # given:
         int_converter = MagicMock('int_converter')
@@ -138,8 +136,6 @@ def _create_mock_string_converter():
 
 class ListElementCellConversionTest(TestCase):
 
-    # TODO fixme
-    @unittest.skip
     def test_apply(self):
         # given:
         converter = _create_mock_string_converter()
@@ -162,8 +158,6 @@ class ListElementCellConversionTest(TestCase):
         thing = list_of_things[0]
         self.assertEqual('sample - converted', thing.get('name'))
 
-    # TODO fixme
-    @unittest.skip
     def test_apply_previously_processed_field(self):
         # given:
         converter = _create_mock_string_converter()
@@ -211,8 +205,6 @@ class ListElementCellConversionTest(TestCase):
 
 class IdentityCellConversionTest(TestCase):
 
-    # TODO fixme
-    @unittest.skip
     def test_apply(self):
         # given:
         converter = _create_mock_string_converter()
@@ -235,7 +227,8 @@ class IdentityCellConversionTest(TestCase):
 
 
 class LinkedIdentityCellConversionTest(TestCase):
-    # TODO fix me
+
+    # TODO update this to use list converter
     @unittest.skip
     def test_apply(self):
         # given:
@@ -257,7 +250,7 @@ class LinkedIdentityCellConversionTest(TestCase):
         self.assertEqual(1, len(item_types))
         self.assertTrue('item_no_29 - converted' in item_types)
 
-    # TODO fix me
+    # TODO update this to use list converter
     @unittest.skip
     def test_apply_with_previous_entry(self):
         # given:
