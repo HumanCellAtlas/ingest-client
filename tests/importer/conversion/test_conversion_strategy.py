@@ -59,7 +59,7 @@ class ModuleTest(TestCase):
         # then:
         self.assertIsInstance(strategy, strategy_class)
         self.assertEqual('product.product_id', strategy.field)
-        self.assertEqual(converter, strategy.CONVERTER)
+        self.assertEqual(converter, strategy.converter)
 
         # and:
         if and_also is not None:

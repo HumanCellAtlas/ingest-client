@@ -17,7 +17,7 @@ class CellConversion(object):
     def __init__(self, field, converter: Converter):
         self.field = field
         self.applied_field = self._process_applied_field(field)
-        self.CONVERTER = converter
+        self.converter = converter
 
     @staticmethod
     def _process_applied_field(field):
@@ -34,7 +34,7 @@ class DirectCellConversion(CellConversion):
     def apply(self, data_node: DataNode, cell_data):
         if cell_data is not None:
             structured_field = f'{CONTENT_FIELD}.{self.applied_field}'
-            data_node[structured_field] = self.CONVERTER.convert(cell_data)
+            data_node[structured_field] = self.converter.convert(cell_data)
 
 
 class ListElementCellConversion(CellConversion):
@@ -44,7 +44,7 @@ class ListElementCellConversion(CellConversion):
             structured_field = f'{CONTENT_FIELD}.{self.applied_field}'
             parent_path, target_field = split_field_chain(structured_field)
             target_object = self._determine_target_object(data_node, parent_path)
-            data = self.CONVERTER.convert(cell_data)
+            data = self.converter.convert(cell_data)
             target_object[target_field] = data
 
     @staticmethod
@@ -63,7 +63,7 @@ class ListElementCellConversion(CellConversion):
 class IdentityCellConversion(CellConversion):
 
     def apply(self, data_node: DataNode, cell_data):
-        value = self.CONVERTER.convert(cell_data)
+        value = self.converter.convert(cell_data)
         data_node[OBJECT_ID_FIELD] = value
         structured_field = f'{CONTENT_FIELD}.{self.applied_field}'
         data_node[structured_field] = value
@@ -71,18 +71,15 @@ class IdentityCellConversion(CellConversion):
 
 class LinkedIdentityCellConversion(CellConversion):
 
-    CONVERTER = ListConverter()
-
     def __init__(self, field, main_category):
-        super(LinkedIdentityCellConversion, self).__init__(field,
-                                                           LinkedIdentityCellConversion.CONVERTER)
+        super(LinkedIdentityCellConversion, self).__init__(field, ListConverter())
         self.main_category = main_category
 
     def apply(self, data_node: DataNode, cell_data):
         if cell_data is None:
             return
         linked_ids = self._get_linked_ids(data_node)
-        linked_ids.extend(self.CONVERTER.convert(cell_data))
+        linked_ids.extend(self.converter.convert(cell_data))
 
     def _get_linked_ids(self, data_node):
         links = self._get_links(data_node)
