@@ -59,7 +59,7 @@ class ModuleTest(TestCase):
         # then:
         self.assertIsInstance(strategy, strategy_class)
         self.assertEqual('product.product_id', strategy.field)
-        self.assertEqual(converter, strategy.converter)
+        self.assertEqual(converter, strategy.CONVERTER)
 
         # and:
         if and_also is not None:
@@ -228,18 +228,16 @@ class IdentityCellConversionTest(TestCase):
 
 class LinkedIdentityCellConversionTest(TestCase):
 
-    # TODO update this to use list converter
-    @unittest.skip
     def test_apply(self):
         # given:
-        converter = _create_mock_string_converter()
-        cell_conversion = LinkedIdentityCellConversion('item.item_id', 'item_type', converter)
+        cell_conversion = LinkedIdentityCellConversion('item.item_id', 'item_type')
 
         # and:
         data_node = DataNode()
 
         # when:
         cell_conversion.apply(data_node, 'item_no_29')
+        cell_conversion.apply(data_node, 'item_no_31||item_no_50')
 
         # then:
         links = data_node[conversion_strategy.LINKS_FIELD]
@@ -247,15 +245,16 @@ class LinkedIdentityCellConversionTest(TestCase):
 
         # and:
         item_types = links.get('item_type')
-        self.assertEqual(1, len(item_types))
-        self.assertTrue('item_no_29 - converted' in item_types)
+        self.assertEqual(3, len(item_types))
 
-    # TODO update this to use list converter
-    @unittest.skip
+        # and:
+        expected_items = [f'item_no_{number}' for number in [29, 31, 50]]
+        for expected_item in expected_items:
+            self.assertTrue(expected_item in item_types, f'[{expected_item}] not in list.')
+
     def test_apply_with_previous_entry(self):
         # given:
-        converter = _create_mock_string_converter()
-        cell_conversion = LinkedIdentityCellConversion('item.item_number', 'line_order', converter)
+        cell_conversion = LinkedIdentityCellConversion('item.item_number', 'line_order')
 
         # and:
         data_node = DataNode()
@@ -271,7 +270,7 @@ class LinkedIdentityCellConversionTest(TestCase):
 
         # and:
         expected_ids = [id for id in items]
-        expected_ids.append('item_no_721 - converted')
+        expected_ids.append('item_no_721')
         for expected_id in expected_ids:
             self.assertTrue(expected_id in actual_items, f'[{expected_id}] not in list.')
 
