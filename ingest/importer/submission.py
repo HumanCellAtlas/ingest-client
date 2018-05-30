@@ -233,29 +233,18 @@ class Submission(object):
 
 class EntitiesDictionaries(object):
 
-    def __init__(self, spreadsheet_json):
-        self.entities_dict_by_type = self._load(spreadsheet_json)
+    def __init__(self):
+        self.entities_dict_by_type = {}
 
     @staticmethod
-    def _load(spreadsheet_json):
-        entities_by_type = {}
-        for entity_type, entities_dict in spreadsheet_json.items():
-            for entity_id, entity_dict in entities_dict.items():
-                entity = Entity(
-                    type=entity_type,
-                    id=entity_id,
-                    content=entity_dict['content'],
-                    links_by_entity=entity_dict.get('links_by_entity', {})
-                )
-
-                if not entities_by_type.get(entity_type):
-                    entities_by_type[entity_type] = {}
-
-                if not entities_by_type[entity_type].get(entity_id):
-                    entities_by_type[entity_type][entity_id] = {}
-
-                entities_by_type[entity_type][entity_id] = entity
-        return entities_by_type
+    def load(entity_json):
+        dictionary = EntitiesDictionaries()
+        for entity_type, entities_dict in entity_json.items():
+            for entity_id, entity_body in entities_dict.items():
+                entity = Entity(type=entity_type, id=entity_id, content=entity_body['content'],
+                                links_by_entity=entity_body.get('links_by_entity', {}))
+                dictionary.add_entity(entity)
+        return dictionary
 
     def get_entity_types(self):
         return list(self.entities_dict_by_type.keys())
@@ -271,11 +260,9 @@ class EntitiesDictionaries(object):
 
     def add_entity(self, entity):
         entities_of_type = self.entities_dict_by_type.get(entity.type)
-
         if not entities_of_type:
             self.entities_dict_by_type[entity.type] = {}
             entities_of_type = self.entities_dict_by_type.get(entity.type)
-
         entities_of_type[entity.id] = entity
 
     def get_entities(self):

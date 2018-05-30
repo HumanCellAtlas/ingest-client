@@ -149,7 +149,7 @@ class EntitiesDictionariesTest(TestCase):
         spreadsheet_json = _create_spreadsheet_json()
 
         # when:
-        entity_map = EntitiesDictionaries(spreadsheet_json)
+        entity_map = EntitiesDictionaries.load(spreadsheet_json)
 
         # then:
         self.assertEqual(['project', 'biomaterial', 'file', 'protocol'],
