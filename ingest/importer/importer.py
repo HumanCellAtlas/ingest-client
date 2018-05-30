@@ -113,7 +113,7 @@ class WorksheetImporter:
 class ProjectWorksheetImporter(WorksheetImporter):
 
     def do_import(self, worksheet, template: TemplateManager):
-        records = self._import_records(worksheet, template)
+        records = super(ProjectWorksheetImporter, self).do_import(worksheet, template)
 
         if len(records.keys()) == 0:
             raise NoProjectFound()
@@ -130,6 +130,7 @@ class ContactWorksheetImporter(WorksheetImporter):
         records = self._import_records(worksheet, template)
 
         return list(records.values())
+
 
 class MultipleProjectsFound(Exception):
     pass
