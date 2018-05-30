@@ -3,9 +3,8 @@ import json
 
 class IngestSubmitter(object):
 
-    def __init__(self, ingest_api, template_manager):
+    def __init__(self, ingest_api):
         self.ingest_api = ingest_api
-        self.template_manager = template_manager
 
     def submit(self, entities_dictionaries, submission_url):
 

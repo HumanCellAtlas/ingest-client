@@ -132,10 +132,7 @@ class IngestSubmitterTest(TestCase):
 
         spreadsheet_json = _create_spreadsheet_json()
 
-        mock_template_manager = MagicMock(name='template_manager')
-        mock_template_manager.get_schema_url = MagicMock(return_value='url')
-
-        submitter = IngestSubmitter(mock_ingest_api, mock_template_manager)
+        submitter = IngestSubmitter(mock_ingest_api)
         entities_dictionaries = EntitiesDictionaries(spreadsheet_json)
         submission = submitter.submit(entities_dictionaries, submission_url='url')
 

@@ -1,5 +1,3 @@
-import re
-
 import openpyxl
 
 from ingest.importer.conversion import template_manager, conversion_strategy
@@ -10,6 +8,8 @@ from ingest.importer.submission import IngestSubmitter, EntitiesDictionaries, En
 
 class IngestImporter:
 
+    # TODO why does the importer need to refer to an IngestApi instance?
+    # Seems like it should be the IngestSubmitter that takes care of this detail
     def __init__(self, ingest_api):
         self.ingest_api = ingest_api
 
@@ -27,8 +27,10 @@ class IngestImporter:
         entities_dictionaries = entity_linker.process_links(entities_dictionaries)
 
         submission = None
+        # TODO what do we need the dry run for? This is a separate behaviour.
         if not dry_run:
-            submitter = IngestSubmitter(self.ingest_api, template_mgr)
+            submitter = IngestSubmitter(self.ingest_api)
+            # TODO the submission_url should be passed to the IngestSubmitter instead
             submission = submitter.submit(entities_dictionaries, submission_url)
             print(f'Submission in {submission_url} is done!')
 
