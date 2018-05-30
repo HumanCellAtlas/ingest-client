@@ -179,6 +179,13 @@ class EntityMapTest(TestCase):
         self.assertEqual(entity_type, entity.type)
         self.assertEqual(links, entity.links_by_entity)
 
+    def test_count_total(self):
+        # given:
+        zero_map = EntityMap()
+
+        # expect:
+        self.assertEqual(0, zero_map.count_total())
+
 
 class EntityLinkerTest(TestCase):
 

@@ -287,6 +287,9 @@ class EntityMap(object):
         project_id = list(self.entities_dict_by_type.get('project').keys())[0]
         return self.get_entity('project', project_id)
 
+    def count_total(self):
+        return 0
+
 
 class InvalidEntityIngestLink(Exception):
 
