@@ -4,6 +4,7 @@ import json
 class IngestSubmitter(object):
 
     def __init__(self, ingest_api):
+        # TODO the IngestSubmitter should probably build its own instance of IngestApi
         self.ingest_api = ingest_api
 
     def submit(self, entities_dictionaries, submission_url):
@@ -205,8 +206,6 @@ class Submission(object):
 
     def add_entity(self, entity: Entity):
         link_name = self.ENTITY_LINK[entity.type]
-
-        response = None
 
         # TODO: how to get filename?!!!
         if entity.type == 'file':
