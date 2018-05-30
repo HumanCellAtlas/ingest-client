@@ -242,14 +242,14 @@ class Submission(object):
         self.ingest_api.linkEntity(from_entity_ingest, to_entity_ingest , relationship)
 
 
-class EntitiesDictionaries(object):
+class EntityMap(object):
 
     def __init__(self):
         self.entities_dict_by_type = {}
 
     @staticmethod
     def load(entity_json):
-        dictionary = EntitiesDictionaries()
+        dictionary = EntityMap()
         for entity_type, entities_dict in entity_json.items():
             for entity_id, entity_body in entities_dict.items():
                 entity = Entity(entity_type=entity_type, entity_id=entity_id, content=entity_body['content'],

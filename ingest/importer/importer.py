@@ -3,7 +3,7 @@ import openpyxl
 from ingest.importer.conversion import template_manager, conversion_strategy
 from ingest.importer.conversion.template_manager import TemplateManager
 from ingest.importer.spreadsheet.ingest_workbook import IngestWorkbook
-from ingest.importer.submission import IngestSubmitter, EntitiesDictionaries, EntityLinker
+from ingest.importer.submission import IngestSubmitter, EntityMap, EntityLinker
 
 
 class IngestImporter:
@@ -39,7 +39,7 @@ class IngestImporter:
 
     @staticmethod
     def _process_entity_dictionary(template_mgr, spreadsheet_json):
-        entities_dictionaries = EntitiesDictionaries.load(spreadsheet_json)
+        entities_dictionaries = EntityMap.load(spreadsheet_json)
         entity_linker = EntityLinker(template_mgr)
         entities_dictionaries = entity_linker.process_links(entities_dictionaries)
         return entities_dictionaries
