@@ -197,6 +197,12 @@ class Entity(object):
             self.direct_links.extend(direct_links)
 
 
+class SubmissionEnvelopeManifest:
+
+    def __init__(self, total_count):
+        self.total_count = total_count
+
+
 class Submission(object):
 
     ENTITY_LINK = {
@@ -242,7 +248,9 @@ class Submission(object):
         self.ingest_api.linkEntity(from_entity_ingest, to_entity_ingest , relationship)
 
     def define_manifest(self, entity_map):
-        self.ingest_api.create_submission_manifest()
+        total_count = entity_map.count_total()
+        manifest = SubmissionEnvelopeManifest(total_count)
+        self.ingest_api.createSubmissionManifest(manifest)
 
 
 class EntityMap(object):
