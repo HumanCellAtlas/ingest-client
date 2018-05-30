@@ -39,7 +39,7 @@ class IngestImporter:
 
     @staticmethod
     def _process_entity_dictionary(template_mgr, spreadsheet_json):
-        entities_dictionaries = EntitiesDictionaries(spreadsheet_json)
+        entities_dictionaries = EntitiesDictionaries.load(spreadsheet_json)
         entity_linker = EntityLinker(template_mgr)
         entities_dictionaries = entity_linker.process_links(entities_dictionaries)
         return entities_dictionaries
