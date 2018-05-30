@@ -89,41 +89,15 @@ class WorksheetImporter:
         self.unknown_id_ctr = 0
 
     def do_import(self, worksheet, template: TemplateManager):
-        return self._import_records(worksheet, template)
-
-    def _import_records(self, worksheet, template: TemplateManager):
         records = {}
         row_template = template.create_row_template(worksheet)
         for row in self._get_data_rows(worksheet):
             # TODO row_template.do_import should return a structured abstraction
             json = row_template.do_import(row)
-
-            link_map = json.get(conversion_strategy.LINKS_FIELD, {})
-            new_link_map = {}
-
-            for concrete_entity, ids in link_map.items():
-                domain_entity = template.get_domain_entity(concrete_entity)
-
-                if domain_entity is None:
-                    continue
-
-                domain_entity_ids = new_link_map.get(domain_entity, [])
-
-                if len(domain_entity_ids) == 0:
-                    new_link_map[domain_entity] = domain_entity_ids
-
-                domain_entity_ids.extend(ids)
-
-            concrete_entity = template.get_concrete_entity_of_tab(worksheet.title)
-
-            json[conversion_strategy.CONTENT_FIELD]['describedBy'] = template.get_schema_url(concrete_entity)
-            json[conversion_strategy.CONTENT_FIELD]['schema_type'] = template.get_domain_entity(concrete_entity)
-
             record_id = json.get(conversion_strategy.OBJECT_ID_FIELD, self._generate_id())
-
             records[record_id] = {
                 'content': json[conversion_strategy.CONTENT_FIELD],
-                'links_by_entity': new_link_map
+                'links_by_entity': json[conversion_strategy.LINKS_FIELD]
             }
         return records
 
@@ -139,7 +113,7 @@ class WorksheetImporter:
 class ProjectWorksheetImporter(WorksheetImporter):
 
     def do_import(self, worksheet, template: TemplateManager):
-        records = self._import_records(worksheet, template)
+        records = super(ProjectWorksheetImporter, self).do_import(worksheet, template)
 
         if len(records.keys()) == 0:
             raise NoProjectFound()
@@ -156,6 +130,7 @@ class ContactWorksheetImporter(WorksheetImporter):
         records = self._import_records(worksheet, template)
 
         return list(records.values())
+
 
 class MultipleProjectsFound(Exception):
     pass

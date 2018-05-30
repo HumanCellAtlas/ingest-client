@@ -21,9 +21,3 @@ def extract_root_field(field_chain):
         split = field_chain.split('.')
         root_field = split[0]
     return root_field
-
-
-def get_field_chain(header_name):
-    match = re.search('(\w+\.){1}(?P<field_chain>.*)', header_name)
-    field_chain = match.group('field_chain')
-    return field_chain
