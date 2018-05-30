@@ -183,8 +183,20 @@ class EntityMapTest(TestCase):
         # given:
         zero_map = EntityMap()
 
+        # and:
+        one_map = EntityMap()
+        one_map.add_entity(Entity('product', 'product_1', {}))
+
+        # and:
+        three_map = EntityMap()
+        three_map.add_entity(Entity('profile', 'profile_1', {}))
+        for product_id in range(0, 2):
+            three_map.add_entity(Entity('product', f'product_{product_id}', {}))
+
         # expect:
         self.assertEqual(0, zero_map.count_total())
+        self.assertEqual(1, one_map.count_total())
+        self.assertEqual(3, three_map.count_total())
 
 
 class EntityLinkerTest(TestCase):

@@ -280,7 +280,6 @@ class EntityMap(object):
         all_entities = []
         for entity_type, entities_dict in self.entities_dict_by_type.items():
             all_entities.extend(entities_dict.values())
-
         return all_entities
 
     def get_project(self):
@@ -288,7 +287,7 @@ class EntityMap(object):
         return self.get_entity('project', project_id)
 
     def count_total(self):
-        return 0
+        return len(self.get_entities())
 
 
 class InvalidEntityIngestLink(Exception):
