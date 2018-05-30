@@ -56,7 +56,7 @@ class SubmissionTest(TestCase):
 
         submission = Submission(mock_ingest_api, submission_url='url')
 
-        entity = Entity(id='id', type='biomaterial', content={})
+        entity = Entity(entity_id='id', entity_type='biomaterial', content={})
         entity = submission.add_entity(entity)
 
         self.assertEqual(new_entity_mock_response, entity.ingest_json)

@@ -164,8 +164,8 @@ class EntityLinker(object):
         obj = {"process_core": process_core, "schema_type": schema_type, "describedBy": described_by}
 
         process = Entity(
-            type='process',
-            id=empty_process_id,
+            entity_type='process',
+            entity_id=empty_process_id,
             content=obj
         )
         return process
@@ -177,17 +177,28 @@ class EntityLinker(object):
 
 
 class Entity(object):
-    def __init__(self, type, id, content, links_by_entity=None, direct_links=None):
-        self.type = type
-        self.id = id
-        self.content = content
-        self.links_by_entity = {} if links_by_entity is None else links_by_entity
-        self.direct_links = [] if direct_links is None else direct_links
 
+    def __init__(self, entity_type, entity_id, content, links_by_entity=None, direct_links=None):
+        self.type = entity_type
+        self.id = entity_id
+        self.content = content
+        self._prepare_links_by_entity(links_by_entity)
+        self._prepare_direct_links(direct_links)
         self.ingest_json = None
+
+    def _prepare_links_by_entity(self, links_by_entity):
+        self.links_by_entity = {}
+        if links_by_entity is not None:
+            self.links_by_entity.update(links_by_entity)
+
+    def _prepare_direct_links(self, direct_links):
+        self.direct_links = []
+        if direct_links is not None:
+            self.direct_links.extend(direct_links)
 
 
 class Submission(object):
+
     ENTITY_LINK = {
         'biomaterial': 'biomaterials',
         'process': 'processes',
@@ -241,7 +252,7 @@ class EntitiesDictionaries(object):
         dictionary = EntitiesDictionaries()
         for entity_type, entities_dict in entity_json.items():
             for entity_id, entity_body in entities_dict.items():
-                entity = Entity(type=entity_type, id=entity_id, content=entity_body['content'],
+                entity = Entity(entity_type=entity_type, entity_id=entity_id, content=entity_body['content'],
                                 links_by_entity=entity_body.get('links_by_entity', {}))
                 dictionary.add_entity(entity)
         return dictionary
