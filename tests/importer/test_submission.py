@@ -144,21 +144,35 @@ class IngestSubmitterTest(TestCase):
 class EntitiesDictionariesTest(TestCase):
 
     def test_load(self):
+        # given:
         spreadsheet_json = _create_spreadsheet_json()
+
+        # when:
         entities_map = EntitiesDictionaries(spreadsheet_json)
 
-        self.assertEqual(['project', 'biomaterial', 'file', 'protocol'], list(entities_map.get_entity_types()))
+        # then:
+        self.assertEqual(['project', 'biomaterial', 'file', 'protocol'],
+                         list(entities_map.get_entity_types()))
 
-        self.assertTrue(entities_map.get_entity('biomaterial', 'biomaterial_id_1'))
-        self.assertEqual({'key': 'biomaterial_1'}, entities_map.get_entity('biomaterial', 'biomaterial_id_1').content)
-        self.assertEqual('biomaterial_id_1', entities_map.get_entity('biomaterial', 'biomaterial_id_1').id)
-        self.assertEqual('biomaterial', entities_map.get_entity('biomaterial', 'biomaterial_id_1').type)
+        # and:
+        biomaterial1 = entities_map.get_entity('biomaterial', 'biomaterial_id_1')
+        self.assertTrue(biomaterial1)
+        self.assertEqual({'key': 'biomaterial_1'}, biomaterial1.content)
+        self.assertEqual('biomaterial_id_1',biomaterial1.id)
+        self.assertEqual('biomaterial', biomaterial1.type)
 
-        self.assertTrue(entities_map.get_entity('biomaterial', 'biomaterial_id_2'))
-        self.assertEqual(spreadsheet_json['biomaterial']['biomaterial_id_2']['links_by_entity'],
-                         entities_map.get_entity('biomaterial', 'biomaterial_id_2').links_by_entity)
+        # and:
+        biomaterial2 = entities_map.get_entity('biomaterial', 'biomaterial_id_2')
+        self.assertTrue(biomaterial2)
+        links = {
+            'biomaterial': ['biomaterial_id_1'],
+            'process': ['process_id_1']
+        }
+        self.assertEqual(links, biomaterial2.links_by_entity)
 
-        self.assertEqual({'key': 'protocol_1'}, entities_map.get_entity('protocol', 'protocol_id_1').content)
+        # and:
+        protocol1 = entities_map.get_entity('protocol', 'protocol_id_1')
+        self.assertEqual({'key': 'protocol_1'}, protocol1.content)
 
 
 class EntityLinkerTest(TestCase):
