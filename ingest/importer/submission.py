@@ -7,16 +7,16 @@ class IngestSubmitter(object):
         # TODO the IngestSubmitter should probably build its own instance of IngestApi
         self.ingest_api = ingest_api
 
-    def submit(self, entities_dictionaries, submission_url):
-
+    def submit(self, entity_map, submission_url):
         submission = Submission(self.ingest_api, submission_url)
 
-        for entity in entities_dictionaries.get_entities():
+        entities = entity_map.get_entities()
+        for entity in entities:
             submission.add_entity(entity)
 
-        for entity in entities_dictionaries.get_entities():
+        for entity in entities:
             for link in entity.direct_links:
-                to_entity = entities_dictionaries.get_entity(link['entity'], link['id'])
+                to_entity = entity_map.get_entity(link['entity'], link['id'])
                 try:
                     submission.link_entity(entity, to_entity, relationship=link['relationship'])
                 except Exception as link_error:
@@ -240,6 +240,9 @@ class Submission(object):
         from_entity_ingest = from_entity.ingest_json
         to_entity_ingest = to_entity.ingest_json
         self.ingest_api.linkEntity(from_entity_ingest, to_entity_ingest , relationship)
+
+    def define_manifest(self, entity_map):
+        self.ingest_api.create_submission_manifest()
 
 
 class EntityMap(object):

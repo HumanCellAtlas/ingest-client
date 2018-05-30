@@ -61,6 +61,22 @@ class SubmissionTest(TestCase):
 
         self.assertEqual(new_entity_mock_response, entity.ingest_json)
 
+    def test_define_manifest(self):
+        # given:
+        ingest_api = MagicMock('ingest_api')
+        ingest_api.create_submission_manifest = MagicMock()
+        submission = Submission(ingest_api, 'http://core.sample.com/submission/8fd733')
+
+        # and:
+        entity_map = MagicMock('entity_map')
+        entity_map.count_total = MagicMock(return_value=32)
+
+        # when:
+        submission.define_manifest(entity_map)
+
+        # then:
+        ingest_api.create_submission_manifest.assert_called()
+
 
 def _create_spreadsheet_json():
     spreadsheet_json = {
