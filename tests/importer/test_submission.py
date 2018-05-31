@@ -2,7 +2,7 @@ import json
 from unittest import TestCase
 
 import copy
-from mock import MagicMock
+from mock import MagicMock, patch
 
 from ingest.api.ingestapi import IngestApi
 from ingest.importer.submission import Submission, Entity, IngestSubmitter, EntityLinker, LinkedEntityNotFound, \
@@ -150,24 +150,24 @@ def _create_spreadsheet_json():
 
 class IngestSubmitterTest(TestCase):
 
-    def test_submit(self):
-        ingest.api.ingestapi.requests.get = MagicMock()
-        mock_ingest_api = IngestApi()
-        mock_ingest_api.load_root = MagicMock()
-        new_entity_mock_response = {'key': 'value'}
-        mock_ingest_api.createEntity = MagicMock(return_value=new_entity_mock_response)
-        mock_ingest_api.createFile = MagicMock(return_value=new_entity_mock_response)
-        mock_ingest_api.linkEntity = MagicMock()
+    @patch('ingest.importer.submission.Submission')
+    def test_submit(self, submission_constructor):
+        # given:
+        ingest_api = MagicMock('ingest_api')
 
-        spreadsheet_json = _create_spreadsheet_json()
+        # and:
+        submission = MagicMock('submission')
+        submission_constructor.return_value = submission
 
-        submitter = IngestSubmitter(mock_ingest_api)
-        entities_dictionaries = EntityMap.load(spreadsheet_json)
-        submission = submitter.submit(entities_dictionaries, submission_url='url')
+        # and:
+        entity_map = EntityMap()
 
-        self.assertTrue(submission)
-        self.assertTrue(submission.get_entity('biomaterial', 'biomaterial_id_1').ingest_json)
-        self.assertEqual('biomaterial_1', submission.get_entity('biomaterial', 'biomaterial_id_1').content['key'])
+        # when:
+        submitter = IngestSubmitter(ingest_api)
+        submitter.submit(entity_map, submission_url='url')
+
+        # then:
+        submission_constructor.assert_called()
 
 
 class EntityMapTest(TestCase):
