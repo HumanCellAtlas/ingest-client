@@ -154,11 +154,7 @@ class IngestSubmitterTest(TestCase):
     def test_submit(self, submission_constructor):
         # given:
         ingest_api = MagicMock('ingest_api')
-
-        # and:
-        submission = MagicMock('submission')
-        submission.add_entity = MagicMock()
-        submission_constructor.return_value = submission
+        submission = self._mock_submission(submission_constructor)
 
         # and:
         product = Entity('product', 'product_1', {})
@@ -171,18 +167,14 @@ class IngestSubmitterTest(TestCase):
 
         # then:
         submission_constructor.assert_called_with(ingest_api, 'url')
+        submission.define_manifest.assert_called_with(entity_map)
         submission.add_entity.assert_has_calls([call(product), call(user)], any_order=True)
 
     @patch('ingest.importer.submission.Submission')
     def test_submit_linked_entity(self, submission_constructor):
         # given:
         ingest_api = MagicMock('ingest_api')
-
-        # and:
-        submission = MagicMock('submission')
-        submission.add_entity = MagicMock()
-        submission.link_entity = MagicMock()
-        submission_constructor.return_value = submission
+        submission = self._mock_submission(submission_constructor)
 
         # and:
         user = Entity('user', 'user_1', {})
@@ -203,8 +195,18 @@ class IngestSubmitterTest(TestCase):
 
         # then:
         submission_constructor.assert_called_with(ingest_api, 'url')
+        submission.define_manifest.assert_called_with(entity_map)
         submission.add_entity.assert_has_calls([call(user), call(linked_product)], any_order=True)
         submission.link_entity.assert_called_with(linked_product, user, relationship='wish_list')
+
+    @staticmethod
+    def _mock_submission(submission_constructor):
+        submission = MagicMock('submission')
+        submission.define_manifest = MagicMock()
+        submission.add_entity = MagicMock()
+        submission.link_entity = MagicMock()
+        submission_constructor.return_value = submission
+        return submission
 
 
 class EntityMapTest(TestCase):

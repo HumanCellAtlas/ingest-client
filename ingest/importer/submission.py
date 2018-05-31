@@ -9,6 +9,7 @@ class IngestSubmitter(object):
 
     def submit(self, entity_map, submission_url):
         submission = Submission(self.ingest_api, submission_url)
+        submission.define_manifest(entity_map)
 
         entities = entity_map.get_entities()
         for entity in entities:
