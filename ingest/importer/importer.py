@@ -1,38 +1,48 @@
-import re
-
 import openpyxl
 
 from ingest.importer.conversion import template_manager, conversion_strategy
 from ingest.importer.conversion.template_manager import TemplateManager
 from ingest.importer.spreadsheet.ingest_workbook import IngestWorkbook
-from ingest.importer.submission import IngestSubmitter, EntitiesDictionaries, EntityLinker
+from ingest.importer.submission import IngestSubmitter, EntityMap, EntityLinker
 
 
 class IngestImporter:
 
+    # TODO why does the importer need to refer to an IngestApi instance?
+    # Seems like it should be the IngestSubmitter that takes care of this detail
     def __init__(self, ingest_api):
         self.ingest_api = ingest_api
 
     def import_spreadsheet(self, file_path, submission_url, dry_run=False):
-        workbook = openpyxl.load_workbook(filename=file_path)
-        ingest_workbook = IngestWorkbook(workbook)
-        schemas = ingest_workbook.get_schemas()
+        ingest_workbook = self._create_ingest_workbook(file_path)
+        template_mgr = template_manager.build(ingest_workbook.get_schemas())
 
-        template_mgr = template_manager.build(schemas)
         workbook_importer = WorkbookImporter(template_mgr)
         spreadsheet_json = workbook_importer.do_import(ingest_workbook)
-
-        entities_dictionaries = EntitiesDictionaries(spreadsheet_json)
-        entity_linker = EntityLinker(template_mgr)
-        entities_dictionaries = entity_linker.process_links(entities_dictionaries)
+        entities_dictionaries = self._process_entity_dictionary(template_mgr, spreadsheet_json)
 
         submission = None
+        # TODO what do we need the dry run for? This is a separate behaviour.
         if not dry_run:
-            submitter = IngestSubmitter(self.ingest_api, template_mgr)
+            submitter = IngestSubmitter(self.ingest_api)
+            # TODO the submission_url should be passed to the IngestSubmitter instead
             submission = submitter.submit(entities_dictionaries, submission_url)
-            print(f'Submission in {submission_url} is done!')
+            print(f'Submission in {submission_url} is done!') # TODO log or remove this
 
+        # TODO why return the submission instance when it's not used by the client code (Broker)?
         return submission
+
+    @staticmethod
+    def _create_ingest_workbook(file_path):
+        workbook = openpyxl.load_workbook(filename=file_path)
+        return IngestWorkbook(workbook)
+
+    @staticmethod
+    def _process_entity_dictionary(template_mgr, spreadsheet_json):
+        entities_dictionaries = EntityMap.load(spreadsheet_json)
+        entity_linker = EntityLinker(template_mgr)
+        entities_dictionaries = entity_linker.process_links(entities_dictionaries)
+        return entities_dictionaries
 
 
 class WorkbookImporter:

@@ -1,28 +1,32 @@
 import json
 
+import logging
+
 
 class IngestSubmitter(object):
 
-    def __init__(self, ingest_api, template_manager):
+    def __init__(self, ingest_api):
+        # TODO the IngestSubmitter should probably build its own instance of IngestApi
         self.ingest_api = ingest_api
-        self.template_manager = template_manager
 
-    def submit(self, entities_dictionaries, submission_url):
-
+    def submit(self, entity_map, submission_url):
         submission = Submission(self.ingest_api, submission_url)
+        submission.define_manifest(entity_map)
 
-        for entity in entities_dictionaries.get_entities():
+        entities = entity_map.get_entities()
+        for entity in entities:
             submission.add_entity(entity)
 
-        for entity in entities_dictionaries.get_entities():
+        for entity in entities:
             for link in entity.direct_links:
-                to_entity = entities_dictionaries.get_entity(link['entity'], link['id'])
+                to_entity = entity_map.get_entity(link['entity'], link['id'])
                 try:
                     submission.link_entity(entity, to_entity, relationship=link['relationship'])
                 except Exception as link_error:
-                    # TODO use logging
-                    print(f'The {entity.type} with {entity.id} could not be linked to {to_entity.type} with id {to_entity.id}')
-                    print(f'{str(link_error)}')
+                    error_message = f'''The {entity.type} with id {entity.id} could not be 
+                    linked to {to_entity.type} with id {to_entity.id}.'''
+                    logging.error(error_message)
+                    logging.error(f'{str(link_error)}')
 
         return submission
 
@@ -164,8 +168,8 @@ class EntityLinker(object):
         obj = {"process_core": process_core, "schema_type": schema_type, "describedBy": described_by}
 
         process = Entity(
-            type='process',
-            id=empty_process_id,
+            entity_type='process',
+            entity_id=empty_process_id,
             content=obj
         )
         return process
@@ -177,17 +181,34 @@ class EntityLinker(object):
 
 
 class Entity(object):
-    def __init__(self, type, id, content, links_by_entity=None, direct_links=None):
-        self.type = type
-        self.id = id
-        self.content = content
-        self.links_by_entity = {} if links_by_entity is None else links_by_entity
-        self.direct_links = [] if direct_links is None else direct_links
 
+    def __init__(self, entity_type, entity_id, content, links_by_entity=None, direct_links=None):
+        self.type = entity_type
+        self.id = entity_id
+        self.content = content
+        self._prepare_links_by_entity(links_by_entity)
+        self._prepare_direct_links(direct_links)
         self.ingest_json = None
+
+    def _prepare_links_by_entity(self, links_by_entity):
+        self.links_by_entity = {}
+        if links_by_entity is not None:
+            self.links_by_entity.update(links_by_entity)
+
+    def _prepare_direct_links(self, direct_links):
+        self.direct_links = []
+        if direct_links is not None:
+            self.direct_links.extend(direct_links)
+
+
+class SubmissionEnvelopeManifest:
+
+    def __init__(self, total_count):
+        self.total_count = total_count
 
 
 class Submission(object):
+
     ENTITY_LINK = {
         'biomaterial': 'biomaterials',
         'process': 'processes',
@@ -206,8 +227,6 @@ class Submission(object):
 
     def add_entity(self, entity: Entity):
         link_name = self.ENTITY_LINK[entity.type]
-
-        response = None
 
         # TODO: how to get filename?!!!
         if entity.type == 'file':
@@ -232,32 +251,30 @@ class Submission(object):
         to_entity_ingest = to_entity.ingest_json
         self.ingest_api.linkEntity(from_entity_ingest, to_entity_ingest , relationship)
 
+    def define_manifest(self, entity_map):
+        total_count = entity_map.count_total()
+        manifest = SubmissionEnvelopeManifest(total_count)
+        manifest_json = json.dumps(manifest.__dict__)
+        self.ingest_api.createSubmissionManifest(manifest_json)
 
-class EntitiesDictionaries(object):
 
-    def __init__(self, spreadsheet_json):
-        self.entities_dict_by_type = self._load(spreadsheet_json)
+class EntityMap(object):
+
+    def __init__(self, *entities):
+        self.entities_dict_by_type = {}
+        if entities is not None:
+            for entity in entities:
+                self.add_entity(entity)
 
     @staticmethod
-    def _load(spreadsheet_json):
-        entities_by_type = {}
-        for entity_type, entities_dict in spreadsheet_json.items():
-            for entity_id, entity_dict in entities_dict.items():
-                entity = Entity(
-                    type=entity_type,
-                    id=entity_id,
-                    content=entity_dict['content'],
-                    links_by_entity=entity_dict.get('links_by_entity', {})
-                )
-
-                if not entities_by_type.get(entity_type):
-                    entities_by_type[entity_type] = {}
-
-                if not entities_by_type[entity_type].get(entity_id):
-                    entities_by_type[entity_type][entity_id] = {}
-
-                entities_by_type[entity_type][entity_id] = entity
-        return entities_by_type
+    def load(entity_json):
+        dictionary = EntityMap()
+        for entity_type, entities_dict in entity_json.items():
+            for entity_id, entity_body in entities_dict.items():
+                entity = Entity(entity_type=entity_type, entity_id=entity_id, content=entity_body['content'],
+                                links_by_entity=entity_body.get('links_by_entity', {}))
+                dictionary.add_entity(entity)
+        return dictionary
 
     def get_entity_types(self):
         return list(self.entities_dict_by_type.keys())
@@ -273,23 +290,23 @@ class EntitiesDictionaries(object):
 
     def add_entity(self, entity):
         entities_of_type = self.entities_dict_by_type.get(entity.type)
-
         if not entities_of_type:
             self.entities_dict_by_type[entity.type] = {}
             entities_of_type = self.entities_dict_by_type.get(entity.type)
-
         entities_of_type[entity.id] = entity
 
     def get_entities(self):
         all_entities = []
         for entity_type, entities_dict in self.entities_dict_by_type.items():
             all_entities.extend(entities_dict.values())
-
         return all_entities
 
     def get_project(self):
         project_id = list(self.entities_dict_by_type.get('project').keys())[0]
         return self.get_entity('project', project_id)
+
+    def count_total(self):
+        return len(self.get_entities())
 
 
 class InvalidEntityIngestLink(Exception):
