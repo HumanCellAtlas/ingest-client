@@ -1,5 +1,7 @@
 import json
 
+import logging
+
 
 class IngestSubmitter(object):
 
@@ -21,9 +23,10 @@ class IngestSubmitter(object):
                 try:
                     submission.link_entity(entity, to_entity, relationship=link['relationship'])
                 except Exception as link_error:
-                    # TODO use logging
-                    print(f'The {entity.type} with {entity.id} could not be linked to {to_entity.type} with id {to_entity.id}')
-                    print(f'{str(link_error)}')
+                    error_message = f'''The {entity.type} with id {entity.id} could not be 
+                    linked to {to_entity.type} with id {to_entity.id}.'''
+                    logging.error(error_message)
+                    logging.error(f'{str(link_error)}')
 
         return submission
 
