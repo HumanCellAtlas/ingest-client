@@ -258,6 +258,9 @@ class IngestApi:
     def createProcess(self, submissionUrl, jsonObject):
         return self.createEntity(submissionUrl, jsonObject, "processes")
 
+    def createSubmissionManifest(self, submissionUrl, jsonObject):
+        return self.createEntity(submissionUrl, jsonObject, 'submissionmanifests')
+
     # def createDonor(self, submissionUrl, jsonObject):
     #     return self.createBiomaterial(submissionUrl, jsonObject)
 
