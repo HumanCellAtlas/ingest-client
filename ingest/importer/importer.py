@@ -137,7 +137,7 @@ class ProjectWorksheetImporter(WorksheetImporter):
 class ContactWorksheetImporter(WorksheetImporter):
 
     def do_import(self, worksheet, template: TemplateManager):
-        records = self._import_records(worksheet, template)
+        records = super(ContactWorksheetImporter, self).do_import(worksheet, template)
 
         return list(records.values())
 
