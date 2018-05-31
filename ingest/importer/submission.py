@@ -254,7 +254,8 @@ class Submission(object):
     def define_manifest(self, entity_map):
         total_count = entity_map.count_total()
         manifest = SubmissionEnvelopeManifest(total_count)
-        self.ingest_api.createSubmissionManifest(manifest)
+        manifest_json = json.dumps(manifest.__dict__)
+        self.ingest_api.createSubmissionManifest(manifest_json)
 
 
 class EntityMap(object):

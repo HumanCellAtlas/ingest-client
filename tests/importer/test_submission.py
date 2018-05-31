@@ -5,6 +5,7 @@ import copy
 from mock import MagicMock, patch, call
 
 from ingest.api.ingestapi import IngestApi
+from ingest.importer.data_node import DataNode
 from ingest.importer.submission import Submission, Entity, IngestSubmitter, EntityLinker, LinkedEntityNotFound, \
     InvalidLinkInSpreadsheet, MultipleProcessesFound, EntityMap
 
@@ -86,8 +87,9 @@ class SubmissionTest(TestCase):
         self.assertEqual(1, len(ingest_api_args))
 
         # and:
-        submitted_manifest = ingest_api_args[0]
-        self.assertEqual(total_count, submitted_manifest.total_count)
+        raw_json = ingest_api_args[0]
+        submitted_json = json.loads(raw_json)
+        self.assertEqual(total_count, submitted_json['total_count'])
 
 
 def _create_spreadsheet_json():
