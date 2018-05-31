@@ -233,6 +233,7 @@ schemas = [
     "http://schema.dev.data.humancellatlas.org/type/protocol/biomaterial_collection/latest/enrichment_protocol",
     "http://schema.dev.data.humancellatlas.org/type/protocol/sequencing/latest/library_preparation_protocol",
     "http://schema.dev.data.humancellatlas.org/type/protocol/sequencing/latest/sequencing_protocol",
+    "http://schema.dev.data.humancellatlas.org/type/process/latest/process"
 ]
 
 spreadsheet_builder = SpreadsheetBuilder("my_custom_tabs.xlsx")
