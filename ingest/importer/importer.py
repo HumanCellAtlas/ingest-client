@@ -106,8 +106,8 @@ class WorksheetImporter:
             json = row_template.do_import(row)
             record_id = json.get(conversion_strategy.OBJECT_ID_FIELD, self._generate_id())
             records[record_id] = {
-                'content': json[conversion_strategy.CONTENT_FIELD],
-                'links_by_entity': json[conversion_strategy.LINKS_FIELD]
+                'content': json.get(conversion_strategy.CONTENT_FIELD, {}),
+                'links_by_entity': json.get(conversion_strategy.LINKS_FIELD, {})
             }
         return records
 
