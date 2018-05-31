@@ -15,16 +15,35 @@ class IngestWorkbook:
     def get_project_worksheet(self):
         if PROJECT_WORKSHEET in self.workbook.get_sheet_names():
             return self.workbook[PROJECT_WORKSHEET]
+
+        if PROJECT_WORKSHEET.lower() in self.workbook.get_sheet_names():
+            return self.workbook[PROJECT_WORKSHEET.lower()]
+
         return None
 
     def get_contact_worksheet(self):
         if CONTACT_WORKSHEET in self.workbook.get_sheet_names():
             return self.workbook[CONTACT_WORKSHEET]
+
+        if CONTACT_WORKSHEET.lower() in self.workbook.get_sheet_names():
+            return self.workbook[CONTACT_WORKSHEET.lower()]
+
         return None
 
     def get_schemas(self):
-        worksheet = self.workbook.get_sheet_by_name(SCHEMAS_WORKSHEET)
         schemas = []
+
+        worksheet = None
+
+        if SCHEMAS_WORKSHEET in self.workbook.get_sheet_names():
+            worksheet = self.workbook.get_sheet_by_name(SCHEMAS_WORKSHEET)
+
+        if SCHEMAS_WORKSHEET.lower() in self.workbook.get_sheet_names():
+            worksheet = self.workbook.get_sheet_by_name(SCHEMAS_WORKSHEET.lower())
+
+        if not worksheet:
+            return schemas
+
         for row in worksheet.iter_rows(row_offset=1, max_row=(worksheet.max_row - 1)):
             schema_cell = row[0]
             schemas.append(schema_cell.value)

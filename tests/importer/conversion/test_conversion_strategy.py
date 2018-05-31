@@ -7,15 +7,16 @@ from ingest.importer.conversion.conversion_strategy import DirectCellConversion,
     ListElementCellConversion, CellConversion, IdentityCellConversion, LinkedIdentityCellConversion, \
     DoNothing
 from ingest.importer.conversion.column_specification import ColumnSpecification, ConversionType
-from ingest.importer.conversion.data_converter import DataType
+from ingest.importer.conversion.data_converter import DataType, StringConverter
 from ingest.importer.data_node import DataNode
 
 import unittest
 
-def _mock_column_spec(field_name='field_name', converter=None,
+def _mock_column_spec(field_name='field_name', main_category=None, converter=None,
                       conversion_type=ConversionType.UNDEFINED):
     column_spec: ColumnSpecification = MagicMock('column_spec')
     column_spec.field_name = field_name
+    column_spec.main_category = main_category
     column_spec.determine_converter = lambda: converter
     column_spec.get_conversion_type = lambda: conversion_type
     return column_spec
@@ -36,14 +37,20 @@ class ModuleTest(TestCase):
         # expect:
         self._assert_correct_strategy(ConversionType.IDENTITY, IdentityCellConversion)
 
+    @unittest.skip
     def test_determine_strategy_for_linked_identity_field(self):
         # expect:
-        self._assert_correct_strategy(ConversionType.LINKED_IDENTITY, LinkedIdentityCellConversion)
+        self._assert_correct_strategy(ConversionType.LINKED_IDENTITY, LinkedIdentityCellConversion,
+                                      and_also=self._assert_correct_main_category)
 
-    def _assert_correct_strategy(self, conversion_type, strategy_class):
+    def _assert_correct_main_category(self, strategy: CellConversion):
+        self.assertEqual('product_type', strategy.main_category)
+
+    def _assert_correct_strategy(self, conversion_type, strategy_class, and_also=None):
         # given:
         converter = MagicMock('converter')
-        column_spec = _mock_column_spec(field_name='product.product_id', converter=converter,
+        column_spec = _mock_column_spec(field_name='product.product_id',
+                                        main_category='product_type', converter=converter,
                                         conversion_type=conversion_type)
 
         # when:
@@ -54,6 +61,10 @@ class ModuleTest(TestCase):
         self.assertEqual('product.product_id', strategy.field)
         self.assertEqual(converter, strategy.converter)
 
+        # and:
+        if and_also is not None:
+            and_also(strategy)
+
     def test_determine_strategy_for_unknown_type(self):
         # given:
         converter = MagicMock('converter')
@@ -61,23 +72,23 @@ class ModuleTest(TestCase):
                                         conversion_type=ConversionType.UNDEFINED)
 
         # when:
-        strategy: CellConversion = conversion_strategy.determine_strategy(column_spec)
+        undefined_strategy: CellConversion = conversion_strategy.determine_strategy(column_spec)
+        none_strategy: CellConversion = conversion_strategy.determine_strategy(None)
 
         # then:
-        self.assertIsInstance(strategy, DoNothing)
+        self.assertIsInstance(undefined_strategy, DoNothing)
+        self.assertIsInstance(none_strategy, DoNothing)
 
 
 class DirectCellConversionTest(TestCase):
 
-    # TODO fixme
-    @unittest.skip
     def test_apply(self):
         # given:
         int_converter = MagicMock('int_converter')
         int_converter.convert = lambda __: 27
 
         # and:
-        cell_conversion = DirectCellConversion('user.age', int_converter)
+        cell_conversion = DirectCellConversion('profile.user.age', int_converter)
 
         # when:
         data_node = DataNode()
@@ -92,6 +103,30 @@ class DirectCellConversionTest(TestCase):
         self.assertIsNotNone(user)
         self.assertEqual(27, user.get('age'))
 
+    def test_apply_none_data(self):
+        # given:
+        string_converter = StringConverter()
+        cell_conversion = DirectCellConversion('product.id', string_converter)
+
+        # when:
+        data_node = DataNode(defaults={
+            conversion_strategy.CONTENT_FIELD: {
+                'product': {
+                    'name': 'product name'
+                }
+            }
+        })
+        cell_conversion.apply(data_node, None)
+
+        # then:
+        content = data_node.as_dict().get(conversion_strategy.CONTENT_FIELD)
+        self.assertIsNotNone(content)
+
+        # and:
+        product = content.get('product')
+        self.assertIsNotNone(product)
+        self.assertTrue('id' not in product, '[id] not expected to be in product field')
+
 
 def _create_mock_string_converter():
     converter = MagicMock('converter')
@@ -101,12 +136,10 @@ def _create_mock_string_converter():
 
 class ListElementCellConversionTest(TestCase):
 
-    # TODO fixme
-    @unittest.skip
     def test_apply(self):
         # given:
         converter = _create_mock_string_converter()
-        cell_conversion = ListElementCellConversion('list_of_things.name', converter)
+        cell_conversion = ListElementCellConversion('stuff.list_of_things.name', converter)
 
         # when:
         data_node = DataNode()
@@ -125,12 +158,10 @@ class ListElementCellConversionTest(TestCase):
         thing = list_of_things[0]
         self.assertEqual('sample - converted', thing.get('name'))
 
-    # TODO fixme
-    @unittest.skip
     def test_apply_previously_processed_field(self):
         # given:
         converter = _create_mock_string_converter()
-        cell_conversion = ListElementCellConversion('user.basket.product_name', converter)
+        cell_conversion = ListElementCellConversion('shop.user.basket.product_name', converter)
 
         # and:
         data_node = DataNode()
@@ -152,15 +183,32 @@ class ListElementCellConversionTest(TestCase):
         self.assertEqual(3, current_element.get('quantity'))
         self.assertEqual('apple - converted', current_element.get('product_name'))
 
+    def test_apply_none_data(self):
+        # given:
+        converter = _create_mock_string_converter()
+        cell_conversion = ListElementCellConversion('user.name', converter)
+
+        # and:
+        data_node = DataNode(defaults={
+            conversion_strategy.CONTENT_FIELD: {
+                'user': [{'id': '65fd8'}]
+            }
+        })
+
+        # when:
+        cell_conversion.apply(data_node, None)
+
+        # then:
+        list_element = data_node[f'{conversion_strategy.CONTENT_FIELD}.user'][0]
+        self.assertTrue('name' not in list_element.keys(), '[name] should not be added to element.')
+
 
 class IdentityCellConversionTest(TestCase):
 
-    # TODO fixme
-    @unittest.skip
     def test_apply(self):
         # given:
         converter = _create_mock_string_converter()
-        cell_conversion = IdentityCellConversion('product_id', converter)
+        cell_conversion = IdentityCellConversion('product.product_id', converter)
 
         # and:
         data_node = DataNode()
@@ -172,49 +220,57 @@ class IdentityCellConversionTest(TestCase):
         expected_id = 'product_no_144 - converted'
         self.assertEqual(data_node[conversion_strategy.OBJECT_ID_FIELD], expected_id)
 
+        # and: identity value should be in content
+        content = data_node[conversion_strategy.CONTENT_FIELD]
+        self.assertIsNotNone(content)
+        self.assertEqual(expected_id, content.get('product_id'))
+
 
 class LinkedIdentityCellConversionTest(TestCase):
 
     def test_apply(self):
         # given:
-        converter = _create_mock_string_converter()
-        cell_conversion = LinkedIdentityCellConversion('item.item_id', converter)
+        cell_conversion = LinkedIdentityCellConversion('item.item_id', 'item_type')
 
         # and:
         data_node = DataNode()
 
         # when:
         cell_conversion.apply(data_node, 'item_no_29')
+        cell_conversion.apply(data_node, 'item_no_31||item_no_50')
 
         # then:
         links = data_node[conversion_strategy.LINKS_FIELD]
         self.assertIsNotNone(links)
 
         # and:
-        items = links.get('item')
-        self.assertEqual(1, len(items))
-        self.assertTrue('item_no_29 - converted' in items)
+        item_types = links.get('item_type')
+        self.assertEqual(3, len(item_types))
+
+        # and:
+        expected_items = [f'item_no_{number}' for number in [29, 31, 50]]
+        for expected_item in expected_items:
+            self.assertTrue(expected_item in item_types, f'[{expected_item}] not in list.')
 
     def test_apply_with_previous_entry(self):
         # given:
-        converter = _create_mock_string_converter()
-        cell_conversion = LinkedIdentityCellConversion('item.item_number', converter)
+        cell_conversion = LinkedIdentityCellConversion('item.item_number', 'line_order')
 
         # and:
         data_node = DataNode()
         items = ['item_no_56', 'item_no_199']
-        data_node[conversion_strategy.LINKS_FIELD] = {'item': items}
+        data_node[conversion_strategy.LINKS_FIELD] = {'line_order': items}
 
         # when:
         cell_conversion.apply(data_node, 'item_no_721')
 
         # then:
-        actual_items = data_node[conversion_strategy.LINKS_FIELD]['item']
+        actual_items = data_node[conversion_strategy.LINKS_FIELD]['line_order']
         self.assertEqual(3, len(actual_items))
 
         # and:
         expected_ids = [id for id in items]
-        expected_ids.append('item_no_721 - converted')
+        expected_ids.append('item_no_721')
         for expected_id in expected_ids:
             self.assertTrue(expected_id in actual_items, f'[{expected_id}] not in list.')
 

@@ -7,31 +7,7 @@ class IngestSubmitter(object):
         self.ingest_api = ingest_api
         self.template_manager = template_manager
 
-    @staticmethod
-    def generate_entities_dict(spreadsheet_json):
-        entities_by_type = {}
-        for entity_type, entities_dict in spreadsheet_json.items():
-            for entity_id, entity_dict in entities_dict.items():
-                entity = Entity(
-                    type=entity_type,
-                    id=entity_id,
-                    content=entity_dict['content'],
-                    links_by_entity=entity_dict.get('links_by_entity') if entity_dict.get('links_by_entity') else {}
-                )
-
-                if not entities_by_type.get(entity_type):
-                    entities_by_type[entity_type] = {}
-
-                if not entities_by_type[entity_type].get(entity_id):
-                    entities_by_type[entity_type][entity_id] = {}
-
-                entities_by_type[entity_type][entity_id] = entity
-        return entities_by_type
-
-    def submit(self, spreadsheet_json, submission_url):
-        entities_dictionaries = EntitiesDictionaries(spreadsheet_json)
-        entity_linker = EntityLinker(self.template_manager)
-        entities_dictionaries = entity_linker.process_links(entities_dictionaries)
+    def submit(self, entities_dictionaries, submission_url):
 
         submission = Submission(self.ingest_api, submission_url)
 

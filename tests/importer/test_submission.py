@@ -136,7 +136,8 @@ class IngestSubmitterTest(TestCase):
         mock_template_manager.get_schema_url = MagicMock(return_value='url')
 
         submitter = IngestSubmitter(mock_ingest_api, mock_template_manager)
-        submission = submitter.submit(spreadsheet_json, submission_url='url')
+        entities_dictionaries = EntitiesDictionaries(spreadsheet_json)
+        submission = submitter.submit(entities_dictionaries, submission_url='url')
 
         self.assertTrue(submission)
         self.assertTrue(submission.get_entity('biomaterial', 'biomaterial_id_1').ingest_json)

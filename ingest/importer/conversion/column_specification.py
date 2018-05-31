@@ -16,10 +16,11 @@ class ConversionType(Enum):
 
 class ColumnSpecification:
 
-    def __init__(self, field_name, object_type, data_type, multivalue=False,
+    def __init__(self, field_name, object_type, main_category, data_type, multivalue=False,
                  multivalue_parent=False, identity: bool=False):
         self.field_name = field_name
         self.object_type = object_type
+        self.main_category = main_category
         self.data_type = data_type
         self.multivalue = multivalue
         self.multivalue_parent = multivalue_parent
@@ -55,10 +56,11 @@ class ColumnSpecification:
         return converter
 
     @staticmethod
-    def build_raw(field_name, object_type, raw_spec, parent=None):
+    def build_raw(field_name, object_type, main_category, raw_spec, parent=None):
         data_type = DataType.find(raw_spec.get('value_type'))
         multivalue = bool(raw_spec.get('multivalue'))
         multivalue_parent = bool(parent.get('multivalue')) if parent != None else False
         identity: bool = bool(raw_spec.get('identifiable'))
-        return ColumnSpecification(field_name, object_type, data_type, multivalue=multivalue,
-                                   multivalue_parent=multivalue_parent, identity=identity)
+        return ColumnSpecification(field_name, object_type, main_category, data_type,
+                                   multivalue=multivalue, multivalue_parent=multivalue_parent,
+                                   identity=identity)
