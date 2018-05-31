@@ -89,7 +89,7 @@ class SubmissionTest(TestCase):
         # and:
         raw_json = ingest_api_args[0]
         submitted_json = json.loads(raw_json)
-        self.assertEqual(total_count, submitted_json['total_count'])
+        self.assertEqual(total_count, submitted_json['totalCount'])
 
 
 def _create_spreadsheet_json():
