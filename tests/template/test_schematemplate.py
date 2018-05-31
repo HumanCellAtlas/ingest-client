@@ -120,6 +120,16 @@ class TestSchemaTemplate(TestCase):
         template = schema_mock.get_template_for_json(data=data)
         self.assertIsNone(template.lookup("donor_organism.foo_bar.description"))
 
+    def test_format(self):
+        data = '{"id" : "' + self.dummyDonorUri + '", "properties": {"foo_bar": {"format" : "date-time"}} }'
+        template = schema_mock.get_template_for_json(data=data)
+        self.assertEqual("date-time", template.lookup("donor_organism.foo_bar.format"))
+
+        data = '{"id" : "' + self.dummyDonorUri + '", "properties": {"foo_bar": {"user_friendly" : "Foo bar"}} }'
+        template = schema_mock.get_template_for_json(data=data)
+        self.assertIsNone(template.lookup("donor_organism.foo_bar.format"))
+
+
     def test_example(self):
         data = '{"id" : "' + self.dummyDonorUri + '", "properties": {"foo_bar": {"example" : "Foo is a bar"}} }'
         template = schema_mock.get_template_for_json(data=data)

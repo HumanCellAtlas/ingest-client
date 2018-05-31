@@ -69,9 +69,12 @@ class SchemaTemplate:
         return a SchemaTemplate object
         """
         for uri in list_of_schema_urls:
-            with urllib.request.urlopen(uri) as url:
-                data = json.loads(url.read().decode())
-                self._parser._load_schema(data)
+            try:
+                with urllib.request.urlopen(uri) as url:
+                    data = json.loads(url.read().decode())
+                    self._parser._load_schema(data)
+            except:
+                print ("Failed to read schema from "+ uri)
         return self
 
     def get_tabs_config(self, ):
@@ -210,7 +213,7 @@ class SchemaParser:
 
     def _extract_property(self, data, *args, **kwargs):
 
-        dic = {"multivalue": False, "required" : False, "identifiable": False, "user_friendly" : None, "description": None, "example" : None, "value_type": "string"}
+        dic = {"multivalue": False, "format":None, "required" : False, "identifiable": False, "user_friendly" : None, "description": None, "example" : None, "value_type": "string"}
 
         if "type" in data:
             dic["value_type"] = data["type"]
@@ -246,6 +249,9 @@ class SchemaParser:
 
         if "description" in data:
             dic["description"] = data["description"]
+
+        if "format" in data:
+            dic["format"] = data["format"]
 
         if "example" in data:
             dic["example"] = data["example"]
