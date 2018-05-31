@@ -18,18 +18,18 @@ spreadsheet_builder.save_workbook()
 ```
 
 Note, this is driven entirely from what is declared in the JSON schema so the spreadsheet will contain every possible submittable type. Also note that
-the order with which tabs and columsn are laid out is driven by the order properties are described in the JSON schema, so are unlikely to desirable for users. Brokers should
-use this as a base template and remove unnecessary tabs/columns before sharing these templates with users.
+the order with which tabs and columns are laid out is driven by the order with which are declared in the JSON schema. This default order is unlikely to be desirable for users of the spreadsheet. Brokers should
+use this as a base template and remove unnecessary tabs/columns before sharing these templates with users (or see below on how to provide a custom template configuration)
 
-**Generic spreadsheets will not contain linking columns e.g. a donor_id column in the speciemn tab, you will need to add these yourself or use a pre-defined template (see below)**
+**Generic spreadsheets will not contain linking columns e.g. a donor_id column in the speciemn tab, you will need to add these yourself or use a custom template (see below)**
 
 
 ## Building an empty spreadsheet from a specific set of schemas
 
 By default `SpreadsheetBuilder` will query the schemas API in ingest to get the latest schema versions. If you want to build a spreadsheet with a specific set of schemas you can
-supply these as parameter. Note, can only give `type` schemas to the SpreadsheetBuilder, it will traverse the schema to fetch all the necessary modules.
+supply these as a parameter. Note, you can only give `type` schemas to the SpreadsheetBuilder, it will traverse the schema to fetch all the necessary sub-modules.
 
-To build a template from the latest `dev` schemas, you can pass in a list of schema URLs to `SpreadsheetBuilder` as follows
+To build a template from a specific set of schemas or from the latest `develop` schemas, you can pass in a list of schema URLs to `SpreadsheetBuilder` as follows
 
 ```python
 from ingest.template.spreadsheet_builder import SpreadsheetBuilder
@@ -54,12 +54,12 @@ spreadsheet_builder.save_workbook()
 ## Building an empty spreadsheet with a pre-defined layout
 
 You can create a template for a spreadsheet that defines which tabs/columns to include and specifies the order. We use a simple YAML based representation
-for these templates. Use this YML format to declare tabs and columns and pass this to the `SpreadsheetBuilder`. Here's an exmaple YAML file for a small spreadsheet.
+for these templates. Use this YAML format to declare tabs and columns and pass this to the `SpreadsheetBuilder`. Here's an exmaple YAML file for a small spreadsheet.
 
-Properties in the schema can be referred to using a DOT notation that represents the location of the property in the metadata hierarchy. The first elemnt is the shortname for the schema followed
+Properties in the schema can be referred to using a DOT notation that represents the location of the property in the metadata hierarchy. The first elemnt is the short name for the schema followed
 by the property e.g. The DOT notation for the `ncbi_taxon_id` property from the `biomaterial_core` module in the `donor_organism` schema is `donor_organism.biomaterial_core.ncbi_taxon_id`.
 
-**Linking fields can be addded by linking col;umns based on the `*_id` field. e.g. to link a `specimen_from_organism` to a `donor` you must place a  `donor_organism.biomaterial_core.biomaterial_id` column in the `speciemen_from_organism` sheet. The same applied when
+**Linking fields can be addded by linking columns based on the `*_id` field. e.g. to link a `specimen_from_organism` to a `donor` you must place a  `donor_organism.biomaterial_core.biomaterial_id` column in the `speciemen_from_organism` sheet. The same applied when
 linking entities (files or biomaterials) to a protocol**
 
 
