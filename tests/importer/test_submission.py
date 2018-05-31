@@ -158,6 +158,7 @@ class IngestSubmitterTest(TestCase):
         # and:
         submission = MagicMock('submission')
         submission.add_entity = MagicMock()
+        submission.link_entity = MagicMock()
         submission_constructor.return_value = submission
 
         # and:
@@ -165,13 +166,26 @@ class IngestSubmitterTest(TestCase):
         user = Entity('user', 'user_1', {})
         entity_map = EntityMap(product, user)
 
+        # and:
+        link_to_user = {
+            'entity': 'user',
+            'id': 'user_1',
+            'relationship': 'wish_list'
+        }
+        linked_product = Entity('product', 'product_2', {}, direct_links=[link_to_user])
+        entity_map.add_entity(linked_product)
+
         # when:
         submitter = IngestSubmitter(ingest_api)
         submitter.submit(entity_map, submission_url='url')
 
         # then:
         submission_constructor.assert_called_with(ingest_api, 'url')
-        submission.add_entity.assert_has_calls([call(product), call(user)], any_order=True)
+        expected_calls = [call(product), call(user), call(linked_product)]
+        submission.add_entity.assert_has_calls(expected_calls, any_order=True)
+
+        # and:
+        submission.link_entity.assert_called()
 
 
 class EntityMapTest(TestCase):
