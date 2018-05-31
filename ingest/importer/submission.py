@@ -255,8 +255,11 @@ class Submission(object):
 
 class EntityMap(object):
 
-    def __init__(self):
+    def __init__(self, *entities):
         self.entities_dict_by_type = {}
+        if entities is not None:
+            for entity in entities:
+                self.add_entity(entity)
 
     @staticmethod
     def load(entity_json):

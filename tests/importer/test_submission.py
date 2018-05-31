@@ -2,7 +2,7 @@ import json
 from unittest import TestCase
 
 import copy
-from mock import MagicMock, patch
+from mock import MagicMock, patch, call
 
 from ingest.api.ingestapi import IngestApi
 from ingest.importer.submission import Submission, Entity, IngestSubmitter, EntityLinker, LinkedEntityNotFound, \
@@ -157,17 +157,21 @@ class IngestSubmitterTest(TestCase):
 
         # and:
         submission = MagicMock('submission')
+        submission.add_entity = MagicMock()
         submission_constructor.return_value = submission
 
         # and:
-        entity_map = EntityMap()
+        product = Entity('product', 'product_1', {})
+        user = Entity('user', 'user_1', {})
+        entity_map = EntityMap(product, user)
 
         # when:
         submitter = IngestSubmitter(ingest_api)
         submitter.submit(entity_map, submission_url='url')
 
         # then:
-        submission_constructor.assert_called()
+        submission_constructor.assert_called_with(ingest_api, 'url')
+        submission.add_entity.assert_has_calls([call(product), call(user)], any_order=True)
 
 
 class EntityMapTest(TestCase):
