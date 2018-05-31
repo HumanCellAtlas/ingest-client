@@ -35,11 +35,20 @@ class SpreadsheetBuilder:
 
     def _get_value_for_column(self, template, col_name, property):
         try:
-            uf = str(template.lookup(col_name + "."+property)) if template.lookup(col_name + "."+property) else col_name
+            uf = str(template.lookup(col_name + "."+property)) if template.lookup(col_name + "."+property) else ""
             return uf
         except:
             print("No property for " + col_name)
             return ""
+
+    def get_user_friendly(self, template, col_name):
+        key = col_name + ".user_friendly"
+        try:
+            uf = str(template.lookup(key)) if template.lookup(key) else col_name
+            return uf
+        except:
+            return key
+
 
     def save_workbook(self):
         self.workbook.close()
@@ -60,9 +69,9 @@ class SpreadsheetBuilder:
 
 
                 for cols in detail["columns"]:
-                    uf = self._get_value_for_column(template, cols, "user_friendly")
+                    uf = self.get_user_friendly(template, cols)
                     desc = self._get_value_for_column(template, cols, "description")
-                    required = self._get_value_for_column(template, cols, "required")
+                    required = bool(self._get_value_for_column(template, cols, "required"))
                     example_text = self._get_value_for_column(template, cols, "example")
 
                     hf = self.header_format
