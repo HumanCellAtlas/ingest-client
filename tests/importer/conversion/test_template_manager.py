@@ -150,9 +150,10 @@ class TemplateManagerTest(TestCase):
         row_template = template_manager.create_row_template(worksheet)
 
         # then:
-        default_values = row_template.default_values
-        self.assertEqual(schema_url, default_values.get('describedBy'))
-        self.assertEqual(object_type, default_values.get('schema_type'))
+        content_defaults = row_template.default_values.get(conversion_strategy.CONTENT_FIELD)
+        self.assertIsNotNone(content_defaults)
+        self.assertEqual(schema_url, content_defaults.get('describedBy'))
+        self.assertEqual(object_type, content_defaults.get('schema_type'))
 
     @patch.object(conversion_strategy, 'determine_strategy')
     def test_create_row_template_with_none_header(self, determine_strategy):

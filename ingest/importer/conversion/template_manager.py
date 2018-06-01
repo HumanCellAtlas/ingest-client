@@ -123,7 +123,8 @@ class RowTemplate:
 
     def __init__(self, cell_conversions, default_values={}):
         self.cell_conversions = cell_conversions
-        self.default_values = copy.deepcopy(default_values)
+        content = {conversion_strategy.CONTENT_FIELD: copy.deepcopy(default_values)}
+        self.default_values = content
 
     def do_import(self, row):
         data_node = DataNode(defaults=self.default_values)
