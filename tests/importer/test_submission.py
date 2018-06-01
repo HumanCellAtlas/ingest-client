@@ -72,7 +72,8 @@ class SubmissionTest(TestCase):
         # given:
         ingest_api = MagicMock('ingest_api')
         ingest_api.createSubmissionManifest = MagicMock()
-        submission = Submission(ingest_api, 'http://core.sample.com/submission/8fd733')
+        url = 'http://core.sample.com/submission/8fd733'
+        submission = Submission(ingest_api, url)
 
         # and:
         entity_map = MagicMock('entity_map')
@@ -84,10 +85,11 @@ class SubmissionTest(TestCase):
         # then:
         ingest_api.createSubmissionManifest.assert_called()
         ingest_api_args, __ = ingest_api.createSubmissionManifest.call_args
-        self.assertEqual(1, len(ingest_api_args))
+        self.assertEqual(2, len(ingest_api_args))
+        self.assertEqual(url, ingest_api_args[0])
 
         # and:
-        raw_json = ingest_api_args[0]
+        raw_json = ingest_api_args[1]
         submitted_json = json.loads(raw_json)
         self.assertEqual(total_count, submitted_json['totalCount'])
 

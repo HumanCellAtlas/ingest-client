@@ -256,7 +256,7 @@ class Submission(object):
         manifest = SubmissionEnvelopeManifest(total_count)
         # TODO provide a better way to serialize
         manifest_json = json.dumps({'totalCount': manifest.total_count})
-        self.ingest_api.createSubmissionManifest(manifest_json)
+        self.ingest_api.createSubmissionManifest(self.submission_url, manifest_json)
 
 
 class EntityMap(object):
