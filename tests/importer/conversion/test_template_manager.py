@@ -133,8 +133,8 @@ class TemplateManagerTest(TestCase):
 
         # and:
         schema_url = 'http://schema.sample.com/profile'
-        object_type = 'profile_type'
-        self._mock_schema_lookup(schema_template, schema_url=schema_url, object_type=object_type)
+        self._mock_schema_lookup(schema_template, schema_url=schema_url, main_category='profile',
+                                 object_type='profile_type')
 
         # and:
         build_raw.return_value = MagicMock('column_spec')
@@ -153,7 +153,7 @@ class TemplateManagerTest(TestCase):
         content_defaults = row_template.default_values.get(conversion_strategy.CONTENT_FIELD)
         self.assertIsNotNone(content_defaults)
         self.assertEqual(schema_url, content_defaults.get('describedBy'))
-        self.assertEqual(object_type, content_defaults.get('schema_type'))
+        self.assertEqual('profile', content_defaults.get('schema_type'))
 
     @patch.object(conversion_strategy, 'determine_strategy')
     def test_create_row_template_with_none_header(self, determine_strategy):
@@ -185,13 +185,14 @@ class TemplateManagerTest(TestCase):
         self.assertEqual(do_nothing_strategy, strategy)
 
     @staticmethod
-    def _mock_schema_lookup(schema_template, schema_url='', object_type=''):
+    def _mock_schema_lookup(schema_template, schema_url='', object_type='', main_category=None):
         tabs_config = MagicMock('tabs_config')
         tabs_config.get_key_for_label = MagicMock(return_value=object_type)
         schema_template.get_tabs_config = MagicMock(return_value=tabs_config)
-        # and:
+
+        domain_entity = f'{main_category}/{object_type}' if main_category else object_type
         schema = {'schema': {
-            'domain_entity': object_type,
+            'domain_entity': domain_entity,
             'url': schema_url
         }}
         spec_map = {

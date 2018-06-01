@@ -58,7 +58,7 @@ class TemplateManager:
     def _define_default_values(self, object_type):
         default_values = {
             'describedBy': self.get_schema_url(object_type),
-            'schema_type': object_type
+            'schema_type': self.get_domain_entity(object_type)
         }
         return default_values
 
