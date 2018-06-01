@@ -69,12 +69,12 @@ class SchemaTemplate:
         return a SchemaTemplate object
         """
         for uri in list_of_schema_urls:
-            try:
                 with urllib.request.urlopen(uri) as url:
-                    data = json.loads(url.read().decode())
+                    try:
+                        data = json.loads(url.read().decode())
+                    except:
+                        print("Failed to read schema from " + uri)
                     self._parser._load_schema(data)
-            except:
-                print ("Failed to read schema from "+ uri)
         return self
 
     def get_tabs_config(self, ):
