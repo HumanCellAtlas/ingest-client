@@ -4,6 +4,7 @@ from abc import abstractmethod
 from ingest.importer.conversion import data_converter
 from ingest.importer.conversion.column_specification import ColumnSpecification, ConversionType
 from ingest.importer.conversion.data_converter import Converter, ListConverter
+from ingest.importer.conversion.exceptions import UnknownMainCategory
 from ingest.importer.conversion.utils import split_field_chain
 from ingest.importer.data_node import DataNode
 
@@ -78,10 +79,11 @@ class LinkedIdentityCellConversion(CellConversion):
         self.main_category = main_category
 
     def apply(self, data_node: DataNode, cell_data):
-        if cell_data is None:
-            return
-        linked_ids = self._get_linked_ids(data_node)
-        linked_ids.extend(self.converter.convert(cell_data))
+        if self.main_category is None:
+            raise UnknownMainCategory()
+        if cell_data is not None:
+            linked_ids = self._get_linked_ids(data_node)
+            linked_ids.extend(self.converter.convert(cell_data))
 
     def _get_linked_ids(self, data_node):
         links = self._get_links(data_node)

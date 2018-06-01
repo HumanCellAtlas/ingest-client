@@ -7,7 +7,8 @@ from ingest.importer.conversion.conversion_strategy import DirectCellConversion,
     ListElementCellConversion, CellConversion, IdentityCellConversion, LinkedIdentityCellConversion, \
     DoNothing
 from ingest.importer.conversion.column_specification import ColumnSpecification, ConversionType
-from ingest.importer.conversion.data_converter import DataType, StringConverter
+from ingest.importer.conversion.data_converter import StringConverter
+from ingest.importer.conversion.exceptions import UnknownMainCategory
 from ingest.importer.data_node import DataNode
 
 import unittest
@@ -274,3 +275,16 @@ class LinkedIdentityCellConversionTest(TestCase):
         for expected_id in expected_ids:
             self.assertTrue(expected_id in actual_items, f'[{expected_id}] not in list.')
 
+    def test_apply_no_main_category(self):
+        # given:
+        cell_conversion = LinkedIdentityCellConversion('product.name', None)
+
+        # when:
+        exception_thrown = False
+        try:
+            cell_conversion.apply(DataNode(), 'sample')
+        except UnknownMainCategory:
+            exception_thrown = True
+
+        # then:
+        self.assertTrue(exception_thrown, f'[{UnknownMainCategory.__name__}] not raised.')
