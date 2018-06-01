@@ -326,5 +326,7 @@ class RowTemplateTest(TestCase):
         result = row_template.do_import(row)
 
         # then:
-        self.assertEqual(schema_url, result.get('describedBy'))
-        self.assertEqual('extra field', result.get('extra_field'))
+        content = result.get(conversion_strategy.CONTENT_FIELD)
+        self.assertIsNotNone(content)
+        self.assertEqual(schema_url, content.get('describedBy'))
+        self.assertEqual('extra field', content.get('extra_field'))
