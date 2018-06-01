@@ -7,6 +7,7 @@ CONTACT_WORKSHEET = 'Contact'
 # TODO think of a better name
 SPECIAL_TABS = [SCHEMAS_WORKSHEET, PROJECT_WORKSHEET, CONTACT_WORKSHEET]
 
+
 class IngestWorkbook:
 
     def __init__(self, workbook: Workbook):

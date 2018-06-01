@@ -91,7 +91,7 @@ class TemplateManagerTest(TestCase):
             'user.profile.first_name': name_raw_spec,
             'user.profile': name_raw_parent_spec,
             'numbers': numbers_raw_spec,
-            'sample_object': schema
+            'user': schema
         }
         schema_template.lookup = lambda key: spec_map.get(key, None)
 
@@ -114,7 +114,7 @@ class TemplateManagerTest(TestCase):
         expected_calls = [
             call('user.profile.first_name', 'sample_object', 'main_category', name_raw_spec,
                  parent=name_raw_parent_spec),
-            call('numbers', 'sample_object', 'main_category', numbers_raw_spec, parent=None)
+            call('numbers', 'sample_object', None, numbers_raw_spec, parent=None)
         ]
         build_raw.assert_has_calls(expected_calls)
         determine_strategy.assert_has_calls([call(name_column_spec), call(numbers_column_spec)])

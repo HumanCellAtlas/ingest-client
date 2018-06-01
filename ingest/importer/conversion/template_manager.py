@@ -33,10 +33,7 @@ class TemplateManager:
             column_spec = self._define_column_spec(header, object_type)
             strategy = conversion_strategy.determine_strategy(column_spec)
             cell_conversions.append(strategy)
-        default_values = {
-            'describedBy': self.get_schema_url(object_type),
-            'schema_type': object_type
-        }
+        default_values = self._define_default_values(object_type)
         return RowTemplate(cell_conversions, default_values=default_values)
 
     @staticmethod
@@ -50,12 +47,20 @@ class TemplateManager:
             parent_path, __ = utils.split_field_chain(header)
             raw_spec = self.lookup(header)
             raw_parent_spec = self.lookup(parent_path)
-            main_category = self.get_domain_entity(object_type)
+            concrete_type = utils.extract_root_field(header)
+            main_category = self.get_domain_entity(concrete_type)
             column_spec = ColumnSpecification.build_raw(header, object_type, main_category,
                                                         raw_spec, parent=raw_parent_spec)
         else:
             column_spec = None
         return column_spec
+
+    def _define_default_values(self, object_type):
+        default_values = {
+            'describedBy': self.get_schema_url(object_type),
+            'schema_type': object_type
+        }
+        return default_values
 
     def get_schema_url(self, concrete_entity):
         schema = self._get_schema(concrete_entity)
@@ -64,15 +69,12 @@ class TemplateManager:
 
     def get_domain_entity(self, concrete_entity):
         domain_entity = None
-
         schema = self._get_schema(concrete_entity)
-
         if schema:
             domain_entity = schema.get('domain_entity', '')
             subdomain = domain_entity.split('/')
             if subdomain:
                 domain_entity = subdomain[0]
-
         return domain_entity
 
     def _get_schema(self, concrete_entity):
