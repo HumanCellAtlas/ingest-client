@@ -75,9 +75,17 @@ class SubmissionTest(TestCase):
         url = 'http://core.sample.com/submission/8fd733'
         submission = Submission(ingest_api, url)
 
+        count_per_entity = {
+            'biomaterial': 5,
+            'project': 1,
+            'protocol': 5,
+            'file': 10,
+            'process': 5
+        }
         # and:
         entity_map = MagicMock('entity_map')
         entity_map.count_total = MagicMock(return_value=total_count)
+        entity_map.count_entities_of_type = lambda entity: count_per_entity.get(entity)
 
         # when:
         submission.define_manifest(entity_map)
@@ -92,6 +100,11 @@ class SubmissionTest(TestCase):
         raw_json = ingest_api_args[1]
         submitted_json = json.loads(raw_json)
         self.assertEqual(total_count, submitted_json['totalCount'])
+        self.assertEqual(count_per_entity['biomaterial'], submitted_json['expectedBiomaterials'])
+        self.assertEqual(count_per_entity['process'], submitted_json['expectedProcesses'])
+        self.assertEqual(count_per_entity['file'], submitted_json['expectedFiles'])
+        self.assertEqual(count_per_entity['protocol'], submitted_json['expectedProtocols'])
+        self.assertEqual(count_per_entity['project'], submitted_json['expectedProjects'])
 
 
 def _create_spreadsheet_json():

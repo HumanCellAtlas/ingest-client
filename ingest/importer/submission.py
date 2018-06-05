@@ -201,12 +201,6 @@ class Entity(object):
             self.direct_links.extend(direct_links)
 
 
-class SubmissionEnvelopeManifest:
-
-    def __init__(self, total_count):
-        self.total_count = total_count
-
-
 class Submission(object):
 
     ENTITY_LINK = {
@@ -253,9 +247,17 @@ class Submission(object):
 
     def define_manifest(self, entity_map):
         total_count = entity_map.count_total()
-        manifest = SubmissionEnvelopeManifest(total_count)
+
         # TODO provide a better way to serialize
-        manifest_json = json.dumps({'totalCount': manifest.total_count})
+        manifest_json = json.dumps({
+            'totalCount': entity_map.count_total(),
+            'expectedBiomaterials': entity_map.count_entities_of_type('biomaterial'),
+            'expectedProcesses': entity_map.count_entities_of_type('process'),
+            'expectedFiles': entity_map.count_entities_of_type('file'),
+            'expectedProtocols': entity_map.count_entities_of_type('protocol'),
+            'expectedProjects': entity_map.count_entities_of_type('project')
+        })
+
         self.ingest_api.createSubmissionManifest(self.submission_url, manifest_json)
 
 
@@ -309,6 +311,8 @@ class EntityMap(object):
     def count_total(self):
         return len(self.get_entities())
 
+    def count_entities_of_type(self, type):
+        return len(list(self.get_entities_of_type(type).keys()))
 
 class InvalidEntityIngestLink(Exception):
 
