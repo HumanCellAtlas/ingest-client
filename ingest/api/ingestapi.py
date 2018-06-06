@@ -279,7 +279,7 @@ class IngestApi:
         r = requests.post(fileSubmissionsUrl, data=json.dumps(fileToCreateObject),
                           headers=self.headers)
         if r.status_code == requests.codes.created or r.status_code == requests.codes.accepted:
-            return json.loads(r.text)
+            return r.json()
         raise ValueError('Create file failed: File ' + fileName + " - " + r.text)
 
     def createEntity(self, submissionUrl, jsonObject, entityType, token=None):
