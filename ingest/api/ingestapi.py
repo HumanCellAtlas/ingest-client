@@ -31,7 +31,7 @@ class IngestApi:
         self.ingest_api_root = ingest_api_root if ingest_api_root is not None else self.get_root_url()
 
 
-def set_token(self, token):
+    def set_token(self, token):
         self.token = token
 
     def get_root_url(self):
@@ -269,6 +269,9 @@ def set_token(self, token):
     #     return self.createEntity(submissionUrl, jsonObject, "analyses")
 
     def createFile(self, submissionUrl, fileName, jsonObject):
+        # TODO: why do we need the submission's links before we can create a file on it?
+        # TODO: submission_links should be a cache;
+        # TODO: getting a submission look in the cache before retrieving it from the API
         fileSubmissionsUrl = self.submission_links[submissionUrl]["files"]['href'].rsplit("{")[0]
         fileSubmissionsUrl = fileSubmissionsUrl + "/" + fileName
         self.logger.debug("posting " + submissionUrl)
