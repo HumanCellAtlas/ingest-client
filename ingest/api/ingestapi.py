@@ -25,13 +25,13 @@ class IngestApi:
             self.logger.info("using " + url + " for ingest API")
         self.url = url if url else "http://localhost:8080"
 
-        self.ingest_api_root = ingest_api_root if ingest_api_root is not None else self.get_root_url()
         self.headers = {'Content-type': 'application/json'}
-
         self.submission_links = {}
         self.token = None
+        self.ingest_api_root = ingest_api_root if ingest_api_root is not None else self.get_root_url()
 
-    def set_token(self, token):
+
+def set_token(self, token):
         self.token = token
 
     def get_root_url(self):
