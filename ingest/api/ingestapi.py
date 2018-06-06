@@ -271,13 +271,14 @@ class IngestApi:
     #     return self.createEntity(submissionUrl, jsonObject, "analyses")
 
     def createFile(self, submissionUrl, fileName, jsonObject):
-        submissionUrl = self.submission_links[submissionUrl]["files"]['href'].rsplit("{")[0]
+        fileSubmissionsUrl = self.submission_links[submissionUrl]["files"]['href'].rsplit("{")[0]
+        fileSubmissionsUrl = fileSubmissionsUrl + "/" + fileName
         self.logger.debug("posting " + submissionUrl)
         fileToCreateObject = {
             "fileName": fileName,
             "content": json.loads(jsonObject)
         }
-        r = requests.post(submissionUrl, data=json.dumps(fileToCreateObject),
+        r = requests.post(fileSubmissionsUrl, data=json.dumps(fileToCreateObject),
                           headers=self.headers)
         if r.status_code == requests.codes.created or r.status_code == requests.codes.accepted:
             return json.loads(r.text)
