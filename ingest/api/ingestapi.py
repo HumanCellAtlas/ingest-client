@@ -271,13 +271,13 @@ class IngestApi:
     def createFile(self, submissionUrl, fileName, jsonObject):
         # TODO: why do we need the submission's links before we can create a file on it?
         # TODO: submission_links should be a cache;
-        # TODO: getting a submission look in the cache before retrieving it from the API
+        # TODO: getting a submission's links should look in the cache before retrieving it from the API
         fileSubmissionsUrl = self.submission_links[submissionUrl]["files"]['href'].rsplit("{")[0]
         fileSubmissionsUrl = fileSubmissionsUrl + "/" + fileName
         self.logger.debug("posting " + submissionUrl)
         fileToCreateObject = {
             "fileName": fileName,
-            "content": json.loads(jsonObject)
+            "content": json.loads(jsonObject) # TODO jsonObject should be a dict()
         }
         r = requests.post(fileSubmissionsUrl, data=json.dumps(fileToCreateObject),
                           headers=self.headers)
