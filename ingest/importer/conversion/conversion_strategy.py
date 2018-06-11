@@ -110,7 +110,7 @@ class ExternalReferenceCellConversion(CellConversion):
         self.main_category = main_category
 
     def apply(self, data_node: DataNode, cell_data):
-        data_node['_external_links'] = {}
+        data_node['_external_links.account'] = [cell_data]
 
 
 class DoNothing(CellConversion):

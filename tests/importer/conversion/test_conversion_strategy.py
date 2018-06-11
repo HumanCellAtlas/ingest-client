@@ -314,3 +314,9 @@ class ExternalReferenceCellConversionTest(TestCase):
         # then:
         external_links = data_node['_external_links']
         self.assertIsNotNone(external_links)
+
+        # and:
+        account_list = external_links.get('account')
+        self.assertIsNotNone(account_list, '[account] list in external links expected.')
+        self.assertEqual(1, len(account_list))
+        self.assertTrue('621bfa0' in account_list, 'Expected content not in list.')
