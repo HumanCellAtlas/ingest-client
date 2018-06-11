@@ -7,7 +7,7 @@ __license__ = "Apache 2.0"
 __date__ = "25/05/2018"
 
 from unittest import TestCase
-import ingest.template.spreadsheet_builder as spreadsheet_builder
+from ingest.template.spreadsheet_builder import SpreadsheetBuilder
 import unittest
 
 class TestSchemaTemplate(TestCase):
@@ -20,6 +20,8 @@ class TestSchemaTemplate(TestCase):
     # TODO fixme
     @unittest.skip
     def test_no_schemas(self):
+        spreadsheet_builder = SpreadsheetBuilder("foo.xlsx")
+        spreadsheet_builder.generate_workbook()
         pass
 
     # TODO fixme

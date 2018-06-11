@@ -25,6 +25,9 @@ class TestSchemaTemplate(TestCase):
         self.dummyDonorUri = "https://schema.humancellatlas.org/type/biomaterial/5.1.0/donor_organism"
         pass
 
+    def test_no_schemas(self):
+        schema_template = SchemaTemplate()
+
 
     def test_schema_lookup(self):
 
@@ -128,6 +131,16 @@ class TestSchemaTemplate(TestCase):
         data = '{"id" : "' + self.dummyDonorUri + '", "properties": {"foo_bar": {"user_friendly" : "Foo bar"}} }'
         template = schema_mock.get_template_for_json(data=data)
         self.assertIsNone(template.lookup("donor_organism.foo_bar.format"))
+
+    def test_retrieveable(self):
+        data = '{"id" : "' + self.dummyDonorUri + '", "properties": {"foo_bar": {"format" : "date-time"}} }'
+        template = schema_mock.get_template_for_json(data=data)
+        self.assertTrue(template.lookup("donor_organism.uuid.retrievable"))
+        self.assertFalse(template.lookup("donor_organism.foo_bar.retrievable"))
+
+        with self.assertRaises(UnknownKeyException):
+            self.assertTrue(template.lookup("donor_organism.format.uuid.retrievable"))
+
 
 
     def test_example(self):

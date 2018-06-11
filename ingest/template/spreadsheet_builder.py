@@ -17,6 +17,7 @@ class SpreadsheetBuilder:
         self.workbook = xlsxwriter.Workbook(output_file)
 
         self.header_format = self.workbook.add_format({'bold': True, 'bg_color': '#D0D0D0'})
+        self.locked_format = self.workbook.add_format({'locked': True})
         self.required_header_format = self.workbook.add_format({'bold': True, 'bg_color': 'yellow'})
         self.desc_format = self.workbook.add_format({'font_color': 'light-grey', 'italic': True, 'text_wrap': True})
 
@@ -49,11 +50,14 @@ class SpreadsheetBuilder:
         except:
             return key
 
-
     def save_workbook(self):
         self.workbook.close()
 
-
+    def _write_schemas(self, schema_urls):
+        worksheet = self.workbook.add_worksheet("Schemas")
+        worksheet.write(0, 0, "Schemas")
+        for index, url in enumerate(schema_urls):
+            worksheet.write(index + 1, 0, url)
 
     def _build(self, template):
 
@@ -67,8 +71,8 @@ class SpreadsheetBuilder:
 
                 col_number = 0
 
-
                 for cols in detail["columns"]:
+
                     uf = self.get_user_friendly(template, cols)
                     desc = self._get_value_for_column(template, cols, "description")
                     required = bool(self._get_value_for_column(template, cols, "required"))
@@ -81,27 +85,21 @@ class SpreadsheetBuilder:
                     # set the description
                     worksheet.write(0, col_number, desc, self.desc_format)
 
-
                     # set the user friendly name
                     worksheet.write(1, col_number, uf, hf)
                     worksheet.set_column(col_number, col_number, len(uf))
 
-
+                    # write example
                     worksheet.write(2, col_number, example_text)
 
                     # set the key
-                    worksheet.write(3, col_number, cols)
-
-                    worksheet.write(4, 0, "Add your data below this line", self.header_format)
+                    worksheet.write(3, col_number, cols, self.locked_format)
 
                     col_number+=1
 
+                worksheet.write(4, len(detail["columns"]), "Add your data below this line", self.header_format)
 
-        worksheet = self.workbook.add_worksheet("Schemas")
-        worksheet.write(0,0, "Schemas")
-        for index, url in enumerate(template.get_schema_urls()):
-            worksheet.write(index+1, 0, url)
-
+        self._write_schemas(template.get_schema_urls())
 
         return self
 

@@ -12,7 +12,7 @@ import json, os, requests, logging, uuid
 
 
 class IngestApi:
-    def __init__(self, url=None):
+    def __init__(self, url=None, ingest_api_root=None):
         format = '[%(filename)s:%(lineno)s - %(funcName)20s() ] %(asctime)s - %(name)s - %(levelname)s - %(message)s'
         logging.basicConfig(format=format)
         logging.getLogger("requests").setLevel(logging.WARNING)
@@ -25,20 +25,18 @@ class IngestApi:
             self.logger.info("using " + url + " for ingest API")
         self.url = url if url else "http://localhost:8080"
 
-        self.ingest_api = None
         self.headers = {'Content-type': 'application/json'}
-
         self.submission_links = {}
         self.token = None
-        self.load_root()
+        self.ingest_api_root = ingest_api_root if ingest_api_root is not None else self.get_root_url()
+
 
     def set_token(self, token):
         self.token = token
 
-    def load_root(self):
-        if not self.ingest_api:
-            reply = requests.get(self.url, headers=self.headers)
-            self.ingest_api = reply.json()["_links"]
+    def get_root_url(self):
+        reply = requests.get(self.url, headers=self.headers)
+        return reply.json()["_links"]
 
     def _get_url_for_link(self, url, link_name):
         r = requests.get(url, headers=self.headers)
@@ -80,13 +78,13 @@ class IngestApi:
 
 
     def get_schemas_url(self):
-        if "schemas" in self.ingest_api:
-            return self.ingest_api["schemas"]["href"].rsplit("{")[0]
+        if "schemas" in self.ingest_api_root:
+            return self.ingest_api_root["schemas"]["href"].rsplit("{")[0]
         return None
 
     def getSubmissions(self):
         params = {'sort': 'submissionDate,desc'}
-        r = requests.get(self.ingest_api["submissionEnvelopes"]["href"].rsplit("{")[0], params=params,
+        r = requests.get(self.ingest_api_root["submissionEnvelopes"]["href"].rsplit("{")[0], params=params,
                          headers=self.headers)
         if r.status_code == requests.codes.ok:
             return json.loads(r.text)["_embedded"]["submissionEnvelopes"]
@@ -165,7 +163,7 @@ class IngestApi:
         }
 
         try:
-            r = requests.post(self.ingest_api["submissionEnvelopes"]["href"].rsplit("{")[0], data="{}",
+            r = requests.post(self.ingest_api_root["submissionEnvelopes"]["href"].rsplit("{")[0], data="{}",
                               headers=auth_headers)
             r.raise_for_status()
             submission = r.json()
@@ -223,7 +221,7 @@ class IngestApi:
             return None
 
     def getSubmissionUri(self, submissionId):
-        return self.ingest_api["submissionEnvelopes"]["href"].rsplit("{")[0] + "/" + submissionId
+        return self.ingest_api_root["submissionEnvelopes"]["href"].rsplit("{")[0] + "/" + submissionId
 
     def getAssayUrl(self, assayCallbackLink):
         # TODO check if callback link already has a leading slash
@@ -286,16 +284,22 @@ class IngestApi:
         return self.createEntity(submissionUrl, jsonObject, "protocols")
 
     def createFile(self, submissionUrl, fileName, jsonObject):
-        file_submission_url = self.get_link_in_submisssion(submissionUrl, 'files')
-        self.logger.debug("posting " + file_submission_url)
+        # TODO: why do we need the submission's links before we can create a file on it?
+        # TODO: submission_links should be a cache;
+        # TODO: getting a submission's links should look in the cache before retrieving it from the API
+
+        fileSubmissionsUrl = self.get_link_in_submisssion(submissionUrl, 'files')
+        fileSubmissionsUrl = fileSubmissionsUrl + "/" + fileName
+        self.logger.debug("posting " + submissionUrl)
+
         fileToCreateObject = {
             "fileName": fileName,
-            "content": json.loads(jsonObject)
+            "content": json.loads(jsonObject) # TODO jsonObject should be a dict()
         }
-        r = requests.post(file_submission_url, data=json.dumps(fileToCreateObject),
-                          headers=self.headers)
+
+        r = requests.post(fileSubmissionsUrl, data=json.dumps(fileToCreateObject), headers=self.headers)
         if r.status_code == requests.codes.created or r.status_code == requests.codes.accepted:
-            return json.loads(r.text)
+            return r.json()
         raise ValueError('Create file failed: File ' + fileName + " - " + r.text)
 
     def createEntity(self, submissionUrl, jsonObject, entityType, token=None):
@@ -412,10 +416,10 @@ class IngestApi:
         return requests.put(url, data=data, headers=headers)
 
     def createBundleManifest(self, bundleManifest):
-        r = self._retry_when_http_error(0, self._post_bundle_manifest, bundleManifest, self.ingest_api["bundleManifests"]["href"].rsplit("{")[0])
+        r = self._retry_when_http_error(0, self._post_bundle_manifest, bundleManifest, self.ingest_api_root["bundleManifests"]["href"].rsplit("{")[0])
 
         if not (200 <= r.status_code < 300):
-            error_message = "Failed to create bundle manifest at URL {0} with request payload: {1}".format(self.ingest_api["bundleManifests"]["href"].rsplit("{")[0],
+            error_message = "Failed to create bundle manifest at URL {0} with request payload: {1}".format(self.ingest_api_root["bundleManifests"]["href"].rsplit("{")[0],
                                                                                                            json.dumps(bundleManifest.__dict__))
             self.logger.error(error_message)
             raise ValueError(error_message)

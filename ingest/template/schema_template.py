@@ -70,6 +70,7 @@ class SchemaTemplate:
         """
         for uri in list_of_schema_urls:
                 with urllib.request.urlopen(uri) as url:
+                    data = {}
                     try:
                         data = json.loads(url.read().decode())
                     except:
@@ -181,6 +182,9 @@ class SchemaParser:
         if not property.schema or "type" not in property.schema.high_level_entity:
             raise RootSchemaException(
                 "Schema must start with a root submittable type schema")
+        else:
+            # as this is top level add a retrievable property for
+            property.uuid = {'retrievable': True}
 
         # todo get tab display name from schema
         tab_display = property.schema.module[0].upper() + property.schema.module[1:].replace("_", " ")
@@ -211,9 +215,21 @@ class SchemaParser:
         if "required" in data:
             self._required = list(set().union(self._required, data["required"]))
 
+    def _new_template (self):
+        return {
+            "multivalue": False,
+            "format":None,
+            "required" : False,
+            "identifiable": False,
+            "retrievable": False,
+            "user_friendly" : None,
+            "description": None,
+            "example" : None,
+            "value_type": "string"}
+
     def _extract_property(self, data, *args, **kwargs):
 
-        dic = {"multivalue": False, "format":None, "required" : False, "identifiable": False, "user_friendly" : None, "description": None, "example" : None, "value_type": "string"}
+        dic = self._new_template()
 
         if "type" in data:
             dic["value_type"] = data["type"]
