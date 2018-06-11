@@ -111,7 +111,16 @@ class ExternalReferenceCellConversion(CellConversion):
         self.main_category = main_category
 
     def apply(self, data_node: DataNode, cell_data):
-        data_node[f'{EXTERNAL_LINKS_FIELD}.account'] = [cell_data]
+        external_links = data_node[EXTERNAL_LINKS_FIELD]
+        if external_links is None:
+            external_links = {}
+            data_node[EXTERNAL_LINKS_FIELD] = external_links
+
+        external_link_ids = external_links.get(self.main_category)
+        if external_link_ids is None:
+            external_link_ids = []
+            external_links[self.main_category] = external_link_ids
+        external_link_ids.append(cell_data)
 
 
 class DoNothing(CellConversion):

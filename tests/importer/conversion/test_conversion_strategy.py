@@ -320,3 +320,29 @@ class ExternalReferenceCellConversionTest(TestCase):
         self.assertIsNotNone(account_list, '[account] list in external links expected.')
         self.assertEqual(1, len(account_list))
         self.assertTrue('621bfa0' in account_list, 'Expected content not in list.')
+
+    def test_apply_with_previous_entries(self):
+        # given:
+        data_node = DataNode(defaults={
+            conversion_strategy.EXTERNAL_LINKS_FIELD: {
+                'store_item': ['109bdd9', 'c3c35e6']
+            }
+        })
+
+        # and:
+        cell_conversion = ExternalReferenceCellConversion('product.uuid', 'store_item')
+
+        # when:
+        cell_conversion.apply(data_node, '73de901')
+
+        # then:
+        external_links = data_node[conversion_strategy.EXTERNAL_LINKS_FIELD]
+        self.assertIsNotNone(external_links)
+
+        # then:
+        store_item_list = external_links.get('store_item')
+        self.assertIsNotNone(store_item_list, '[store_item] list in external links expected.')
+
+        # and:
+        expected_ids = ['109bdd9', '73de901', 'c3c35e6']
+        self.assertCountEqual(expected_ids, store_item_list)
