@@ -45,6 +45,8 @@ class ColumnSpecification:
             entity_type = utils.extract_root_field(self.field_name)
             if entity_type == self.object_type:
                 conversion_type = ConversionType.IDENTITY
+            elif self.external_reference:
+                conversion_type = ConversionType.EXTERNAL_REFERENCE
             else:
                 conversion_type = ConversionType.LINKED_IDENTITY
         else:
