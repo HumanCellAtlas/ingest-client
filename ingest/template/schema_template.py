@@ -184,7 +184,7 @@ class SchemaParser:
                 "Schema must start with a root submittable type schema")
         else:
             # as this is top level add a retrievable property for
-            property.uuid = {'retrievable': True, 'identifiable' : True}
+            property.uuid = {'external_reference': True, 'identifiable' : True}
 
         # todo get tab display name from schema
         tab_display = property.schema.module[0].upper() + property.schema.module[1:].replace("_", " ")
@@ -221,7 +221,7 @@ class SchemaParser:
             "format":None,
             "required" : False,
             "identifiable": False,
-            "retrievable": False,
+            "external_reference": False,
             "user_friendly" : None,
             "description": None,
             "example" : None,
