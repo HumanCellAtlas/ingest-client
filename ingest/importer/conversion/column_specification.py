@@ -16,7 +16,7 @@ class ConversionType(Enum):
 class ColumnSpecification:
 
     def __init__(self, field_name, object_type, main_category, data_type, multivalue=False,
-                 multivalue_parent=False, identity: bool=False):
+                 multivalue_parent=False, identity: bool=False, external_reference: bool=False):
         self.field_name = field_name
         self.object_type = object_type
         self.main_category = main_category
@@ -24,6 +24,7 @@ class ColumnSpecification:
         self.multivalue = multivalue
         self.multivalue_parent = multivalue_parent
         self.identity = identity
+        self.external_reference = external_reference
 
     def is_multivalue(self):
         return self.multivalue
@@ -33,6 +34,9 @@ class ColumnSpecification:
 
     def is_identity(self):
         return self.identity
+
+    def is_external_reference(self):
+        return self.external_reference
 
     def get_conversion_type(self):
         if self.multivalue_parent:
@@ -60,6 +64,7 @@ class ColumnSpecification:
         multivalue = bool(raw_spec.get('multivalue'))
         multivalue_parent = bool(parent.get('multivalue')) if parent != None else False
         identity: bool = bool(raw_spec.get('identifiable'))
+        external_reference = bool(raw_spec.get('external_reference'))
         return ColumnSpecification(field_name, object_type, main_category, data_type,
                                    multivalue=multivalue, multivalue_parent=multivalue_parent,
-                                   identity=identity)
+                                   identity=identity, external_reference=external_reference)
