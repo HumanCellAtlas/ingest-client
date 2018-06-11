@@ -103,7 +103,7 @@ class LinkedIdentityCellConversion(CellConversion):
         return links
 
 
-class ExternalIdentityCellConversion(CellConversion):
+class ExternalReferenceCellConversion(CellConversion):
 
     def apply(self, data_node: DataNode, cell_data):
         pass
@@ -135,6 +135,6 @@ def determine_strategy(column_spec: ColumnSpecification):
             strategy = IdentityCellConversion(field_name, converter)
         elif ConversionType.LINKED_IDENTITY == conversion_type:
             strategy = LinkedIdentityCellConversion(field_name, column_spec.main_category)
-        elif ConversionType.EXTERNAL_IDENTITY == conversion_type:
-            strategy = ExternalIdentityCellConversion(field_name, converter)
+        elif ConversionType.EXTERNAL_REFERENCE == conversion_type:
+            strategy = ExternalReferenceCellConversion(field_name, converter)
     return strategy

@@ -10,7 +10,7 @@ class ConversionType(Enum):
     FIELD_OF_LIST_ELEMENT = 2,
     IDENTITY = 3,
     LINKED_IDENTITY = 4,
-    EXTERNAL_IDENTITY = 5
+    EXTERNAL_REFERENCE = 5
 
 
 class ColumnSpecification:

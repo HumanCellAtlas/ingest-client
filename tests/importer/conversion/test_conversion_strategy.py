@@ -6,7 +6,7 @@ from ingest.importer.conversion import conversion_strategy
 from ingest.importer.conversion.column_specification import ColumnSpecification, ConversionType
 from ingest.importer.conversion.conversion_strategy import DirectCellConversion, \
     ListElementCellConversion, CellConversion, IdentityCellConversion, LinkedIdentityCellConversion, \
-    DoNothing, ExternalIdentityCellConversion
+    DoNothing, ExternalReferenceCellConversion
 from ingest.importer.conversion.data_converter import StringConverter, ListConverter
 from ingest.importer.conversion.exceptions import UnknownMainCategory
 from ingest.importer.data_node import DataNode
@@ -43,9 +43,9 @@ class ModuleTest(TestCase):
                                       expected_converter_type=ListConverter,
                                       and_also=self._assert_correct_main_category)
 
-    def test_determine_strategy_for_external_identity_field(self):
-        self._assert_correct_strategy(ConversionType.EXTERNAL_IDENTITY,
-                                      ExternalIdentityCellConversion)
+    def test_determine_strategy_for_external_reference_field(self):
+        self._assert_correct_strategy(ConversionType.EXTERNAL_REFERENCE,
+                                      ExternalReferenceCellConversion)
 
     def _assert_correct_main_category(self, strategy: CellConversion):
         self.assertEqual('product_type', strategy.main_category)
