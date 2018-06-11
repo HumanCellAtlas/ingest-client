@@ -7,7 +7,7 @@ from openpyxl import Workbook
 
 from ingest.importer.conversion import conversion_strategy
 from ingest.importer.data_node import DataNode
-from ingest.importer.importer import WorksheetImporter, WorkbookImporter, IngestImporter
+from ingest.importer.importer import WorksheetImporter, WorkbookImporter, XlsImporter
 from ingest.importer.spreadsheet.ingest_workbook import IngestWorkbook
 
 BASE_PATH = os.path.dirname(__file__)
@@ -59,7 +59,7 @@ class WorkbookImporterTest(TestCase):
         # and: mock WorksheetImporter constructor
         worksheet_importer_constructor.return_value = worksheet_importer
         workbook_importer = WorkbookImporter(mock_template_manager)
-        workbook_importer.import_project = MagicMock()
+        workbook_importer.import_or_reference_project = MagicMock()
 
         # when:
         workbook_output = workbook_importer.do_import(ingest_workbook)
@@ -170,6 +170,6 @@ class IngestImporterTest(TestCase):
 
         spreadsheet_file = BASE_PATH + '/metadata_spleen_new_protocols.xlsx'
 
-        submission = IngestImporter(MagicMock()).import_spreadsheet(file_path=spreadsheet_file, submission_url=None, dry_run=True)
+        submission = XlsImporter(MagicMock()).import_file(file_path=spreadsheet_file, submission_url=None, dry_run=True)
 
         self.assertTrue(submission)
