@@ -136,13 +136,12 @@ class TestSchemaTemplate(TestCase):
         data = '{"id" : "' + self.dummyDonorUri + '", "properties": {"foo_bar": {"format" : "date-time"}} }'
         template = schema_mock.get_template_for_json(data=data)
         self.assertTrue(template.lookup("donor_organism.uuid.retrievable"))
+        self.assertFalse(template.lookup("donor_organism.foo_bar.retrievable"))
 
         with self.assertRaises(UnknownKeyException):
             self.assertTrue(template.lookup("donor_organism.format.uuid.retrievable"))
 
-        data = '{"id" : "' + self.dummyDonorUri + '", "properties": {"foo_bar": {"user_friendly" : "Foo bar"}} }'
-        template = schema_mock.get_template_for_json(data=data)
-        self.assertIsNone(template.lookup("donor_organism.foo_bar.format"))
+
 
     def test_example(self):
         data = '{"id" : "' + self.dummyDonorUri + '", "properties": {"foo_bar": {"example" : "Foo is a bar"}} }'

@@ -221,6 +221,7 @@ class SchemaParser:
             "format":None,
             "required" : False,
             "identifiable": False,
+            "retrievable": False,
             "user_friendly" : None,
             "description": None,
             "example" : None,
