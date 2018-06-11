@@ -120,7 +120,7 @@ class ExternalReferenceCellConversion(CellConversion):
         if external_link_ids is None:
             external_link_ids = []
             external_links[self.main_category] = external_link_ids
-        external_link_ids.append(cell_data)
+        external_link_ids.extend(self.converter.convert(cell_data))
 
 
 class DoNothing(CellConversion):

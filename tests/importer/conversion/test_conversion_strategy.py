@@ -321,6 +321,19 @@ class ExternalReferenceCellConversionTest(TestCase):
         self.assertEqual(1, len(account_list))
         self.assertTrue('621bfa0' in account_list, 'Expected content not in list.')
 
+    def test_apply_multiple_values(self):
+        # given:
+        cell_conversion = ExternalReferenceCellConversion('company.uuid', 'organisation')
+
+        # when:
+        data_node = DataNode()
+        cell_conversion.apply(data_node, '7e56de9||2fe9eb0')
+
+        # then:
+        expected_ids = ['7e56de9', '2fe9eb0']
+        id_field = f'{conversion_strategy.EXTERNAL_LINKS_FIELD}.organisation'
+        self.assertCountEqual(expected_ids, data_node[id_field])
+
     def test_apply_with_previous_entries(self):
         # given:
         data_node = DataNode(defaults={
