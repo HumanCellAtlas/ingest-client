@@ -3,15 +3,14 @@ from unittest import TestCase
 from mock import MagicMock
 
 from ingest.importer.conversion import conversion_strategy
+from ingest.importer.conversion.column_specification import ColumnSpecification, ConversionType
 from ingest.importer.conversion.conversion_strategy import DirectCellConversion, \
     ListElementCellConversion, CellConversion, IdentityCellConversion, LinkedIdentityCellConversion, \
     DoNothing
-from ingest.importer.conversion.column_specification import ColumnSpecification, ConversionType
-from ingest.importer.conversion.data_converter import StringConverter
+from ingest.importer.conversion.data_converter import StringConverter, ListConverter
 from ingest.importer.conversion.exceptions import UnknownMainCategory
 from ingest.importer.data_node import DataNode
 
-import unittest
 
 def _mock_column_spec(field_name='field_name', main_category=None, converter=None,
                       conversion_type=ConversionType.UNDEFINED):
@@ -38,16 +37,18 @@ class ModuleTest(TestCase):
         # expect:
         self._assert_correct_strategy(ConversionType.IDENTITY, IdentityCellConversion)
 
-    @unittest.skip
     def test_determine_strategy_for_linked_identity_field(self):
         # expect:
         self._assert_correct_strategy(ConversionType.LINKED_IDENTITY, LinkedIdentityCellConversion,
+                                      expected_converter_type=ListConverter,
                                       and_also=self._assert_correct_main_category)
 
     def _assert_correct_main_category(self, strategy: CellConversion):
         self.assertEqual('product_type', strategy.main_category)
 
-    def _assert_correct_strategy(self, conversion_type, strategy_class, and_also=None):
+    def _assert_correct_strategy(self, conversion_type, strategy_class,
+                                 expected_converter_type=None,
+                                 and_also=None):
         # given:
         converter = MagicMock('converter')
         column_spec = _mock_column_spec(field_name='product.product_id',
@@ -60,7 +61,12 @@ class ModuleTest(TestCase):
         # then:
         self.assertIsInstance(strategy, strategy_class)
         self.assertEqual('product.product_id', strategy.field)
-        self.assertEqual(converter, strategy.converter)
+
+        # and:
+        if expected_converter_type is None:
+            self.assertEqual(converter, strategy.converter)
+        else:
+            self.assertIsInstance(strategy.converter, expected_converter_type)
 
         # and:
         if and_also is not None:
