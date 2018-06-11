@@ -111,6 +111,7 @@ class WorkbookImporter:
 
 
 class WorksheetImporter:
+
     KEY_HEADER_ROW_IDX = 4
     USER_FRIENDLY_HEADER_ROW_IDX = 2
     START_ROW_IDX = 5
@@ -129,7 +130,8 @@ class WorksheetImporter:
             record_id = json.get(conversion_strategy.OBJECT_ID_FIELD, self._generate_id())
             records[record_id] = {
                 'content': json.get(conversion_strategy.CONTENT_FIELD, {}),
-                'links_by_entity': json.get(conversion_strategy.LINKS_FIELD, {})
+                'links_by_entity': json.get(conversion_strategy.LINKS_FIELD, {}),
+                'external_links_by_entity': json.get(conversion_strategy.EXTERNAL_LINKS_FIELD)
             }
         return records
 

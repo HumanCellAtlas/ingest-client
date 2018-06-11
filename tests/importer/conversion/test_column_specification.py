@@ -1,5 +1,7 @@
 from unittest import TestCase
 
+import copy
+
 from ingest.importer.conversion.column_specification import ColumnSpecification, ConversionType
 from ingest.importer.conversion.data_converter import DataType, IntegerConverter, \
     BooleanConverter, ListConverter, StringConverter, DefaultConverter
@@ -44,6 +46,35 @@ class ColumnSpecificationTest(TestCase):
         self.assertTrue(int_array_column_spec.is_multivalue())
         self.assertFalse(int_array_column_spec.is_identity())
 
+    def test_build_raw_external_reference(self):
+        # given:
+        external_raw_spec = {
+            'value_type': 'string',
+            'identifiable': True,
+            'external_reference': True
+        }
+
+        # and:
+        non_external_raw_spec = copy.deepcopy(external_raw_spec)
+        non_external_raw_spec['external_reference'] = False
+
+        # when:
+        external_spec = ColumnSpecification.build_raw('profile.uuid', 'profile', 'personal_info',
+                                                      external_raw_spec)
+        non_external_spec = ColumnSpecification.build_raw('user.id', 'user', 'personal_info',
+                                                          non_external_raw_spec)
+
+        # then:
+        self.assertEqual('profile.uuid', external_spec.field_name)
+        self.assertEqual('profile', external_spec.object_type)
+        self.assertEqual('personal_info', external_spec.main_category)
+        self.assertEqual(DataType.STRING, external_spec.data_type)
+        self.assertTrue(external_spec.is_external_reference())
+
+        # then:
+        self.assertEqual('user.id', non_external_spec.field_name)
+        self.assertFalse(non_external_spec.is_external_reference())
+
     def test_build_raw_spec_with_parent_spec(self):
         # given:
         raw_spec = {
@@ -78,7 +109,7 @@ class ColumnSpecificationTest(TestCase):
         self._assert_correct_converter_single_value(DataType.BOOLEAN, BooleanConverter)
         self._assert_correct_converter_single_value(DataType.UNDEFINED, DefaultConverter)
 
-    def _assert_correct_converter_single_value(self, data_type:DataType, expected_converter_type):
+    def _assert_correct_converter_single_value(self, data_type: DataType, expected_converter_type):
         # given:
         column_spec = ColumnSpecification('field', 'object_type', 'main_category', data_type)
 

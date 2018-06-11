@@ -11,6 +11,7 @@ from ingest.importer.data_node import DataNode
 OBJECT_ID_FIELD = '_object_id'
 CONTENT_FIELD = '_content'
 LINKS_FIELD = '_links'
+EXTERNAL_LINKS_FIELD = '_external_links'
 
 _LIST_CONVERTER = ListConverter()
 
@@ -103,6 +104,35 @@ class LinkedIdentityCellConversion(CellConversion):
         return links
 
 
+class ExternalReferenceCellConversion(CellConversion):
+
+    def __init__(self, field, main_category):
+        super(ExternalReferenceCellConversion, self).__init__(field, _LIST_CONVERTER)
+        self.main_category = main_category
+
+    def apply(self, data_node: DataNode, cell_data):
+        external_link_ids = self._get_external_link_ids(data_node)
+        external_link_ids.extend(self.converter.convert(cell_data))
+
+    # TODO duplication; merge this with linked identity implementation
+    def _get_external_link_ids(self, data_node):
+        external_links = self._get_external_links(data_node)
+        entity_type = self.main_category
+        external_link_ids = external_links.get(entity_type)
+        if external_link_ids is None:
+            external_link_ids = []
+            external_links[entity_type] = external_link_ids
+        return external_link_ids
+
+    @staticmethod
+    def _get_external_links(data_node):
+        external_links = data_node[EXTERNAL_LINKS_FIELD]
+        if external_links is None:
+            external_links = {}
+            data_node[EXTERNAL_LINKS_FIELD] = external_links
+        return external_links
+
+
 class DoNothing(CellConversion):
 
     def __init__(self):
@@ -129,5 +159,6 @@ def determine_strategy(column_spec: ColumnSpecification):
             strategy = IdentityCellConversion(field_name, converter)
         elif ConversionType.LINKED_IDENTITY == conversion_type:
             strategy = LinkedIdentityCellConversion(field_name, column_spec.main_category)
+        elif ConversionType.EXTERNAL_REFERENCE == conversion_type:
+            strategy = ExternalReferenceCellConversion(field_name, column_spec.main_category)
     return strategy
-

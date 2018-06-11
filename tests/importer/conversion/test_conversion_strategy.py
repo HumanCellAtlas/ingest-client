@@ -3,15 +3,14 @@ from unittest import TestCase
 from mock import MagicMock
 
 from ingest.importer.conversion import conversion_strategy
+from ingest.importer.conversion.column_specification import ColumnSpecification, ConversionType
 from ingest.importer.conversion.conversion_strategy import DirectCellConversion, \
     ListElementCellConversion, CellConversion, IdentityCellConversion, LinkedIdentityCellConversion, \
-    DoNothing
-from ingest.importer.conversion.column_specification import ColumnSpecification, ConversionType
-from ingest.importer.conversion.data_converter import StringConverter
+    DoNothing, ExternalReferenceCellConversion
+from ingest.importer.conversion.data_converter import StringConverter, ListConverter
 from ingest.importer.conversion.exceptions import UnknownMainCategory
 from ingest.importer.data_node import DataNode
 
-import unittest
 
 def _mock_column_spec(field_name='field_name', main_category=None, converter=None,
                       conversion_type=ConversionType.UNDEFINED):
@@ -38,16 +37,23 @@ class ModuleTest(TestCase):
         # expect:
         self._assert_correct_strategy(ConversionType.IDENTITY, IdentityCellConversion)
 
-    @unittest.skip
     def test_determine_strategy_for_linked_identity_field(self):
         # expect:
         self._assert_correct_strategy(ConversionType.LINKED_IDENTITY, LinkedIdentityCellConversion,
+                                      expected_converter_type=ListConverter,
+                                      and_also=self._assert_correct_main_category)
+
+    def test_determine_strategy_for_external_reference_field(self):
+        self._assert_correct_strategy(ConversionType.EXTERNAL_REFERENCE,
+                                      ExternalReferenceCellConversion,
+                                      expected_converter_type=ListConverter,
                                       and_also=self._assert_correct_main_category)
 
     def _assert_correct_main_category(self, strategy: CellConversion):
         self.assertEqual('product_type', strategy.main_category)
 
-    def _assert_correct_strategy(self, conversion_type, strategy_class, and_also=None):
+    def _assert_correct_strategy(self, conversion_type, strategy_class,
+                                 expected_converter_type=None, and_also=None):
         # given:
         converter = MagicMock('converter')
         column_spec = _mock_column_spec(field_name='product.product_id',
@@ -60,7 +66,12 @@ class ModuleTest(TestCase):
         # then:
         self.assertIsInstance(strategy, strategy_class)
         self.assertEqual('product.product_id', strategy.field)
-        self.assertEqual(converter, strategy.converter)
+
+        # and:
+        if expected_converter_type is None:
+            self.assertEqual(converter, strategy.converter)
+        else:
+            self.assertIsInstance(strategy.converter, expected_converter_type)
 
         # and:
         if and_also is not None:
@@ -288,3 +299,63 @@ class LinkedIdentityCellConversionTest(TestCase):
 
         # then:
         self.assertTrue(exception_thrown, f'[{UnknownMainCategory.__name__}] not raised.')
+
+
+class ExternalReferenceCellConversionTest(TestCase):
+
+    def test_apply(self):
+        # given:
+        cell_conversion = ExternalReferenceCellConversion('user.uuid', 'account')
+
+        # when:
+        data_node = DataNode()
+        cell_conversion.apply(data_node, '621bfa0')
+
+        # then:
+        external_links = data_node[conversion_strategy.EXTERNAL_LINKS_FIELD]
+        self.assertIsNotNone(external_links)
+
+        # and:
+        account_list = external_links.get('account')
+        self.assertIsNotNone(account_list, '[account] list in external links expected.')
+        self.assertEqual(1, len(account_list))
+        self.assertTrue('621bfa0' in account_list, 'Expected content not in list.')
+
+    def test_apply_multiple_values(self):
+        # given:
+        cell_conversion = ExternalReferenceCellConversion('company.uuid', 'organisation')
+
+        # when:
+        data_node = DataNode()
+        cell_conversion.apply(data_node, '7e56de9||2fe9eb0')
+
+        # then:
+        expected_ids = ['7e56de9', '2fe9eb0']
+        id_field = f'{conversion_strategy.EXTERNAL_LINKS_FIELD}.organisation'
+        self.assertCountEqual(expected_ids, data_node[id_field])
+
+    def test_apply_with_previous_entries(self):
+        # given:
+        data_node = DataNode(defaults={
+            conversion_strategy.EXTERNAL_LINKS_FIELD: {
+                'store_item': ['109bdd9', 'c3c35e6']
+            }
+        })
+
+        # and:
+        cell_conversion = ExternalReferenceCellConversion('product.uuid', 'store_item')
+
+        # when:
+        cell_conversion.apply(data_node, '73de901')
+
+        # then:
+        external_links = data_node[conversion_strategy.EXTERNAL_LINKS_FIELD]
+        self.assertIsNotNone(external_links)
+
+        # then:
+        store_item_list = external_links.get('store_item')
+        self.assertIsNotNone(store_item_list, '[store_item] list in external links expected.')
+
+        # and:
+        expected_ids = ['109bdd9', '73de901', 'c3c35e6']
+        self.assertCountEqual(expected_ids, store_item_list)
