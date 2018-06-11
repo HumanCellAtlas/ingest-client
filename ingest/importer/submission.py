@@ -13,8 +13,17 @@ class IngestSubmitter(object):
         submission = Submission(self.ingest_api, submission_url)
         submission.define_manifest(entity_map)
 
-        entities = self.add_entities(entity_map, submission)
+        entities = entity_map.get_entities()
 
+        self._add_entities(entities, submission)
+
+        self._link_submission_to_project(entity_map, submission, submission_url)
+
+        self._link_entities(entities, entity_map, submission)
+
+        return submission
+
+    def _link_submission_to_project(self, entity_map, submission, submission_url):
         project = entity_map.get_project()
         submission_envelope = self.ingest_api.getSubmissionEnvelope(submission_url)
         submission_entity = Entity('submission_envelope',
@@ -25,6 +34,7 @@ class IngestSubmitter(object):
                                    )
         submission.link_entity(project, submission_entity, 'submissionEnvelopes')
 
+    def _link_entities(self, entities, entity_map, submission):
         for entity in entities:
             for link in entity.direct_links:
                 to_entity = entity_map.get_entity(link['entity'], link['id'])
@@ -36,14 +46,10 @@ class IngestSubmitter(object):
                     logging.error(error_message)
                     logging.error(f'{str(link_error)}')
 
-        return submission
-
-    def add_entities(self, entity_map, submission):
-        entities = entity_map.get_entities()
+    def _add_entities(self, entities, submission):
         for entity in entities:
             if not entity.is_reference:
                 submission.add_entity(entity)
-        return entities
 
 
 class EntityLinker(object):
@@ -292,14 +298,40 @@ class EntityMap(object):
     @staticmethod
     def load(entity_json):
         dictionary = EntityMap()
+
         for entity_type, entities_dict in entity_json.items():
             for entity_id, entity_body in entities_dict.items():
+
+                external_links = entity_body.get('external_links_by_entity')
+
+                if not external_links:
+                    external_links = {}
+
+                for external_link_type, external_link_uuids in external_links.items():
+                    for entity_uuid in external_link_uuids:
+                        external_link_entity = Entity(entity_type=entity_type,
+                                                      entity_id=entity_uuid,
+                                                      content=None,
+                                                      is_reference=True)
+
+                        dictionary.add_entity(external_link_entity)
+
+                        if not entity_body.get('links_by_entity'):
+                            entity_body['links_by_entity'] = {}
+
+                        if not entity_body['links_by_entity'].get(entity_type):
+                            entity_body['links_by_entity'][entity_type] = []
+
+                        entity_body['links_by_entity'][entity_type].append(entity_uuid)
+
                 entity = Entity(entity_type=entity_type,
                                 entity_id=entity_id,
                                 content=entity_body.get('content'),
                                 links_by_entity=entity_body.get('links_by_entity', {}),
                                 is_reference=entity_body.get('is_reference', False))
+
                 dictionary.add_entity(entity)
+
         return dictionary
 
     def get_entity_types(self):
