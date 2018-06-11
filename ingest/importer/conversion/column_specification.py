@@ -1,17 +1,16 @@
-import re
 from enum import Enum
 
 from ingest.importer.conversion import utils, data_converter
 from ingest.importer.conversion.data_converter import DataType, CONVERTER_MAP, ListConverter
 
-import unittest
 
 class ConversionType(Enum):
     UNDEFINED = 0,
     MEMBER_FIELD = 1,
     FIELD_OF_LIST_ELEMENT = 2,
     IDENTITY = 3,
-    LINKED_IDENTITY = 4
+    LINKED_IDENTITY = 4,
+    EXTERNAL_IDENTITY = 5
 
 
 class ColumnSpecification:
