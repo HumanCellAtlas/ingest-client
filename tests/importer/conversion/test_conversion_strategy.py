@@ -45,7 +45,8 @@ class ModuleTest(TestCase):
 
     def test_determine_strategy_for_external_reference_field(self):
         self._assert_correct_strategy(ConversionType.EXTERNAL_REFERENCE,
-                                      ExternalReferenceCellConversion)
+                                      ExternalReferenceCellConversion,
+                                      and_also=self._assert_correct_main_category)
 
     def _assert_correct_main_category(self, strategy: CellConversion):
         self.assertEqual('product_type', strategy.main_category)
