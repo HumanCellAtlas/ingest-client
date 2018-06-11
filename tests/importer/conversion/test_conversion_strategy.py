@@ -46,14 +46,14 @@ class ModuleTest(TestCase):
     def test_determine_strategy_for_external_reference_field(self):
         self._assert_correct_strategy(ConversionType.EXTERNAL_REFERENCE,
                                       ExternalReferenceCellConversion,
+                                      expected_converter_type=ListConverter,
                                       and_also=self._assert_correct_main_category)
 
     def _assert_correct_main_category(self, strategy: CellConversion):
         self.assertEqual('product_type', strategy.main_category)
 
     def _assert_correct_strategy(self, conversion_type, strategy_class,
-                                 expected_converter_type=None,
-                                 and_also=None):
+                                 expected_converter_type=None, and_also=None):
         # given:
         converter = MagicMock('converter')
         column_spec = _mock_column_spec(field_name='product.product_id',
@@ -299,3 +299,18 @@ class LinkedIdentityCellConversionTest(TestCase):
 
         # then:
         self.assertTrue(exception_thrown, f'[{UnknownMainCategory.__name__}] not raised.')
+
+
+class ExternalReferenceCellConversionTest(TestCase):
+
+    def test_apply(self):
+        # given:
+        cell_conversion = ExternalReferenceCellConversion('user.uuid', 'account')
+
+        # when:
+        data_node = DataNode()
+        cell_conversion.apply(data_node, '621bfa0')
+
+        # then:
+        external_links = data_node['_external_links']
+        self.assertIsNotNone(external_links)

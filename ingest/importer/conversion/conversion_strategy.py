@@ -105,12 +105,12 @@ class LinkedIdentityCellConversion(CellConversion):
 
 class ExternalReferenceCellConversion(CellConversion):
 
-    def __init__(self, field, main_category, converter):
-        super(ExternalReferenceCellConversion, self).__init__(field, converter)
+    def __init__(self, field, main_category):
+        super(ExternalReferenceCellConversion, self).__init__(field, _LIST_CONVERTER)
         self.main_category = main_category
 
     def apply(self, data_node: DataNode, cell_data):
-        pass
+        data_node['_external_links'] = {}
 
 
 class DoNothing(CellConversion):
@@ -140,6 +140,5 @@ def determine_strategy(column_spec: ColumnSpecification):
         elif ConversionType.LINKED_IDENTITY == conversion_type:
             strategy = LinkedIdentityCellConversion(field_name, column_spec.main_category)
         elif ConversionType.EXTERNAL_REFERENCE == conversion_type:
-            strategy = ExternalReferenceCellConversion(field_name, column_spec.main_category,
-                                                       converter)
+            strategy = ExternalReferenceCellConversion(field_name, column_spec.main_category)
     return strategy
