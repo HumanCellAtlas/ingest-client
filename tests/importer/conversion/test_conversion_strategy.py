@@ -312,7 +312,7 @@ class ExternalReferenceCellConversionTest(TestCase):
         cell_conversion.apply(data_node, '621bfa0')
 
         # then:
-        external_links = data_node['_external_links']
+        external_links = data_node[conversion_strategy.EXTERNAL_LINKS_FIELD]
         self.assertIsNotNone(external_links)
 
         # and:

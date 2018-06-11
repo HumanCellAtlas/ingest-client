@@ -11,6 +11,7 @@ from ingest.importer.data_node import DataNode
 OBJECT_ID_FIELD = '_object_id'
 CONTENT_FIELD = '_content'
 LINKS_FIELD = '_links'
+EXTERNAL_LINKS_FIELD = '_external_links'
 
 _LIST_CONVERTER = ListConverter()
 
@@ -110,7 +111,7 @@ class ExternalReferenceCellConversion(CellConversion):
         self.main_category = main_category
 
     def apply(self, data_node: DataNode, cell_data):
-        data_node['_external_links.account'] = [cell_data]
+        data_node[f'{EXTERNAL_LINKS_FIELD}.account'] = [cell_data]
 
 
 class DoNothing(CellConversion):
