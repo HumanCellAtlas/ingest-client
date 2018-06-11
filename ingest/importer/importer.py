@@ -6,30 +6,36 @@ from ingest.importer.spreadsheet.ingest_workbook import IngestWorkbook
 from ingest.importer.submission import IngestSubmitter, EntityMap, EntityLinker
 
 
-class IngestImporter:
+class XlsImporter:
 
     # TODO why does the importer need to refer to an IngestApi instance?
     # Seems like it should be the IngestSubmitter that takes care of this detail
     def __init__(self, ingest_api):
         self.ingest_api = ingest_api
 
-    def import_spreadsheet(self, file_path, submission_url, dry_run=False):
+    def dry_run_import_file(self, file_path, project_uuid=None):
+        spreadsheet_json, template_mgr = self._generate_spreadsheet_json(file_path, project_uuid)
+        entity_map = self._process_links_from_spreadsheet(template_mgr, spreadsheet_json)
+
+        return entity_map
+
+    def _generate_spreadsheet_json(self, file_path, project_uuid=None):
         ingest_workbook = self._create_ingest_workbook(file_path)
         template_mgr = template_manager.build(ingest_workbook.get_schemas())
-
         workbook_importer = WorkbookImporter(template_mgr)
-        spreadsheet_json = workbook_importer.do_import(ingest_workbook)
-        entities_dictionaries = self._process_entity_dictionary(template_mgr, spreadsheet_json)
+        spreadsheet_json = workbook_importer.do_import(ingest_workbook, project_uuid)
+        return spreadsheet_json, template_mgr
 
-        submission = None
-        # TODO what do we need the dry run for? This is a separate behaviour.
-        if not dry_run:
-            submitter = IngestSubmitter(self.ingest_api)
-            # TODO the submission_url should be passed to the IngestSubmitter instead
-            submission = submitter.submit(entities_dictionaries, submission_url)
-            print(f'Submission in {submission_url} is done!') # TODO log or remove this
+    def import_file(self, file_path, submission_url, project_uuid=None):
+        spreadsheet_json, template_mgr = self._generate_spreadsheet_json(file_path, project_uuid)
+        entity_map = self._process_links_from_spreadsheet(template_mgr, spreadsheet_json)
 
-        # TODO why return the submission instance when it's not used by the client code (Broker)?
+        submitter = IngestSubmitter(self.ingest_api)
+
+        # TODO the submission_url should be passed to the IngestSubmitter instead
+        submission = submitter.submit(entity_map, submission_url)
+        print(f'Submission in {submission_url} is done!')  # TODO log or remove this
+
         return submission
 
     @staticmethod
@@ -38,11 +44,11 @@ class IngestImporter:
         return IngestWorkbook(workbook)
 
     @staticmethod
-    def _process_entity_dictionary(template_mgr, spreadsheet_json):
-        entities_dictionaries = EntityMap.load(spreadsheet_json)
+    def _process_links_from_spreadsheet(template_mgr, spreadsheet_json):
+        entity_map = EntityMap.load(spreadsheet_json)
         entity_linker = EntityLinker(template_mgr)
-        entities_dictionaries = entity_linker.process_links(entities_dictionaries)
-        return entities_dictionaries
+        entity_map = entity_linker.process_links_from_spreadsheet(entity_map)
+        return entity_map
 
 
 class WorkbookImporter:
@@ -51,10 +57,10 @@ class WorkbookImporter:
         self.worksheet_importer = WorksheetImporter()
         self.template_mgr = template_mgr
 
-    def do_import(self, workbook: IngestWorkbook):
-        pre_ingest_json_map = {}
+    def do_import(self, workbook: IngestWorkbook, project_uuid=None):
+        spreadsheet_json = {}
 
-        self.import_project(pre_ingest_json_map, workbook)
+        self.import_or_reference_project(project_uuid, spreadsheet_json, workbook)
 
         for worksheet in workbook.importable_worksheets():
             concrete_entity = self.template_mgr.get_concrete_entity_of_tab(worksheet.title)
@@ -70,13 +76,22 @@ class WorkbookImporter:
                 continue
 
             entities_dict = self.worksheet_importer.do_import(worksheet, self.template_mgr)
-            if pre_ingest_json_map.get(domain_entity) is None:
-                pre_ingest_json_map[domain_entity] = {}
+            if spreadsheet_json.get(domain_entity) is None:
+                spreadsheet_json[domain_entity] = {}
 
-            pre_ingest_json_map[domain_entity].update(entities_dict)
-        return pre_ingest_json_map
+            spreadsheet_json[domain_entity].update(entities_dict)
 
-    def import_project(self, pre_ingest_json_map, workbook):
+        return spreadsheet_json
+
+    def import_or_reference_project(self, project_uuid, spreadsheet_json, workbook):
+        project_dict = None
+        if not project_uuid:
+            project_dict = self.import_project(workbook)
+        else:
+            project_dict = self.create_project_dict(project_uuid)
+        spreadsheet_json['project'] = project_dict
+
+    def import_project(self, workbook):
         project_worksheet = workbook.get_project_worksheet()
         project_importer = ProjectWorksheetImporter()
         project_dict = project_importer.do_import(project_worksheet, self.template_mgr)
@@ -85,7 +100,14 @@ class WorkbookImporter:
         contacts = contact_importer.do_import(contact_worksheet, self.template_mgr)
         project_record = list(project_dict.values())[0]
         project_record['content']['contributors'] = list(map(lambda record: record['content']['contributors'][0], contacts))
-        pre_ingest_json_map['project'] = project_dict
+        return project_dict
+
+    def create_project_dict(self, project_id):
+        project_dict = {}
+        project_dict[project_id] = {}
+        project_dict[project_id]['is_reference'] = True
+
+        return  project_dict
 
 
 class WorksheetImporter:
