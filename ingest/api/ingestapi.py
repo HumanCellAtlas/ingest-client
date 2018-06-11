@@ -125,7 +125,10 @@ class IngestApi:
             raise ValueError("Project " + id + " could not be retrieved")
 
     def getProjectByUuid(self, uuid):
-        url =  self.url + '/projects/search/findByUuid?uuid=' + uuid
+        return self.getEntityByUuid('projects')
+
+    def getEntityByUuid(self, entity_type, uuid):
+        url =  self.url + f'/{entity_type}/search/findByUuid?uuid=' + uuid
         r = requests.get(url, headers=self.headers)
         r.raise_for_status()
         return r.json()
@@ -156,19 +159,37 @@ class IngestApi:
         return bundleManifests
 
     def createSubmission(self, token):
-        auth_headers = {'Content-type': 'application/json',
-                        'Authorization': token
-                        }
+        auth_headers = {
+            'Content-type': 'application/json',
+            'Authorization': token
+        }
+
         try:
             r = requests.post(self.ingest_api["submissionEnvelopes"]["href"].rsplit("{")[0], data="{}",
                               headers=auth_headers)
             r.raise_for_status()
-            submissionUrl = json.loads(r.text)["_links"]["self"]["href"].rsplit("{")[0]
-            self.submission_links[submissionUrl] = json.loads(r.text)["_links"]
-            return submissionUrl
+            submission = r.json()
+            submission_url = submission["_links"]["self"]["href"].rsplit("{")[0]
+            self.submission_links[submission_url] = submission["_links"]
+            return submission_url
         except requests.exceptions.RequestException as err:
             self.logger.error("Request failed: " + str(err))
             raise
+
+    def get_submission_links(self, submission_url):
+        if not self.submission_links.get(submission_url):
+            r = requests.get(submission_url, headers=self.headers)
+            r.raise_for_status()
+            self.submission_links[submission_url] = r.json()["_links"]
+
+        return self.submission_links.get(submission_url)
+
+    def get_link_in_submisssion(self, submission_url, link_name):
+        links = self.get_submission_links(submission_url)
+        link_obj = links.get(link_name) # TODO what if link doesn't exist
+        link = link_obj['href'].rsplit("{")[0]
+
+        return link
 
     def finishSubmission(self, submissionUrl):
         r = requests.put(submissionUrl, headers=self.headers)
@@ -261,23 +282,17 @@ class IngestApi:
     def createSubmissionManifest(self, submissionUrl, jsonObject):
         return self.createEntity(submissionUrl, jsonObject, 'submissionManifest')
 
-    # def createDonor(self, submissionUrl, jsonObject):
-    #     return self.createBiomaterial(submissionUrl, jsonObject)
-
     def createProtocol(self, submissionUrl, jsonObject):
         return self.createEntity(submissionUrl, jsonObject, "protocols")
 
-    # def createAnalysis(self, submissionUrl, jsonObject):
-    #     return self.createEntity(submissionUrl, jsonObject, "analyses")
-
     def createFile(self, submissionUrl, fileName, jsonObject):
-        submissionUrl = self.submission_links[submissionUrl]["files"]['href'].rsplit("{")[0]
-        self.logger.debug("posting " + submissionUrl)
+        file_submission_url = self.get_link_in_submisssion(submissionUrl, 'files')
+        self.logger.debug("posting " + file_submission_url)
         fileToCreateObject = {
             "fileName": fileName,
             "content": json.loads(jsonObject)
         }
-        r = requests.post(submissionUrl, data=json.dumps(fileToCreateObject),
+        r = requests.post(file_submission_url, data=json.dumps(fileToCreateObject),
                           headers=self.headers)
         if r.status_code == requests.codes.created or r.status_code == requests.codes.accepted:
             return json.loads(r.text)
@@ -288,11 +303,10 @@ class IngestApi:
         auth_headers = {'Content-type': 'application/json',
                         'Authorization': token
                         }
-        submissionUrl = self.submission_links[submissionUrl][entityType]['href'].rsplit("{")[0]
+        submissionUrl = self.get_link_in_submisssion(submissionUrl, entityType)
 
         self.logger.debug("posting " + submissionUrl)
-        r = requests.post(submissionUrl, data=jsonObject,
-                          headers=auth_headers)
+        r = requests.post(submissionUrl, data=jsonObject, headers=auth_headers)
         if r.status_code == requests.codes.created or r.status_code == requests.codes.accepted:
             return json.loads(r.text)
 

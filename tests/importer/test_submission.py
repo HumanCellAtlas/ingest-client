@@ -171,12 +171,15 @@ class IngestSubmitterTest(TestCase):
     def test_submit(self, submission_constructor):
         # given:
         ingest_api = MagicMock('ingest_api')
+        ingest_api.getSubmissionEnvelope = MagicMock()
         submission = self._mock_submission(submission_constructor)
 
         # and:
         product = Entity('product', 'product_1', {})
+        project = Entity('project', 'id', {})
         user = Entity('user', 'user_1', {})
-        entity_map = EntityMap(product, user)
+        entity_map = EntityMap(product, user, project)
+
 
         # when:
         submitter = IngestSubmitter(ingest_api)
@@ -191,6 +194,7 @@ class IngestSubmitterTest(TestCase):
     def test_submit_linked_entity(self, submission_constructor):
         # given:
         ingest_api = MagicMock('ingest_api')
+        ingest_api.getSubmissionEnvelope = MagicMock()
         submission = self._mock_submission(submission_constructor)
 
         # and:
@@ -204,7 +208,9 @@ class IngestSubmitterTest(TestCase):
             'relationship': 'wish_list'
         }
         linked_product = Entity('product', 'product_1', {}, direct_links=[link_to_user])
+        project = Entity('project', 'id', {})
         entity_map.add_entity(linked_product)
+        entity_map.add_entity(project)
 
         # when:
         submitter = IngestSubmitter(ingest_api)
@@ -433,7 +439,7 @@ class EntityLinkerTest(TestCase):
 
         entity_linker = EntityLinker(self.mocked_template_manager)
         entities_dictionaries = EntityMap.load(spreadsheet_json)
-        output = entity_linker.process_links(entities_dictionaries)
+        output = entity_linker.process_links_from_spreadsheet(entities_dictionaries)
 
         self._assert_equal_direct_links(expected_json, output)
 
@@ -510,7 +516,7 @@ class EntityLinkerTest(TestCase):
                         },
                         {
                             'entity': 'process',
-                            'id': 'empty_process_id_1',
+                            'id': 'process_id_1',
                             'relationship': 'inputToProcesses'
                         }
                     ]
@@ -530,14 +536,14 @@ class EntityLinkerTest(TestCase):
                         },
                         {
                             'entity': 'process',
-                            'id': 'empty_process_id_1',
+                            'id': 'process_id_1',
                             'relationship': 'derivedByProcesses'
                         }
                     ]
                 }
             },
             'process': {
-                'empty_process_id_1': {
+                'process_id_1': {
                     'content': {
                         'key': 'process_1'
                     },
@@ -590,7 +596,7 @@ class EntityLinkerTest(TestCase):
 
         entity_linker = EntityLinker(self.mocked_template_manager)
         entities_dictionaries = EntityMap.load(spreadsheet_json)
-        output = entity_linker.process_links(entities_dictionaries)
+        output = entity_linker.process_links_from_spreadsheet(entities_dictionaries)
 
         self._assert_equal_direct_links(expected_json, output)
 
@@ -655,7 +661,7 @@ class EntityLinkerTest(TestCase):
                         },
                         {
                             'entity': 'process',
-                            'id': 'empty_process_id_1',
+                            'id': 'process_id_1',
                             'relationship': 'inputToProcesses'
                         }
                     ]
@@ -675,14 +681,14 @@ class EntityLinkerTest(TestCase):
                         },
                         {
                             'entity': 'process',
-                            'id': 'empty_process_id_1',
+                            'id': 'process_id_1',
                             'relationship': 'derivedByProcesses'
                         }
                     ]
                 }
             },
             'process': {
-                'empty_process_id_1': {
+                'process_id_1': {
                     'content': {
                         'key': 'process_1'
                     },
@@ -735,7 +741,7 @@ class EntityLinkerTest(TestCase):
 
         entity_linker = EntityLinker(self.mocked_template_manager)
         entities_dictionaries = EntityMap.load(spreadsheet_json)
-        output = entity_linker.process_links(entities_dictionaries)
+        output = entity_linker.process_links_from_spreadsheet(entities_dictionaries)
 
         self._assert_equal_direct_links(expected_json, output)
 
@@ -882,7 +888,7 @@ class EntityLinkerTest(TestCase):
 
         entity_linker = EntityLinker(self.mocked_template_manager)
         entities_dictionaries = EntityMap.load(spreadsheet_json)
-        output = entity_linker.process_links(entities_dictionaries)
+        output = entity_linker.process_links_from_spreadsheet(entities_dictionaries)
 
         self._assert_equal_direct_links(expected_json, output)
 
@@ -1029,7 +1035,7 @@ class EntityLinkerTest(TestCase):
 
         entity_linker = EntityLinker(self.mocked_template_manager)
         entities_dictionaries = EntityMap.load(spreadsheet_json)
-        output = entity_linker.process_links(entities_dictionaries)
+        output = entity_linker.process_links_from_spreadsheet(entities_dictionaries)
 
         self._assert_equal_direct_links(expected_json, output)
 
@@ -1060,7 +1066,7 @@ class EntityLinkerTest(TestCase):
         entity_linker = EntityLinker(self.mocked_template_manager)
 
         with self.assertRaises(LinkedEntityNotFound) as context:
-            entity_linker.process_links(entities_dictionaries)
+            entity_linker.process_links_from_spreadsheet(entities_dictionaries)
 
         self.assertEqual('biomaterial', context.exception.entity)
         self.assertEqual('biomaterial_id_1', context.exception.id)
@@ -1098,7 +1104,7 @@ class EntityLinkerTest(TestCase):
         entity_linker = EntityLinker(self.mocked_template_manager)
 
         with self.assertRaises(InvalidLinkInSpreadsheet) as context:
-            entity_linker.process_links(entities_dictionaries)
+            entity_linker.process_links_from_spreadsheet(entities_dictionaries)
 
         self.assertEqual('biomaterial', context.exception.from_entity.type)
         self.assertEqual('file', context.exception.link_entity_type)
@@ -1144,7 +1150,7 @@ class EntityLinkerTest(TestCase):
         entity_linker = EntityLinker(self.mocked_template_manager)
 
         with self.assertRaises(MultipleProcessesFound) as context:
-            entity_linker.process_links(entities_dictionaries)
+            entity_linker.process_links_from_spreadsheet(entities_dictionaries)
 
         self.assertEqual('biomaterial', context.exception.from_entity.type)
         self.assertEqual(['process_id_1', 'process_id_2'], context.exception.process_ids)

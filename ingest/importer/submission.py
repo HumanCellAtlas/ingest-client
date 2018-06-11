@@ -13,9 +13,17 @@ class IngestSubmitter(object):
         submission = Submission(self.ingest_api, submission_url)
         submission.define_manifest(entity_map)
 
-        entities = entity_map.get_entities()
-        for entity in entities:
-            submission.add_entity(entity)
+        entities = self.add_entities(entity_map, submission)
+
+        project = entity_map.get_project()
+        submission_envelope = self.ingest_api.getSubmissionEnvelope(submission_url)
+        submission_entity = Entity('submission_envelope',
+                                   submission_url,
+                                   None,
+                                   is_reference=True,
+                                   ingest_json=submission_envelope
+                                   )
+        submission.link_entity(project, submission_entity, 'submissionEnvelopes')
 
         for entity in entities:
             for link in entity.direct_links:
@@ -30,6 +38,13 @@ class IngestSubmitter(object):
 
         return submission
 
+    def add_entities(self, entity_map, submission):
+        entities = entity_map.get_entities()
+        for entity in entities:
+            if not entity.is_reference:
+                submission.add_entity(entity)
+        return entities
+
 
 class EntityLinker(object):
 
@@ -37,17 +52,15 @@ class EntityLinker(object):
         self.template_manager = template_manager
         self.process_id_ctr = 0
 
-    def process_links(self, entities_dictionaries):
-        for from_entity_type in entities_dictionaries.get_entity_types():
-            entities_dict = entities_dictionaries.get_entities_of_type(from_entity_type)
-            for from_entity_id, from_entity in entities_dict.items():
-                self._validate_entity_links(entities_dictionaries, from_entity)
-                self.generate_direct_links(entities_dictionaries, from_entity)
+    def process_links_from_spreadsheet(self, entity_map):
+        for from_entity in entity_map.get_entities():
+            self._validate_entity_links(entity_map, from_entity)
+            self._generate_direct_links(entity_map, from_entity)
 
-        return entities_dictionaries
+        return entity_map
 
-    def generate_direct_links(self, entities_dictionaries, from_entity):
-        project = entities_dictionaries.get_project()
+    def _generate_direct_links(self, entity_map, from_entity):
+        project = entity_map.get_project()
 
         # link all entities to project
         if not from_entity.type == 'project':
@@ -60,20 +73,20 @@ class EntityLinker(object):
 
         links_by_entity = from_entity.links_by_entity
 
-        linked_biomaterial_ids = links_by_entity.get('biomaterial') if links_by_entity.get('biomaterial') else []
+        linked_biomaterial_ids = links_by_entity.get('biomaterial', [])
         linked_process_id = links_by_entity['process'][0] if links_by_entity.get('process') else None
-        linked_protocol_ids = links_by_entity.get('protocol') if links_by_entity.get('protocol') else []
-        linked_file_ids = links_by_entity.get('file') if links_by_entity.get('file') else []
+        linked_protocol_ids = links_by_entity.get('protocol', [])
+        linked_file_ids = links_by_entity.get('file', [])
 
         if linked_biomaterial_ids or linked_file_ids:
 
-            linking_process = self.link_process(entities_dictionaries, linked_process_id)
+            linking_process = self.link_process(entity_map, linked_process_id)
             linking_process.direct_links.append({
                 'entity': 'project',
                 'id': project.id,
                 'relationship': 'projects'
             })
-            entities_dictionaries.add_entity(linking_process)
+            entity_map.add_entity(linking_process)
 
             # link output of process
             from_entity.direct_links.append({
@@ -93,7 +106,7 @@ class EntityLinker(object):
             # biomaterial-biomaterial
             # file-biomaterial
             for linked_biomaterial_id in linked_biomaterial_ids:
-                linked_biomaterial_entity = entities_dictionaries.get_entity('biomaterial', linked_biomaterial_id)
+                linked_biomaterial_entity = entity_map.get_entity('biomaterial', linked_biomaterial_id)
                 linked_biomaterial_entity.direct_links.append({
                     'entity': linking_process.type,
                     'id': linking_process.id,
@@ -102,25 +115,25 @@ class EntityLinker(object):
 
             # file-file
             for linked_file_id in linked_file_ids:
-                linked_file_entity = entities_dictionaries.get_entity('file', linked_file_id)
+                linked_file_entity = entity_map.get_entity('file', linked_file_id)
                 linked_file_entity.direct_links.append({
                     'entity': linking_process.type,
                     'id': linking_process.id,
                     'relationship': 'inputToProcesses'
                 })
 
-    def link_process(self, entities_dictionaries, linked_process_id):
+    def link_process(self, entity_map, linked_process_id):
         linking_process = None
 
         if linked_process_id:
-            linking_process = self.create_or_get_process(entities_dictionaries, linked_process_id)
+            linking_process = self.create_or_get_process(entity_map, linked_process_id)
         else:
             empty_process_id = self._generate_empty_process_id()
             linking_process = self._create_empty_process(empty_process_id)
 
         return linking_process
 
-    def _validate_entity_links(self, entities_dictionaries, entity):
+    def _validate_entity_links(self, entity_map, entity):
         links_by_entity = entity.links_by_entity
 
         for link_entity_type, link_entity_ids in links_by_entity.items():
@@ -128,17 +141,16 @@ class EntityLinker(object):
                 if not link_entity_type == 'process':  # it is expected that no processes are defined in any tab, these will be created later
                     if not self._is_valid_spreadsheet_link(entity.type, link_entity_type):
                         raise InvalidLinkInSpreadsheet(entity, link_entity_type, link_entity_id)
-                    if not entities_dictionaries.get_entity(link_entity_type, link_entity_id):
+                    if not entity_map.get_entity(link_entity_type, link_entity_id):
                         raise LinkedEntityNotFound(entity, link_entity_type, link_entity_id)
-                    if not entities_dictionaries.get_entity(link_entity_type, link_entity_id):
+                    if not entity_map.get_entity(link_entity_type, link_entity_id):
                         raise LinkedEntityNotFound(entity, link_entity_type, link_entity_id)
-
 
                 if link_entity_type == 'process' and not len(link_entity_ids) == 1:
                     raise MultipleProcessesFound(entity, link_entity_ids)
 
-    def create_or_get_process(self, entities_dictionaries, process_id):
-        process = entities_dictionaries.get_entity('process', process_id)
+    def create_or_get_process(self, entity_map, process_id):
+        process = entity_map.get_entity('process', process_id)
 
         if not process:
             process = self._create_empty_process(process_id)
@@ -161,7 +173,7 @@ class EntityLinker(object):
         return link_key in VALID_ENTITY_LINKS_MAP
 
     def _create_empty_process(self, empty_process_id):
-        process_core = {"process_id": "process_" + str(empty_process_id)}
+        process_core = { 'process_id': empty_process_id }
         schema_type = 'process'
         described_by = self.template_manager.get_schema_url(schema_type)
 
@@ -177,18 +189,19 @@ class EntityLinker(object):
     def _generate_empty_process_id(self):
         self.process_id_ctr += 1
 
-        return 'empty_process_id_' + str(self.process_id_ctr)
+        return 'process_id_' + str(self.process_id_ctr)
 
 
 class Entity(object):
 
-    def __init__(self, entity_type, entity_id, content, links_by_entity=None, direct_links=None):
+    def __init__(self, entity_type, entity_id, content, ingest_json=None, links_by_entity=None, direct_links=None, is_reference=False):
         self.type = entity_type
         self.id = entity_id
         self.content = content
         self._prepare_links_by_entity(links_by_entity)
         self._prepare_direct_links(direct_links)
-        self.ingest_json = None
+        self.ingest_json = ingest_json
+        self.is_reference = is_reference
 
     def _prepare_links_by_entity(self, links_by_entity):
         self.links_by_entity = {}
@@ -241,6 +254,13 @@ class Submission(object):
         return self.metadata_dict[key]
 
     def link_entity(self, from_entity, to_entity, relationship):
+
+        if from_entity.is_reference and not from_entity.ingest_json:
+            from_entity.ingest_json = self.ingest_api.getEntityByUuid(self.ENTITY_LINK[from_entity.type], from_entity.id)
+
+        if to_entity.is_reference and not to_entity.ingest_json:
+            to_entity.ingest_json = self.ingest_api.getEntityByUuid(self.ENTITY_LINK[to_entity.type], to_entity.id)
+
         from_entity_ingest = from_entity.ingest_json
         to_entity_ingest = to_entity.ingest_json
         self.ingest_api.linkEntity(from_entity_ingest, to_entity_ingest , relationship)
@@ -274,8 +294,11 @@ class EntityMap(object):
         dictionary = EntityMap()
         for entity_type, entities_dict in entity_json.items():
             for entity_id, entity_body in entities_dict.items():
-                entity = Entity(entity_type=entity_type, entity_id=entity_id, content=entity_body['content'],
-                                links_by_entity=entity_body.get('links_by_entity', {}))
+                entity = Entity(entity_type=entity_type,
+                                entity_id=entity_id,
+                                content=entity_body.get('content'),
+                                links_by_entity=entity_body.get('links_by_entity', {}),
+                                is_reference=entity_body.get('is_reference', False))
                 dictionary.add_entity(entity)
         return dictionary
 
@@ -283,9 +306,23 @@ class EntityMap(object):
         return list(self.entities_dict_by_type.keys())
 
     def get_entities_of_type(self, type):
+        entities = []
+
         entities_dict = self.entities_dict_by_type.get(type, {})
 
-        return entities_dict
+        for entity_id, entity in entities_dict.items():
+            entities.append(entity)
+
+        return entities
+
+    def get_new_entities_of_type(self, type):
+        entities = []
+        entities_dict = self.entities_dict_by_type.get(type, {})
+        for entity_id, entity in entities_dict.items():
+            if not entity.is_reference:
+                entities.append(entity)
+
+        return entities
 
     def get_entity(self, type, id):
         if self.entities_dict_by_type.get(type) and self.entities_dict_by_type[type].get(id):
@@ -304,6 +341,14 @@ class EntityMap(object):
             all_entities.extend(entities_dict.values())
         return all_entities
 
+    def get_new_entities(self):
+        all_entities = []
+        for entity_type, entities_dict in self.entities_dict_by_type.items():
+            for entity_id, entity in entities_dict.items():
+                if not entity.is_reference:
+                    all_entities.append(entity)
+        return all_entities
+
     def get_project(self):
         project_id = list(self.entities_dict_by_type.get('project').keys())[0]
         return self.get_entity('project', project_id)
@@ -312,7 +357,8 @@ class EntityMap(object):
         return len(self.get_entities())
 
     def count_entities_of_type(self, type):
-        return len(list(self.get_entities_of_type(type).keys()))
+        return len(self.get_new_entities_of_type(type))
+
 
 class InvalidEntityIngestLink(Exception):
 
