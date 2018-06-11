@@ -44,6 +44,21 @@ class ColumnSpecificationTest(TestCase):
         self.assertTrue(int_array_column_spec.is_multivalue())
         self.assertFalse(int_array_column_spec.is_identity())
 
+    def test_build_raw_external_reference(self):
+        # given:
+        raw_spec = {
+            'value_type': 'string',
+            'identifiable': True,
+            'external_reference': True
+        }
+
+        # when:
+        column_spec = ColumnSpecification.build_raw('profile.uuid', 'profile', 'personal_info',
+                                                    raw_spec)
+
+        # then:
+        self.assertEqual(DataType.STRING, column_spec.data_type)
+
     def test_build_raw_spec_with_parent_spec(self):
         # given:
         raw_spec = {
