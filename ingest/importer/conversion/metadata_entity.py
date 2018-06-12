@@ -1,3 +1,5 @@
+import copy
+
 from ingest.importer.data_node import DataNode
 
 
@@ -9,17 +11,29 @@ class MetadataEntity:
         self.links = {}
         self.external_links = {}
 
+    @property
+    def content(self):
+        return copy.deepcopy(self.content)
+
     def get_content(self, content_property):
         return self.content[content_property]
 
     def define_content(self, content_property, value):
         self.content[content_property] = value
 
+    @property
+    def links(self):
+        return copy.deepcopy(self.links())
+
     def get_links(self, link_entity_type):
         return self.links.get(link_entity_type)
 
     def add_links(self, link_entity_type, new_links):
         self._do_add_links(self.links, link_entity_type, new_links)
+
+    @property
+    def external_links(self):
+        return copy.deepcopy(self.external_links())
 
     def get_external_links(self, link_entity_type):
         return self.external_links.get(link_entity_type)
