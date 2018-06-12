@@ -17,3 +17,18 @@ class MetadataEntityTest(TestCase):
         profile_links = metadata.get_links('profile')
         self.assertIsNotNone(profile_links)
         self.assertCountEqual(new_links, profile_links)
+
+    def test_add_links_multiple_times(self):
+        # given:
+        metadata = MetadataEntity()
+
+        # when:
+        batch_1 = ['78de112', '963fefed']
+        batch_2 = ['2daab01']
+        metadata.add_links('item', batch_1)
+        metadata.add_links('item', batch_2)
+
+        # then:
+        item_links = metadata.get_links('item')
+        self.assertIsNotNone(item_links)
+        self.assertCountEqual(batch_1 + batch_2, item_links)
