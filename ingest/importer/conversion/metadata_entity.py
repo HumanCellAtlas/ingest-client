@@ -3,7 +3,8 @@ from ingest.importer.data_node import DataNode
 
 class MetadataEntity:
 
-    def __init__(self):
+    def __init__(self, object_id=None):
+        self.object_id = object_id
         self.content = DataNode()
         self.links = {}
         self.external_links = {}
