@@ -73,7 +73,10 @@ class MetadataEntityTest(TestCase):
 
         # when:
         metadata.define_content('user.name', 'Juan dela Cruz')
+        metadata.define_content('user.age', 47)
 
         # then:
         user = metadata.get_content('user')
         self.assertIsNotNone(user)
+        self.assertEqual('Juan dela Cruz', user.get('name'))
+        self.assertEqual(47, user.get('age'))

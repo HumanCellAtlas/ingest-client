@@ -12,7 +12,7 @@ class MetadataEntity:
         return self.content[content_property]
 
     def define_content(self, content_property, value):
-        self.content['user'] = []
+        self.content[content_property] = value
 
     def get_links(self, link_entity_type):
         return self.links.get(link_entity_type)
