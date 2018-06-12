@@ -9,6 +9,7 @@ from ingest.importer.conversion.conversion_strategy import DirectCellConversion,
     DoNothing, ExternalReferenceCellConversion
 from ingest.importer.conversion.data_converter import StringConverter, ListConverter
 from ingest.importer.conversion.exceptions import UnknownMainCategory
+from ingest.importer.conversion.metadata_entity import MetadataEntity
 from ingest.importer.data_node import DataNode
 
 
@@ -103,39 +104,27 @@ class DirectCellConversionTest(TestCase):
         cell_conversion = DirectCellConversion('profile.user.age', int_converter)
 
         # when:
-        data_node = DataNode()
-        cell_conversion.apply(data_node, '27')
+        metadata = MetadataEntity()
+        cell_conversion.apply(metadata, '27')
 
         # then:
-        content = data_node.as_dict().get(conversion_strategy.CONTENT_FIELD)
-        self.assertIsNotNone(content)
+        self.assertEqual(27, metadata.get_content('user.age'))
 
-        # and:
-        user = content.get('user')
-        self.assertIsNotNone(user)
-        self.assertEqual(27, user.get('age'))
-
-    def test_apply_none_data(self):
+    def test_apply_skips_none_data(self):
         # given:
         string_converter = StringConverter()
         cell_conversion = DirectCellConversion('product.id', string_converter)
 
         # when:
-        data_node = DataNode(defaults={
-            conversion_strategy.CONTENT_FIELD: {
-                'product': {
-                    'name': 'product name'
-                }
+        metadata = MetadataEntity(content={
+            'product': {
+                'name': 'product name'
             }
         })
-        cell_conversion.apply(data_node, None)
+        cell_conversion.apply(metadata, None)
 
         # then:
-        content = data_node.as_dict().get(conversion_strategy.CONTENT_FIELD)
-        self.assertIsNotNone(content)
-
-        # and:
-        product = content.get('product')
+        product = metadata.get_content('product')
         self.assertIsNotNone(product)
         self.assertTrue('id' not in product, '[id] not expected to be in product field')
 

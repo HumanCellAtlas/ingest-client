@@ -5,6 +5,7 @@ from ingest.importer.conversion import data_converter
 from ingest.importer.conversion.column_specification import ColumnSpecification, ConversionType
 from ingest.importer.conversion.data_converter import Converter, ListConverter
 from ingest.importer.conversion.exceptions import UnknownMainCategory
+from ingest.importer.conversion.metadata_entity import MetadataEntity
 from ingest.importer.conversion.utils import split_field_chain
 from ingest.importer.data_node import DataNode
 
@@ -35,10 +36,10 @@ class CellConversion(object):
 
 class DirectCellConversion(CellConversion):
 
-    def apply(self, data_node: DataNode, cell_data):
+    def apply(self, metadata: MetadataEntity, cell_data):
         if cell_data is not None:
-            structured_field = f'{CONTENT_FIELD}.{self.applied_field}'
-            data_node[structured_field] = self.converter.convert(cell_data)
+            content = self.converter.convert(cell_data)
+            metadata.define_content(self.applied_field, content)
 
 
 class ListElementCellConversion(CellConversion):
