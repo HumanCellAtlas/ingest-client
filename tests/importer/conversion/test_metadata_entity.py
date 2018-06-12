@@ -44,3 +44,4 @@ class MetadataEntityTest(TestCase):
         # then:
         file_links = metadata.get_external_links('file')
         self.assertIsNotNone(file_links)
+        self.assertCountEqual(new_links, file_links)

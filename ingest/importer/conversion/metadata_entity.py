@@ -19,4 +19,4 @@ class MetadataEntity:
         return self.external_links.get(link_entity_type)
 
     def add_external_links(self, link_entity_type, new_links):
-        self.external_links[link_entity_type] = []
+        self.external_links[link_entity_type] = new_links
