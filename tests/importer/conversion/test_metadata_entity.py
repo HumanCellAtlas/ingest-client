@@ -5,6 +5,20 @@ from ingest.importer.conversion.metadata_entity import MetadataEntity
 
 class MetadataEntityTest(TestCase):
 
+    def test_define_content(self):
+        # given:
+        metadata = MetadataEntity()
+
+        # when:
+        metadata.define_content('user.name', 'Juan dela Cruz')
+        metadata.define_content('user.age', 47)
+
+        # then:
+        user = metadata.get_content('user')
+        self.assertIsNotNone(user)
+        self.assertEqual('Juan dela Cruz', user.get('name'))
+        self.assertEqual(47, user.get('age'))
+
     def test_add_links(self):
         # given:
         metadata = MetadataEntity()
@@ -66,17 +80,3 @@ class MetadataEntityTest(TestCase):
         process_links = metadata.get_external_links('process')
         self.assertIsNotNone(process_links)
         self.assertCountEqual(batch_2 + batch_1 + batch_3, process_links)
-
-    def test_define_content(self):
-        # given:
-        metadata = MetadataEntity()
-
-        # when:
-        metadata.define_content('user.name', 'Juan dela Cruz')
-        metadata.define_content('user.age', 47)
-
-        # then:
-        user = metadata.get_content('user')
-        self.assertIsNotNone(user)
-        self.assertEqual('Juan dela Cruz', user.get('name'))
-        self.assertEqual(47, user.get('age'))
