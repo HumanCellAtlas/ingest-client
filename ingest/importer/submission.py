@@ -309,7 +309,7 @@ class EntityMap(object):
 
                 for external_link_type, external_link_uuids in external_links.items():
                     for entity_uuid in external_link_uuids:
-                        external_link_entity = Entity(entity_type=entity_type,
+                        external_link_entity = Entity(entity_type=external_link_type,
                                                       entity_id=entity_uuid,
                                                       content=None,
                                                       is_reference=True)
@@ -319,10 +319,10 @@ class EntityMap(object):
                         if not entity_body.get('links_by_entity'):
                             entity_body['links_by_entity'] = {}
 
-                        if not entity_body['links_by_entity'].get(entity_type):
-                            entity_body['links_by_entity'][entity_type] = []
+                        if not entity_body['links_by_entity'].get(external_link_type):
+                            entity_body['links_by_entity'][external_link_type] = []
 
-                        entity_body['links_by_entity'][entity_type].append(entity_uuid)
+                        entity_body['links_by_entity'][external_link_type].append(entity_uuid)
 
                 entity = Entity(entity_type=entity_type,
                                 entity_id=entity_id,
