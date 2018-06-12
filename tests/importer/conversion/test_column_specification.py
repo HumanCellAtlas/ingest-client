@@ -49,7 +49,7 @@ class ColumnSpecificationTest(TestCase):
     def test_build_raw_external_reference(self):
         # given:
         external_raw_spec = {
-            'value_type': 'string',
+            # 'value_type': 'string',
             'identifiable': True,
             'external_reference': True
         }
@@ -68,7 +68,7 @@ class ColumnSpecificationTest(TestCase):
         self.assertEqual('profile.uuid', external_spec.field_name)
         self.assertEqual('profile', external_spec.object_type)
         self.assertEqual('personal_info', external_spec.main_category)
-        self.assertEqual(DataType.STRING, external_spec.data_type)
+        # self.assertEqual(DataType.STRING, external_spec.data_type)
         self.assertTrue(external_spec.is_external_reference())
 
         # then:
@@ -168,3 +168,11 @@ class ColumnSpecificationTest(TestCase):
 
         # expect:
         self.assertEqual(ConversionType.LINKED_IDENTITY, column_spec.get_conversion_type())
+
+    def test_get_conversion_type_external_reference_identity(self):
+        # given:
+        column_spec = ColumnSpecification('account.uuid', 'user', 'profile_type',
+                                          DataType.STRING, identity=True, external_reference=True)
+
+        # expect:
+        self.assertEqual(ConversionType.EXTERNAL_REFERENCE, column_spec.get_conversion_type())

@@ -107,7 +107,7 @@ class WorkbookImporter:
         project_dict[project_id] = {}
         project_dict[project_id]['is_reference'] = True
 
-        return  project_dict
+        return project_dict
 
 
 class WorksheetImporter:
