@@ -32,3 +32,15 @@ class MetadataEntityTest(TestCase):
         item_links = metadata.get_links('item')
         self.assertIsNotNone(item_links)
         self.assertCountEqual(batch_1 + batch_2, item_links)
+
+    def test_add_external_links(self):
+        # given:
+        metadata = MetadataEntity()
+
+        # when:
+        new_links = ['77701ee', '254aefb']
+        metadata.add_external_links('file', new_links)
+
+        # then:
+        file_links = metadata.get_external_links('file')
+        self.assertIsNotNone(file_links)
