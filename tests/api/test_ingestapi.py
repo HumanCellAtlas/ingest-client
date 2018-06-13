@@ -52,47 +52,39 @@ class IngestApiTest(TestCase):
         api_url = mock_ingest_api_url
         mock_submission_uuid = "mock-submission-uuid"
         submissions_url = api_url + "/submissionEnvelopes"
+        submission_search_uri = submissions_url + "/search"
+        findByUuidRel = "findByUuid"
+        findByUuidHref = submission_search_uri + "/findByUuidHref"
 
-        # mock the load_root()
-        with patch('ingest.api.ingestapi.IngestApi.get_root_url') as mock_load_root:
-            root_links = dict()
-            root_links["file"] = {"href": api_url + "/files"}
-            root_links["submissionEnvelopes"] = {"href": api_url + "/submissionEnvelopes"}
-            mock_load_root.return_value = root_links
+        ingestapi = IngestApi(api_url, dict())
+        with patch('ingest.api.ingestapi.IngestApi._get_url_for_link') as mock_get_url_for_link:
+            def mock_get_url_for_link_patch(*args, **kwargs):
+                if args[0] == submission_search_uri and args[1] == findByUuidRel:
+                    return findByUuidHref
 
-            ingestapi = IngestApi(api_url)
+            mock_get_url_for_link.side_effect = mock_get_url_for_link_patch
 
-            submission_search_uri = submissions_url + "/search"
-            findByUuidRel = "findByUuid"
-            findByUuidHref = submission_search_uri + "/findByUuidHref"
-            with patch('ingest.api.ingestapi.IngestApi._get_url_for_link') as mock_get_url_for_link:
-                def mock_get_url_for_link_patch(*args, **kwargs):
-                    if args[0] == submission_search_uri and args[1] == findByUuidRel:
-                        return findByUuidHref
+            with patch('ingest.api.ingestapi.requests.get') as mock_requests_get:
+                def mock_get_side_effect(*args, **kwargs):
+                    mock_response = {}
+                    mock_response_payload = {}
 
-                mock_get_url_for_link.side_effect = mock_get_url_for_link_patch
+                    if args[0] == findByUuidHref and 'params' in kwargs and mock_submission_uuid in kwargs['params']:
+                        mock_response['status_code'] = 200
+                        mock_response_payload = {"uuid": {"uuid": mock_submission_uuid}}
+                    else:
+                        mock_response['status_code'] = 404
 
-                with patch('ingest.api.ingestapi.requests.get') as mock_requests_get:
-                    def mock_get_side_effect(*args, **kwargs):
-                        mock_response = {}
-                        mock_response_payload = {}
+                    mock_response['json'] = lambda _self: mock_response_payload
+                    mock_response['text'] = json.dumps(mock_response_payload)
 
-                        if args[0] == findByUuidHref and 'params' in kwargs and mock_submission_uuid in kwargs['params']:
-                            mock_response['status_code'] = 200
-                            mock_response_payload = {"uuid": {"uuid": mock_submission_uuid}}
-                        else:
-                            mock_response['status_code'] = 404
+                    def raise_for_status():
+                        raise Exception("test failed")
 
-                        mock_response['json'] = lambda _self: mock_response_payload
-                        mock_response['text'] = json.dumps(mock_response_payload)
+                    mock_response['raise_for_status'] = lambda _self: raise_for_status()
 
-                        def raise_for_status():
-                            raise Exception("test failed")
+                    return type("MockResponse", (), mock_response)()
 
-                        mock_response['raise_for_status'] = lambda _self: raise_for_status()
+                mock_requests_get.side_effect = mock_get_side_effect
 
-                        return type("MockResponse", (), mock_response)()
-
-                    mock_requests_get.side_effect = mock_get_side_effect
-
-                    assert 'uuid' in ingestapi.getSubmissionByUuid(mock_submission_uuid)
+                assert 'uuid' in ingestapi.getSubmissionByUuid(mock_submission_uuid)
