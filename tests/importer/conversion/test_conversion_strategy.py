@@ -143,15 +143,11 @@ class ListElementCellConversionTest(TestCase):
         cell_conversion = ListElementCellConversion('stuff.list_of_things.name', converter)
 
         # when:
-        data_node = DataNode()
-        cell_conversion.apply(data_node, 'sample')
+        metadata = MetadataEntity()
+        cell_conversion.apply(metadata, 'sample')
 
         # then:
-        content = data_node.as_dict().get(conversion_strategy.CONTENT_FIELD)
-        self.assertIsNotNone(content)
-
-        # and:
-        list_of_things = content.get('list_of_things')
+        list_of_things = metadata.get_content('list_of_things')
         self.assertIsNotNone(list_of_things)
         self.assertEqual(1, len(list_of_things))
 
@@ -165,18 +161,14 @@ class ListElementCellConversionTest(TestCase):
         cell_conversion = ListElementCellConversion('shop.user.basket.product_name', converter)
 
         # and:
-        data_node = DataNode()
-        data_node[f'{conversion_strategy.CONTENT_FIELD}.user.basket'] = [{'quantity': 3}]
+        metadata = MetadataEntity()
+        metadata.define_content('user.basket', [{'quantity': 3}])
 
         # when:
-        cell_conversion.apply(data_node, 'apple')
+        cell_conversion.apply(metadata, 'apple')
 
         # then:
-        content = data_node.as_dict().get(conversion_strategy.CONTENT_FIELD)
-        self.assertIsNotNone(content)
-
-        # and:
-        basket = content.get('user').get('basket')
+        basket = metadata.get_content('user.basket')
         self.assertEqual(1, len(basket))
 
         # and:
@@ -190,17 +182,15 @@ class ListElementCellConversionTest(TestCase):
         cell_conversion = ListElementCellConversion('user.name', converter)
 
         # and:
-        data_node = DataNode(defaults={
-            conversion_strategy.CONTENT_FIELD: {
-                'user': [{'id': '65fd8'}]
-            }
+        metadata = MetadataEntity(content={
+            'user': [{'id': '65fd8'}]
         })
 
         # when:
-        cell_conversion.apply(data_node, None)
+        cell_conversion.apply(metadata, None)
 
         # then:
-        list_element = data_node[f'{conversion_strategy.CONTENT_FIELD}.user'][0]
+        list_element = metadata.get_content('user')[0]
         self.assertTrue('name' not in list_element.keys(), '[name] should not be added to element.')
 
 

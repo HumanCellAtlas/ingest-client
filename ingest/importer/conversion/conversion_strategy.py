@@ -44,24 +44,22 @@ class DirectCellConversion(CellConversion):
 
 class ListElementCellConversion(CellConversion):
 
-    def apply(self, data_node:DataNode, cell_data):
+    def apply(self, metadata: MetadataEntity, cell_data):
         if cell_data is not None:
-            structured_field = f'{CONTENT_FIELD}.{self.applied_field}'
-            parent_path, target_field = split_field_chain(structured_field)
-            target_object = self._determine_target_object(data_node, parent_path)
+            parent_path, target_field = split_field_chain(self.applied_field)
+            target_object = self._determine_target_object(metadata, parent_path)
             data = self.converter.convert(cell_data)
             target_object[target_field] = data
 
     @staticmethod
-    def _determine_target_object(data_node, parent_path):
-        parent = data_node[parent_path]
+    def _determine_target_object(metadata, parent_path):
+        parent = metadata.get_content(parent_path)
         if parent is None:
             target_object = {}
             parent = [target_object]
-            data_node[parent_path] = parent
+            metadata.define_content(parent_path, parent)
         else:
             target_object = parent[0]
-
         return target_object
 
 
