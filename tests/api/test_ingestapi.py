@@ -54,7 +54,7 @@ class IngestApiTest(TestCase):
         submissions_url = api_url + "/submissionEnvelopes"
         submission_search_uri = submissions_url + "/search"
         findByUuidRel = "findByUuid"
-        findByUuidHref = submission_search_uri + "/findByUuidHref"
+        findByUuidHref = submission_search_uri + "/findByUuidHref{?uuid}"
 
         ingestapi = IngestApi(api_url, dict())
         with patch('ingest.api.ingestapi.IngestApi._get_url_for_link') as mock_get_url_for_link:

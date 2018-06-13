@@ -141,6 +141,7 @@ class IngestApi:
 
     def getSubmissionByUuid(self, submissionUuid):
         searchByUuidLink = self._get_url_for_link(self.url + '/submissionEnvelopes/search', 'findByUuid')
+#        searchByUuidLink = searchByUuidLink.replace('{?uuid}', '')  # TODO: use a REST traverser instead of requests?
         r = requests.get(searchByUuidLink, params={'uuid', submissionUuid})
 
         if 200 <= r.status_code < 300:
