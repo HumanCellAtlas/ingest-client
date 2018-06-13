@@ -281,15 +281,11 @@ class ExternalReferenceCellConversionTest(TestCase):
         cell_conversion = ExternalReferenceCellConversion('user.uuid', 'account')
 
         # when:
-        data_node = DataNode()
-        cell_conversion.apply(data_node, '621bfa0')
+        metadata = MetadataEntity()
+        cell_conversion.apply(metadata, '621bfa0')
 
         # then:
-        external_links = data_node[conversion_strategy.EXTERNAL_LINKS_FIELD]
-        self.assertIsNotNone(external_links)
-
-        # and:
-        account_list = external_links.get('account')
+        account_list = metadata.get_external_links('account')
         self.assertIsNotNone(account_list, '[account] list in external links expected.')
         self.assertEqual(1, len(account_list))
         self.assertTrue('621bfa0' in account_list, 'Expected content not in list.')
@@ -299,34 +295,26 @@ class ExternalReferenceCellConversionTest(TestCase):
         cell_conversion = ExternalReferenceCellConversion('company.uuid', 'organisation')
 
         # when:
-        data_node = DataNode()
-        cell_conversion.apply(data_node, '7e56de9||2fe9eb0')
+        metadata = MetadataEntity()
+        cell_conversion.apply(metadata, '7e56de9||2fe9eb0')
 
         # then:
         expected_ids = ['7e56de9', '2fe9eb0']
-        id_field = f'{conversion_strategy.EXTERNAL_LINKS_FIELD}.organisation'
-        self.assertCountEqual(expected_ids, data_node[id_field])
+        self.assertCountEqual(expected_ids, metadata.get_external_links('organisation'))
 
     def test_apply_with_previous_entries(self):
         # given:
-        data_node = DataNode(defaults={
-            conversion_strategy.EXTERNAL_LINKS_FIELD: {
-                'store_item': ['109bdd9', 'c3c35e6']
-            }
-        })
+        metadata = MetadataEntity()
+        metadata.add_external_links('store_item', ['109bdd9', 'c3c35e6'])
 
         # and:
         cell_conversion = ExternalReferenceCellConversion('product.uuid', 'store_item')
 
         # when:
-        cell_conversion.apply(data_node, '73de901')
+        cell_conversion.apply(metadata, '73de901')
 
         # then:
-        external_links = data_node[conversion_strategy.EXTERNAL_LINKS_FIELD]
-        self.assertIsNotNone(external_links)
-
-        # then:
-        store_item_list = external_links.get('store_item')
+        store_item_list = metadata.get_external_links('store_item')
         self.assertIsNotNone(store_item_list, '[store_item] list in external links expected.')
 
         # and:

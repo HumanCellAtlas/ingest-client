@@ -91,27 +91,9 @@ class ExternalReferenceCellConversion(CellConversion):
         super(ExternalReferenceCellConversion, self).__init__(field, _LIST_CONVERTER)
         self.main_category = main_category
 
-    def apply(self, data_node: DataNode, cell_data):
-        external_link_ids = self._get_external_link_ids(data_node)
-        external_link_ids.extend(self.converter.convert(cell_data))
-
-    # TODO duplication; merge this with linked identity implementation
-    def _get_external_link_ids(self, data_node):
-        external_links = self._get_external_links(data_node)
-        entity_type = self.main_category
-        external_link_ids = external_links.get(entity_type)
-        if external_link_ids is None:
-            external_link_ids = []
-            external_links[entity_type] = external_link_ids
-        return external_link_ids
-
-    @staticmethod
-    def _get_external_links(data_node):
-        external_links = data_node[EXTERNAL_LINKS_FIELD]
-        if external_links is None:
-            external_links = {}
-            data_node[EXTERNAL_LINKS_FIELD] = external_links
-        return external_links
+    def apply(self, metadata: MetadataEntity, cell_data):
+        link_ids = self.converter.convert(cell_data)
+        metadata.add_external_links(self.main_category, link_ids)
 
 
 class DoNothing(CellConversion):
