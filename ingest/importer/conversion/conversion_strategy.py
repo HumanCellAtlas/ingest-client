@@ -65,11 +65,10 @@ class ListElementCellConversion(CellConversion):
 
 class IdentityCellConversion(CellConversion):
 
-    def apply(self, data_node: DataNode, cell_data):
+    def apply(self, metadata: MetadataEntity, cell_data):
         value = self.converter.convert(cell_data)
-        data_node[OBJECT_ID_FIELD] = value
-        structured_field = f'{CONTENT_FIELD}.{self.applied_field}'
-        data_node[structured_field] = value
+        metadata.object_id = value
+        metadata.define_content(self.applied_field, value)
 
 
 class LinkedIdentityCellConversion(CellConversion):

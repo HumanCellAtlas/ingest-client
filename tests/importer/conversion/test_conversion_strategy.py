@@ -202,19 +202,17 @@ class IdentityCellConversionTest(TestCase):
         cell_conversion = IdentityCellConversion('product.product_id', converter)
 
         # and:
-        data_node = DataNode()
+        metadata = MetadataEntity()
 
         # when:
-        cell_conversion.apply(data_node, 'product_no_144')
+        cell_conversion.apply(metadata, 'product_no_144')
 
         # then:
         expected_id = 'product_no_144 - converted'
-        self.assertEqual(data_node[conversion_strategy.OBJECT_ID_FIELD], expected_id)
+        self.assertEqual(expected_id, metadata.object_id)
 
         # and: identity value should be in content
-        content = data_node[conversion_strategy.CONTENT_FIELD]
-        self.assertIsNotNone(content)
-        self.assertEqual(expected_id, content.get('product_id'))
+        self.assertEqual(expected_id, metadata.get_content('product_id'))
 
 
 class LinkedIdentityCellConversionTest(TestCase):
