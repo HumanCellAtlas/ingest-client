@@ -222,18 +222,14 @@ class LinkedIdentityCellConversionTest(TestCase):
         cell_conversion = LinkedIdentityCellConversion('item.item_id', 'item_type')
 
         # and:
-        data_node = DataNode()
+        metadata = MetadataEntity()
 
         # when:
-        cell_conversion.apply(data_node, 'item_no_29')
-        cell_conversion.apply(data_node, 'item_no_31||item_no_50')
+        cell_conversion.apply(metadata, 'item_no_29')
+        cell_conversion.apply(metadata, 'item_no_31||item_no_50')
 
         # then:
-        links = data_node[conversion_strategy.LINKS_FIELD]
-        self.assertIsNotNone(links)
-
-        # and:
-        item_types = links.get('item_type')
+        item_types = metadata.get_links('item_type')
         self.assertEqual(3, len(item_types))
 
         # and:
@@ -246,15 +242,15 @@ class LinkedIdentityCellConversionTest(TestCase):
         cell_conversion = LinkedIdentityCellConversion('item.item_number', 'line_order')
 
         # and:
-        data_node = DataNode()
+        metadata = MetadataEntity()
         items = ['item_no_56', 'item_no_199']
-        data_node[conversion_strategy.LINKS_FIELD] = {'line_order': items}
+        metadata.add_links('line_order', items)
 
         # when:
-        cell_conversion.apply(data_node, 'item_no_721')
+        cell_conversion.apply(metadata, 'item_no_721')
 
         # then:
-        actual_items = data_node[conversion_strategy.LINKS_FIELD]['line_order']
+        actual_items = metadata.get_links('line_order')
         self.assertEqual(3, len(actual_items))
 
         # and:
@@ -270,7 +266,7 @@ class LinkedIdentityCellConversionTest(TestCase):
         # when:
         exception_thrown = False
         try:
-            cell_conversion.apply(DataNode(), 'sample')
+            cell_conversion.apply(MetadataEntity(), 'sample')
         except UnknownMainCategory:
             exception_thrown = True
 

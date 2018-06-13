@@ -77,29 +77,12 @@ class LinkedIdentityCellConversion(CellConversion):
         super(LinkedIdentityCellConversion, self).__init__(field, _LIST_CONVERTER)
         self.main_category = main_category
 
-    def apply(self, data_node: DataNode, cell_data):
+    def apply(self, metadata: MetadataEntity, cell_data):
         if self.main_category is None:
             raise UnknownMainCategory()
         if cell_data is not None:
-            linked_ids = self._get_linked_ids(data_node)
-            linked_ids.extend(self.converter.convert(cell_data))
-
-    def _get_linked_ids(self, data_node):
-        links = self._get_links(data_node)
-        entity_type = self.main_category
-        linked_ids = links.get(entity_type)
-        if not linked_ids:
-            linked_ids = []
-            links[entity_type] = linked_ids
-        return linked_ids
-
-    @staticmethod
-    def _get_links(data_node):
-        links = data_node[LINKS_FIELD]
-        if not links:
-            links = {}
-            data_node[LINKS_FIELD] = links
-        return links
+            links = self.converter.convert(cell_data)
+            metadata.add_links(self.main_category, links)
 
 
 class ExternalReferenceCellConversion(CellConversion):
