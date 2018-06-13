@@ -139,6 +139,15 @@ class IngestApi:
         else:
             raise ValueError("Submission Envelope " + submissionUrl + " could not be retrieved")
 
+    def getSubmissionByUuid(self, submissionUuid):
+        searchByUuidLink = self._get_url_for_link(self.url + '/submissionEnvelopes/search', 'findByUuid')
+        r = requests.get(searchByUuidLink, params={'uuid', submissionUuid})
+
+        if 200 <= r.status_code < 300:
+            return r.json()
+        else:
+            r.raise_for_status()
+
     def getFiles(self, id):
         submissionUrl = self.url + '/submissionEnvelopes/' + id + '/files'
         r = requests.get(submissionUrl, headers=self.headers)
