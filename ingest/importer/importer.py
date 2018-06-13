@@ -125,13 +125,13 @@ class WorksheetImporter:
         records = {}
         row_template = template.create_row_template(worksheet)
         for row in self._get_data_rows(worksheet):
-            # TODO row_template.do_import should return a structured abstraction
-            json = row_template.do_import(row)
-            record_id = json.get(conversion_strategy.OBJECT_ID_FIELD, self._generate_id())
+            metadata = row_template.do_import(row)
+            # FIXME generate id when not set
+            record_id = metadata.object_id
             records[record_id] = {
-                'content': json.get(conversion_strategy.CONTENT_FIELD, {}),
-                'links_by_entity': json.get(conversion_strategy.LINKS_FIELD, {}),
-                'external_links_by_entity': json.get(conversion_strategy.EXTERNAL_LINKS_FIELD)
+                'content': metadata.content.as_dict(),
+                'links_by_entity': metadata.links,
+                'external_links_by_entity': metadata.external_links
             }
         return records
 
