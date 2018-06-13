@@ -9,11 +9,6 @@ from ingest.importer.conversion.metadata_entity import MetadataEntity
 from ingest.importer.conversion.utils import split_field_chain
 from ingest.importer.data_node import DataNode
 
-OBJECT_ID_FIELD = '_object_id'
-CONTENT_FIELD = '_content'
-LINKS_FIELD = '_links'
-EXTERNAL_LINKS_FIELD = '_external_links'
-
 _LIST_CONVERTER = ListConverter()
 
 
