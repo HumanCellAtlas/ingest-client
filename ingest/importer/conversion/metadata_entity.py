@@ -23,23 +23,23 @@ class MetadataEntity:
 
     @property
     def links(self):
-        return copy.deepcopy(self.links())
+        return copy.deepcopy(self._links)
 
     def get_links(self, link_entity_type):
-        return self.links.get(link_entity_type)
+        return self._links.get(link_entity_type)
 
     def add_links(self, link_entity_type, new_links):
-        self._do_add_links(self.links, link_entity_type, new_links)
+        self._do_add_links(self._links, link_entity_type, new_links)
 
     @property
     def external_links(self):
-        return copy.deepcopy(self.external_links())
+        return copy.deepcopy(self._external_links)
 
     def get_external_links(self, link_entity_type):
-        return self.external_links.get(link_entity_type)
+        return self._external_links.get(link_entity_type)
 
     def add_external_links(self, link_entity_type, new_links):
-        self._do_add_links(self.external_links, link_entity_type, new_links)
+        self._do_add_links(self._external_links, link_entity_type, new_links)
 
     @staticmethod
     def _do_add_links(link_map, link_entity_type, new_links):
