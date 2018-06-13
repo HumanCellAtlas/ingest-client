@@ -126,14 +126,19 @@ class WorksheetImporter:
         row_template = template.create_row_template(worksheet)
         for row in self._get_data_rows(worksheet):
             metadata = row_template.do_import(row)
-            # FIXME generate id when not set
-            record_id = metadata.object_id
+            record_id = self._determine_record_id(metadata)
             records[record_id] = {
                 'content': metadata.content.as_dict(),
                 'links_by_entity': metadata.links,
                 'external_links_by_entity': metadata.external_links
             }
         return records
+
+    def _determine_record_id(self, metadata):
+        record_id = metadata.object_id
+        if record_id is None:
+            record_id = self._generate_id()
+        return record_id
 
     def _generate_id(self):
         self.unknown_id_ctr = self.unknown_id_ctr + 1
