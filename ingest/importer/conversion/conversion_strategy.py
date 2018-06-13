@@ -31,7 +31,7 @@ class CellConversion(object):
         return match.group('insert_field')
 
     @abstractmethod
-    def apply(self, data_node:DataNode, cell_data): ...
+    def apply(self, metadata: MetadataEntity, cell_data): ...
 
 
 class DirectCellConversion(CellConversion):
@@ -101,7 +101,7 @@ class DoNothing(CellConversion):
     def __init__(self):
         super(DoNothing, self).__init__('', data_converter.DEFAULT)
 
-    def apply(self, data_node: DataNode, cell_data):
+    def apply(self, metadata: MetadataEntity, cell_data):
         pass
 
 
