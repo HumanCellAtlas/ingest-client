@@ -260,12 +260,12 @@ class EntityMapTest(TestCase):
 
         # and:
         protocol1 = entity_map.get_entity('protocol', 'protocol_id_1')
-        self.assertEqual({'key': 'protocol_1'}, protocol1._content)
+        self.assertEqual({'key': 'protocol_1'}, protocol1.content)
 
     def _assert_correct_entity(self, entity, entity_id='', content={}, entity_type='', links={}):
         self.assertTrue(entity)
         self.assertEqual(entity_id, entity.id)
-        self.assertEqual(content, entity._content)
+        self.assertEqual(content, entity.content)
         self.assertEqual(entity_type, entity.type)
         self.assertEqual(links, entity.links_by_entity)
 
