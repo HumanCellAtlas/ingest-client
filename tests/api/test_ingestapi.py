@@ -2,6 +2,7 @@ from unittest import TestCase
 from unittest.mock import patch
 from ingest.api.ingestapi import IngestApi
 
+import json
 
 mock_ingest_api_url = "http://mockingestapi.com"
 mock_submission_envelope_id = "mock-envelope-id"
@@ -47,3 +48,46 @@ class IngestApiTest(TestCase):
                 mock_post.side_effect = mock_post_side_effect
                 ingestapi.createFile(submission_url, filename, "{}")
 
+    def test_get_submission_by_uuid(self):
+        api_url = mock_ingest_api_url
+        mock_submission_uuid = "mock-submission-uuid"
+        submissions_url = api_url + "/submissionEnvelopes"
+        submission_search_uri = submissions_url + "/search"
+        findByUuidRel = "findByUuid"
+        findByUuidHref = submission_search_uri + "/findByUuidHref{?uuid}"
+
+        ingestapi = IngestApi(api_url, dict())
+        with patch('ingest.api.ingestapi.IngestApi._get_url_for_link') as mock_get_url_for_link:
+            def mock_get_url_for_link_patch(*args, **kwargs):
+                if args[0] == submission_search_uri and args[1] == findByUuidRel:
+                    return findByUuidHref
+
+            mock_get_url_for_link.side_effect = mock_get_url_for_link_patch
+
+            with patch('ingest.api.ingestapi.requests.get') as mock_requests_get:
+                def mock_get_side_effect(*args, **kwargs):
+                    mock_response = {}
+                    mock_response_payload = {}
+
+                    if args[0] == submission_search_uri + "/findByUuidHref" \
+                            and 'params' in kwargs \
+                            and 'uuid' in kwargs['params'] \
+                            and kwargs['params']['uuid'] == mock_submission_uuid:
+                        mock_response['status_code'] = 200
+                        mock_response_payload = {"uuid": {"uuid": mock_submission_uuid}}
+                    else:
+                        mock_response['status_code'] = 404
+
+                    mock_response['json'] = lambda _self: mock_response_payload
+                    mock_response['text'] = json.dumps(mock_response_payload)
+
+                    def raise_for_status():
+                        raise Exception("test failed")
+
+                    mock_response['raise_for_status'] = lambda _self: raise_for_status()
+
+                    return type("MockResponse", (), mock_response)()
+
+                mock_requests_get.side_effect = mock_get_side_effect
+
+                assert 'uuid' in ingestapi.getSubmissionByUuid(mock_submission_uuid)

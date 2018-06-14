@@ -123,7 +123,7 @@ class IngestApi:
             raise ValueError("Project " + id + " could not be retrieved")
 
     def getProjectByUuid(self, uuid):
-        return self.getEntityByUuid('projects')
+        return self.getEntityByUuid('projects', uuid)
 
     def getEntityByUuid(self, entity_type, uuid):
         url =  self.url + f'/{entity_type}/search/findByUuid?uuid=' + uuid
@@ -138,6 +138,16 @@ class IngestApi:
             return submissionEnvelope
         else:
             raise ValueError("Submission Envelope " + submissionUrl + " could not be retrieved")
+
+    def getSubmissionByUuid(self, submissionUuid):
+        searchByUuidLink = self._get_url_for_link(self.url + '/submissionEnvelopes/search', 'findByUuid')
+        searchByUuidLink = searchByUuidLink.replace('{?uuid}', '')  # TODO: use a REST traverser instead of requests?
+        r = requests.get(searchByUuidLink, params={'uuid': submissionUuid})
+
+        if 200 <= r.status_code < 300:
+            return r.json()
+        else:
+            r.raise_for_status()
 
     def getFiles(self, id):
         submissionUrl = self.url + '/submissionEnvelopes/' + id + '/files'
@@ -236,13 +246,14 @@ class IngestApi:
     def getAnalyses(self, submissionUrl):
         return self.getEntities(submissionUrl, "analyses")
 
-    def getEntities(self, submissionUrl, entityType):
+    def getEntities(self, submissionUrl, entityType, pageSize=None):
         r = requests.get(submissionUrl, headers=self.headers)
         if r.status_code == requests.codes.ok:
             if entityType in json.loads(r.text)["_links"]:
-                # r2 = requests.get(, headers=self.headers)
-                for entity in self._getAllObjectsFromSet(json.loads(r.text)["_links"][entityType]["href"], entityType):
-                    yield entity
+                if not pageSize:
+                    yield from self._getAllObjectsFromSet(json.loads(r.text)["_links"][entityType]["href"], entityType)
+                else:
+                    yield from self._getAllObjectsFromSet(json.loads(r.text)["_links"][entityType]["href"], entityType, pageSize)
 
     def _getAllObjectsFromSet(self, url, entityType, pageSize=None):
         params = dict()
