@@ -69,7 +69,7 @@ class IngestApiTest(TestCase):
                     mock_response = {}
                     mock_response_payload = {}
 
-                    if args[0] == findByUuidHref and 'params' in kwargs and mock_submission_uuid in kwargs['params']:
+                    if args[0] == submission_search_uri + "/findByUuidHref" and 'params' in kwargs and mock_submission_uuid in kwargs['params']:
                         mock_response['status_code'] = 200
                         mock_response_payload = {"uuid": {"uuid": mock_submission_uuid}}
                     else:
