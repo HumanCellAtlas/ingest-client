@@ -9,6 +9,7 @@ from ingest.importer.conversion.conversion_strategy import DirectCellConversion,
     DoNothing, ExternalReferenceCellConversion
 from ingest.importer.conversion.data_converter import StringConverter, ListConverter
 from ingest.importer.conversion.exceptions import UnknownMainCategory
+from ingest.importer.conversion.metadata_entity import MetadataEntity
 from ingest.importer.data_node import DataNode
 
 
@@ -103,39 +104,27 @@ class DirectCellConversionTest(TestCase):
         cell_conversion = DirectCellConversion('profile.user.age', int_converter)
 
         # when:
-        data_node = DataNode()
-        cell_conversion.apply(data_node, '27')
+        metadata = MetadataEntity()
+        cell_conversion.apply(metadata, '27')
 
         # then:
-        content = data_node.as_dict().get(conversion_strategy.CONTENT_FIELD)
-        self.assertIsNotNone(content)
+        self.assertEqual(27, metadata.get_content('user.age'))
 
-        # and:
-        user = content.get('user')
-        self.assertIsNotNone(user)
-        self.assertEqual(27, user.get('age'))
-
-    def test_apply_none_data(self):
+    def test_apply_skips_none_data(self):
         # given:
         string_converter = StringConverter()
         cell_conversion = DirectCellConversion('product.id', string_converter)
 
         # when:
-        data_node = DataNode(defaults={
-            conversion_strategy.CONTENT_FIELD: {
-                'product': {
-                    'name': 'product name'
-                }
+        metadata = MetadataEntity(content={
+            'product': {
+                'name': 'product name'
             }
         })
-        cell_conversion.apply(data_node, None)
+        cell_conversion.apply(metadata, None)
 
         # then:
-        content = data_node.as_dict().get(conversion_strategy.CONTENT_FIELD)
-        self.assertIsNotNone(content)
-
-        # and:
-        product = content.get('product')
+        product = metadata.get_content('product')
         self.assertIsNotNone(product)
         self.assertTrue('id' not in product, '[id] not expected to be in product field')
 
@@ -154,15 +143,11 @@ class ListElementCellConversionTest(TestCase):
         cell_conversion = ListElementCellConversion('stuff.list_of_things.name', converter)
 
         # when:
-        data_node = DataNode()
-        cell_conversion.apply(data_node, 'sample')
+        metadata = MetadataEntity()
+        cell_conversion.apply(metadata, 'sample')
 
         # then:
-        content = data_node.as_dict().get(conversion_strategy.CONTENT_FIELD)
-        self.assertIsNotNone(content)
-
-        # and:
-        list_of_things = content.get('list_of_things')
+        list_of_things = metadata.get_content('list_of_things')
         self.assertIsNotNone(list_of_things)
         self.assertEqual(1, len(list_of_things))
 
@@ -176,18 +161,14 @@ class ListElementCellConversionTest(TestCase):
         cell_conversion = ListElementCellConversion('shop.user.basket.product_name', converter)
 
         # and:
-        data_node = DataNode()
-        data_node[f'{conversion_strategy.CONTENT_FIELD}.user.basket'] = [{'quantity': 3}]
+        metadata = MetadataEntity()
+        metadata.define_content('user.basket', [{'quantity': 3}])
 
         # when:
-        cell_conversion.apply(data_node, 'apple')
+        cell_conversion.apply(metadata, 'apple')
 
         # then:
-        content = data_node.as_dict().get(conversion_strategy.CONTENT_FIELD)
-        self.assertIsNotNone(content)
-
-        # and:
-        basket = content.get('user').get('basket')
+        basket = metadata.get_content('user.basket')
         self.assertEqual(1, len(basket))
 
         # and:
@@ -201,17 +182,15 @@ class ListElementCellConversionTest(TestCase):
         cell_conversion = ListElementCellConversion('user.name', converter)
 
         # and:
-        data_node = DataNode(defaults={
-            conversion_strategy.CONTENT_FIELD: {
-                'user': [{'id': '65fd8'}]
-            }
+        metadata = MetadataEntity(content={
+            'user': [{'id': '65fd8'}]
         })
 
         # when:
-        cell_conversion.apply(data_node, None)
+        cell_conversion.apply(metadata, None)
 
         # then:
-        list_element = data_node[f'{conversion_strategy.CONTENT_FIELD}.user'][0]
+        list_element = metadata.get_content('user')[0]
         self.assertTrue('name' not in list_element.keys(), '[name] should not be added to element.')
 
 
@@ -223,19 +202,17 @@ class IdentityCellConversionTest(TestCase):
         cell_conversion = IdentityCellConversion('product.product_id', converter)
 
         # and:
-        data_node = DataNode()
+        metadata = MetadataEntity()
 
         # when:
-        cell_conversion.apply(data_node, 'product_no_144')
+        cell_conversion.apply(metadata, 'product_no_144')
 
         # then:
         expected_id = 'product_no_144 - converted'
-        self.assertEqual(data_node[conversion_strategy.OBJECT_ID_FIELD], expected_id)
+        self.assertEqual(expected_id, metadata.object_id)
 
         # and: identity value should be in content
-        content = data_node[conversion_strategy.CONTENT_FIELD]
-        self.assertIsNotNone(content)
-        self.assertEqual(expected_id, content.get('product_id'))
+        self.assertEqual(expected_id, metadata.get_content('product_id'))
 
 
 class LinkedIdentityCellConversionTest(TestCase):
@@ -245,18 +222,14 @@ class LinkedIdentityCellConversionTest(TestCase):
         cell_conversion = LinkedIdentityCellConversion('item.item_id', 'item_type')
 
         # and:
-        data_node = DataNode()
+        metadata = MetadataEntity()
 
         # when:
-        cell_conversion.apply(data_node, 'item_no_29')
-        cell_conversion.apply(data_node, 'item_no_31||item_no_50')
+        cell_conversion.apply(metadata, 'item_no_29')
+        cell_conversion.apply(metadata, 'item_no_31||item_no_50')
 
         # then:
-        links = data_node[conversion_strategy.LINKS_FIELD]
-        self.assertIsNotNone(links)
-
-        # and:
-        item_types = links.get('item_type')
+        item_types = metadata.get_links('item_type')
         self.assertEqual(3, len(item_types))
 
         # and:
@@ -269,15 +242,15 @@ class LinkedIdentityCellConversionTest(TestCase):
         cell_conversion = LinkedIdentityCellConversion('item.item_number', 'line_order')
 
         # and:
-        data_node = DataNode()
+        metadata = MetadataEntity()
         items = ['item_no_56', 'item_no_199']
-        data_node[conversion_strategy.LINKS_FIELD] = {'line_order': items}
+        metadata.add_links('line_order', items)
 
         # when:
-        cell_conversion.apply(data_node, 'item_no_721')
+        cell_conversion.apply(metadata, 'item_no_721')
 
         # then:
-        actual_items = data_node[conversion_strategy.LINKS_FIELD]['line_order']
+        actual_items = metadata.get_links('line_order')
         self.assertEqual(3, len(actual_items))
 
         # and:
@@ -293,7 +266,7 @@ class LinkedIdentityCellConversionTest(TestCase):
         # when:
         exception_thrown = False
         try:
-            cell_conversion.apply(DataNode(), 'sample')
+            cell_conversion.apply(MetadataEntity(), 'sample')
         except UnknownMainCategory:
             exception_thrown = True
 
@@ -308,15 +281,11 @@ class ExternalReferenceCellConversionTest(TestCase):
         cell_conversion = ExternalReferenceCellConversion('user.uuid', 'account')
 
         # when:
-        data_node = DataNode()
-        cell_conversion.apply(data_node, '621bfa0')
+        metadata = MetadataEntity()
+        cell_conversion.apply(metadata, '621bfa0')
 
         # then:
-        external_links = data_node[conversion_strategy.EXTERNAL_LINKS_FIELD]
-        self.assertIsNotNone(external_links)
-
-        # and:
-        account_list = external_links.get('account')
+        account_list = metadata.get_external_links('account')
         self.assertIsNotNone(account_list, '[account] list in external links expected.')
         self.assertEqual(1, len(account_list))
         self.assertTrue('621bfa0' in account_list, 'Expected content not in list.')
@@ -326,34 +295,26 @@ class ExternalReferenceCellConversionTest(TestCase):
         cell_conversion = ExternalReferenceCellConversion('company.uuid', 'organisation')
 
         # when:
-        data_node = DataNode()
-        cell_conversion.apply(data_node, '7e56de9||2fe9eb0')
+        metadata = MetadataEntity()
+        cell_conversion.apply(metadata, '7e56de9||2fe9eb0')
 
         # then:
         expected_ids = ['7e56de9', '2fe9eb0']
-        id_field = f'{conversion_strategy.EXTERNAL_LINKS_FIELD}.organisation'
-        self.assertCountEqual(expected_ids, data_node[id_field])
+        self.assertCountEqual(expected_ids, metadata.get_external_links('organisation'))
 
     def test_apply_with_previous_entries(self):
         # given:
-        data_node = DataNode(defaults={
-            conversion_strategy.EXTERNAL_LINKS_FIELD: {
-                'store_item': ['109bdd9', 'c3c35e6']
-            }
-        })
+        metadata = MetadataEntity()
+        metadata.add_external_links('store_item', ['109bdd9', 'c3c35e6'])
 
         # and:
         cell_conversion = ExternalReferenceCellConversion('product.uuid', 'store_item')
 
         # when:
-        cell_conversion.apply(data_node, '73de901')
+        cell_conversion.apply(metadata, '73de901')
 
         # then:
-        external_links = data_node[conversion_strategy.EXTERNAL_LINKS_FIELD]
-        self.assertIsNotNone(external_links)
-
-        # then:
-        store_item_list = external_links.get('store_item')
+        store_item_list = metadata.get_external_links('store_item')
         self.assertIsNotNone(store_item_list, '[store_item] list in external links expected.')
 
         # and:

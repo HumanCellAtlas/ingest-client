@@ -6,12 +6,8 @@ from openpyxl import Workbook
 from ingest.importer.conversion import conversion_strategy
 from ingest.importer.conversion.column_specification import ColumnSpecification
 from ingest.importer.conversion.conversion_strategy import CellConversion
-from ingest.importer.conversion.data_converter import ListConverter, DataType, \
-    IntegerConverter, BooleanConverter, StringConverter
 from ingest.importer.conversion.template_manager import TemplateManager, RowTemplate
 from ingest.importer.data_node import DataNode
-
-import unittest
 
 
 def _mock_schema_template_lookup(value_type='string', multivalue=False):
@@ -150,7 +146,7 @@ class TemplateManagerTest(TestCase):
         row_template = template_manager.create_row_template(worksheet)
 
         # then:
-        content_defaults = row_template.default_values.get(conversion_strategy.CONTENT_FIELD)
+        content_defaults = row_template.default_values
         self.assertIsNotNone(content_defaults)
         self.assertEqual(schema_url, content_defaults.get('describedBy'))
         self.assertEqual('profile', content_defaults.get('schema_type'))
@@ -269,8 +265,8 @@ class FakeConversion(CellConversion):
     def __init__(self, field):
         self.field = field
 
-    def apply(self, data_node, cell_data):
-        data_node[self.field] = cell_data
+    def apply(self, metadata, cell_data):
+        metadata.define_content(self.field, cell_data)
 
 
 class RowTemplateTest(TestCase):
@@ -295,11 +291,11 @@ class RowTemplateTest(TestCase):
 
         # then:
         self.assertIsNotNone(result)
-        self.assertEqual('Juan', result.get('first_name'))
-        self.assertEqual('dela Cruz', result.get('last_name'))
+        self.assertEqual('Juan', result.get_content('first_name'))
+        self.assertEqual('dela Cruz', result.get_content('last_name'))
 
         # and:
-        address = result.get('address')
+        address = result.get_content('address')
         self.assertIsNotNone(address)
         self.assertEqual('Manila', address.get('city'))
         self.assertEqual('Philippines', address.get('country'))
@@ -327,7 +323,5 @@ class RowTemplateTest(TestCase):
         result = row_template.do_import(row)
 
         # then:
-        content = result.get(conversion_strategy.CONTENT_FIELD)
-        self.assertIsNotNone(content)
-        self.assertEqual(schema_url, content.get('describedBy'))
-        self.assertEqual('extra field', content.get('extra_field'))
+        self.assertEqual(schema_url, result.get_content('describedBy'))
+        self.assertEqual('extra field', result.get_content('extra_field'))

@@ -6,6 +6,7 @@ from mock import MagicMock, patch
 from openpyxl import Workbook
 
 from ingest.importer.conversion import conversion_strategy
+from ingest.importer.conversion.metadata_entity import MetadataEntity
 from ingest.importer.data_node import DataNode
 from ingest.importer.importer import WorksheetImporter, WorkbookImporter, XlsImporter
 from ingest.importer.spreadsheet.ingest_workbook import IngestWorkbook
@@ -118,15 +119,16 @@ class WorksheetImporterTest(TestCase):
         john_doe_content = {'name': 'John Doe'}
         john_doe_links = {}
         john_doe_external_links = {'organisations': ['org_88', 'org_110', 'org_452']}
-        john_doe = self._create_test_json('profile_1', john_doe_content, john_doe_links,
-                                          john_doe_external_links)
+        john_doe = MetadataEntity(object_id='profile_1', content=john_doe_content, links=john_doe_links,
+                                  external_links=john_doe_external_links)
 
         # and:
         emma_jackson_content = {'name': 'Emma Jackson'}
         emma_jackson_links = {'friends': ['profile_19', 'profile_8']}
         emma_jackson_external_links = {}
-        emma_jackson = self._create_test_json('profile_2', emma_jackson_content,
-                                              emma_jackson_links, emma_jackson_external_links)
+        emma_jackson = MetadataEntity(object_id='profile_2', content=emma_jackson_content,
+                                      links=emma_jackson_links,
+                                      external_links=emma_jackson_external_links)
 
         # and:
         row_template.do_import = MagicMock('import_row', side_effect=[john_doe, emma_jackson])
@@ -134,7 +136,6 @@ class WorksheetImporterTest(TestCase):
         # and:
         mock_template_manager = MagicMock('template_manager')
         mock_template_manager.create_row_template = MagicMock(return_value=row_template)
-        mock_template_manager.get_schema_url = MagicMock(return_value='schem_url')
 
         # and:
         workbook = Workbook()
@@ -153,14 +154,33 @@ class WorksheetImporterTest(TestCase):
         self._assert_correct_profile(profile, 'profile_2', emma_jackson_content,
                                      emma_jackson_links, emma_jackson_external_links)
 
-    @staticmethod
-    def _create_test_json(id, content, links, external_links):
-        test_json = DataNode()
-        test_json[conversion_strategy.OBJECT_ID_FIELD] = id
-        test_json[conversion_strategy.CONTENT_FIELD] = content
-        test_json[conversion_strategy.LINKS_FIELD] = links
-        test_json[conversion_strategy.EXTERNAL_LINKS_FIELD] = external_links
-        return test_json.as_dict()
+    def test_do_import_no_id_metadata(self):
+        # given:
+        row_template = MagicMock('row_template')
+
+        # and:
+        paper_metadata = MetadataEntity(content={'product_name': 'paper'},
+                                        links={'delivery': ['123', '456']})
+        pen_metadata = MetadataEntity(content={'product_name': 'pen'},
+                                      links={'delivery': ['789']})
+        row_template.do_import = MagicMock(side_effect=[paper_metadata, pen_metadata])
+
+        # and:
+        mock_template_manager = MagicMock('template_manager')
+        mock_template_manager.create_row_template = MagicMock(return_value=row_template)
+
+        # and:
+        workbook = Workbook()
+        worksheet = workbook.create_sheet('product')
+        worksheet['A6'] = 'paper'
+        worksheet['A7'] = 'pen'
+
+        # when:
+        worksheet_importer = WorksheetImporter()
+        result = worksheet_importer.do_import(worksheet, mock_template_manager)
+
+        # then:
+        self.assertEqual(2, len(result.keys()))
 
     def _assert_correct_profile(self, profile, profile_id, expected_content, expected_links,
                                 expected_external_links):

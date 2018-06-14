@@ -6,6 +6,7 @@ import ingest.template.schema_template as schema_template
 from ingest.importer.conversion import utils, conversion_strategy
 from ingest.importer.conversion.column_specification import ColumnSpecification
 from ingest.importer.conversion.conversion_strategy import CellConversion
+from ingest.importer.conversion.metadata_entity import MetadataEntity
 from ingest.importer.data_node import DataNode
 from ingest.template.schema_template import SchemaTemplate
 
@@ -123,15 +124,14 @@ class RowTemplate:
 
     def __init__(self, cell_conversions, default_values={}):
         self.cell_conversions = cell_conversions
-        content = {conversion_strategy.CONTENT_FIELD: copy.deepcopy(default_values)}
-        self.default_values = content
+        self.default_values = copy.deepcopy(default_values)
 
     def do_import(self, row):
-        data_node = DataNode(defaults=self.default_values)
+        metadata = MetadataEntity(content=self.default_values)
         for index, cell in enumerate(row):
-            conversion:CellConversion = self.cell_conversions[index]
-            conversion.apply(data_node, cell.value)
-        return data_node.as_dict()
+            conversion: CellConversion = self.cell_conversions[index]
+            conversion.apply(metadata, cell.value)
+        return metadata
 
 
 class ParentFieldNotFound(Exception):
