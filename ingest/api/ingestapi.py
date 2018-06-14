@@ -123,7 +123,7 @@ class IngestApi:
             raise ValueError("Project " + id + " could not be retrieved")
 
     def getProjectByUuid(self, uuid):
-        return self.getEntityByUuid('projects')
+        return self.getEntityByUuid('projects', uuid)
 
     def getEntityByUuid(self, entity_type, uuid):
         url =  self.url + f'/{entity_type}/search/findByUuid?uuid=' + uuid
