@@ -7,7 +7,7 @@ class MetadataEntity:
 
     def __init__(self, object_id=None, content={}, links={}, external_links={}):
         self.object_id = object_id
-        self._content = DataNode(copy.deepcopy(content))
+        self._content = DataNode(defaults=copy.deepcopy(content))
         self._links = copy.deepcopy(links)
         self._external_links = copy.deepcopy(external_links)
 
