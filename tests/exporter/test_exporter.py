@@ -1,6 +1,8 @@
 import json
 import os
 import copy
+import uuid
+
 import requests
 
 from mock import MagicMock
@@ -22,8 +24,12 @@ class TestExporter(TestCase):
         self.longMessage = True
         pass
 
-    def test_bundleProject(self):
+    @patch('ingest.api.dssapi.DssApi')
+    def test_bundleProject(self, dss_api_constructor):
         # given:
+        dss_api_constructor.return_value = MagicMock('dss_api')
+
+        # and:
         exporter = IngestExporter()
         project_entity = self._create_entity_template()
 
@@ -50,8 +56,12 @@ class TestExporter(TestCase):
         # and:
         self.assertFalse('content' in hca_ingest.keys())
 
-    def test_bundleFileIngest(self):
+    @patch('ingest.api.dssapi.DssApi')
+    def test_bundleFileIngest(self, dss_api_constructor):
         # given:
+        dss_api_constructor.return_value = MagicMock('dss_api')
+
+        # and:
         exporter = IngestExporter()
         file_entity = self._create_entity_template()
 
@@ -76,8 +86,12 @@ class TestExporter(TestCase):
         self.assertEqual(hca_ingest['submissionDate'], file_entity['submissionDate'])
         # TODO is describedBy required?
 
-    def test_bundleProtocolIngest(self):
+    @patch('ingest.api.dssapi.DssApi')
+    def test_bundleProtocolIngest(self, dss_api_constructor):
         # given:
+        dss_api_constructor.return_value = MagicMock('dss_api')
+
+        # and:
         exporter = IngestExporter()
 
         # and:
@@ -94,8 +108,12 @@ class TestExporter(TestCase):
         self.assertEqual(hca_ingest['document_id'], protocol_entity['uuid']['uuid'])
         self.assertEqual(hca_ingest['submissionDate'], protocol_entity['submissionDate'])
 
-    def test_get_project_info(self):
+    @patch('ingest.api.dssapi.DssApi')
+    def test_get_project_info(self, dss_api_constructor):
         # given:
+        dss_api_constructor.return_value = MagicMock('dss_api')
+
+        # and:
         exporter = IngestExporter()
 
         # and:
@@ -108,8 +126,10 @@ class TestExporter(TestCase):
         # then:
         self.assertTrue(project)
 
-    def test_get_project_info_error(self):
+    @patch('ingest.api.dssapi.DssApi')
+    def test_get_project_info_error(self, dss_api_constructor):
         # given:
+        dss_api_constructor.return_value = MagicMock('dss_api')
         exporter = IngestExporter()
 
         # and:
@@ -123,8 +143,12 @@ class TestExporter(TestCase):
 
         self.assertFalse(project)
 
-    def test_get_input_bundle(self):
+    @patch('ingest.api.dssapi.DssApi')
+    def test_get_input_bundle(self, dss_api_constructor):
         # given:
+        dss_api_constructor.return_value = MagicMock('dss_api')
+
+        # and:
         exporter = IngestExporter()
 
         # and:
@@ -137,8 +161,12 @@ class TestExporter(TestCase):
         # then:
         self.assertEqual('bundle1', input_bundle)
 
-    def test_generate_metadata_files(self):
+    @patch('ingest.api.dssapi.DssApi')
+    def test_generate_metadata_files(self, dss_api_constructor):
         # given:
+        dss_api_constructor.return_value = MagicMock('dss_api')
+
+        # and:
         exporter = IngestExporter()
 
         # and:
@@ -175,8 +203,14 @@ class TestExporter(TestCase):
         self.assertEqual(metadata_files['file']['dss_uuid'], 'new-uuid', 'file must have a new file uuid')
         self.assertEqual(metadata_files['links']['dss_uuid'], 'new-uuid', 'links must have a new file uuid')
 
-    def test_generate_metadata_files_has_input_bundle(self):
+    @patch('ingest.api.dssapi.DssApi')
+    @patch.object(uuid, 'uuid4') # TODO this is knowing too much implementation detail!
+    def test_generate_metadata_files_has_input_bundle(self, uuid_generator, dss_api_constructor):
         # given:
+        uuid_generator.return_value = 'new-uuid'
+        dss_api_constructor.return_value = MagicMock('dss_api')
+
+        # and:
         exporter = IngestExporter()
 
         # and:
@@ -236,8 +270,12 @@ class TestExporter(TestCase):
 
         self.assertEqual(metadata_files['links']['dss_uuid'], 'new-uuid')
 
-    def test_upload_metadata_files(self):
+    @patch('ingest.api.dssapi.DssApi')
+    def test_upload_metadata_files(self, dss_api_constructor):
         # given:
+        dss_api_constructor.return_value = MagicMock('dss_api')
+
+        # and:
         exporter = IngestExporter()
 
         # and:
@@ -290,8 +328,12 @@ class TestExporter(TestCase):
         self.assertEqual(metadata_files_info['project']['dss_uuid'], 'uuid')
         self.assertEqual(metadata_files_info['file']['upload_file_url'], 'file_url')
 
-    def test_upload_metadata_files_error(self):
+    @patch('ingest.api.dssapi.DssApi')
+    def test_upload_metadata_files_error(self, dss_api_constructor):
         # given:
+        dss_api_constructor.return_value = MagicMock('dss_api')
+
+        # and:
         exporter = IngestExporter()
 
         # and:
@@ -340,8 +382,12 @@ class TestExporter(TestCase):
         with self.assertRaises(ingestexportservice.BundleFileUploadError) as e:
             metadata_files = exporter.upload_metadata_files('sub_uuid', metadata_files_info)
 
-    def test_put_bundle_in_dss_error(self):
+    @patch('ingest.api.dssapi.DssApi')
+    def test_put_bundle_in_dss_error(self, dss_api_constructor):
         # given:
+        dss_api_constructor.return_value = MagicMock('dss_api')
+
+        # and:
         exporter = IngestExporter()
 
         # and:
@@ -353,7 +399,10 @@ class TestExporter(TestCase):
 
     # mocks linked entities in the ingest API, attempts to build a bundle by crawling from an assay
     # process, asserts that the bundle created is equivalent to a known bundle
-    def test_create_bundle_manifest(self):
+    @patch('ingest.api.dssapi.DssApi')
+    def test_create_bundle_manifest(self, dss_api_constructor):
+        # given:
+        dss_api_constructor.return_value = MagicMock('dss_api')
 
         class MockRequestResponse:
             def __init__(self, json_payload, status_code):
