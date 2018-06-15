@@ -140,7 +140,7 @@ class ColumnSpecificationTest(TestCase):
 
     def test_get_conversion_type_member_field(self):
         # given:
-        column_spec = ColumnSpecification('user.name', 'profile', 'user_data', DataType.STRING)
+        column_spec = ColumnSpecification('user.name', 'user', 'user_data', DataType.STRING)
 
         # expect:
         self.assertEqual(ConversionType.MEMBER_FIELD, column_spec.get_conversion_type())
