@@ -84,9 +84,11 @@ class EntityLinker(object):
         linked_protocol_ids = links_by_entity.get('protocol', [])
         linked_file_ids = links_by_entity.get('file', [])
 
+        linking_details = from_entity.linking_details
+
         if linked_biomaterial_ids or linked_file_ids:
 
-            linking_process = self.link_process(entity_map, linked_process_id)
+            linking_process = self.link_process(entity_map, linked_process_id, linking_details)
             linking_process.direct_links.append({
                 'entity': 'project',
                 'id': project.id,
@@ -128,14 +130,11 @@ class EntityLinker(object):
                     'relationship': 'inputToProcesses'
                 })
 
-    def link_process(self, entity_map, linked_process_id):
-        linking_process = None
+    def link_process(self, entity_map, linked_process_id, linking_details):
+        if not linked_process_id:
+            linked_process_id = self._generate_empty_process_id()
 
-        if linked_process_id:
-            linking_process = self.create_or_get_process(entity_map, linked_process_id)
-        else:
-            empty_process_id = self._generate_empty_process_id()
-            linking_process = self._create_empty_process(empty_process_id)
+        linking_process = self.create_or_get_process(entity_map, linked_process_id, linking_details)
 
         return linking_process
 
@@ -155,11 +154,11 @@ class EntityLinker(object):
                 if link_entity_type == 'process' and not len(link_entity_ids) == 1:
                     raise MultipleProcessesFound(entity, link_entity_ids)
 
-    def create_or_get_process(self, entity_map, process_id):
+    def create_or_get_process(self, entity_map, process_id, linking_details):
         process = entity_map.get_entity('process', process_id)
 
         if not process:
-            process = self._create_empty_process(process_id)
+            process = self.create_process(process_id, linking_details)
 
         return process
 
@@ -178,18 +177,31 @@ class EntityLinker(object):
 
         return link_key in VALID_ENTITY_LINKS_MAP
 
-    def _create_empty_process(self, empty_process_id):
-        process_core = { 'process_id': empty_process_id }
+    def create_process(self, process_id, linking_details):
         schema_type = 'process'
         described_by = self.template_manager.get_schema_url(schema_type)
 
-        obj = {"process_core": process_core, "schema_type": schema_type, "describedBy": described_by}
+        if linking_details:
+            if not linking_details.get('process_core'):
+                linking_details['process_core'] = {}
+
+            linking_details['process_core']['process_id'] = process_id
+            linking_details['schema_type'] = schema_type
+            linking_details['described_by'] = described_by
+        else:
+            process_core = {'process_id': process_id}
+            linking_details = {
+                "process_core": process_core,
+                "schema_type": schema_type,
+                "describedBy": described_by
+            }
 
         process = Entity(
             entity_type='process',
-            entity_id=empty_process_id,
-            content=obj
+            entity_id=process_id,
+            content=linking_details
         )
+
         return process
 
     def _generate_empty_process_id(self):
@@ -200,12 +212,14 @@ class EntityLinker(object):
 
 class Entity(object):
 
-    def __init__(self, entity_type, entity_id, content, ingest_json=None, links_by_entity=None, direct_links=None, is_reference=False):
+    def __init__(self, entity_type, entity_id, content, ingest_json=None, links_by_entity=None,
+                 direct_links=None, is_reference=False, linking_details=None):
         self.type = entity_type
         self.id = entity_id
         self.content = content
         self._prepare_links_by_entity(links_by_entity)
         self._prepare_direct_links(direct_links)
+        self._prepare_linking_details(linking_details)
         self.ingest_json = ingest_json
         self.is_reference = is_reference
 
@@ -218,6 +232,11 @@ class Entity(object):
         self.direct_links = []
         if direct_links is not None:
             self.direct_links.extend(direct_links)
+
+    def _prepare_linking_details(self, linking_details):
+        self.linking_details = {}
+        if linking_details is not None:
+            self.links_by_entity.update(linking_details)
 
 
 class Submission(object):
@@ -328,7 +347,8 @@ class EntityMap(object):
                                 entity_id=entity_id,
                                 content=entity_body.get('content'),
                                 links_by_entity=entity_body.get('links_by_entity', {}),
-                                is_reference=entity_body.get('is_reference', False))
+                                is_reference=entity_body.get('is_reference', False),
+                                linking_details=entity_body.get('link_details', {}))
 
                 dictionary.add_entity(entity)
 
