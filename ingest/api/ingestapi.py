@@ -488,3 +488,18 @@ class BundleManifest:
         self.fileFilesMap = {}
         self.fileProjectMap = {}
         self.fileProtocolMap = {}
+
+
+class SimpleBundleManifest:
+    def __init__(self):
+        self.bundleUuid = str(uuid.uuid4())
+
+        # dicts() of UUIDs to bundle metadata docs (which is ingest metadata + other info like dates)
+        self.files = dict()
+        self.biomaterials = dict()
+        self.processes = dict()
+        self.protocols = dict()
+        self.projects = dict()
+
+        # dicts() of UUIDs to cloud URLs of data files
+        self.data_files = dict()

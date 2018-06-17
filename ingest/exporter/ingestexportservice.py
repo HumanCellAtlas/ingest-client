@@ -181,6 +181,16 @@ class IngestExporter:
             bundle["hca_ingest"]["accession"] = ""
         return bundle
 
+
+    def bundleMetadataSimple(self, metadata_doc, uuid):
+        bundle_doc = dict()
+        bundle_doc['uuid'] = uuid
+        bundle_doc['content'] = metadata_doc['content']
+        bundle_doc['create_date'] = metadata_doc['submissionDate']
+        bundle_doc['update_date'] = metadata_doc['updateDate']
+
+        return bundle_doc
+
     def _copyAndTrim(self, project_entity):
         copy = project_entity.copy()
         for property in ["_links", "events", "validationState", "validationErrors", "user", "lastModifiedUser"]:
@@ -207,27 +217,29 @@ class IngestExporter:
 
         self.logger.info('Retrieving all process information...')
         process_info = self.get_all_process_info(process_url)
+        simple = self.simplify_process_info(process_info)
+        simple_prepared = self.prepare_metadata_files_simple(simple)
 
         self.logger.info('Generating bundle files...')
-        metadata_files_info = self.prepare_metadata_files(process_info)
-        data_files_info = self.prepare_data_files(process_info)
 
-        bundle_manifest = self.create_bundle_manifest(submission_uuid, metadata_files_info, process_info)
+        # data_files_info = self.prepare_data_files(process_info) # TODO:simple whats this?
+
+        # bundle_manifest = self.create_bundle_manifest(submission_uuid, metadata_files_info, process_info) # TODO:simple not creating a BundleMAnifest in ingest
 
         if self.dryrun:
             self.logger.info('Export is using dry run mode.')
             self.logger.info('Dumping bundle files...')
-            self.dump_metadata_files_and_bundle_manifest(metadata_files_info, bundle_manifest)
-
+            #self.dump_metadata_files_and_bundle_manifest(metadata_files_info, bundle_manifest) TODO:simple not creating a BundleMAnifest in ingest
         else:
             self.logger.info('Uploading metadata files...')
-            self.upload_metadata_files(submission_uuid, metadata_files_info)
+            self.upload_metadata_files(submission_uuid, simple_prepared)
 
             self.logger.info('Saving files in DSS...')
-            bundle_uuid = bundle_manifest.bundleUuid
+            # bundle_uuid = bundle_manifest.bundleUuid TODO:simple not creating a BundleMAnifest in ingest
+            bundle_uuid = str(uuid.uuid4())
 
-            metadata_files = self.get_metadata_files(metadata_files_info)
-            data_files = self.get_data_files(data_files_info)
+            metadata_files = self.get_metadata_files(simple_prepared)
+            data_files = self.get_data_files_simple(simple['file'])
             bundle_files = metadata_files + data_files
 
             created_files = self.put_files_in_dss(bundle_uuid, bundle_files)
@@ -236,13 +248,27 @@ class IngestExporter:
             self.put_bundle_in_dss(bundle_uuid, created_files)
 
             self.logger.info('Saving bundle manifest...')
-            self.ingest_api.createBundleManifest(bundle_manifest)
+            # self.ingest_api.createBundleManifest(bundle_manifest)  TODO:simple not creating a BundleMAnifest in ingest
 
-            saved_bundle_uuid = bundle_manifest.bundleUuid
+            #saved_bundle_uuid = bundle_manifest.bundleUuid  TODO:simple not creating a BundleMAnifest in ingest
 
-            self.logger.info('Bundle ' + saved_bundle_uuid + ' was successfully created!')
+            self.logger.info('Bundle ' + bundle_uuid + ' was successfully created!')
 
         return saved_bundle_uuid
+
+    def simplify_process_info(self, process_info: 'ProcessInfo') -> dict:
+        #  given a ProcessInfo, pull out all the metadata and return as a map of UUID->metadata documents
+        simplified = dict()
+        simplified['process'] = dict(process_info.derived_by_processes)
+        simplified['biomaterial'] = dict(process_info.input_biomaterials)
+        simplified['protocol'] = dict(process_info.protocols)
+        simplified['file'] = dict(process_info.derived_files)
+        simplified['file'].update(process_info.input_files)
+
+        simplified['project'] = dict()
+        simplified['project'][process_info.project['uuid']['uuid']] = process_info.project
+
+        return simplified
 
     def get_all_process_info(self, process_url):
         process = self.ingest_api.getAssay(process_url)  # TODO rename getAssay to getProcess
@@ -354,6 +380,33 @@ class IngestExporter:
             return bundle_manifests[0]
 
         return None
+
+
+    def prepare_metadata_files_simple(self, simple_metadata_info) -> 'dict':
+        prepared_simple = dict()
+
+        for entity_type in ['biomaterial', 'file', 'project', 'protocol', 'process']:
+            prepared_simple[entity_type] = list()
+            for (uuid, doc) in simple_metadata_info[entity_type]:
+                specific_types_counter = dict()
+                specific_entity_type = self.getSchemaNameForEntity(doc)
+                specific_types_counter[specific_entity_type] = 0 if specific_entity_type not in specific_types_counter else specific_types_counter[specific_entity_type] + 1
+
+                file_name = '{0}_{1}.json'.format(specific_entity_type, specific_types_counter[specific_entity_type])
+                upload_filename = '{0}_{1}.json'.format(specific_entity_type, uuid)
+
+                prepared_doc = {
+                    'content': self.bundleMetadataSimple(doc, uuid),
+                    'content_type': '"metadata/{0}"'.format(entity_type),
+                    'indexed': True,  # TODO:simple turn this off?
+                    'dss_filename': file_name,
+                    'dss_uuid': uuid,
+                    'upload_filename': upload_filename
+                }
+
+                prepared_simple[entity_type].append(prepared_doc)
+
+        return prepared_simple
 
     def prepare_metadata_files(self, process_info):
         bundle_content = self.build_and_validate_content(process_info)
@@ -589,13 +642,14 @@ class IngestExporter:
     def upload_metadata_files(self, submission_uuid, metadata_files_info):
         try:
             for metadata_type in ['project', 'biomaterial', 'process', 'protocol', 'file', 'links']:
-                bundle_file = metadata_files_info[metadata_type]
-                filename = bundle_file['upload_filename']
-                content = bundle_file['content']
-                content_type = bundle_file['content_type']
+                for metadata_doc in metadata_files_info[metadata_type]:
+                    bundle_file = metadata_doc
+                    filename = bundle_file['upload_filename']
+                    content = bundle_file['content']
+                    content_type = bundle_file['content_type']
 
-                uploaded_file = self.writeMetadataToStaging(submission_uuid, filename, content, content_type)
-                bundle_file['upload_file_url'] = uploaded_file.url
+                    uploaded_file = self.writeMetadataToStaging(submission_uuid, filename, content, content_type)
+                    bundle_file['upload_file_url'] = uploaded_file.url
         except Exception as e:
             message = "An error occurred on uploading bundle files: " + str(e)
             raise BundleFileUploadError(message)
@@ -616,17 +670,7 @@ class IngestExporter:
             version = ''
 
             try:
-                if bundle_file['is_same_as_input']:
-                    # TODO this assumes that the latest version is the file version in the input bundle, should be a safe assumption for now
-                    # Ideally, bundle manifest must store the file uuid and version and version must be retrieved from there
-                    file_response = self.dss_api.head_file(bundle_file["dss_uuid"])
-                    created_file = {
-                        'version': file_response.headers['X-DSS-VERSION']
-                    }
-                else:
-                    created_file = self.dss_api.put_file(bundle_uuid, bundle_file)
-
-
+                created_file = self.dss_api.put_file(bundle_uuid, bundle_file)
                 version = created_file['version']
             except Exception as e:
                 raise FileDSSError('An error occurred while putting file in DSS' + str(e))
@@ -646,16 +690,16 @@ class IngestExporter:
     def get_metadata_files(self, metadata_files_info):
         metadata_files = []
 
-        for metadata_type, metadata_file in metadata_files_info.items():
-            metadata_files.append({
-                'name': metadata_file['upload_filename'],
-                'submittedName': metadata_file['dss_filename'],
-                'url': metadata_file['upload_file_url'],
-                'dss_uuid': metadata_file['dss_uuid'],
-                'indexed': metadata_file['indexed'],
-                'content-type': metadata_file['content_type'],
-                'is_same_as_input': metadata_file['is_same_as_input'] if 'is_same_as_input' in metadata_file else False
-            })
+        for entity_type in ['biomaterial', 'file', 'project', 'protocol', 'process']:
+            for metadata_file in metadata_files_info[entity_type]:
+                metadata_files.append({
+                    'name': metadata_file['upload_filename'],
+                    'submittedName': metadata_file['dss_filename'],
+                    'url': metadata_file['upload_file_url'],
+                    'dss_uuid': metadata_file['dss_uuid'],
+                    'indexed': metadata_file['indexed'],
+                    'content-type': metadata_file['content_type']
+                })
 
         return metadata_files
 
@@ -677,6 +721,27 @@ class IngestExporter:
             })
 
         return data_files
+
+
+    def get_data_files_simple(self, uuid_file_dict):
+        data_files = []
+
+        for file_uuid, data_file in uuid_file_dict.items():
+            filename = data_file['fileName']
+            cloud_url = data_file['cloudUrl']
+
+            data_files.append({
+                'name': filename,
+                'submittedName': filename,
+                'url': cloud_url,
+                'dss_uuid': str(uuid.uuid4()),  # using a new UUID for these, not sharing the uuid of the File resource
+                'indexed': False,
+                'content-type': 'data'
+            })
+
+        return data_files
+
+
 
     def prepare_data_files(self, process_info):
         for uuid, data_file in process_info.derived_files.items():
