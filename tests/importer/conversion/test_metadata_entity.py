@@ -80,3 +80,17 @@ class MetadataEntityTest(TestCase):
         process_links = metadata.get_external_links('process')
         self.assertIsNotNone(process_links)
         self.assertCountEqual(batch_2 + batch_1 + batch_3, process_links)
+
+    def test_define_linking_detail(self):
+        # given:
+        metadata = MetadataEntity()
+
+        # when:
+        metadata.define_linking_detail('product_core.name', 'Apple Juice')
+        metadata.define_linking_detail('product_core.description', 'pasteurised fruit juice')
+
+        # then:
+        product_core = metadata.get_linking_detail('product_core')
+        self.assertIsNotNone(product_core)
+        self.assertEqual('Apple Juice', product_core.get('name'))
+        self.assertEqual('pasteurised fruit juice', product_core.get('description'))
