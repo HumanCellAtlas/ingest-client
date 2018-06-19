@@ -725,7 +725,12 @@ class IngestExporter:
 
     def get_data_files_simple(self, uuid_file_dict):
         data_files = []
-
+        #  TODO: need to keep track of UUIDs used so that retries work when the DSS returns a 500
+        static_uuids = ["fba24afa-3531-4088-99d1-5270660997f6",
+                        "3845c8ec-3236-4185-a615-a8e65ec0853f",
+                        "50cbc781-1f4a-479e-8406-ae2d156cf57a",
+                        "e0103c5b-2d84-42ce-ac90-4da606203aa7"]
+        indx = 0
         for file_uuid, data_file in uuid_file_dict.items():
             filename = data_file['fileName']
             cloud_url = data_file['cloudUrl']
@@ -734,10 +739,11 @@ class IngestExporter:
                 'name': filename,
                 'submittedName': filename,
                 'url': cloud_url,
-                'dss_uuid': str(uuid.uuid4()),  # using a new UUID for these, not sharing the uuid of the File resource
+                'dss_uuid': static_uuids[indx],  # using a new UUID for these, not sharing the uuid of the File resource
                 'indexed': False,
                 'content-type': 'data'
             })
+            indx = indx + 1
 
         return data_files
 
