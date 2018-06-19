@@ -641,7 +641,7 @@ class IngestExporter:
 
     def upload_metadata_files(self, submission_uuid, metadata_files_info):
         try:
-            for metadata_type in ['project', 'biomaterial', 'process', 'protocol', 'file', 'links']:
+            for metadata_type in ['project', 'biomaterial', 'process', 'protocol', 'file']:
                 for metadata_doc in metadata_files_info[metadata_type]:
                     bundle_file = metadata_doc
                     filename = bundle_file['upload_filename']
