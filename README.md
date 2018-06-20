@@ -12,6 +12,9 @@ This repository contain the hca-ingest Python package library which can be share
     pip install hca-ingest
 
 ## Usage
+
+### API package
+
 To use the Ingest API interface in your python script 
 
     from ingest.api.ingestapi import IngestApi
@@ -19,6 +22,38 @@ To use the Ingest API interface in your python script
 Configure the ingest url to be used by setting the environment variable for INGEST_API
     
     INGEST_API=http://localhost:8080
+
+### Schema template package
+
+The schema template package provides convenient lookup of properties in the HCA JSON schema.
+Each property in the JSON schema is represented as a simple key that is prefixed with the schema name.
+
+The first element is the short name for the schema followed by the property. e.g the key for the biomaterial_id property in the
+donor_organism schema is `donor_organism.biomaterial_core.biomaterial_id`.
+
+The schema template provides access to attributes of each key that is useful for developing schema aware applications that need to query or generate JSON documents against the JSON schema.
+
+| Key | Description | Examples |
+| --- |---| --- |
+| {key}.schema.high_level_entity | Tells you if the property is part of `type`, `module` or `core` schema | `donor_organism.biomaterial_core.schema.high_level_entity` = core, `donor_organism.schema.high_level_entity` = type, `donor_organism.medical_history.schema.high_level_entity` = module |
+| {key}.schema.domain_entity | Tells you if the property is in a `biomaterial`, `file`, `process`, `protocol`, `analysis` or `project` schema | `donor_organism.schema.domain_entity` = biomaterial,  `dissociation_protocol.schema.domain_entity` = protocol,  `dissociation_protocol.schema.domain_entity` = protocol, `sequence_file.schema.domain_entity` = File|
+| {key}.schema.module | Tells you the name of the schema where this property is defined | `donor_organism.schema.domain_entity` = biomaterial,  `dissociation_protocol.schema.module` = dissociation_protocol,  `dissociation_protocol.schema.module` = dissociation_protocol, `donor_organism.medical_history.schema.module` = medical_history |
+| {key}.schema.url | Gives you the full URL to the schema where this property is defined  |  `donor_organism.medical_history.schema.url` = https://schema.humancellatlas.org/module/biomaterial/5.1.0/medical_history |
+| {key}.value_type | Tells you the expected value stype for this property. Can be one of `object`, `string`, `integer`  | `donor_organism.medical_history.medication.value_type` = string, `sequence_file.lane_index.value_type` = integer, `sequence_file.file_core.value_type` = object |
+| {key}.multivalue | Tells you in the value is a single value or an array of values  |  `sequence_file.insdc_run.multivalue` = True |
+| {key}.user_friendly | The user friendly name for the property  | `sequence_file.insdc_run.multivalue` = INSDC run |
+| {key}.description | A short description of the property | `sequence_file.insdc_run.multivalue` = An INSDC (International Nucleotide Sequence Database Collaboration) run accession. Accession must start with DRR, ERR, or SRR. |
+| {key}.format | Tell you if the property has a specific format, like a date format  | `project.contact.email.format` = email |
+| {key}.required | Tells you if the property is required  | `donor_organism.biomaterial_core.biomaterial_id.required` = True|
+| {key}.identifiable | Tells you if the property is an identifiable field for the current entity  | `donor_organism.biomaterial_core.biomaterial_id.identifiable` = True,  `donor_organism.biomaterial_core.biomaterial_name.identifiable` = False |
+| {key}.external_reference | Tells you if the property is globaly identifiable and therefore retrievable a retrievable object from ingest   | `donor_organism.uuid.external_reference` = True|
+| {key}.example  | An example of the expected value for this property  |  `project.contact.contact_name.example` = John,D,Doe |
+
+
+
+
+
+
 
 ## Developer Notes
 
