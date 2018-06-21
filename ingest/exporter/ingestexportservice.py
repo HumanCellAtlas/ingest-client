@@ -387,8 +387,8 @@ class IngestExporter:
 
         for entity_type in ['biomaterial', 'file', 'project', 'protocol', 'process']:
             prepared_simple[entity_type] = list()
+            specific_types_counter = dict()
             for (uuid, doc) in simple_metadata_info[entity_type].items():
-                specific_types_counter = dict()
                 specific_entity_type = self.getSchemaNameForEntity(doc)
                 specific_types_counter[specific_entity_type] = 0 if specific_entity_type not in specific_types_counter else specific_types_counter[specific_entity_type] + 1
 
