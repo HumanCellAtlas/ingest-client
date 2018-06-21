@@ -269,6 +269,9 @@ class IngestExporter:
         simplified['project'] = dict()
         simplified['project'][process_info.project['uuid']['uuid']] = process_info.project
 
+        simplified['links'] = dict()
+        simplified['links'] = self.bundle_links(process_info.links)
+
         return simplified
 
     def get_all_process_info(self, process_url):
@@ -389,23 +392,34 @@ class IngestExporter:
         for entity_type in ['biomaterial', 'file', 'project', 'protocol', 'process']:
             prepared_simple[entity_type] = list()
             specific_types_counter = dict()
-            for (uuid, doc) in simple_metadata_info[entity_type].items():
+            for (metadata_uuid, doc) in simple_metadata_info[entity_type].items():
                 specific_entity_type = self.getSchemaNameForEntity(doc)
                 specific_types_counter[specific_entity_type] = 0 if specific_entity_type not in specific_types_counter else specific_types_counter[specific_entity_type] + 1
 
                 file_name = '{0}_{1}.json'.format(specific_entity_type, specific_types_counter[specific_entity_type])
-                upload_filename = '{0}_{1}.json'.format(specific_entity_type, uuid)
+                upload_filename = '{0}_{1}.json'.format(specific_entity_type, metadata_uuid)
 
                 prepared_doc = {
-                    'content': self.bundleMetadataSimple(doc, uuid),
+                    'content': self.bundleMetadataSimple(doc, metadata_uuid),
                     'content_type': '"metadata/{0}"'.format(entity_type),
                     'indexed': True,  # TODO:simple turn this off?
                     'dss_filename': file_name,
-                    'dss_uuid': uuid,
+                    'dss_uuid': metadata_uuid,
                     'upload_filename': upload_filename
                 }
 
                 prepared_simple[entity_type].append(prepared_doc)
+
+        links_file_uuid = str(uuid.uuid4())
+        prepared_simple['links'] = list()
+        prepared_simple['links'].append({
+            'content': simple_metadata_info['links'],
+            'content_type': '"metadata/{0}"'.format('links'),
+            'indexed': True,
+            'dss_filename': 'links.json',
+            'dss_uuid': links_file_uuid,
+            'upload_filename': 'links_bundle_' + links_file_uuid + '.json'
+        })
 
         return prepared_simple
 
@@ -642,7 +656,7 @@ class IngestExporter:
 
     def upload_metadata_files(self, submission_uuid, metadata_files_info):
         try:
-            for metadata_type in ['project', 'biomaterial', 'process', 'protocol', 'file']:
+            for metadata_type in ['project', 'biomaterial', 'process', 'protocol', 'file', 'links']:
                 for metadata_doc in metadata_files_info[metadata_type]:
                     bundle_file = metadata_doc
                     filename = bundle_file['upload_filename']
@@ -691,7 +705,7 @@ class IngestExporter:
     def get_metadata_files(self, metadata_files_info):
         metadata_files = []
 
-        for entity_type in ['biomaterial', 'file', 'project', 'protocol', 'process']:
+        for entity_type in ['biomaterial', 'file', 'project', 'protocol', 'process', 'links']:
             for metadata_file in metadata_files_info[entity_type]:
                 metadata_files.append({
                     'name': metadata_file['upload_filename'],
