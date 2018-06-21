@@ -188,7 +188,7 @@ class IngestExporter:
         bundle_doc['content'] = metadata_doc['content']
         bundle_doc['create_date'] = metadata_doc['submissionDate']
         bundle_doc['update_date'] = metadata_doc['updateDate']
-        bundle_doc['describedBy'] = "https://raw.githubusercontent.com/HumanCellAtlas/ingest-exporter/unjumble/schema/bundle_schema.json"
+        bundle_doc['describedBy'] = "https://raw.githubusercontent.com/HumanCellAtlas/ingest-exporter/unjumble/schema/bundle/9.0.0/bundle_schema.json"
 
         return bundle_doc
 
