@@ -18,10 +18,10 @@ class SpreadsheetBuilder:
 
         self.header_format = self.workbook.add_format({'bold': True, 'bg_color': '#D0D0D0'})
         self.locked_format = self.workbook.add_format({'locked': True})
-        self.required_header_format = self.workbook.add_format({'bold': True, 'bg_color': 'yellow'})
-        self.desc_format = self.workbook.add_format({'font_color': 'light-grey', 'italic': True, 'text_wrap': True})
+        self.required_header_format = self.workbook.add_format({'bold': True, 'bg_color': '#FFFF00'})
+        self.desc_format = self.workbook.add_format({'font_color': '#808080', 'italic': True, 'text_wrap': True})
 
-    def generate_workbook(self, tabs_template=None, schema_urls=None):
+    def generate_workbook(self, tabs_template=None, schema_urls=list()):
 
         if tabs_template:
 
@@ -97,7 +97,8 @@ class SpreadsheetBuilder:
 
                     col_number+=1
 
-                worksheet.write(4, len(detail["columns"]), "Add your data below this line", self.header_format)
+                worksheet.merge_range(first_col=0, first_row=4, last_col= len(detail["columns"]), last_row=4, cell_format= self.header_format, data="Add your data below this line")
+                worksheet.protect()
 
         self._write_schemas(template.get_schema_urls())
 
