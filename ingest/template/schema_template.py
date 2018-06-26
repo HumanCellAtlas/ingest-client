@@ -119,10 +119,13 @@ class SchemaTemplate:
         '''
         self._template["labels"] = dict
 
-    def yaml_dump(self):
-        return yaml_dump(yaml_load(self.json_dump()))
+    def yaml_dump(self, tabs_only=False):
+        return yaml_dump(yaml_load(self.json_dump(tabs_only)), default_flow_style=False)
 
-    def json_dump(self):
+    def json_dump(self, tabs_only=False):
+        if tabs_only:
+            tabs = {"tabs" : self._template["tabs"]}
+            return json.dumps(tabs, indent=4)
         return json.dumps(self._template, indent=4)
 
     def get_key_for_label(self, column, tab):

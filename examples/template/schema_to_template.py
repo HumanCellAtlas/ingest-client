@@ -48,5 +48,5 @@ print (template.lookup("project.project_core.project_title.user_friendly"))
 
 # dump the config in yaml or json
 
-print(template.yaml_dump())
+print(template.yaml_dump(tabs_only=True))
 # print(data.json_dump())
