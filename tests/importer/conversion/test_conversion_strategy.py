@@ -334,3 +334,20 @@ class LinkingDetailCellConversionTest(TestCase):
 
         # then:
         self.assertEqual('John Doe - converted', metadata.get_linking_detail('user.name'))
+
+    def test_apply_with_previous_entries(self):
+        # given:
+        converter = _create_mock_string_converter()
+        cell_conversion = LinkingDetailCellConversion('product.item.name', converter)
+
+        # and:
+        metadata = MetadataEntity(linking_details={
+            'item': {'description': 'a jar of milk'}
+        })
+
+        # when:
+        cell_conversion.apply(metadata, 'milk')
+
+        # then:
+        self.assertEqual('milk - converted', metadata.get_linking_detail('item.name'))
+        self.assertEqual('a jar of milk', metadata.get_linking_detail('item.description'))
