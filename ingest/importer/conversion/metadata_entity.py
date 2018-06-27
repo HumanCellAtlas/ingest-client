@@ -25,6 +25,10 @@ class MetadataEntity:
     def define_linking_detail(self, link_property, value):
         self._linking_details[link_property] = value
 
+    @property
+    def linking_details(self):
+        return self._linking_details.as_dict()
+
     def get_linking_detail(self, link_property):
         return self._linking_details[link_property]
 
