@@ -6,11 +6,10 @@ from ingest.importer.conversion import conversion_strategy
 from ingest.importer.conversion.column_specification import ColumnSpecification, ConversionType
 from ingest.importer.conversion.conversion_strategy import DirectCellConversion, \
     ListElementCellConversion, CellConversion, IdentityCellConversion, LinkedIdentityCellConversion, \
-    DoNothing, ExternalReferenceCellConversion
+    DoNothing, ExternalReferenceCellConversion, LinkingDetailCellConversion
 from ingest.importer.conversion.data_converter import StringConverter, ListConverter
 from ingest.importer.conversion.exceptions import UnknownMainCategory
 from ingest.importer.conversion.metadata_entity import MetadataEntity
-from ingest.importer.data_node import DataNode
 
 
 def _mock_column_spec(field_name='field_name', main_category=None, converter=None,
@@ -320,3 +319,18 @@ class ExternalReferenceCellConversionTest(TestCase):
         # and:
         expected_ids = ['109bdd9', '73de901', 'c3c35e6']
         self.assertCountEqual(expected_ids, store_item_list)
+
+
+class LinkingDetailCellConversionTest(TestCase):
+
+    def test_apply(self):
+        # given:
+        converter = _create_mock_string_converter()
+        cell_conversion = LinkingDetailCellConversion('profile.user.name', converter)
+        metadata = MetadataEntity()
+
+        # when:
+        cell_conversion.apply(metadata, 'John Doe')
+
+        # then:
+        self.assertEqual('John Doe - converted', metadata.get_linking_detail('user.name'))

@@ -91,6 +91,13 @@ class ExternalReferenceCellConversion(CellConversion):
         metadata.add_external_links(self.main_category, link_ids)
 
 
+class LinkingDetailCellConversion(CellConversion):
+
+    def apply(self, metadata: MetadataEntity, cell_data):
+        value = self.converter.convert(cell_data)
+        metadata.define_linking_detail(self.applied_field, value)
+
+
 class DoNothing(CellConversion):
 
     def __init__(self):
