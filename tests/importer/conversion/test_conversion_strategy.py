@@ -37,6 +37,10 @@ class ModuleTest(TestCase):
         # expect:
         self._assert_correct_strategy(ConversionType.IDENTITY, IdentityCellConversion)
 
+    def test_determine_strategy_for_linking_detail_field(self):
+        # expect
+        self._assert_correct_strategy(ConversionType.LINKING_DETAIL, LinkingDetailCellConversion)
+
     def test_determine_strategy_for_linked_identity_field(self):
         # expect:
         self._assert_correct_strategy(ConversionType.LINKED_IDENTITY, LinkedIdentityCellConversion,
