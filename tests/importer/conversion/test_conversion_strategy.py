@@ -6,11 +6,10 @@ from ingest.importer.conversion import conversion_strategy
 from ingest.importer.conversion.column_specification import ColumnSpecification, ConversionType
 from ingest.importer.conversion.conversion_strategy import DirectCellConversion, \
     ListElementCellConversion, CellConversion, IdentityCellConversion, LinkedIdentityCellConversion, \
-    DoNothing, ExternalReferenceCellConversion
+    DoNothing, ExternalReferenceCellConversion, LinkingDetailCellConversion
 from ingest.importer.conversion.data_converter import StringConverter, ListConverter
 from ingest.importer.conversion.exceptions import UnknownMainCategory
 from ingest.importer.conversion.metadata_entity import MetadataEntity
-from ingest.importer.data_node import DataNode
 
 
 def _mock_column_spec(field_name='field_name', main_category=None, converter=None,
@@ -37,6 +36,10 @@ class ModuleTest(TestCase):
     def test_determine_strategy_for_identity_field(self):
         # expect:
         self._assert_correct_strategy(ConversionType.IDENTITY, IdentityCellConversion)
+
+    def test_determine_strategy_for_linking_detail_field(self):
+        # expect
+        self._assert_correct_strategy(ConversionType.LINKING_DETAIL, LinkingDetailCellConversion)
 
     def test_determine_strategy_for_linked_identity_field(self):
         # expect:
@@ -320,3 +323,35 @@ class ExternalReferenceCellConversionTest(TestCase):
         # and:
         expected_ids = ['109bdd9', '73de901', 'c3c35e6']
         self.assertCountEqual(expected_ids, store_item_list)
+
+
+class LinkingDetailCellConversionTest(TestCase):
+
+    def test_apply(self):
+        # given:
+        converter = _create_mock_string_converter()
+        cell_conversion = LinkingDetailCellConversion('profile.user.name', converter)
+        metadata = MetadataEntity()
+
+        # when:
+        cell_conversion.apply(metadata, 'John Doe')
+
+        # then:
+        self.assertEqual('John Doe - converted', metadata.get_linking_detail('user.name'))
+
+    def test_apply_with_previous_entries(self):
+        # given:
+        converter = _create_mock_string_converter()
+        cell_conversion = LinkingDetailCellConversion('product.item.name', converter)
+
+        # and:
+        metadata = MetadataEntity(linking_details={
+            'item': {'description': 'a jar of milk'}
+        })
+
+        # when:
+        cell_conversion.apply(metadata, 'milk')
+
+        # then:
+        self.assertEqual('milk - converted', metadata.get_linking_detail('item.name'))
+        self.assertEqual('a jar of milk', metadata.get_linking_detail('item.description'))

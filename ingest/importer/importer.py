@@ -130,7 +130,8 @@ class WorksheetImporter:
             records[record_id] = {
                 'content': metadata.content.as_dict(),
                 'links_by_entity': metadata.links,
-                'external_links_by_entity': metadata.external_links
+                'external_links_by_entity': metadata.external_links,
+                'linking_details': metadata.linking_details
             }
         return records
 

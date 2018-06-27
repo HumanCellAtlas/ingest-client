@@ -140,14 +140,14 @@ class ColumnSpecificationTest(TestCase):
 
     def test_get_conversion_type_member_field(self):
         # given:
-        column_spec = ColumnSpecification('user.name', 'profile', 'user_data', DataType.STRING)
+        column_spec = ColumnSpecification('user.name', 'user', 'user_data', DataType.STRING)
 
         # expect:
         self.assertEqual(ConversionType.MEMBER_FIELD, column_spec.get_conversion_type())
 
     def test_get_conversion_type_field_of_list_element(self):
         # given:
-        column_spec = ColumnSpecification('product_name', 'store_schema', 'store_entity',
+        column_spec = ColumnSpecification('product.product_name', 'product', 'store_entity',
                                           DataType.STRING, multivalue_parent=True)
 
         # expect:
@@ -176,3 +176,11 @@ class ColumnSpecificationTest(TestCase):
 
         # expect:
         self.assertEqual(ConversionType.EXTERNAL_REFERENCE, column_spec.get_conversion_type())
+
+    def test_get_conversion_type_linking_detail(self):
+        # given:
+        column_spec = ColumnSpecification('item.description', 'record', 'invoice_detail',
+                                          DataType.STRING)
+
+        # expect:
+        self.assertEqual(ConversionType.LINKING_DETAIL, column_spec.get_conversion_type())

@@ -5,11 +5,12 @@ from ingest.importer.data_node import DataNode
 
 class MetadataEntity:
 
-    def __init__(self, object_id=None, content={}, links={}, external_links={}):
+    def __init__(self, object_id=None, content={}, links={}, external_links={}, linking_details={}):
         self.object_id = object_id
         self._content = DataNode(defaults=copy.deepcopy(content))
         self._links = copy.deepcopy(links)
         self._external_links = copy.deepcopy(external_links)
+        self._linking_details = DataNode(defaults=copy.deepcopy(linking_details))
 
     @property
     def content(self):
@@ -20,6 +21,16 @@ class MetadataEntity:
 
     def define_content(self, content_property, value):
         self._content[content_property] = value
+
+    def define_linking_detail(self, link_property, value):
+        self._linking_details[link_property] = value
+
+    @property
+    def linking_details(self):
+        return self._linking_details.as_dict()
+
+    def get_linking_detail(self, link_property):
+        return self._linking_details[link_property]
 
     @property
     def links(self):

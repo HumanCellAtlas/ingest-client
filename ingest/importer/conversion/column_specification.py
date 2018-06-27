@@ -10,7 +10,8 @@ class ConversionType(Enum):
     FIELD_OF_LIST_ELEMENT = 2,
     IDENTITY = 3,
     LINKED_IDENTITY = 4,
-    EXTERNAL_REFERENCE = 5
+    EXTERNAL_REFERENCE = 5,
+    LINKING_DETAIL = 6
 
 
 class ColumnSpecification:
@@ -39,18 +40,33 @@ class ColumnSpecification:
         return self.external_reference
 
     def get_conversion_type(self):
-        if self.multivalue_parent:
+        if self._represents_an_object_field():
+            conversion_type = self._determine_conversion_type_for_object_field()
+        else:
+            conversion_type = self._determine_conversion_type_for_reference_field()
+        return conversion_type
+
+    def _represents_an_object_field(self):
+        entity_type = utils.extract_root_field(self.field_name)
+        return entity_type == self.object_type
+
+    def _determine_conversion_type_for_object_field(self):
+        if self.identity:
+            conversion_type = ConversionType.IDENTITY
+        elif self.multivalue_parent:
             conversion_type = ConversionType.FIELD_OF_LIST_ELEMENT
-        elif self.identity:
-            entity_type = utils.extract_root_field(self.field_name)
-            if entity_type == self.object_type:
-                conversion_type = ConversionType.IDENTITY
-            elif self.external_reference:
+        else:
+            conversion_type = ConversionType.MEMBER_FIELD
+        return conversion_type
+
+    def _determine_conversion_type_for_reference_field(self):
+        if self.identity:
+            if self.external_reference:
                 conversion_type = ConversionType.EXTERNAL_REFERENCE
             else:
                 conversion_type = ConversionType.LINKED_IDENTITY
         else:
-            conversion_type = ConversionType.MEMBER_FIELD
+            conversion_type = ConversionType.LINKING_DETAIL
         return conversion_type
 
     def determine_converter(self):
