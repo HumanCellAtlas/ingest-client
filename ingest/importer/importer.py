@@ -1,6 +1,6 @@
 import openpyxl
 
-from ingest.importer.conversion import template_manager, conversion_strategy
+from ingest.importer.conversion import template_manager
 from ingest.importer.conversion.template_manager import TemplateManager
 from ingest.importer.spreadsheet.ingest_workbook import IngestWorkbook
 from ingest.importer.submission import IngestSubmitter, EntityMap, EntityLinker
@@ -159,8 +159,7 @@ class WorksheetImporter:
 class ProjectWorksheetImporter(WorksheetImporter):
 
     def do_import(self, worksheet, template: TemplateManager):
-        row_template = None # TODO replace this with custom row template builder
-        records = self._import_using_row_template(worksheet, row_template)
+        records = super(ProjectWorksheetImporter, self).do_import(worksheet, template)
 
         if len(records.keys()) == 0:
             raise NoProjectFound()
@@ -174,7 +173,8 @@ class ProjectWorksheetImporter(WorksheetImporter):
 class ContactWorksheetImporter(WorksheetImporter):
 
     def do_import(self, worksheet, template: TemplateManager):
-        records = super(ContactWorksheetImporter, self).do_import(worksheet, template)
+        row_template = template.create_simple_row_template(worksheet)
+        records = self._import_using_row_template(worksheet, row_template)
 
         return list(records.values())
 
