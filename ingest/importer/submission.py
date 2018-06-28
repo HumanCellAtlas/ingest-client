@@ -187,7 +187,7 @@ class EntityLinker(object):
 
             linking_details['process_core']['process_id'] = process_id
             linking_details['schema_type'] = schema_type
-            linking_details['described_by'] = described_by
+            linking_details['describedBy'] = described_by
         else:
             process_core = {'process_id': process_id}
             linking_details = {
