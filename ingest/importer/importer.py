@@ -122,8 +122,11 @@ class WorksheetImporter:
         self.unknown_id_ctr = 0
 
     def do_import(self, worksheet, template: TemplateManager):
-        records = {}
         row_template = template.create_row_template(worksheet)
+        return self._do_import(worksheet, row_template)
+
+    def _do_import(self, worksheet, row_template):
+        records = {}
         for row in self._get_data_rows(worksheet):
             metadata = row_template.do_import(row)
             record_id = self._determine_record_id(metadata)
@@ -153,7 +156,8 @@ class WorksheetImporter:
 class ProjectWorksheetImporter(WorksheetImporter):
 
     def do_import(self, worksheet, template: TemplateManager):
-        records = super(ProjectWorksheetImporter, self).do_import(worksheet, template)
+        row_template = None # TODO replace this with custom row template builder
+        records = self._do_import(worksheet, row_template)
 
         if len(records.keys()) == 0:
             raise NoProjectFound()
