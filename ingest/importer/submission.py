@@ -236,7 +236,7 @@ class Entity(object):
     def _prepare_linking_details(self, linking_details):
         self.linking_details = {}
         if linking_details is not None:
-            self.links_by_entity.update(linking_details)
+            self.linking_details.update(linking_details)
 
 
 class Submission(object):
@@ -348,7 +348,7 @@ class EntityMap(object):
                                 content=entity_body.get('content'),
                                 links_by_entity=entity_body.get('links_by_entity', {}),
                                 is_reference=entity_body.get('is_reference', False),
-                                linking_details=entity_body.get('link_details', {}))
+                                linking_details=entity_body.get('linking_details', {}))
 
                 dictionary.add_entity(entity)
 

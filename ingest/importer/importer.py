@@ -96,10 +96,13 @@ class WorkbookImporter:
         project_importer = ProjectWorksheetImporter()
         project_dict = project_importer.do_import(project_worksheet, self.template_mgr)
         contact_worksheet = workbook.get_contact_worksheet()
-        contact_importer = ContactWorksheetImporter()
-        contacts = contact_importer.do_import(contact_worksheet, self.template_mgr)
-        project_record = list(project_dict.values())[0]
-        project_record['content']['contributors'] = list(map(lambda record: record['content']['contributors'][0], contacts))
+
+        if contact_worksheet:
+            contact_importer = ContactWorksheetImporter()
+            contacts = contact_importer.do_import(contact_worksheet, self.template_mgr)
+            project_record = list(project_dict.values())[0]
+            project_record['content']['contributors'] = list(map(lambda record: record['content']['contributors'][0], contacts))
+
         return project_dict
 
     def create_project_dict(self, project_id):
