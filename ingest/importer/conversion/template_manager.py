@@ -5,7 +5,7 @@ from openpyxl.worksheet import Worksheet
 import ingest.template.schema_template as schema_template
 from ingest.importer.conversion import utils, conversion_strategy
 from ingest.importer.conversion.column_specification import ColumnSpecification
-from ingest.importer.conversion.conversion_strategy import CellConversion
+from ingest.importer.conversion.conversion_strategy import CellConversion, ListElementCellConversion
 from ingest.importer.conversion.metadata_entity import MetadataEntity
 from ingest.importer.data_node import DataNode
 from ingest.template.schema_template import SchemaTemplate
@@ -36,6 +36,20 @@ class TemplateManager:
             cell_conversions.append(strategy)
         default_values = self._define_default_values(object_type)
         return RowTemplate(cell_conversions, default_values=default_values)
+
+    def create_simple_row_template(self, worksheet: Worksheet):
+        tab_name = worksheet.title
+        object_type = self.get_concrete_entity_of_tab(tab_name)
+        header_row = self._get_header_row(worksheet)
+        cell_conversions = []
+        for cell in header_row:
+            header = cell.value
+            column_spec = self._define_column_spec(header, object_type)
+            strategy = ListElementCellConversion(column_spec.field_name, column_spec.determine_converter())
+            cell_conversions.append(strategy)
+        default_values = self._define_default_values(object_type)
+        return RowTemplate(cell_conversions, default_values=default_values)
+
 
     @staticmethod
     def _get_header_row(worksheet):

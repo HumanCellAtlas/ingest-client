@@ -1,6 +1,6 @@
 import openpyxl
 
-from ingest.importer.conversion import template_manager, conversion_strategy
+from ingest.importer.conversion import template_manager
 from ingest.importer.conversion.template_manager import TemplateManager
 from ingest.importer.spreadsheet.ingest_workbook import IngestWorkbook
 from ingest.importer.submission import IngestSubmitter, EntityMap, EntityLinker
@@ -96,10 +96,13 @@ class WorkbookImporter:
         project_importer = ProjectWorksheetImporter()
         project_dict = project_importer.do_import(project_worksheet, self.template_mgr)
         contact_worksheet = workbook.get_contact_worksheet()
-        contact_importer = ContactWorksheetImporter()
-        contacts = contact_importer.do_import(contact_worksheet, self.template_mgr)
-        project_record = list(project_dict.values())[0]
-        project_record['content']['contributors'] = list(map(lambda record: record['content']['contributors'][0], contacts))
+
+        if contact_worksheet:
+            contact_importer = ContactWorksheetImporter()
+            contacts = contact_importer.do_import(contact_worksheet, self.template_mgr)
+            project_record = list(project_dict.values())[0]
+            project_record['content']['contributors'] = list(map(lambda record: record['content']['contributors'][0], contacts))
+
         return project_dict
 
     def create_project_dict(self, project_id):
@@ -122,15 +125,19 @@ class WorksheetImporter:
         self.unknown_id_ctr = 0
 
     def do_import(self, worksheet, template: TemplateManager):
-        records = {}
         row_template = template.create_row_template(worksheet)
+        return self._import_using_row_template(worksheet, row_template)
+
+    def _import_using_row_template(self, worksheet, row_template):
+        records = {}
         for row in self._get_data_rows(worksheet):
             metadata = row_template.do_import(row)
             record_id = self._determine_record_id(metadata)
             records[record_id] = {
                 'content': metadata.content.as_dict(),
                 'links_by_entity': metadata.links,
-                'external_links_by_entity': metadata.external_links
+                'external_links_by_entity': metadata.external_links,
+                'linking_details': metadata.linking_details
             }
         return records
 
@@ -166,7 +173,8 @@ class ProjectWorksheetImporter(WorksheetImporter):
 class ContactWorksheetImporter(WorksheetImporter):
 
     def do_import(self, worksheet, template: TemplateManager):
-        records = super(ContactWorksheetImporter, self).do_import(worksheet, template)
+        row_template = template.create_simple_row_template(worksheet)
+        records = self._import_using_row_template(worksheet, row_template)
 
         return list(records.values())
 

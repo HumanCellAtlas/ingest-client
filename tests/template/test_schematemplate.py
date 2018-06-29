@@ -25,10 +25,6 @@ class TestSchemaTemplate(TestCase):
         self.dummyDonorUri = "https://schema.humancellatlas.org/type/biomaterial/5.1.0/donor_organism"
         pass
 
-    def test_no_schemas(self):
-        schema_template = SchemaTemplate()
-
-
     def test_schema_lookup(self):
 
         data='{"id" : "'+self.dummyProjectUri+'", "properties": {"foo": "bar"} }'

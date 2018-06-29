@@ -91,6 +91,13 @@ class ExternalReferenceCellConversion(CellConversion):
         metadata.add_external_links(self.main_category, link_ids)
 
 
+class LinkingDetailCellConversion(CellConversion):
+
+    def apply(self, metadata: MetadataEntity, cell_data):
+        value = self.converter.convert(cell_data)
+        metadata.define_linking_detail(self.applied_field, value)
+
+
 class DoNothing(CellConversion):
 
     def __init__(self):
@@ -113,6 +120,8 @@ def determine_strategy(column_spec: ColumnSpecification):
             strategy = DirectCellConversion(field_name, converter)
         elif ConversionType.FIELD_OF_LIST_ELEMENT == conversion_type:
             strategy = ListElementCellConversion(field_name, converter)
+        elif ConversionType.LINKING_DETAIL == conversion_type:
+            strategy = LinkingDetailCellConversion(field_name, converter)
         elif ConversionType.IDENTITY == conversion_type:
             strategy = IdentityCellConversion(field_name, converter)
         elif ConversionType.LINKED_IDENTITY == conversion_type:
