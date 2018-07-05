@@ -173,12 +173,7 @@ class TemplateManagerTest(TestCase):
         row_template = template_manager.create_row_template(worksheet)
 
         # then:
-        determine_strategy.assert_called_with(None)
-        self.assertEqual(1, len(row_template.cell_conversions))
-
-        # and:
-        strategy = row_template.cell_conversions[0]
-        self.assertEqual(do_nothing_strategy, strategy)
+        self.assertEqual(0, len(row_template.cell_conversions))
 
     @staticmethod
     def _mock_schema_lookup(schema_template, schema_url='', object_type='', main_category=None):

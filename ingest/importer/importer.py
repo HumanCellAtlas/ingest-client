@@ -126,11 +126,14 @@ class WorksheetImporter:
 
     def do_import(self, worksheet, template: TemplateManager):
         row_template = template.create_row_template(worksheet)
-        return self._import_using_row_template(worksheet, row_template)
+        return self._import_using_row_template(template, worksheet, row_template)
 
-    def _import_using_row_template(self, worksheet, row_template):
+    def _import_using_row_template(self, template, worksheet, row_template):
         records = {}
+        header_row = template.get_header_row(worksheet)
+
         for row in self._get_data_rows(worksheet):
+            row = row[:len(header_row)]
             metadata = row_template.do_import(row)
             record_id = self._determine_record_id(metadata)
             records[record_id] = {
@@ -153,7 +156,7 @@ class WorksheetImporter:
 
     def _get_data_rows(self, worksheet):
         return worksheet.iter_rows(row_offset=self.START_ROW_IDX,
-                                   max_row=(worksheet.max_row - self.START_ROW_IDX))
+                                  max_row=(worksheet.max_row - self.START_ROW_IDX))
 
 
 class ProjectWorksheetImporter(WorksheetImporter):
@@ -174,7 +177,7 @@ class ContactWorksheetImporter(WorksheetImporter):
 
     def do_import(self, worksheet, template: TemplateManager):
         row_template = template.create_simple_row_template(worksheet)
-        records = self._import_using_row_template(worksheet, row_template)
+        records = self._import_using_row_template(template, worksheet, row_template)
 
         return list(records.values())
 

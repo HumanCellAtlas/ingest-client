@@ -27,7 +27,7 @@ class TemplateManager:
     def create_row_template(self, worksheet: Worksheet):
         tab_name = worksheet.title
         object_type = self.get_concrete_entity_of_tab(tab_name)
-        header_row = self._get_header_row(worksheet)
+        header_row = self.get_header_row(worksheet)
         cell_conversions = []
         for cell in header_row:
             header = cell.value
@@ -40,22 +40,32 @@ class TemplateManager:
     def create_simple_row_template(self, worksheet: Worksheet):
         tab_name = worksheet.title
         object_type = self.get_concrete_entity_of_tab(tab_name)
-        header_row = self._get_header_row(worksheet)
+        header_row = self.get_header_row(worksheet)
         cell_conversions = []
         for cell in header_row:
             header = cell.value
             column_spec = self._define_column_spec(header, object_type)
             strategy = ListElementCellConversion(column_spec.field_name, column_spec.determine_converter())
             cell_conversions.append(strategy)
+
         default_values = self._define_default_values(object_type)
         return RowTemplate(cell_conversions, default_values=default_values)
 
 
+    # TODO move this outside template manager
     @staticmethod
-    def _get_header_row(worksheet):
+    def get_header_row(worksheet):
         for row in worksheet.iter_rows(row_offset=3, max_row=1):
             header_row = row
-        return header_row
+
+        clean_header_row = []
+
+        for cell in header_row:
+            if cell.value is None:
+                continue
+            clean_header_row.append(cell)
+
+        return clean_header_row
 
     def _define_column_spec(self, header, object_type):
         if header is not None:
@@ -143,6 +153,8 @@ class RowTemplate:
     def do_import(self, row):
         metadata = MetadataEntity(content=self.default_values)
         for index, cell in enumerate(row):
+            if cell.value is None:
+                continue
             conversion: CellConversion = self.cell_conversions[index]
             conversion.apply(metadata, cell.value)
         return metadata
