@@ -1,10 +1,12 @@
-import openpyxl
+import openpyxl, logging
 
 from ingest.importer.conversion import template_manager
 from ingest.importer.conversion.template_manager import TemplateManager
 from ingest.importer.spreadsheet.ingest_workbook import IngestWorkbook
 from ingest.importer.submission import IngestSubmitter, EntityMap, EntityLinker
 
+format = '[%(filename)s:%(lineno)s - %(funcName)20s() ] %(asctime)s - %(name)s - %(levelname)s - %(message)s'
+logging.basicConfig(format=format)
 
 class XlsImporter:
 
@@ -123,6 +125,7 @@ class WorksheetImporter:
 
     def __init__(self):
         self.unknown_id_ctr = 0
+        self.logger = logging.getLogger(__name__)
 
     def do_import(self, worksheet, template: TemplateManager):
         row_template = template.create_row_template(worksheet)
@@ -132,8 +135,11 @@ class WorksheetImporter:
         records = {}
         header_row = template.get_header_row(worksheet)
 
-        for row in self._get_data_rows(worksheet):
+        for index, row in enumerate(self._get_data_rows(worksheet)):
             row = row[:len(header_row)]
+            if all(cell.value is None for cell in row):
+                self.logger.warning(f'skipping row {index} of {worksheet.title} tab')
+                continue
             metadata = row_template.do_import(row)
             record_id = self._determine_record_id(metadata)
             records[record_id] = {

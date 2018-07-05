@@ -1,13 +1,15 @@
 import json
-
 import logging
 
+format = '[%(filename)s:%(lineno)s - %(funcName)20s() ] %(asctime)s - %(name)s - %(levelname)s - %(message)s'
+logging.basicConfig(format=format)
 
 class IngestSubmitter(object):
 
     def __init__(self, ingest_api):
         # TODO the IngestSubmitter should probably build its own instance of IngestApi
         self.ingest_api = ingest_api
+        self.logger = logging.getLogger(__name__)
 
     def submit(self, entity_map, submission_url):
         submission = Submission(self.ingest_api, submission_url)
@@ -43,8 +45,8 @@ class IngestSubmitter(object):
                 except Exception as link_error:
                     error_message = f'''The {entity.type} with id {entity.id} could not be 
                     linked to {to_entity.type} with id {to_entity.id}.'''
-                    logging.error(error_message)
-                    logging.error(f'{str(link_error)}')
+                    self.logger.error(error_message)
+                    self.logger.error(f'{str(link_error)}')
 
     def _add_entities(self, entities, submission):
         for entity in entities:
