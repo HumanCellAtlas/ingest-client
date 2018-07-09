@@ -23,7 +23,7 @@ class XlsImporter:
 
     def _generate_spreadsheet_json(self, file_path, project_uuid=None):
         ingest_workbook = self._create_ingest_workbook(file_path)
-        template_mgr = template_manager.build(ingest_workbook.get_schemas())
+        template_mgr = template_manager.build(ingest_workbook.get_schemas(), self.ingest_api)
         workbook_importer = WorkbookImporter(template_mgr)
         spreadsheet_json = workbook_importer.do_import(ingest_workbook, project_uuid)
         return spreadsheet_json, template_mgr
