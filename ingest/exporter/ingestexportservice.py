@@ -141,8 +141,8 @@ class IngestExporter:
             'upload_filename': 'links_' + links_file_uuid + '.json'
         })
 
-        # TODO: only store the submission and bundle uuid in bundle manifest for now
-        bundle_manifest = self.create_bundle_manifest(submission_uuid)
+        # restructure bundle manifest
+        bundle_manifest = self.create_bundle_manifest(submission_uuid, files_by_type)
 
         self.logger.info('Generating bundle files...')
 
@@ -167,6 +167,9 @@ class IngestExporter:
             metadata_files = self.get_metadata_files(files_by_type)
             data_files = self.get_data_files(metadata_by_type['file'])
             bundle_files = metadata_files + data_files
+
+            bundle_manifest.dataFiles = list()
+            bundle_manifest.dataFiles = [data_file['dss_uuid'] for data_file in data_files]
 
             created_files = self.put_files_in_dss(bundle_uuid, bundle_files)
 
@@ -424,10 +427,29 @@ class IngestExporter:
 
         return data_files
 
-
-    def create_bundle_manifest(self, submission_uuid):
+    def create_bundle_manifest(self, submission_uuid, files_by_type):
         bundle_manifest = ingestapi.BundleManifest()
         bundle_manifest.envelopeUuid = submission_uuid
+
+        bundle_manifest.fileProjectMap = dict()
+        for metadata_file in files_by_type['project']:
+            bundle_manifest.fileProjectMap[metadata_file['dss_uuid']] = [metadata_file['dss_uuid']]
+
+        bundle_manifest.fileBiomaterialMap = dict()
+        for metadata_file in files_by_type['biomaterial']:
+            bundle_manifest.fileBiomaterialMap[metadata_file['dss_uuid']] = [metadata_file['dss_uuid']]
+
+        bundle_manifest.fileProcessMap = dict()
+        for metadata_file in files_by_type['process']:
+            bundle_manifest.fileProcessMap[metadata_file['dss_uuid']] = [metadata_file['dss_uuid']]
+
+        bundle_manifest.fileProtocolMap = dict()
+        for metadata_file in files_by_type['protocol']:
+            bundle_manifest.fileProtocolMap[metadata_file['dss_uuid']] = [metadata_file['dss_uuid']]
+
+        bundle_manifest.fileFilesMap = dict()
+        for metadata_file in files_by_type['file']:
+            bundle_manifest.fileFilesMap[metadata_file['dss_uuid']] = [metadata_file['dss_uuid']]
 
         return bundle_manifest
 
@@ -518,3 +540,5 @@ if __name__ == '__main__':
     ex = IngestExporter(options)
 
     ex.export_bundle(options.submissionsEnvelopeUuid, options.processUrl)
+
+
