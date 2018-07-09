@@ -95,12 +95,14 @@ class IngestExporter:
         return file_description
 
     def bundle_metadata(self, metadata_doc, uuid):
-        bundle_doc = dict()
-        bundle_doc['uuid'] = uuid
-        bundle_doc['content'] = metadata_doc['content']
-        bundle_doc['create_date'] = metadata_doc['submissionDate']
-        bundle_doc['update_date'] = metadata_doc['updateDate']
-        bundle_doc['describedBy'] = "https://raw.githubusercontent.com/HumanCellAtlas/ingest-exporter/unjumble/schema/bundle/9.0.0/bundle_schema.json"
+        provenance_core = dict()
+        provenance_core['document_id'] = uuid
+        provenance_core['submission_date'] = metadata_doc['submissionDate']
+        provenance_core['update_date'] = metadata_doc['updateDate']
+        provenance_core['describedBy'] = 'https://raw.githubusercontent.com/HumanCellAtlas/metadata-schema/0761cb040dc5b1bb5dd91d38eb7bdfbc2c75e7ea/json_schema/core/provenance_core.json'
+
+        bundle_doc = metadata_doc['content']
+        bundle_doc['provenance_core'] = provenance_core
 
         return bundle_doc
 
