@@ -98,7 +98,6 @@ class SpreadsheetBuilder:
                     col_number+=1
 
                 worksheet.merge_range(first_col=0, first_row=4, last_col= len(detail["columns"]), last_row=4, cell_format= self.header_format, data="Add your data below this line")
-                worksheet.protect()
 
         self._write_schemas(template.get_schema_urls())
 

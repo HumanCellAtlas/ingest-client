@@ -55,26 +55,20 @@ class IngestApi:
             r = requests.get(search_url, headers=self.headers)
             if r.status_code == requests.codes.ok:
                 response_j = json.loads(r.text)
-                all_schemas = self.getRelatedEntities("latestSchemas", response_j, "schemas")
+                all_schemas = list(self.getRelatedEntities("latestSchemas", response_j, "schemas"))
         else:
-            all_schemas = self.getEntities(schema_url, "schemas")
+            all_schemas = list(self.getEntities(schema_url, "schemas"))
 
-        if high_level_entity or domain_entity or concrete_entity:
-            for schema in all_schemas:
-                # todo hack until the schemas endpoint allows combined search and get latest schema
-                if high_level_entity:
-                    if "highLevelEntity" in schema and high_level_entity == schema["highLevelEntity"]:
-                        filtered_schemas[schema["_links"]["json-schema"]["href"]] = schema
-                if domain_entity:
-                    if "domainEntity" in schema and domain_entity == schema["domainEntity"]:
-                        filtered_schemas[schema["_links"]["json-schema"]["href"]] = schema
-                if concrete_entity:
-                    if "concreteEntity" in schema and concrete_entity == schema["concreteEntity"]:
-                        filtered_schemas[schema["_links"]["json-schema"]["href"]] = schema
-            return filtered_schemas.values()
+        if high_level_entity:
+            all_schemas = list(filter(lambda schema: schema.get('highLevelEntity') == high_level_entity, all_schemas))
+
+        if domain_entity:
+            all_schemas = list(filter(lambda schema: schema.get('domainEntity') == domain_entity, all_schemas))
+
+        if concrete_entity:
+            all_schemas = list(filter(lambda schema: schema.get('concreteEntity') == concrete_entity, all_schemas))
 
         return all_schemas
-
 
 
     def get_schemas_url(self):

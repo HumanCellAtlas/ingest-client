@@ -1,10 +1,12 @@
-import openpyxl
+import openpyxl, logging
 
 from ingest.importer.conversion import template_manager
 from ingest.importer.conversion.template_manager import TemplateManager
 from ingest.importer.spreadsheet.ingest_workbook import IngestWorkbook
 from ingest.importer.submission import IngestSubmitter, EntityMap, EntityLinker
 
+format = '[%(filename)s:%(lineno)s - %(funcName)20s() ] %(asctime)s - %(name)s - %(levelname)s - %(message)s'
+logging.basicConfig(format=format)
 
 class XlsImporter:
 
@@ -21,7 +23,7 @@ class XlsImporter:
 
     def _generate_spreadsheet_json(self, file_path, project_uuid=None):
         ingest_workbook = self._create_ingest_workbook(file_path)
-        template_mgr = template_manager.build(ingest_workbook.get_schemas())
+        template_mgr = template_manager.build(ingest_workbook.get_schemas(), self.ingest_api)
         workbook_importer = WorkbookImporter(template_mgr)
         spreadsheet_json = workbook_importer.do_import(ingest_workbook, project_uuid)
         return spreadsheet_json, template_mgr
@@ -123,14 +125,21 @@ class WorksheetImporter:
 
     def __init__(self):
         self.unknown_id_ctr = 0
+        self.logger = logging.getLogger(__name__)
 
     def do_import(self, worksheet, template: TemplateManager):
         row_template = template.create_row_template(worksheet)
-        return self._import_using_row_template(worksheet, row_template)
+        return self._import_using_row_template(template, worksheet, row_template)
 
-    def _import_using_row_template(self, worksheet, row_template):
+    def _import_using_row_template(self, template, worksheet, row_template):
         records = {}
-        for row in self._get_data_rows(worksheet):
+        header_row = template.get_header_row(worksheet)
+
+        for index, row in enumerate(self._get_data_rows(worksheet)):
+            row = row[:len(header_row)]
+            if all(cell.value is None for cell in row):
+                self.logger.warning(f'skipping row {index} of {worksheet.title} tab')
+                continue
             metadata = row_template.do_import(row)
             record_id = self._determine_record_id(metadata)
             records[record_id] = {
@@ -153,7 +162,7 @@ class WorksheetImporter:
 
     def _get_data_rows(self, worksheet):
         return worksheet.iter_rows(row_offset=self.START_ROW_IDX,
-                                   max_row=(worksheet.max_row - self.START_ROW_IDX))
+                                  max_row=(worksheet.max_row - self.START_ROW_IDX))
 
 
 class ProjectWorksheetImporter(WorksheetImporter):
@@ -174,7 +183,7 @@ class ContactWorksheetImporter(WorksheetImporter):
 
     def do_import(self, worksheet, template: TemplateManager):
         row_template = template.create_simple_row_template(worksheet)
-        records = self._import_using_row_template(worksheet, row_template)
+        records = self._import_using_row_template(template, worksheet, row_template)
 
         return list(records.values())
 

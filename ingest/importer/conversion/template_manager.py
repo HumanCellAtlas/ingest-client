@@ -3,6 +3,7 @@ import copy
 from openpyxl.worksheet import Worksheet
 
 import ingest.template.schema_template as schema_template
+from ingest.api.ingestapi import IngestApi
 from ingest.importer.conversion import utils, conversion_strategy
 from ingest.importer.conversion.column_specification import ColumnSpecification
 from ingest.importer.conversion.conversion_strategy import CellConversion, ListElementCellConversion
@@ -13,8 +14,9 @@ from ingest.template.schema_template import SchemaTemplate
 
 class TemplateManager:
 
-    def __init__(self, template:SchemaTemplate):
+    def __init__(self, template:SchemaTemplate, ingest_api:IngestApi):
         self.template = template
+        self.ingest_api = ingest_api
 
     def create_template_node(self, worksheet: Worksheet):
         concrete_entity = self.get_concrete_entity_of_tab(worksheet.title)
@@ -27,7 +29,7 @@ class TemplateManager:
     def create_row_template(self, worksheet: Worksheet):
         tab_name = worksheet.title
         object_type = self.get_concrete_entity_of_tab(tab_name)
-        header_row = self._get_header_row(worksheet)
+        header_row = self.get_header_row(worksheet)
         cell_conversions = []
         for cell in header_row:
             header = cell.value
@@ -40,22 +42,32 @@ class TemplateManager:
     def create_simple_row_template(self, worksheet: Worksheet):
         tab_name = worksheet.title
         object_type = self.get_concrete_entity_of_tab(tab_name)
-        header_row = self._get_header_row(worksheet)
+        header_row = self.get_header_row(worksheet)
         cell_conversions = []
         for cell in header_row:
             header = cell.value
             column_spec = self._define_column_spec(header, object_type)
             strategy = ListElementCellConversion(column_spec.field_name, column_spec.determine_converter())
             cell_conversions.append(strategy)
+
         default_values = self._define_default_values(object_type)
         return RowTemplate(cell_conversions, default_values=default_values)
 
 
+    # TODO move this outside template manager
     @staticmethod
-    def _get_header_row(worksheet):
+    def get_header_row(worksheet):
         for row in worksheet.iter_rows(row_offset=3, max_row=1):
             header_row = row
-        return header_row
+
+        clean_header_row = []
+
+        for cell in header_row:
+            if cell.value is None:
+                continue
+            clean_header_row.append(cell)
+
+        return clean_header_row
 
     def _define_column_spec(self, header, object_type):
         if header is not None:
@@ -77,10 +89,29 @@ class TemplateManager:
         }
         return default_values
 
+    def get_latest_schema_url(self, high_level_entity, domain_entity, concrete_entity):
+        latest_schema = self.ingest_api.get_schemas(
+            latest_only=True,
+            high_level_entity=high_level_entity,
+            domain_entity=domain_entity.split('/')[0],
+            concrete_entity=concrete_entity
+        )
+
+        return latest_schema[0]['_links']['json-schema']['href'] if latest_schema else None
+
     def get_schema_url(self, concrete_entity):
         schema = self._get_schema(concrete_entity)
-        # TODO must query schema endpoint in core to get the latest version
-        return schema.get('url') if schema else None
+
+        if not schema:
+            return None
+
+        latest_schema_url = self.get_latest_schema_url(
+            high_level_entity=schema.get('high_level_entity'),
+            domain_entity=schema.get('domain_entity'),
+            concrete_entity=schema.get('module')
+        )
+
+        return latest_schema_url
 
     def get_domain_entity(self, concrete_entity):
         domain_entity = None
@@ -122,7 +153,7 @@ class TemplateManager:
         return spec
 
 
-def build(schemas) -> TemplateManager:
+def build(schemas, ingest_api) -> TemplateManager:
     template = None
 
     if not schemas:
@@ -130,7 +161,7 @@ def build(schemas) -> TemplateManager:
     else:
         template = SchemaTemplate(list_of_schema_urls=schemas)
 
-    template_mgr = TemplateManager(template)
+    template_mgr = TemplateManager(template, ingest_api)
     return template_mgr
 
 
@@ -143,6 +174,8 @@ class RowTemplate:
     def do_import(self, row):
         metadata = MetadataEntity(content=self.default_values)
         for index, cell in enumerate(row):
+            if cell.value is None:
+                continue
             conversion: CellConversion = self.cell_conversions[index]
             conversion.apply(metadata, cell.value)
         return metadata
