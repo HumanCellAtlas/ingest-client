@@ -39,9 +39,12 @@ class DssApi:
         url = file["url"]
         uuid = file["dss_uuid"]
 
+        version = datetime.datetime.utcnow().strftime("%Y-%m-%dT%H%M%S.%fZ")
+
         try:
             bundle_file = self.hca_client.put_file(
                 uuid=uuid,
+                version=version,
                 bundle_uuid=bundle_uuid,
                 creator_uid=self.creator_uid,
                 source_url=url
