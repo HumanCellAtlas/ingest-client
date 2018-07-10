@@ -271,6 +271,8 @@ class IngestExporter:
         #  links to it must be applied to its chained processes
         processes_to_link = chained_processes if is_wrapper else [process]
         for process_to_link in processes_to_link:
+            process_uuid = process_to_link['uuid']['uuid']
+
             protocols = list(self.ingest_api.getRelatedEntities('protocols', process_to_link, 'protocols'))
             for protocol in protocols:
                 uuid = protocol['uuid']['uuid']
@@ -279,6 +281,7 @@ class IngestExporter:
             if input_biomaterials:
                 if derived_files:
                     process_info.links.append({
+                        'process': process_uuid,
                         'inputs': [input_biomaterial['uuid']['uuid'] for input_biomaterial in input_biomaterials],
                         'input_type': 'biomaterial',
                         'outputs': [derived_file['uuid']['uuid'] for derived_file in derived_files],
@@ -293,6 +296,7 @@ class IngestExporter:
 
                 if derived_biomaterials:
                     process_info.links.append({
+                        'process': process_uuid,
                         'inputs': [input_biomaterial['uuid']['uuid'] for input_biomaterial in input_biomaterials],
                         'input_type': 'biomaterial',
                         'outputs': [derived_biomaterial['uuid']['uuid'] for derived_biomaterial in derived_biomaterials],
@@ -307,6 +311,7 @@ class IngestExporter:
 
             if input_files and derived_files:
                 process_info.links.append({
+                    'process': process_uuid,
                     'inputs': [input_file['uuid']['uuid'] for input_file in input_files],
                     'input_type': 'file',
                     'outputs': [derived_file['uuid']['uuid'] for derived_file in derived_files],
