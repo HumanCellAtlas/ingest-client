@@ -87,7 +87,6 @@ class IngestExporter:
         if not success:
             raise Error("An error occurred in export. Failed to export to dss: " + message["callbackLink"])
 
-
     def upload_file(self, submission_uuid, filename, content, content_type):
         self.logger.info("writing to staging area..." + filename)
         file_description = self.staging_api.stageFile(submission_uuid, filename, content, content_type)
@@ -99,7 +98,6 @@ class IngestExporter:
         provenance_core['document_id'] = uuid
         provenance_core['submission_date'] = metadata_doc['submissionDate']
         provenance_core['update_date'] = metadata_doc['updateDate']
-        provenance_core['describedBy'] = 'https://raw.githubusercontent.com/HumanCellAtlas/metadata-schema/0761cb040dc5b1bb5dd91d38eb7bdfbc2c75e7ea/json_schema/core/provenance_core.json'
 
         bundle_doc = metadata_doc['content']
         bundle_doc['provenance_core'] = provenance_core
@@ -273,31 +271,53 @@ class IngestExporter:
         #  links to it must be applied to its chained processes
         processes_to_link = chained_processes if is_wrapper else [process]
         for process_to_link in processes_to_link:
-            process_name = self.get_concrete_entity_type(process_to_link)
-            process_uuid = process_to_link['uuid']['uuid']
-
-            for input_biomaterial in input_biomaterials:
-                uuid = input_biomaterial['uuid']['uuid']
-                process_info.links.append(self.build_link_obj('biomaterial', uuid, process_name, process_uuid))
-
-            for input_file in input_files:
-                uuid = input_file['uuid']['uuid']
-                process_info.links.append(self.build_link_obj('file', uuid, process_name, process_uuid))
-
             protocols = list(self.ingest_api.getRelatedEntities('protocols', process_to_link, 'protocols'))
             for protocol in protocols:
                 uuid = protocol['uuid']['uuid']
-                process_info.links.append(self.build_link_obj(process_name, process_uuid, 'protocol', uuid))
                 process_info.protocols[uuid] = protocol
 
-            for derived_file in derived_files:
-                uuid = derived_file['uuid']['uuid']
-                process_info.links.append(self.build_link_obj(process_name, process_uuid, 'file', uuid))
-                process_info.derived_files[uuid] = derived_file
+            if input_biomaterials:
+                if derived_files:
+                    process_info.links.append({
+                        'inputs': [input_biomaterial['uuid']['uuid'] for input_biomaterial in input_biomaterials],
+                        'input_type': 'biomaterial',
+                        'outputs': [derived_file['uuid']['uuid'] for derived_file in derived_files],
+                        'output_type': 'file',
+                        'protocols': [
+                            {
+                                'protocol_type': self.get_concrete_entity_type(protocol),
+                                'protocol_id': protocol['uuid']['uuid']
+                            } for protocol in protocols
+                        ]
+                    })
 
-            for derived_biomaterial in derived_biomaterials:
-                uuid = derived_biomaterial['uuid']['uuid']
-                process_info.links.append(self.build_link_obj(process_name, process_uuid, 'biomaterial', uuid))
+                if derived_biomaterials:
+                    process_info.links.append({
+                        'inputs': [input_biomaterial['uuid']['uuid'] for input_biomaterial in input_biomaterials],
+                        'input_type': 'biomaterial',
+                        'outputs': [derived_biomaterial['uuid']['uuid'] for derived_biomaterial in derived_biomaterials],
+                        'output_type': 'biomaterial',
+                        'protocols': [
+                            {
+                                'protocol_type': self.get_concrete_entity_type(protocol),
+                                'protocol_id': protocol['uuid']['uuid']
+                            } for protocol in protocols
+                        ]
+                    })
+
+            if input_files and derived_files:
+                process_info.links.append({
+                    'inputs': [input_file['uuid']['uuid'] for input_file in input_files],
+                    'input_type': 'file',
+                    'outputs': [derived_file['uuid']['uuid'] for derived_file in derived_files],
+                    'output_type': 'file',
+                    'protocols': [
+                        {
+                            'protocol_type': self.get_concrete_entity_type(protocol),
+                            'protocol_id': protocol['uuid']['uuid']
+                        } for protocol in protocols
+                    ]
+                })
 
         for derived_by_process in derived_by_processes:
             self.recurse_process(derived_by_process, process_info)
@@ -540,5 +560,6 @@ if __name__ == '__main__':
     ex = IngestExporter(options)
 
     ex.export_bundle(options.submissionsEnvelopeUuid, options.processUrl)
+
 
 
