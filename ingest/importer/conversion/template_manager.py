@@ -101,17 +101,8 @@ class TemplateManager:
 
     def get_schema_url(self, concrete_entity):
         schema = self._get_schema(concrete_entity)
-
-        if not schema:
-            return None
-
-        latest_schema_url = self.get_latest_schema_url(
-            high_level_entity=schema.get('high_level_entity'),
-            domain_entity=schema.get('domain_entity'),
-            concrete_entity=schema.get('module')
-        )
-
-        return latest_schema_url
+        # TODO use schema version that is specified in spreadsheet for now
+        return schema.get('url') if schema else None
 
     def get_domain_entity(self, concrete_entity):
         domain_entity = None
