@@ -120,7 +120,12 @@ class IngestApi:
         return self.getEntityByUuid('projects', uuid)
 
     def getEntityByUuid(self, entity_type, uuid):
-        url =  self.url + f'/{entity_type}/search/findByUuid?uuid=' + uuid
+        url = self.url + f'/{entity_type}/search/findByUuid?uuid=' + uuid
+
+        # TODO make the endpoint consistent
+        if entity_type == 'submissionEnvelopes':
+            url = self.url + f'/{entity_type}/search/findByUuidUuid?uuid=' + uuid
+
         r = requests.get(url, headers=self.headers)
         r.raise_for_status()
         return r.json()
@@ -227,15 +232,14 @@ class IngestApi:
     def getSubmissionUri(self, submissionId):
         return self.ingest_api_root["submissionEnvelopes"]["href"].rsplit("{")[0] + "/" + submissionId
 
-    def getAssayUrl(self, assayCallbackLink):
+    def get_full_url(self, callback_link):
         # TODO check if callback link already has a leading slash
-        return self.url + "/" + assayCallbackLink
+        return self.url + "/" + callback_link
 
-    def getAssay(self, assayUrl):
-        r = requests.get(assayUrl, headers=self.headers)
-        if r.status_code == requests.codes.ok:
-            return r.json()
-
+    def get_process(self, process_url):
+        r = requests.get(process_url, headers=self.headers)
+        r.raise_for_status()
+        return r.json()
 
     def getAnalyses(self, submissionUrl):
         return self.getEntities(submissionUrl, "analyses")

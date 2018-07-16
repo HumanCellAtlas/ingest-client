@@ -44,8 +44,6 @@ class IngestExporter:
         self.schema_version = options.schema_version if options and options.schema_version else os.path.expandvars(METADATA_SCHEMA_VERSION)
         self.schema_url = os.path.expandvars(BUNDLE_SCHEMA_BASE_URL % self.schema_version)
 
-        self.logger.debug("ingest url is " + self.ingestUrl)
-
         self.staging_api = stagingapi.StagingApi()
         self.dss_api = dssapi.DssApi()
         self.ingest_api = ingestapi.IngestApi(self.ingestUrl)
@@ -72,33 +70,6 @@ class IngestExporter:
             'destination_type': destination_type,
             'destination_id': destination_id
         }
-
-    def generateBundle(self, message):
-        success = False
-        callbackLink = message["callbackLink"]
-
-        self.logger.info('process received ' + callbackLink)
-        self.logger.info('process index: ' + str(message["index"]) + ', total processes: ' + str(message["total"]))
-
-        # given an assay, generate a bundle
-
-        processUrl = self.ingest_api.getAssayUrl(callbackLink)  # TODO rename getAssayUrl
-        processUuid = message["documentUuid"]
-        envelopeUuid = message["envelopeUuid"]
-
-        # check staging area is available
-        if self.dryrun or self.staging_api.hasStagingArea(envelopeUuid):
-            assay = self.ingest_api.getAssay(processUrl)
-
-            self.logger.info("Attempting to export bundle to DSS...")
-            success = self.export_bundle(envelopeUuid, processUrl)
-        else:
-            error_message = "Can't do export as no upload area has been created"
-            raise NoUploadAreaFoundError(error_message)
-
-        if not success:
-            raise Error("An error occurred in export. Failed to export to dss: " + message["callbackLink"])
-
 
     def bundleFileIngest(self, file_entity):
         return self._bundleEntityIngest(file_entity)
@@ -200,16 +171,23 @@ class IngestExporter:
             tmpFile.write(json.dumps(object, indent=4))
             tmpFile.close()
 
-    def export_bundle(self, submission_uuid, process_url):
-        self.logger.info('Export bundle for process: ' + process_url)
-
+    def export_bundle(self, submission_uuid, process_uuid):
         saved_bundle_uuid = None
 
+        if not self.dryrun and not self.staging_api.hasStagingArea(submission_uuid):
+            error_message = "Can't do export as no upload area has been created."
+            raise NoUploadAreaFoundError(error_message)
+
+        self.logger.info('Export bundle for process with UUID ' + process_uuid)
+
         self.logger.info('Retrieving all process information...')
-        process_info = self.get_all_process_info(process_url)
+        process = self.ingest_api.getEntityByUuid('processes', process_uuid)
+        process_info = self.get_all_process_info(process)
 
         self.logger.info('Generating bundle files...')
-        metadata_files_info = self.prepare_metadata_files(process_info)
+        submission = self.ingest_api.getEntityByUuid('submissionEnvelopes', submission_uuid)
+        is_indexed = submission['triggersAnalysis']
+        metadata_files_info = self.prepare_metadata_files(process_info, is_indexed)
         data_files_info = self.prepare_data_files(process_info)
 
         bundle_manifest = self.create_bundle_manifest(submission_uuid, metadata_files_info, process_info)
@@ -244,8 +222,7 @@ class IngestExporter:
 
         return saved_bundle_uuid
 
-    def get_all_process_info(self, process_url):
-        process = self.ingest_api.getAssay(process_url)  # TODO rename getAssay to getProcess
+    def get_all_process_info(self, process):
         process_info = ProcessInfo()
         process_info.input_bundle = self.get_input_bundle(process)
 
@@ -355,7 +332,7 @@ class IngestExporter:
 
         return None
 
-    def prepare_metadata_files(self, process_info):
+    def prepare_metadata_files(self, process_info, is_indexed=True):
         bundle_content = self.build_and_validate_content(process_info)
 
         metadata_files = {}
@@ -364,7 +341,7 @@ class IngestExporter:
         metadata_files['project'] = {
             'content': bundle_content['project'],
             'content_type': '"metadata/project"',
-            'indexed': True,
+            'indexed': is_indexed,
             'dss_filename': 'project.json',
             'dss_uuid': file_uuid,
             'upload_filename': 'project_bundle_' + file_uuid + '.json'
@@ -374,7 +351,7 @@ class IngestExporter:
         metadata_files['biomaterial'] = {
             'content': bundle_content['biomaterial'],
             'content_type': '"metadata/biomaterial"',
-            'indexed': True,
+            'indexed': is_indexed,
             'dss_filename': 'biomaterial.json',
             'dss_uuid': file_uuid,
             'upload_filename': 'biomaterial_bundle_' + file_uuid + '.json'
@@ -384,7 +361,7 @@ class IngestExporter:
         metadata_files['process'] = {
             'content': bundle_content['process'],
             'content_type': '"metadata/process"',
-            'indexed': True,
+            'indexed': is_indexed,
             'dss_filename': 'process.json',
             'dss_uuid': file_uuid,
             'upload_filename': 'process_bundle_' + file_uuid + '.json'
@@ -394,7 +371,7 @@ class IngestExporter:
         metadata_files['protocol'] = {
             'content': bundle_content['protocol'],
             'content_type': '"metadata/protocol"',
-            'indexed': True,
+            'indexed': is_indexed,
             'dss_filename': 'protocol.json',
             'dss_uuid': file_uuid,
             'upload_filename': 'protocol_bundle_' + file_uuid + '.json'
@@ -404,7 +381,7 @@ class IngestExporter:
         metadata_files['file'] = {
              'content': bundle_content['file'],
              'content_type': '"metadata/file"',
-             'indexed': True,
+             'indexed': is_indexed,
              'dss_filename': 'file.json',
              'dss_uuid': file_uuid,
              'upload_filename': 'file_bundle_' + file_uuid + '.json'
@@ -414,7 +391,7 @@ class IngestExporter:
         metadata_files['links'] = {
             'content': bundle_content['links'],
             'content_type': '"metadata/links"',
-            'indexed': True,
+            'indexed': is_indexed,
             'dss_filename': 'links.json',
             'dss_uuid': file_uuid,
             'upload_filename': 'links_bundle_' + file_uuid + '.json'
@@ -738,14 +715,15 @@ class FileDSSError(Error):
 class NoUploadAreaFoundError(Error):
     """Export couldn't be as no upload area found"""
 
+
 if __name__ == '__main__':
     logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 
     parser = OptionParser()
-    parser.add_option("-e", "--subsEnvUuid", dest="submissionsEnvelopeUuid",
+    parser.add_option("-e", "--submissionEnvelopeUuid",
                       help="Submission envelope UUID for which to generate the bundle")
-    parser.add_option("-p", "--processUrl", dest="processUrl",
-                      help="Process Url")
+    parser.add_option("-p", "--processUuid",
+                      help="Process UUID")
     parser.add_option("-D", "--dry", help="do a dry run without submitting to ingest", action="store_true",
                       default=False)
     parser.add_option("-o", "--output", dest="output",
@@ -759,14 +737,17 @@ if __name__ == '__main__':
 
     (options, args) = parser.parse_args()
 
-    if not options.submissionsEnvelopeUuid:
-        print ("You must supply a submission envelope UUID")
+    if not options.submissionEnvelopeUuid:
+        print ("You must supply a Submission Envelope UUID")
         exit(2)
 
-    if not options.processUrl:
-        print ("You must supply a processUrl")
+    if not options.processUuid:
+        print ("You must supply a process UUID.")
         exit(2)
 
-    ex = IngestExporter(options)
+    if not options.ingest:
+        print ("You must the url of Ingest API.")
+        exit(2)
 
-    ex.export_bundle(options.submissionsEnvelopeUuid, options.processUrl)
+    exporter = IngestExporter(options)
+    exporter.export_bundle(options.submissionsEnvelopeUuid, options.processUuid)
