@@ -316,7 +316,7 @@ class SchemaParser:
     def get_domain_entity_from_url(self, url):
         pattern = re.compile("http[s]?://[^/]*/[^/]*/(?P<domain_entity>.*)/(((\d+\.)?(\d+\.)?(\*|\d+))|(latest))/.*")
         match = pattern.search(url)
-        return match.group(1)
+        return match.group(1) if match else None
 
     def get_module_from_url(self, url):
         return url.rsplit('/', 1)[-1]

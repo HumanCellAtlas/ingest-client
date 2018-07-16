@@ -166,11 +166,17 @@ class TestSchemaTemplate(TestCase):
         self.assertEqual("foo/bar", schema_parser.get_domain_entity_from_url(url))
         url = "https://schema.humancellatlas.org/type/foo/latest/project"
         self.assertEqual("foo", schema_parser.get_domain_entity_from_url(url))
+        url = 'https://schema.humancellatlas.org/bundle/1.0.0/links'
+        self.assertEqual(None, schema_parser.get_domain_entity_from_url(url))
+        url= 'http://schema.dev.data.humancellatlas.org/system/1.0.0/provenance'
+        self.assertEqual(None, schema_parser.get_domain_entity_from_url(url))
 
     def test_get_high_level_entity_from_url(self):
         schema_parser = SchemaParser(None)
         url = "https://schema.humancellatlas.org/type/project/5.1.0/project"
         self.assertEqual("type", schema_parser.get_high_level_entity_from_url(url))
+        url = 'http://schema.dev.data.humancellatlas.org/system/1.0.0/provenance'
+        self.assertEqual('system', schema_parser.get_high_level_entity_from_url(url))
 
     def test_get_module_from_url(self):
         schema_parser = SchemaParser(None)
