@@ -100,7 +100,7 @@ class IngestExporter:
         provenance_core['update_date'] = metadata_doc['updateDate']
 
         bundle_doc = metadata_doc['content']
-        bundle_doc['provenance_core'] = provenance_core
+        bundle_doc['provenance'] = provenance_core
 
         return bundle_doc
 
@@ -362,10 +362,11 @@ class IngestExporter:
         return metadata_files_by_type
 
     def bundle_links(self, links):
+        # TODO do not hard code schema, query latest from schema endpoint
         return {
-            'describedBy': 'https://schema.humancellatlas.org/bundle/1.0.0/links',
+            'describedBy': 'http://schema.dev.data.humancellatlas.org/system/1.1.1/links',
             'schema_type': 'link_bundle',
-            'schema_version': '1.0.0',
+            'schema_version': '1.1.1',
             'links': links
         }
 
