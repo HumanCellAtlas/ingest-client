@@ -42,8 +42,3 @@ class TabConfig:
     def get_key_for_label(self, label):
         return self._key_label[label.lower()]
 
-class Tab:
-    def __init__(self):
-        self.display_name = ""
-        self.columns = []
-
