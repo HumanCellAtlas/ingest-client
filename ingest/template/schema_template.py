@@ -3,6 +3,7 @@
 This package will return a SchemaTemplate objects
 from a set of JSON schema files.
 """
+import os
 
 __author__ = "jupp"
 __license__ = "Apache 2.0"
@@ -19,7 +20,8 @@ import jsonref
 import re
 import urllib.request
 
-
+# use this default as it's assumed to be stable
+DEFAULT_INGEST_API_URL = 'http://api.ingest.data.humancellatlas.org'
 
 class SchemaTemplate:
     """
@@ -27,9 +29,9 @@ class SchemaTemplate:
     JSON schema for the HCA metadata
     """
     def __init__(self, ingest_api_url=None, list_of_schema_urls=None, tab_config=None):
-
-        # todo remove this hard coding to a default ingest API url
-        self.ingest_api_url = ingest_api_url if ingest_api_url else "http://api.ingest.dev.data.humancellatlas.org"
+        self.ingest_api_url = os.environ.get('INGEST_API', DEFAULT_INGEST_API_URL)
+        if ingest_api_url:
+            self.ingest_api_url = ingest_api_url
         self._template = {
             "template_version" : "1.0.0",
             "created_date" : str(datetime.now()),
