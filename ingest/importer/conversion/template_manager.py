@@ -148,9 +148,9 @@ def build(schemas, ingest_api) -> TemplateManager:
     template = None
 
     if not schemas:
-        template = SchemaTemplate()
+        template = SchemaTemplate(ingest_api_url=ingest_api.url)
     else:
-        template = SchemaTemplate(list_of_schema_urls=schemas)
+        template = SchemaTemplate(ingest_api_url=ingest_api.url, list_of_schema_urls=schemas)
 
     template_mgr = TemplateManager(template, ingest_api)
     return template_mgr
