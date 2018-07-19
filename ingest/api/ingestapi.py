@@ -255,6 +255,7 @@ class IngestApi:
             params = {"size": pageSize}
 
         r = requests.get(url, headers=self.headers, params=params)
+        r.raise_for_status()
         if r.status_code == requests.codes.ok:
             if "_embedded" in json.loads(r.text):
                 for entity in json.loads(r.text)["_embedded"][entityType]:
