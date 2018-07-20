@@ -9,23 +9,21 @@ __license__ = "Apache 2.0"
 import json
 import logging
 import os
-
 import sys
 import uuid
+
 from optparse import OptionParser
+from urllib.parse import urljoin
 
-import ingest.api.stagingapi as stagingapi
-import ingest.api.ingestapi as ingestapi
 import ingest.api.dssapi as dssapi
-
-import ingest.utils.bundlevalidator as bundlevalidator
+import ingest.api.ingestapi as ingestapi
+import ingest.api.stagingapi as stagingapi
 
 DEFAULT_INGEST_URL = os.environ.get('INGEST_API', 'http://api.ingest.dev.data.humancellatlas.org')
 DEFAULT_STAGING_URL = os.environ.get('STAGING_API', 'http://staging.dev.data.humancellatlas.org')
 DEFAULT_DSS_URL = os.environ.get('DSS_API', 'http://dss.dev.data.humancellatlas.org')
 
-BUNDLE_SCHEMA_BASE_URL = os.environ.get('BUNDLE_SCHEMA_BASE_URL', 'https://schema.humancellatlas.org/bundle/%s/')
-METADATA_SCHEMA_VERSION = os.environ.get('SCHEMA_VERSION', '5.1.0')
+BUNDLE_SCHEMA_BASE_URL = os.environ.get('BUNDLE_SCHEMA_BASE_URL', 'https://schema.humancellatlas.org')
 
 
 class IngestExporter:
@@ -41,79 +39,11 @@ class IngestExporter:
 
         self.stagingUrl = options.staging if options and options.staging else os.path.expandvars(DEFAULT_STAGING_URL)
         self.dssUrl = options.dss if options and options.dss else os.path.expandvars(DEFAULT_DSS_URL)
-        self.schema_version = options.schema_version if options and options.schema_version else os.path.expandvars(METADATA_SCHEMA_VERSION)
-        self.schema_url = os.path.expandvars(BUNDLE_SCHEMA_BASE_URL % self.schema_version)
+        self.schema_url = os.path.expandvars(BUNDLE_SCHEMA_BASE_URL)
 
         self.staging_api = stagingapi.StagingApi()
         self.dss_api = dssapi.DssApi()
         self.ingest_api = ingestapi.IngestApi(self.ingestUrl)
-
-    def get_concrete_entity_type(self, schema_uri):
-        return schema_uri["content"]["describedBy"].rsplit('/', 1)[-1]
-
-    def build_link_obj(self, source_type, source_id, destination_type, destination_id):
-        return {
-            'source_type': source_type,
-            'source_id': source_id,
-            'destination_type': destination_type,
-            'destination_id': destination_id
-        }
-
-
-    def generateBundle(self, message):
-        success = False
-        callbackLink = message["callbackLink"]
-
-        self.logger.info('process received ' + callbackLink)
-        self.logger.info('process index: ' + str(message["index"]) + ', total processes: ' + str(message["total"]))
-
-        # given an assay, generate a bundle
-
-        processUrl = self.ingest_api.getAssayUrl(callbackLink)  # TODO rename getAssayUrl
-        processUuid = message["documentUuid"]
-        envelopeUuid = message["envelopeUuid"]
-
-        # check staging area is available
-        if self.dryrun or self.staging_api.hasStagingArea(envelopeUuid):
-            assay = self.ingest_api.getAssay(processUrl)
-
-            self.logger.info("Attempting to export bundle to DSS...")
-            success = self.export_bundle(envelopeUuid, processUrl)
-        else:
-            error_message = "Can't do export as no upload area has been created"
-            raise NoUploadAreaFoundError(error_message)
-
-        if not success:
-            raise Error("An error occurred in export. Failed to export to dss: " + message["callbackLink"])
-
-    def upload_file(self, submission_uuid, filename, content, content_type):
-        self.logger.info("writing to staging area..." + filename)
-        file_description = self.staging_api.stageFile(submission_uuid, filename, content, content_type)
-        self.logger.info("File staged at " + file_description.url)
-        return file_description
-
-    def bundle_metadata(self, metadata_doc, uuid):
-        provenance_core = dict()
-        provenance_core['document_id'] = uuid
-        provenance_core['submission_date'] = metadata_doc['submissionDate']
-        provenance_core['update_date'] = metadata_doc['updateDate']
-
-        bundle_doc = metadata_doc['content']
-        bundle_doc['provenance'] = provenance_core
-
-        return bundle_doc
-
-    def dump_to_file(self, content, filename, output_dir=None):
-        if output_dir:
-            self.outputDir = output_dir
-
-        if self.outputDir:
-            dir = os.path.abspath(self.outputDir)
-            if not os.path.exists(dir):
-                os.makedirs(dir)
-            tmpFile = open(dir + "/" + filename + ".json", "w")
-            tmpFile.write(content)
-            tmpFile.close()
 
     def export_bundle(self, submission_uuid, process_uuid):
         saved_bundle_uuid = None
@@ -135,7 +65,6 @@ class IngestExporter:
 
         metadata_by_type = self.get_metadata_by_type(process_info)
         files_by_type = self.prepare_metadata_files(metadata_by_type, is_indexed)
-
 
         links = self.bundle_links(process_info.links)
         links_file_uuid = str(uuid.uuid4())
@@ -371,10 +300,21 @@ class IngestExporter:
 
         return metadata_files_by_type
 
+    def bundle_metadata(self, metadata_doc, uuid):
+        provenance_core = dict()
+        provenance_core['document_id'] = uuid
+        provenance_core['submission_date'] = metadata_doc['submissionDate']
+        provenance_core['update_date'] = metadata_doc['updateDate']
+
+        bundle_doc = metadata_doc['content']
+        bundle_doc['provenance'] = provenance_core
+
+        return bundle_doc
+
     def bundle_links(self, links):
         # TODO do not hard code schema, query latest from schema endpoint
         return {
-            'describedBy': 'http://schema.dev.data.humancellatlas.org/system/1.1.1/links',
+            'describedBy': urljoin(self.schema_url, '/system/1.1.1/links'),
             'schema_type': 'link_bundle',
             'schema_version': '1.1.1',
             'links': links
@@ -489,6 +429,26 @@ class IngestExporter:
 
         return bundle_manifest
 
+    def get_concrete_entity_type(self, schema_uri):
+        return schema_uri["content"]["describedBy"].rsplit('/', 1)[-1]
+
+    def upload_file(self, submission_uuid, filename, content, content_type):
+        self.logger.info("writing to staging area..." + filename)
+        file_description = self.staging_api.stageFile(submission_uuid, filename, content, content_type)
+        self.logger.info("File staged at " + file_description.url)
+        return file_description
+
+    def dump_to_file(self, content, filename, output_dir=None):
+        if output_dir:
+            self.outputDir = output_dir
+
+        if self.outputDir:
+            dir = os.path.abspath(self.outputDir)
+            if not os.path.exists(dir):
+                os.makedirs(dir)
+            tmpFile = open(dir + "/" + filename + ".json", "w")
+            tmpFile.write(content)
+            tmpFile.close()
 
 class File:
     def __init__(self):
@@ -562,7 +522,6 @@ if __name__ == '__main__':
     parser.add_option("-s", "--staging", help="the URL to the staging API")
     parser.add_option("-d", "--dss", help="the URL to the datastore service")
     parser.add_option("-l", "--log", help="the logging level", default='INFO')
-    parser.add_option("-v", "--version", dest="schema_version", help="Metadata schema version", default=None)
 
     (options, args) = parser.parse_args()
 
