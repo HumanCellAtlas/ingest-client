@@ -21,8 +21,7 @@ class DssApi:
         logging.getLogger("requests").setLevel(logging.WARNING)
         self.logger = logging.getLogger(__name__)
 
-        self.url = url if url else "http://dss.dev.data.humancellatlas.org"
-
+        self.url = url if url else "https://dss.dev.data.humancellatlas.org"
         if not url and 'DSS_API' in os.environ:
             url = os.environ['DSS_API']
             # expand interpolated env vars
