@@ -2,13 +2,15 @@
 """
 desc goes here
 """
+import json
+import logging
+import os
+import requests
 import time
+import uuid
+
 from requests import HTTPError
-
-__author__ = "jupp"
-__license__ = "Apache 2.0"
-
-import json, os, requests, logging, uuid
+from urllib.parse import urljoin
 
 
 class IngestApi:
@@ -228,8 +230,7 @@ class IngestApi:
         return self.ingest_api_root["submissionEnvelopes"]["href"].rsplit("{")[0] + "/" + submissionId
 
     def getAssayUrl(self, assayCallbackLink):
-        # TODO check if callback link already has a leading slash
-        return self.url + "/" + assayCallbackLink
+        return urljoin(self.url, assayCallbackLink)
 
     def getAssay(self, assayUrl):
         r = requests.get(assayUrl, headers=self.headers)
@@ -255,6 +256,7 @@ class IngestApi:
             params = {"size": pageSize}
 
         r = requests.get(url, headers=self.headers, params=params)
+        r.raise_for_status()
         if r.status_code == requests.codes.ok:
             if "_embedded" in json.loads(r.text):
                 for entity in json.loads(r.text)["_embedded"][entityType]:
