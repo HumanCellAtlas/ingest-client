@@ -44,8 +44,6 @@ class IngestExporter:
         self.schema_version = options.schema_version if options and options.schema_version else os.path.expandvars(METADATA_SCHEMA_VERSION)
         self.schema_url = os.path.expandvars(BUNDLE_SCHEMA_BASE_URL % self.schema_version)
 
-        self.logger.debug("ingest url is " + self.ingestUrl)
-
         self.staging_api = stagingapi.StagingApi()
         self.dss_api = dssapi.DssApi()
         self.ingest_api = ingestapi.IngestApi(self.ingestUrl)
@@ -60,6 +58,7 @@ class IngestExporter:
             'destination_type': destination_type,
             'destination_id': destination_id
         }
+
 
     def generateBundle(self, message):
         success = False
@@ -116,16 +115,27 @@ class IngestExporter:
             tmpFile.write(content)
             tmpFile.close()
 
-    def export_bundle(self, submission_uuid, process_url):
-        self.logger.info('Export bundle for process: ' + process_url)
-
+    def export_bundle(self, submission_uuid, process_uuid):
         saved_bundle_uuid = None
 
-        self.logger.info('Retrieving all process information...')
-        process_info = self.get_all_process_info(process_url)
-        metadata_by_type = self.get_metadata_by_type(process_info)
+        if not self.dryrun and not self.staging_api.hasStagingArea(submission_uuid):
+            error_message = "Can't do export as no upload area has been created."
+            raise NoUploadAreaFoundError(error_message)
 
-        files_by_type = self.prepare_metadata_files(metadata_by_type)
+        self.logger.info('Export bundle for process with UUID ' + process_uuid)
+
+        self.logger.info('Retrieving all process information...')
+
+        process = self.ingest_api.getEntityByUuid('processes', process_uuid)
+        process_info = self.get_all_process_info(process)
+
+        self.logger.info('Generating bundle files...')
+        submission = self.ingest_api.getEntityByUuid('submissionEnvelopes', submission_uuid)
+        is_indexed = submission['triggersAnalysis']
+
+        metadata_by_type = self.get_metadata_by_type(process_info)
+        files_by_type = self.prepare_metadata_files(metadata_by_type, is_indexed)
+
 
         links = self.bundle_links(process_info.links)
         links_file_uuid = str(uuid.uuid4())
@@ -197,8 +207,7 @@ class IngestExporter:
 
         return simplified
 
-    def get_all_process_info(self, process_url):
-        process = self.ingest_api.getAssay(process_url)  # TODO rename getAssay to getProcess
+    def get_all_process_info(self, process):
         process_info = ProcessInfo()
         process_info.input_bundle = self.get_input_bundle(process)
 
@@ -335,7 +344,7 @@ class IngestExporter:
 
         return None
 
-    def prepare_metadata_files(self, metadata_info) -> 'dict':
+    def prepare_metadata_files(self, metadata_info,  is_indexed=True) -> 'dict':
         metadata_files_by_type = dict()
 
         for entity_type in ['biomaterial', 'file', 'project', 'protocol', 'process']:
@@ -343,6 +352,7 @@ class IngestExporter:
             specific_types_counter = dict()
             for (metadata_uuid, doc) in metadata_info[entity_type].items():
                 specific_entity_type = self.get_concrete_entity_type(doc)
+
                 specific_types_counter[specific_entity_type] = 0 if specific_entity_type not in specific_types_counter else specific_types_counter[specific_entity_type] + 1
 
                 file_name = '{0}_{1}.json'.format(specific_entity_type, specific_types_counter[specific_entity_type])
@@ -351,7 +361,7 @@ class IngestExporter:
                 prepared_doc = {
                     'content': self.bundle_metadata(doc, metadata_uuid),
                     'content_type': '"metadata/{0}"'.format(entity_type),
-                    'indexed': True,
+                    'indexed': is_indexed,
                     'dss_filename': file_name,
                     'dss_uuid': metadata_uuid,
                     'upload_filename': upload_filename
@@ -534,14 +544,15 @@ class FileDSSError(Error):
 class NoUploadAreaFoundError(Error):
     """Export couldn't be as no upload area found"""
 
+
 if __name__ == '__main__':
     logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 
     parser = OptionParser()
-    parser.add_option("-e", "--subsEnvUuid", dest="submissionsEnvelopeUuid",
+    parser.add_option("-e", "--submissionEnvelopeUuid",
                       help="Submission envelope UUID for which to generate the bundle")
-    parser.add_option("-p", "--processUrl", dest="processUrl",
-                      help="Process Url")
+    parser.add_option("-p", "--processUuid",
+                      help="Process UUID")
     parser.add_option("-D", "--dry", help="do a dry run without submitting to ingest", action="store_true",
                       default=False)
     parser.add_option("-o", "--output", dest="output",
@@ -555,17 +566,17 @@ if __name__ == '__main__':
 
     (options, args) = parser.parse_args()
 
-    if not options.submissionsEnvelopeUuid:
-        print("You must supply a submission envelope UUID")
+    if not options.submissionEnvelopeUuid:
+        print ("You must supply a Submission Envelope UUID")
         exit(2)
 
-    if not options.processUrl:
-        print("You must supply a processUrl")
+    if not options.processUuid:
+        print ("You must supply a process UUID.")
         exit(2)
 
-    ex = IngestExporter(options)
+    if not options.ingest:
+        print ("You must the url of Ingest API.")
+        exit(2)
 
-    ex.export_bundle(options.submissionsEnvelopeUuid, options.processUrl)
-
-
-
+    exporter = IngestExporter(options)
+    exporter.export_bundle(options.submissionsEnvelopeUuid, options.processUuid)
