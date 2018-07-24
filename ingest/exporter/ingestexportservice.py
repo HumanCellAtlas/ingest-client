@@ -73,7 +73,7 @@ class IngestExporter:
         files_by_type['links'].append({
             'content': links,
             'content_type': '"metadata/{0}"'.format('links'),
-            'indexed': True,
+            'indexed': is_indexed,
             'dss_filename': 'links.json',
             'dss_uuid': links_file_uuid,
             'upload_filename': 'links_' + links_file_uuid + '.json'
