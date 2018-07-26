@@ -141,6 +141,7 @@ class WorksheetImporterTest(TestCase):
         mock_template_manager = MagicMock('template_manager')
         mock_template_manager.create_row_template = MagicMock(return_value=row_template)
         mock_template_manager.get_header_row = MagicMock(return_value=['header1', 'header2'])
+        mock_template_manager.get_concrete_entity_of_tab = MagicMock(return_value='concrete_entity')
 
         # and:
         workbook = Workbook()
@@ -175,6 +176,7 @@ class WorksheetImporterTest(TestCase):
         mock_template_manager = MagicMock('template_manager')
         mock_template_manager.create_row_template = MagicMock(return_value=row_template)
         mock_template_manager.get_header_row = MagicMock(return_value=['header1', 'header2'])
+        mock_template_manager.get_concrete_entity_of_tab = MagicMock(return_value='concrete_entity')
 
         # and:
         workbook = Workbook()
