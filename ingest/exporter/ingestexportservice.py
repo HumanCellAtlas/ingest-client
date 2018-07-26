@@ -131,6 +131,7 @@ class IngestExporter:
         simplified['protocol'] = dict(process_info.protocols)
         simplified['file'] = dict(process_info.derived_files)
         simplified['file'].update(process_info.input_files)
+        simplified['file'].update(process_info.supplementary_files)
 
         simplified['project'] = dict()
         simplified['project'][process_info.project['uuid']['uuid']] = process_info.project
@@ -153,6 +154,12 @@ class IngestExporter:
             process_info.project = self.ingest_api.getProjectByUuid(project_uuid)
 
         self.recurse_process(process, process_info)
+
+        if process_info.project:
+            supplementary_files = self.ingest_api.getRelatedEntities('supplementaryFiles', process_info.project, 'files')
+            for supplementary_file in supplementary_files:
+                uuid = supplementary_file['uuid']['uuid']
+                process_info.supplementary_files[uuid] = supplementary_file
 
         return process_info
 
@@ -472,6 +479,7 @@ class ProcessInfo:
         self.input_files = {}
         self.derived_files = {}
         self.protocols = {}
+        self.supplementary_files = {}
 
         self.links = []
 
