@@ -61,32 +61,39 @@ class EntityLinker(object):
         self.process_id_ctr = 0
 
     def process_links_from_spreadsheet(self, entity_map):
-        for from_entity in entity_map.get_entities():
-            self._validate_entity_links(entity_map, from_entity)
-            self._generate_direct_links(entity_map, from_entity)
+        for entity in entity_map.get_entities():
+            self._validate_entity_links(entity_map, entity)
+            self._generate_direct_links(entity_map, entity)
 
         return entity_map
 
-    def _generate_direct_links(self, entity_map, from_entity):
+    def _generate_direct_links(self, entity_map, entity):
         project = entity_map.get_project()
 
         # link all entities to project
-        if not from_entity.type == 'project':
+        if project and not entity.type == 'project':
             # TODO protocols and files don't have links to project in ingest-core
-            from_entity.direct_links.append({
+            entity.direct_links.append({
                 'entity': 'project',
                 'id': project.id,
                 'relationship': 'projects'
             })
 
-        links_by_entity = from_entity.links_by_entity
+        if project and entity.concrete_type == 'supplementary_file':
+            project.direct_links.append({
+                'entity': 'file',
+                'id': entity.id,
+                'relationship': 'supplementaryFiles'
+            })
+
+        links_by_entity = entity.links_by_entity
 
         linked_biomaterial_ids = links_by_entity.get('biomaterial', [])
         linked_process_id = links_by_entity['process'][0] if links_by_entity.get('process') else None
         linked_protocol_ids = links_by_entity.get('protocol', [])
         linked_file_ids = links_by_entity.get('file', [])
 
-        linking_details = from_entity.linking_details
+        linking_details = entity.linking_details
 
         if linked_biomaterial_ids or linked_file_ids:
 
@@ -99,7 +106,7 @@ class EntityLinker(object):
             entity_map.add_entity(linking_process)
 
             # link output of process
-            from_entity.direct_links.append({
+            entity.direct_links.append({
                 'entity': linking_process.type,
                 'id': linking_process.id,
                 'relationship': 'derivedByProcesses'
@@ -215,7 +222,7 @@ class EntityLinker(object):
 class Entity(object):
 
     def __init__(self, entity_type, entity_id, content, ingest_json=None, links_by_entity=None,
-                 direct_links=None, is_reference=False, linking_details=None):
+                 direct_links=None, is_reference=False, linking_details=None, concrete_type=None):
         self.type = entity_type
         self.id = entity_id
         self.content = content
@@ -224,6 +231,7 @@ class Entity(object):
         self._prepare_linking_details(linking_details)
         self.ingest_json = ingest_json
         self.is_reference = is_reference
+        self.concrete_type = concrete_type
 
     def _prepare_links_by_entity(self, links_by_entity):
         self.links_by_entity = {}
@@ -281,7 +289,6 @@ class Submission(object):
         return self.metadata_dict[key]
 
     def link_entity(self, from_entity, to_entity, relationship):
-
         if from_entity.is_reference and not from_entity.ingest_json:
             from_entity.ingest_json = self.ingest_api.getEntityByUuid(self.ENTITY_LINK[from_entity.type], from_entity.id)
 
@@ -290,7 +297,7 @@ class Submission(object):
 
         from_entity_ingest = from_entity.ingest_json
         to_entity_ingest = to_entity.ingest_json
-        self.ingest_api.linkEntity(from_entity_ingest, to_entity_ingest , relationship)
+        self.ingest_api.linkEntity(from_entity_ingest, to_entity_ingest, relationship)
 
     def define_manifest(self, entity_map):
         total_count = entity_map.count_total()
@@ -350,7 +357,8 @@ class EntityMap(object):
                                 content=entity_body.get('content'),
                                 links_by_entity=entity_body.get('links_by_entity', {}),
                                 is_reference=entity_body.get('is_reference', False),
-                                linking_details=entity_body.get('linking_details', {}))
+                                linking_details=entity_body.get('linking_details', {}),
+                                concrete_type=entity_body.get('concrete_type'))
 
                 dictionary.add_entity(entity)
 

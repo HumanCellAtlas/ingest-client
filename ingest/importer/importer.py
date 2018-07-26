@@ -146,7 +146,8 @@ class WorksheetImporter:
                 'content': metadata.content.as_dict(),
                 'links_by_entity': metadata.links,
                 'external_links_by_entity': metadata.external_links,
-                'linking_details': metadata.linking_details
+                'linking_details': metadata.linking_details,
+                'concrete_type': template.get_concrete_entity_of_tab(worksheet.title)
             }
         return records
 
