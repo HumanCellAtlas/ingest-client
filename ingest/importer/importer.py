@@ -1,4 +1,5 @@
-import openpyxl, logging
+import logging
+import openpyxl
 
 from ingest.importer.conversion import template_manager
 from ingest.importer.conversion.template_manager import TemplateManager
@@ -7,6 +8,7 @@ from ingest.importer.submission import IngestSubmitter, EntityMap, EntityLinker
 
 format = '[%(filename)s:%(lineno)s - %(funcName)20s() ] %(asctime)s - %(name)s - %(levelname)s - %(message)s'
 logging.basicConfig(format=format)
+
 
 class XlsImporter:
 
