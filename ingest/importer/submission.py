@@ -75,7 +75,7 @@ class EntityLinker(object):
         # another issue is that protocols and files don't have links to project in ingest-core
 
         if project and not entity.type == 'project':
-            if entity.type != 'protocols' and entity.type != 'files':
+            if entity.type != 'protocol' and entity.type != 'file':
                 entity.direct_links.append({
                     'entity': 'project',
                     'id': project.id,
