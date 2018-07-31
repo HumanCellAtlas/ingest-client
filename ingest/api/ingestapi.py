@@ -19,6 +19,7 @@ class IngestApi:
         logging.basicConfig(format=format)
         logging.getLogger("requests").setLevel(logging.WARNING)
         self.logger = logging.getLogger(__name__)
+        self.logger.setLevel(logging.DEBUG)
 
         if not url and 'INGEST_API' in os.environ:
             url = os.environ['INGEST_API']
@@ -313,7 +314,6 @@ class IngestApi:
         raise ValueError('Create file failed: File ' + fileName + " - " + r.text)
 
     def createEntity(self, submissionUrl, jsonObject, entityType, token=None):
-        self.logger.debug(".", )
         auth_headers = {'Content-type': 'application/json',
                         'Authorization': token
                         }
