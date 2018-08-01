@@ -31,9 +31,18 @@ class TemplateManager:
         object_type = self.get_concrete_entity_of_tab(tab_name)
         header_row = self.get_header_row(worksheet)
         cell_conversions = []
+
+        header_ctr = {}
+
         for cell in header_row:
             header = cell.value
-            column_spec = self._define_column_spec(header, object_type)
+
+            if not header_ctr.get(header):
+                header_ctr[header] = 0
+
+            header_ctr[header] = header_ctr[header] + 1
+
+            column_spec = self._define_column_spec(header, object_type, order_of_occurence=header_ctr[header])
             strategy = conversion_strategy.determine_strategy(column_spec)
             cell_conversions.append(strategy)
         default_values = self._define_default_values(object_type)
@@ -69,15 +78,16 @@ class TemplateManager:
 
         return clean_header_row
 
-    def _define_column_spec(self, header, object_type):
+    def _define_column_spec(self, header, object_type, order_of_occurence=1):
         if header is not None:
             parent_path, __ = utils.split_field_chain(header)
             raw_spec = self.lookup(header)
             raw_parent_spec = self.lookup(parent_path)
             concrete_type = utils.extract_root_field(header)
             main_category = self.get_domain_entity(concrete_type)
-            column_spec = ColumnSpecification.build_raw(header, object_type, main_category,
-                                                        raw_spec, parent=raw_parent_spec)
+            column_spec = ColumnSpecification.build_raw(header, object_type, main_category, raw_spec,
+                                                        parent=raw_parent_spec,
+                                                        order_of_occurence=order_of_occurence)
         else:
             column_spec = None
         return column_spec

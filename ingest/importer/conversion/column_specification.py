@@ -17,7 +17,8 @@ class ConversionType(Enum):
 class ColumnSpecification:
 
     def __init__(self, field_name, object_type, main_category, data_type, multivalue=False,
-                 multivalue_parent=False, identity: bool=False, external_reference: bool=False):
+                 multivalue_parent=False, identity: bool=False, external_reference: bool=False,
+                 order_of_occurence: int = 1):
         self.field_name = field_name
         self.object_type = object_type
         self.main_category = main_category
@@ -26,6 +27,7 @@ class ColumnSpecification:
         self.multivalue_parent = multivalue_parent
         self.identity = identity
         self.external_reference = external_reference
+        self.order_of_occurence = order_of_occurence
 
     def is_multivalue(self):
         return self.multivalue
@@ -48,7 +50,7 @@ class ColumnSpecification:
 
     def _represents_an_object_field(self):
         entity_type = utils.extract_root_field(self.field_name)
-        return entity_type == self.object_type
+        return entity_type == self.object_type and self.order_of_occurence == 1
 
     def _determine_conversion_type_for_object_field(self):
         if self.identity:
@@ -77,7 +79,7 @@ class ColumnSpecification:
         return converter
 
     @staticmethod
-    def build_raw(field_name, object_type, main_category, raw_spec, parent=None):
+    def build_raw(field_name, object_type, main_category, raw_spec, order_of_occurence=1, parent=None):
         data_type = DataType.find(raw_spec.get('value_type'))
         multivalue = bool(raw_spec.get('multivalue'))
         multivalue_parent = bool(parent.get('multivalue')) if parent != None else False
@@ -85,4 +87,5 @@ class ColumnSpecification:
         external_reference = bool(raw_spec.get('external_reference'))
         return ColumnSpecification(field_name, object_type, main_category, data_type,
                                    multivalue=multivalue, multivalue_parent=multivalue_parent,
-                                   identity=identity, external_reference=external_reference)
+                                   identity=identity, external_reference=external_reference,
+                                   order_of_occurence=order_of_occurence)
