@@ -169,6 +169,14 @@ class ColumnSpecificationTest(TestCase):
         # expect:
         self.assertEqual(ConversionType.LINKED_IDENTITY, column_spec.get_conversion_type())
 
+    def test_get_conversion_type_linked_identity_order(self):
+        # given:
+        column_spec = ColumnSpecification('account.number', 'account', 'profile_type',
+                                          DataType.STRING, identity=True, order_of_occurence=2)
+
+        # expect:
+        self.assertEqual(ConversionType.LINKED_IDENTITY, column_spec.get_conversion_type())
+
     def test_get_conversion_type_external_reference_identity(self):
         # given:
         column_spec = ColumnSpecification('account.uuid', 'user', 'profile_type',

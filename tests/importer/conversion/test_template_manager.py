@@ -112,8 +112,8 @@ class TemplateManagerTest(TestCase):
         # then:
         expected_calls = [
             call('user.profile.first_name', 'sample_object', 'main_category', name_raw_spec,
-                 parent=name_raw_parent_spec),
-            call('numbers', 'sample_object', None, numbers_raw_spec, parent=None)
+                 order_of_occurence=1, parent=name_raw_parent_spec),
+            call('numbers', 'sample_object', None, numbers_raw_spec, order_of_occurence=1, parent=None)
         ]
         build_raw.assert_has_calls(expected_calls)
         determine_strategy.assert_has_calls([call(name_column_spec), call(numbers_column_spec)])
