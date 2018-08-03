@@ -1,4 +1,5 @@
 import copy
+import logging
 
 from openpyxl.worksheet import Worksheet
 
@@ -17,6 +18,7 @@ class TemplateManager:
     def __init__(self, template:SchemaTemplate, ingest_api:IngestApi):
         self.template = template
         self.ingest_api = ingest_api
+        self.logger = logging.getLogger(__name__)
 
     def create_template_node(self, worksheet: Worksheet):
         concrete_entity = self.get_concrete_entity_of_tab(worksheet.title)
@@ -133,7 +135,7 @@ class TemplateManager:
             tabs_config = self.template.get_tabs_config()
             concrete_entity = tabs_config.get_key_for_label(tab_name)
         except:
-            print(f'No entity found for tab {tab_name}')
+            self.logger.warning(f'No entity found for tab {tab_name}')
             return None
         return concrete_entity
 
@@ -141,14 +143,14 @@ class TemplateManager:
         try:
             key = self.template.get_key_for_label(header_name, tab_name)
         except:
-            print(f'{header_name} in "{tab_name}" tab is not found in schema template')
+            self.logger.warning(f'{header_name} in "{tab_name}" tab is not found in schema template')
         return key
 
     def lookup(self, header_name):
         try:
             spec = self.template.lookup(header_name)
         except schema_template.UnknownKeyException:
-            print(f'schema_template.UnknownKeyException: Could not lookup {header_name} in template.')
+            self.logger.warning(f'schema_template.UnknownKeyException: Could not lookup {header_name} in template.')
             return {}
 
         return spec

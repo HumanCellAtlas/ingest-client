@@ -16,6 +16,7 @@ class XlsImporter:
     # Seems like it should be the IngestSubmitter that takes care of this detail
     def __init__(self, ingest_api):
         self.ingest_api = ingest_api
+        self.logger = logging.getLogger(__name__)
 
     def dry_run_import_file(self, file_path, project_uuid=None):
         spreadsheet_json, template_mgr = self._generate_spreadsheet_json(file_path, project_uuid)
@@ -38,7 +39,7 @@ class XlsImporter:
 
         # TODO the submission_url should be passed to the IngestSubmitter instead
         submission = submitter.submit(entity_map, submission_url)
-        print(f'Submission in {submission_url} is done!')  # TODO log or remove this
+        self.logger.info(f'Submission in {submission_url} is done!')
 
         return submission
 
@@ -60,6 +61,7 @@ class WorkbookImporter:
     def __init__(self, template_mgr):
         self.worksheet_importer = WorksheetImporter()
         self.template_mgr = template_mgr
+        self.logger = logging.getLogger(__name__)
 
     def do_import(self, workbook: IngestWorkbook, project_uuid=None):
         spreadsheet_json = {}
@@ -71,7 +73,7 @@ class WorkbookImporter:
 
             # TODO what if the tab is not a valid entity?
             if concrete_entity is None:
-                print(f'{worksheet.title} is not a valid tab name.')
+                self.logger.warning(f'{worksheet.title} is not a valid tab name.')
                 continue
 
             domain_entity = self.template_mgr.get_domain_entity(concrete_entity)
