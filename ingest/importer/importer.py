@@ -23,8 +23,6 @@ class XlsImporter:
         self.logger = logging.getLogger(__name__)
 
     def dry_run_import_file(self, file_path, project_uuid=None):
-        entity_map = None
-
         spreadsheet_json, template_mgr = self._generate_spreadsheet_json(file_path, project_uuid)
         entity_map = self._process_links_from_spreadsheet(template_mgr, spreadsheet_json)
 
@@ -76,7 +74,7 @@ class XlsImporter:
             })
 
         if error_json:
-            self.logger.error('Error: ' + json.dumps(error_json))
+            self.logger.error('An error occured for submission, {submission_url} : ' + json.dumps(error_json))
             self.ingest_api.createSubmissionError(submission_url, error_json)
         else:
             self.logger.info(f'Submission in {submission_url} is done!')
@@ -125,7 +123,7 @@ class WorkbookImporter:
         if not project_uuid:
             project_dict = self.import_project(workbook)
         else:
-            project_dict = self.create_project_dict(project_uuid)
+            project_dict = self._create_project_dict(project_uuid)
         spreadsheet_json['project'] = project_dict
 
     def import_project(self, workbook):
@@ -144,10 +142,9 @@ class WorkbookImporter:
                 project_record['content'][field_name] = list(
                     map(lambda record: record['content'][field_name][0], records))
 
-
         return project_dict
 
-    def create_project_dict(self, project_id):
+    def _create_project_dict(self, project_id):
         project_dict = {}
         project_dict[project_id] = {}
         project_dict[project_id]['is_reference'] = True

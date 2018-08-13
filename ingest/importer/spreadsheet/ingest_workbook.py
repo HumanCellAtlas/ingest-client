@@ -3,9 +3,27 @@ from openpyxl import Workbook
 SCHEMAS_WORKSHEET = 'Schemas'
 PROJECT_WORKSHEET = 'Project'
 CONTACT_WORKSHEET = 'Contact'
+FUNDER_WORKSHEET = 'Funder'
+PUBLICATION_WORKSHEET = 'Publications'
 
 # TODO think of a better name
-SPECIAL_TABS = [SCHEMAS_WORKSHEET, PROJECT_WORKSHEET, CONTACT_WORKSHEET]
+SPECIAL_TABS = [SCHEMAS_WORKSHEET, PROJECT_WORKSHEET]
+
+# TODO figure out how to identify that a tab is a module tab to generate this config automatically
+MODULE_TABS = {
+    'Contact': {
+        'field': 'contributors',
+        'parent_entity': 'project'
+    },
+    'Funder': {
+        'field': 'funders',
+        'parent_entity': 'project'
+    },
+    'Publications': {
+        'field': 'publications',
+        'parent_entity': 'project'
+    },
+}
 
 
 class IngestWorkbook:
@@ -14,20 +32,14 @@ class IngestWorkbook:
         self.workbook = workbook
 
     def get_project_worksheet(self):
-        if PROJECT_WORKSHEET in self.workbook.get_sheet_names():
-            return self.workbook[PROJECT_WORKSHEET]
+        return self.get_worksheet(PROJECT_WORKSHEET)
 
-        if PROJECT_WORKSHEET.lower() in self.workbook.get_sheet_names():
-            return self.workbook[PROJECT_WORKSHEET.lower()]
+    def get_worksheet(self, worksheet_title):
+        if worksheet_title in self.workbook.get_sheet_names():
+            return self.workbook[worksheet_title]
 
-        return None
-
-    def get_contact_worksheet(self):
-        if CONTACT_WORKSHEET in self.workbook.get_sheet_names():
-            return self.workbook[CONTACT_WORKSHEET]
-
-        if CONTACT_WORKSHEET.lower() in self.workbook.get_sheet_names():
-            return self.workbook[CONTACT_WORKSHEET.lower()]
+        if worksheet_title.lower() in self.workbook.get_sheet_names():
+            return self.workbook[worksheet_title.lower()]
 
         return None
 
@@ -52,5 +64,13 @@ class IngestWorkbook:
 
     def importable_worksheets(self):
         importable_names = [name for name in self.workbook.get_sheet_names() if
-                            (not name in SPECIAL_TABS)]
+                            (not name in SPECIAL_TABS and not name in list(MODULE_TABS.keys()))]
         return [self.workbook[name] for name in importable_names]
+
+    def module_worksheets(self):
+        return [self.get_worksheet(name) for name in list(MODULE_TABS.keys())]
+
+    def get_module_field(self, module_tab_name):
+        return MODULE_TABS[module_tab_name]['field'] if MODULE_TABS.get(module_tab_name) and \
+                                                        MODULE_TABS[module_tab_name].get('field') else None
+

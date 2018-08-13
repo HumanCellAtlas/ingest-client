@@ -19,7 +19,6 @@ class IngestApi:
         logging.basicConfig(format=format)
         logging.getLogger("requests").setLevel(logging.WARNING)
         self.logger = logging.getLogger(__name__)
-        self.logger.setLevel(logging.DEBUG)
 
         if not url and 'INGEST_API' in os.environ:
             url = os.environ['INGEST_API']
@@ -290,6 +289,9 @@ class IngestApi:
 
     def createSubmissionManifest(self, submissionUrl, jsonObject):
         return self.createEntity(submissionUrl, jsonObject, 'submissionManifest')
+
+    def createSubmissionError(self, submissionUrl, jsonObject):
+        return self.createEntity(submissionUrl, jsonObject, 'submissionErrors')
 
     def createProtocol(self, submissionUrl, jsonObject):
         return self.createEntity(submissionUrl, jsonObject, "protocols")
