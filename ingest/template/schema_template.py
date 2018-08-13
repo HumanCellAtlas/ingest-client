@@ -298,14 +298,23 @@ class SchemaParser:
         if "items" in data:
             return self._get_schema_from_object(data["items"])
 
-        if "id" in data:
-            url = data["id"]
+        url_key = None
+
+        if '$id' in data:
+            url_key = '$id'
+
+        if 'id' in data:
+            url_key = 'id'
+
+        if url_key:
+            url = data[url_key]
             schema = Schema().build()
             schema.domain_entity = self.get_domain_entity_from_url(url)
             schema.high_level_entity = self.get_high_level_entity_from_url(url)
             schema.module = self.get_module_from_url(url)
             schema.url = url
             return schema
+
         return None
 
     def get_high_level_entity_from_url(self, url):

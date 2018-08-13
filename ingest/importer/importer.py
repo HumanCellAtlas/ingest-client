@@ -1,10 +1,14 @@
+import json
 import logging
 import openpyxl
+
+import ingest.importer.submission
 
 from ingest.importer.conversion import template_manager
 from ingest.importer.conversion.template_manager import TemplateManager
 from ingest.importer.spreadsheet.ingest_workbook import IngestWorkbook
 from ingest.importer.submission import IngestSubmitter, EntityMap, EntityLinker
+
 
 format = '[%(filename)s:%(lineno)s - %(funcName)20s() ] %(asctime)s - %(name)s - %(levelname)s - %(message)s'
 logging.basicConfig(format=format)
@@ -19,27 +23,63 @@ class XlsImporter:
         self.logger = logging.getLogger(__name__)
 
     def dry_run_import_file(self, file_path, project_uuid=None):
+        entity_map = None
+
         spreadsheet_json, template_mgr = self._generate_spreadsheet_json(file_path, project_uuid)
         entity_map = self._process_links_from_spreadsheet(template_mgr, spreadsheet_json)
 
         return entity_map
 
     def _generate_spreadsheet_json(self, file_path, project_uuid=None):
+
         ingest_workbook = self._create_ingest_workbook(file_path)
-        template_mgr = template_manager.build(ingest_workbook.get_schemas(), self.ingest_api)
+        template_mgr = None
+
+        try:
+            template_mgr = template_manager.build(ingest_workbook.get_schemas(), self.ingest_api)
+        except Exception as e:
+            raise SchemaRetrievalError(
+                'An error was encountered while retrieving the schema information to process the spreadsheet.')
+
         workbook_importer = WorkbookImporter(template_mgr)
         spreadsheet_json = workbook_importer.do_import(ingest_workbook, project_uuid)
+
         return spreadsheet_json, template_mgr
 
     def import_file(self, file_path, submission_url, project_uuid=None):
-        spreadsheet_json, template_mgr = self._generate_spreadsheet_json(file_path, project_uuid)
-        entity_map = self._process_links_from_spreadsheet(template_mgr, spreadsheet_json)
+        error_json = None
+        submission = None
+        try:
+            spreadsheet_json, template_mgr = self._generate_spreadsheet_json(file_path, project_uuid)
+            entity_map = self._process_links_from_spreadsheet(template_mgr, spreadsheet_json)
 
-        submitter = IngestSubmitter(self.ingest_api)
+            submitter = IngestSubmitter(self.ingest_api)
 
-        # TODO the submission_url should be passed to the IngestSubmitter instead
-        submission = submitter.submit(entity_map, submission_url)
-        self.logger.info(f'Submission in {submission_url} is done!')
+            # TODO the submission_url should be passed to the IngestSubmitter instead
+            submission = submitter.submit(entity_map, submission_url)
+
+        except ingest.importer.submission.Error as e:
+            error_json = json.dumps({
+                'errorCode': 'ingest.importer.submission',
+                'errorType': 'Error',
+                'message': e.message,
+                'details': str(e),
+
+            })
+        except Exception as e:
+            error_json = json.dumps({
+                'errorCode': 'ingest.importer.error',
+                'errorType': 'Error',
+                'message': 'An error during submission occurred.',
+                'details': str(e),
+
+            })
+
+        if error_json:
+            self.logger.error('Error: ' + json.dumps(error_json))
+            self.ingest_api.createSubmissionError(submission_url, error_json)
+        else:
+            self.logger.info(f'Submission in {submission_url} is done!')
 
         return submission
 
@@ -59,7 +99,7 @@ class XlsImporter:
 class WorkbookImporter:
 
     def __init__(self, template_mgr):
-        self.worksheet_importer = WorksheetImporter()
+        self.worksheet_importer = IdentifiableWorksheetImporter()
         self.template_mgr = template_mgr
         self.logger = logging.getLogger(__name__)
 
@@ -70,16 +110,7 @@ class WorkbookImporter:
 
         for worksheet in workbook.importable_worksheets():
             concrete_entity = self.template_mgr.get_concrete_entity_of_tab(worksheet.title)
-
-            # TODO what if the tab is not a valid entity?
-            if concrete_entity is None:
-                self.logger.warning(f'{worksheet.title} is not a valid tab name.')
-                continue
-
             domain_entity = self.template_mgr.get_domain_entity(concrete_entity)
-
-            if domain_entity is None:
-                continue
 
             entities_dict = self.worksheet_importer.do_import(worksheet, self.template_mgr)
             if spreadsheet_json.get(domain_entity) is None:
@@ -100,14 +131,19 @@ class WorkbookImporter:
     def import_project(self, workbook):
         project_worksheet = workbook.get_project_worksheet()
         project_importer = ProjectWorksheetImporter()
-        project_dict = project_importer.do_import(project_worksheet, self.template_mgr)
-        contact_worksheet = workbook.get_contact_worksheet()
 
-        if contact_worksheet:
-            contact_importer = ContactWorksheetImporter()
-            contacts = contact_importer.do_import(contact_worksheet, self.template_mgr)
-            project_record = list(project_dict.values())[0]
-            project_record['content']['contributors'] = list(map(lambda record: record['content']['contributors'][0], contacts))
+        project_dict = project_importer.do_import(project_worksheet, self.template_mgr)
+
+        project_record = list(project_dict.values())[0]
+
+        for worksheet in workbook.module_worksheets():
+            if worksheet:
+                module_importer = ModuleWorksheetImporter('project', workbook.get_module_field(worksheet.title))
+                records = module_importer.do_import(worksheet, self.template_mgr)
+                field_name = module_importer.property
+                project_record['content'][field_name] = list(
+                    map(lambda record: record['content'][field_name][0], records))
+
 
         return project_dict
 
@@ -130,33 +166,43 @@ class WorksheetImporter:
     def __init__(self):
         self.unknown_id_ctr = 0
         self.logger = logging.getLogger(__name__)
+        self.concrete_entity = None
 
     def do_import(self, worksheet, template: TemplateManager):
         row_template = template.create_row_template(worksheet)
+        self.concrete_entity = template.get_concrete_entity_of_tab(worksheet.title)
         return self._import_using_row_template(template, worksheet, row_template)
 
     def _import_using_row_template(self, template, worksheet, row_template):
         records = {}
-        header_row = template.get_header_row(worksheet)
-
-        for index, row in enumerate(self._get_data_rows(worksheet)):
-            row = row[:len(header_row)]
-            if all(cell.value is None for cell in row):
-                self.logger.warning(f'skipping row {index} of {worksheet.title} tab')
-                continue
+        rows = self._get_data_rows(worksheet, template)
+        for index, row in enumerate(rows):
             metadata = row_template.do_import(row)
+
             record_id = self._determine_record_id(metadata)
+
             records[record_id] = {
                 'content': metadata.content.as_dict(),
                 'links_by_entity': metadata.links,
                 'external_links_by_entity': metadata.external_links,
                 'linking_details': metadata.linking_details,
-                'concrete_type': template.get_concrete_entity_of_tab(worksheet.title)
+                'concrete_type': self.concrete_entity
             }
         return records
 
+    @staticmethod
+    def _is_empty_row(row):
+        return all(cell.value is None for cell in row)
+
+    def _get_data_rows(self, worksheet, template):
+        header_row = template.get_header_row(worksheet)
+        rows = worksheet.iter_rows(row_offset=self.START_ROW_IDX,
+                                  max_row=(worksheet.max_row - self.START_ROW_IDX))
+        return [row[:len(header_row)] for row in rows if not WorksheetImporter._is_empty_row(row)]
+
     def _determine_record_id(self, metadata):
         record_id = metadata.object_id
+
         if record_id is None:
             record_id = self._generate_id()
         return record_id
@@ -165,9 +211,19 @@ class WorksheetImporter:
         self.unknown_id_ctr = self.unknown_id_ctr + 1
         return f'{self.UNKNOWN_ID_PREFIX}{self.unknown_id_ctr}'
 
-    def _get_data_rows(self, worksheet):
-        return worksheet.iter_rows(row_offset=self.START_ROW_IDX,
-                                  max_row=(worksheet.max_row - self.START_ROW_IDX))
+
+class IdentifiableWorksheetImporter(WorksheetImporter):
+
+    def do_import(self, worksheet, template: TemplateManager):
+        records = super(IdentifiableWorksheetImporter, self).do_import(worksheet, template)
+
+        if self.unknown_id_ctr:
+            raise RowIdNotFound()
+
+        if not self.concrete_entity:
+            raise InvalidTabName(worksheet.title)
+
+        return records
 
 
 class ProjectWorksheetImporter(WorksheetImporter):
@@ -184,18 +240,46 @@ class ProjectWorksheetImporter(WorksheetImporter):
         return records
 
 
-class ContactWorksheetImporter(WorksheetImporter):
+class ModuleWorksheetImporter(WorksheetImporter):
+    def __init__(self, parent_entity, property):
+        super(ModuleWorksheetImporter, self).__init__()
+        self.parent_entity = parent_entity
+        self.property = property
 
     def do_import(self, worksheet, template: TemplateManager):
         row_template = template.create_simple_row_template(worksheet)
         records = self._import_using_row_template(template, worksheet, row_template)
-
         return list(records.values())
 
 
 class MultipleProjectsFound(Exception):
-    pass
+    def __init__(self):
+        message = f'The spreadsheet should only be associated to a single project.'
+        super(MultipleProjectsFound, self).__init__(message)
 
 
 class NoProjectFound(Exception):
+    def __init__(self):
+        message = f'The spreadsheet should be associated to a project.'
+        super(NoProjectFound, self).__init__(message)
+
+
+class RowIdNotFound(Exception):
+    def __init__(self, row_index, tab_name):
+        message = f'No identifier was found for row {row_index + 1} in {tab_name}.'
+        super(RowIdNotFound, self).__init__(message)
+
+        self.row_index = row_index
+        self.tab_name = tab_name
+
+
+class SchemaRetrievalError(Exception):
     pass
+
+
+class InvalidTabName(Exception):
+    def __init__(self, tab_name):
+        message = f'The {tab_name} tab does not correspond to any entity in metadata schema.'
+        super(InvalidTabName, self).__init__(message)
+        self.tab_name = tab_name
+
