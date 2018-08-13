@@ -47,6 +47,7 @@ class TemplateManager:
             column_spec = self._define_column_spec(header, object_type, order_of_occurence=header_ctr[header])
             strategy = conversion_strategy.determine_strategy(column_spec)
             cell_conversions.append(strategy)
+
         default_values = self._define_default_values(object_type)
         return RowTemplate(cell_conversions, default_values=default_values)
 
@@ -54,6 +55,7 @@ class TemplateManager:
         tab_name = worksheet.title
         object_type = self.get_concrete_entity_of_tab(tab_name)
         header_row = self.get_header_row(worksheet)
+
         cell_conversions = []
         for cell in header_row:
             header = cell.value
@@ -63,7 +65,6 @@ class TemplateManager:
 
         default_values = self._define_default_values(object_type)
         return RowTemplate(cell_conversions, default_values=default_values)
-
 
     # TODO move this outside template manager
     @staticmethod
@@ -131,12 +132,15 @@ class TemplateManager:
         return spec.get('schema') if spec else None
 
     def get_concrete_entity_of_tab(self, tab_name):
+        concrete_entity = None
         try:
             tabs_config = self.template.get_tabs_config()
             concrete_entity = tabs_config.get_key_for_label(tab_name)
-        except:
-            self.logger.warning(f'No entity found for tab {tab_name}')
-            return None
+        except schema_template.UnknownKeyException as e:
+            pass
+        except KeyError as e:
+            pass
+
         return concrete_entity
 
     def get_key_for_label(self, header_name, tab_name):
@@ -190,3 +194,4 @@ class ParentFieldNotFound(Exception):
         super(ParentFieldNotFound, self).__init__(message)
 
         self.header_name = header_name
+

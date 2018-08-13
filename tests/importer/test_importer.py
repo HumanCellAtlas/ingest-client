@@ -8,7 +8,7 @@ from openpyxl import Workbook
 from ingest.importer.conversion import conversion_strategy
 from ingest.importer.conversion.metadata_entity import MetadataEntity
 from ingest.importer.data_node import DataNode
-from ingest.importer.importer import WorksheetImporter, WorkbookImporter, XlsImporter
+from ingest.importer.importer import WorksheetImporter, WorkbookImporter, XlsImporter, IdentifiableWorksheetImporter
 from ingest.importer.spreadsheet.ingest_workbook import IngestWorkbook
 
 BASE_PATH = os.path.dirname(__file__)
@@ -30,7 +30,7 @@ def _create_single_row_worksheet(worksheet_data: dict):
 
 class WorkbookImporterTest(TestCase):
 
-    @patch('ingest.importer.importer.WorksheetImporter')
+    @patch('ingest.importer.importer.IdentifiableWorksheetImporter')
     def test_do_import(self, worksheet_importer_constructor):
         # given: set up template manager
         key_label_map = {
@@ -48,7 +48,7 @@ class WorkbookImporterTest(TestCase):
         mock_template_manager.get_domain_entity = lambda key: domain_entity_map.get(key)
 
         # and: set up worksheet importer
-        worksheet_importer = WorksheetImporter()
+        worksheet_importer = IdentifiableWorksheetImporter()
         expected_json = self._fake_worksheet_import(worksheet_importer, mock_template_manager)
 
         # and: set up workbook
