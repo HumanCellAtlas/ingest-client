@@ -202,6 +202,7 @@ class WorksheetImporter:
 
         if record_id is None:
             record_id = self._generate_id()
+
         return record_id
 
     def _generate_id(self):
@@ -215,7 +216,7 @@ class IdentifiableWorksheetImporter(WorksheetImporter):
         records = super(IdentifiableWorksheetImporter, self).do_import(worksheet, template)
 
         if self.unknown_id_ctr:
-            raise RowIdNotFound()
+            raise RowIdNotFound(worksheet.title)
 
         if not self.concrete_entity:
             raise InvalidTabName(worksheet.title)
@@ -262,11 +263,9 @@ class NoProjectFound(Exception):
 
 
 class RowIdNotFound(Exception):
-    def __init__(self, row_index, tab_name):
-        message = f'No identifier was found for row {row_index + 1} in {tab_name}.'
+    def __init__(self, tab_name):
+        message = f'No identifier was found for some rows in "{tab_name}" tab.'
         super(RowIdNotFound, self).__init__(message)
-
-        self.row_index = row_index
         self.tab_name = tab_name
 
 
