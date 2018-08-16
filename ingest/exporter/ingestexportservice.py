@@ -109,7 +109,7 @@ class IngestExporter:
             bundle_manifest.dataFiles = [data_file['dss_uuid'] for data_file in data_files]
             self.logger.info('Saving files in DSS...')
             bundle_uuid = bundle_manifest.bundleUuid
-            created_files = self.put_files_in_dss(bundle_uuid, bundle_files)
+            created_files = self.put_files_in_dss(bundle_uuid, bundle_files, process_info)
 
             self.logger.info('Saving bundle in DSS...')
             self.put_bundle_in_dss(bundle_uuid, created_files)
@@ -356,14 +356,26 @@ class IngestExporter:
 
         return created_bundle
 
-    def put_files_in_dss(self, bundle_uuid, files_to_put):
+    def put_files_in_dss(self, bundle_uuid, files_to_put, process_info):
         created_files = []
 
         for bundle_file in files_to_put:
             version = ''
-
+            file_uuid = bundle_file["dss_uuid"]
+            created_file = None
+            input_data_files = [input_file['dataFileUuid'] for input_file in list(process_info.input_files.values())]
             try:
-                created_file = self.dss_api.put_file(bundle_uuid, bundle_file)
+                # TODO if file is an input file, this file may already be in the data store, need to get the stored version
+                # This assumes that the latest version is the file version in the input bundle, should be a safe assumption for now
+                # Ideally, bundle manifest must store the file uuid and version and version must be retrieved from there
+                if file_uuid in input_data_files:
+                    file_response = self.dss_api.head_file(bundle_file["dss_uuid"])
+                    created_file = {
+                        'version': file_response.headers['X-DSS-VERSION']
+                    }
+                else:
+                    created_file = self.dss_api.put_file(bundle_uuid, bundle_file)
+
                 version = created_file['version']
             except Exception as e:
                 raise FileDSSError('An error occurred while putting file in DSS' + str(e))
@@ -371,7 +383,7 @@ class IngestExporter:
             file_param = {
                 "indexed": bundle_file["indexed"],
                 "name": bundle_file["submittedName"],
-                "uuid": bundle_file["dss_uuid"],
+                "uuid": file_uuid,
                 "content-type": bundle_file["content-type"],
                 "version": version
             }
