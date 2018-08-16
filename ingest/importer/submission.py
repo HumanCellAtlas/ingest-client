@@ -61,32 +61,42 @@ class EntityLinker(object):
         self.process_id_ctr = 0
 
     def process_links_from_spreadsheet(self, entity_map):
-        for from_entity in entity_map.get_entities():
-            self._validate_entity_links(entity_map, from_entity)
-            self._generate_direct_links(entity_map, from_entity)
+        for entity in entity_map.get_entities():
+            self._validate_entity_links(entity_map, entity)
+            self._generate_direct_links(entity_map, entity)
 
         return entity_map
 
-    def _generate_direct_links(self, entity_map, from_entity):
+    def _generate_direct_links(self, entity_map, entity):
         project = entity_map.get_project()
 
-        # link all entities to project
-        if not from_entity.type == 'project':
-            # TODO protocols and files don't have links to project in ingest-core
-            from_entity.direct_links.append({
-                'entity': 'project',
-                'id': project.id,
-                'relationship': 'projects'
+        # TODO Revisit if we need to link all entities to the project
+        # currently, all entities are indirectly link to the project via the submission envelope
+        # another issue is that protocols and files don't have links to project in ingest-core
+
+        if project and not entity.type == 'project':
+            if entity.type != 'protocol' and entity.type != 'file':
+                entity.direct_links.append({
+                    'entity': 'project',
+                    'id': project.id,
+                    'relationship': 'projects'
+                })
+
+        if project and entity.concrete_type == 'supplementary_file':
+            project.direct_links.append({
+                'entity': 'file',
+                'id': entity.id,
+                'relationship': 'supplementaryFiles'
             })
 
-        links_by_entity = from_entity.links_by_entity
+        links_by_entity = entity.links_by_entity
 
         linked_biomaterial_ids = links_by_entity.get('biomaterial', [])
         linked_process_id = links_by_entity['process'][0] if links_by_entity.get('process') else None
         linked_protocol_ids = links_by_entity.get('protocol', [])
         linked_file_ids = links_by_entity.get('file', [])
 
-        linking_details = from_entity.linking_details
+        linking_details = entity.linking_details
 
         if linked_biomaterial_ids or linked_file_ids:
 
@@ -99,7 +109,7 @@ class EntityLinker(object):
             entity_map.add_entity(linking_process)
 
             # link output of process
-            from_entity.direct_links.append({
+            entity.direct_links.append({
                 'entity': linking_process.type,
                 'id': linking_process.id,
                 'relationship': 'derivedByProcesses'
@@ -215,7 +225,7 @@ class EntityLinker(object):
 class Entity(object):
 
     def __init__(self, entity_type, entity_id, content, ingest_json=None, links_by_entity=None,
-                 direct_links=None, is_reference=False, linking_details=None):
+                 direct_links=None, is_reference=False, linking_details=None, concrete_type=None):
         self.type = entity_type
         self.id = entity_id
         self.content = content
@@ -224,6 +234,7 @@ class Entity(object):
         self._prepare_linking_details(linking_details)
         self.ingest_json = ingest_json
         self.is_reference = is_reference
+        self.concrete_type = concrete_type
 
     def _prepare_links_by_entity(self, links_by_entity):
         self.links_by_entity = {}
@@ -281,7 +292,6 @@ class Submission(object):
         return self.metadata_dict[key]
 
     def link_entity(self, from_entity, to_entity, relationship):
-
         if from_entity.is_reference and not from_entity.ingest_json:
             from_entity.ingest_json = self.ingest_api.getEntityByUuid(self.ENTITY_LINK[from_entity.type], from_entity.id)
 
@@ -290,7 +300,7 @@ class Submission(object):
 
         from_entity_ingest = from_entity.ingest_json
         to_entity_ingest = to_entity.ingest_json
-        self.ingest_api.linkEntity(from_entity_ingest, to_entity_ingest , relationship)
+        self.ingest_api.linkEntity(from_entity_ingest, to_entity_ingest, relationship)
 
     def define_manifest(self, entity_map):
         total_count = entity_map.count_total()
@@ -350,7 +360,8 @@ class EntityMap(object):
                                 content=entity_body.get('content'),
                                 links_by_entity=entity_body.get('links_by_entity', {}),
                                 is_reference=entity_body.get('is_reference', False),
-                                linking_details=entity_body.get('linking_details', {}))
+                                linking_details=entity_body.get('linking_details', {}),
+                                concrete_type=entity_body.get('concrete_type'))
 
                 dictionary.add_entity(entity)
 
@@ -413,39 +424,41 @@ class EntityMap(object):
     def count_entities_of_type(self, type):
         return len(self.get_new_entities_of_type(type))
 
+class Error(Exception):
+    def __init__(self, code, message):
+        super(Error, self).__init__(message)
+        self.code = code
 
-class InvalidEntityIngestLink(Exception):
-
+class InvalidEntityIngestLink(Error):
     def __init__(self, from_entity, to_entity):
         message = f'It is not possible to link a {from_entity.type} to {to_entity.type} in ingest database.'
-        super(InvalidEntityIngestLink, self).__init__(message)
+        super(InvalidEntityIngestLink, self).__init__('InvalidEntityIngestLink', message)
         self.from_entity = from_entity
         self.to_entity = to_entity
 
 
-class InvalidLinkInSpreadsheet(Exception):
-
+class InvalidLinkInSpreadsheet(Error):
     def __init__(self, from_entity, link_entity_type, link_entity_id):
         message = f'It is not possible to link a {from_entity.type} to {link_entity_type} in the spreadsheet.'
-        super(InvalidLinkInSpreadsheet, self).__init__(message)
+        super(InvalidLinkInSpreadsheet, self).__init__('InvalidLinkInSpreadsheet', message)
         self.from_entity = from_entity
         self.link_entity_type = link_entity_type
         self.link_entity_id = link_entity_id
 
 
-class LinkedEntityNotFound(Exception):
+class LinkedEntityNotFound(Error):
     def __init__(self, from_entity, entity_type, id):
         message = f'A link from a {from_entity.type} with id {from_entity.id} to a {entity_type} with id, ' \
                   f'"{id}", is not found in the spreadsheet.'
-        super(LinkedEntityNotFound, self).__init__(message)
+        super(LinkedEntityNotFound, self).__init__('LinkedEntityNotFound', message)
         self.entity = entity_type
         self.id = id
 
 
-class MultipleProcessesFound(Exception):
+class MultipleProcessesFound(Error):
     def __init__(self, from_entity, process_ids):
         message = f'Multiple processes are linked {from_entity.type} in the spreadsheet: {process_ids}.'
-        super(MultipleProcessesFound, self).__init__(message)
+        super(MultipleProcessesFound, self).__init__('MultipleProcessesFound', message)
 
         self.process_ids = process_ids
         self.from_entity = from_entity

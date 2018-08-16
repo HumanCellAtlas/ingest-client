@@ -9,24 +9,23 @@ __license__ = "Apache 2.0"
 import json
 import logging
 import os
-
-import sys
 import uuid
-from optparse import OptionParser
 
-import ingest.api.stagingapi as stagingapi
-import ingest.api.ingestapi as ingestapi
+
+from urllib.parse import urljoin
+
 import ingest.api.dssapi as dssapi
-
-import ingest.utils.bundlevalidator as bundlevalidator
+import ingest.api.ingestapi as ingestapi
+import ingest.api.stagingapi as stagingapi
 
 DEFAULT_INGEST_URL = os.environ.get('INGEST_API', 'http://api.ingest.dev.data.humancellatlas.org')
-DEFAULT_STAGING_URL = os.environ.get('STAGING_API', 'http://staging.dev.data.humancellatlas.org')
+DEFAULT_STAGING_URL = os.environ.get('STAGING_API', 'http://upload.dev.data.humancellatlas.org')
 DEFAULT_DSS_URL = os.environ.get('DSS_API', 'http://dss.dev.data.humancellatlas.org')
 
-BUNDLE_SCHEMA_BASE_URL = os.environ.get('BUNDLE_SCHEMA_BASE_URL', 'https://schema.humancellatlas.org/bundle/%s/')
-METADATA_SCHEMA_VERSION = os.environ.get('SCHEMA_VERSION', '5.1.0')
+BUNDLE_SCHEMA_BASE_URL = os.environ.get('BUNDLE_SCHEMA_BASE_URL', 'https://schema.humancellatlas.org')
 
+
+# TODO shouldn't source from environment variables, must pass config or params instead, throw an error if not in config
 
 class IngestExporter:
     def __init__(self, options=None):
@@ -41,91 +40,32 @@ class IngestExporter:
 
         self.stagingUrl = options.staging if options and options.staging else os.path.expandvars(DEFAULT_STAGING_URL)
         self.dssUrl = options.dss if options and options.dss else os.path.expandvars(DEFAULT_DSS_URL)
-        self.schema_version = options.schema_version if options and options.schema_version else os.path.expandvars(METADATA_SCHEMA_VERSION)
-        self.schema_url = os.path.expandvars(BUNDLE_SCHEMA_BASE_URL % self.schema_version)
-
-        self.logger.debug("ingest url is " + self.ingestUrl)
+        self.schema_url = os.path.expandvars(BUNDLE_SCHEMA_BASE_URL)
 
         self.staging_api = stagingapi.StagingApi()
         self.dss_api = dssapi.DssApi()
         self.ingest_api = ingestapi.IngestApi(self.ingestUrl)
 
-    def get_concrete_entity_type(self, schema_uri):
-        return schema_uri["content"]["describedBy"].rsplit('/', 1)[-1]
-
-    def build_link_obj(self, source_type, source_id, destination_type, destination_id):
-        return {
-            'source_type': source_type,
-            'source_id': source_id,
-            'destination_type': destination_type,
-            'destination_id': destination_id
-        }
-
-    def generateBundle(self, message):
-        success = False
-        callbackLink = message["callbackLink"]
-
-        self.logger.info('process received ' + callbackLink)
-        self.logger.info('process index: ' + str(message["index"]) + ', total processes: ' + str(message["total"]))
-
-        # given an assay, generate a bundle
-
-        processUrl = self.ingest_api.getAssayUrl(callbackLink)  # TODO rename getAssayUrl
-        processUuid = message["documentUuid"]
-        envelopeUuid = message["envelopeUuid"]
-
-        # check staging area is available
-        if self.dryrun or self.staging_api.hasStagingArea(envelopeUuid):
-            assay = self.ingest_api.getAssay(processUrl)
-
-            self.logger.info("Attempting to export bundle to DSS...")
-            success = self.export_bundle(envelopeUuid, processUrl)
-        else:
-            error_message = "Can't do export as no upload area has been created"
-            raise NoUploadAreaFoundError(error_message)
-
-        if not success:
-            raise Error("An error occurred in export. Failed to export to dss: " + message["callbackLink"])
-
-    def upload_file(self, submission_uuid, filename, content, content_type):
-        self.logger.info("writing to staging area..." + filename)
-        file_description = self.staging_api.stageFile(submission_uuid, filename, content, content_type)
-        self.logger.info("File staged at " + file_description.url)
-        return file_description
-
-    def bundle_metadata(self, metadata_doc, uuid):
-        provenance_core = dict()
-        provenance_core['document_id'] = uuid
-        provenance_core['submission_date'] = metadata_doc['submissionDate']
-        provenance_core['update_date'] = metadata_doc['updateDate']
-
-        bundle_doc = metadata_doc['content']
-        bundle_doc['provenance'] = provenance_core
-
-        return bundle_doc
-
-    def dump_to_file(self, content, filename, output_dir=None):
-        if output_dir:
-            self.outputDir = output_dir
-
-        if self.outputDir:
-            dir = os.path.abspath(self.outputDir)
-            if not os.path.exists(dir):
-                os.makedirs(dir)
-            tmpFile = open(dir + "/" + filename + ".json", "w")
-            tmpFile.write(content)
-            tmpFile.close()
-
-    def export_bundle(self, submission_uuid, process_url):
-        self.logger.info('Export bundle for process: ' + process_url)
-
+    def export_bundle(self, submission_uuid, process_uuid):
         saved_bundle_uuid = None
 
-        self.logger.info('Retrieving all process information...')
-        process_info = self.get_all_process_info(process_url)
-        metadata_by_type = self.get_metadata_by_type(process_info)
+        if not self.dryrun and not self.staging_api.hasStagingArea(submission_uuid):
+            error_message = "Can't do export as no upload area has been created."
+            raise NoUploadAreaFoundError(error_message)
 
-        files_by_type = self.prepare_metadata_files(metadata_by_type)
+        self.logger.info('Export bundle for process with UUID ' + process_uuid)
+
+        self.logger.info('Retrieving all process information...')
+
+        process = self.ingest_api.getEntityByUuid('processes', process_uuid)
+        process_info = self.get_all_process_info(process)
+
+        self.logger.info('Generating bundle files...')
+        submission = self.ingest_api.getEntityByUuid('submissionEnvelopes', submission_uuid)
+        is_indexed = submission['triggersAnalysis']
+
+        metadata_by_type = self.get_metadata_by_type(process_info)
+        files_by_type = self.prepare_metadata_files(metadata_by_type, is_indexed)
 
         links = self.bundle_links(process_info.links)
         links_file_uuid = str(uuid.uuid4())
@@ -133,7 +73,7 @@ class IngestExporter:
         files_by_type['links'].append({
             'content': links,
             'content_type': '"metadata/{0}"'.format('links'),
-            'indexed': True,
+            'indexed': is_indexed,
             'dss_filename': 'links.json',
             'dss_uuid': links_file_uuid,
             'upload_filename': 'links_' + links_file_uuid + '.json'
@@ -153,14 +93,13 @@ class IngestExporter:
                     bundle_file = metadata_doc
                     filename = bundle_file['upload_filename']
                     content = bundle_file['content']
-                    self.dump_to_file(json.dumps(content, indent=4), filename, output_dir=bundle_manifest.bundleUuid)
+                    output_dir = self.outputDir if self.outputDir else bundle_manifest.bundleUuid
+                    self.dump_to_file(json.dumps(content, indent=4), filename, output_dir=output_dir)
 
+            self.logger.info('Dry run for bundle ' + bundle_manifest.bundleUuid)
         else:
             self.logger.info('Uploading metadata files...')
             self.upload_metadata_files(submission_uuid, files_by_type)
-
-            self.logger.info('Saving files in DSS...')
-            bundle_uuid = bundle_manifest.bundleUuid
 
             metadata_files = self.get_metadata_files(files_by_type)
             data_files = self.get_data_files(metadata_by_type['file'])
@@ -168,7 +107,8 @@ class IngestExporter:
 
             bundle_manifest.dataFiles = list()
             bundle_manifest.dataFiles = [data_file['dss_uuid'] for data_file in data_files]
-
+            self.logger.info('Saving files in DSS...')
+            bundle_uuid = bundle_manifest.bundleUuid
             created_files = self.put_files_in_dss(bundle_uuid, bundle_files)
 
             self.logger.info('Saving bundle in DSS...')
@@ -191,14 +131,14 @@ class IngestExporter:
         simplified['protocol'] = dict(process_info.protocols)
         simplified['file'] = dict(process_info.derived_files)
         simplified['file'].update(process_info.input_files)
+        simplified['file'].update(process_info.supplementary_files)
 
         simplified['project'] = dict()
         simplified['project'][process_info.project['uuid']['uuid']] = process_info.project
 
         return simplified
 
-    def get_all_process_info(self, process_url):
-        process = self.ingest_api.getAssay(process_url)  # TODO rename getAssay to getProcess
+    def get_all_process_info(self, process):
         process_info = ProcessInfo()
         process_info.input_bundle = self.get_input_bundle(process)
 
@@ -214,6 +154,12 @@ class IngestExporter:
             process_info.project = self.ingest_api.getProjectByUuid(project_uuid)
 
         self.recurse_process(process, process_info)
+
+        if process_info.project:
+            supplementary_files = self.ingest_api.getRelatedEntities('supplementaryFiles', process_info.project, 'files')
+            for supplementary_file in supplementary_files:
+                uuid = supplementary_file['uuid']['uuid']
+                process_info.supplementary_files[uuid] = supplementary_file
 
         return process_info
 
@@ -278,6 +224,10 @@ class IngestExporter:
                 uuid = protocol['uuid']['uuid']
                 process_info.protocols[uuid] = protocol
 
+            for derived_file in derived_files:
+                uuid = derived_file['uuid']['uuid']
+                process_info.derived_files[uuid] = derived_file
+
             if input_biomaterials:
                 if derived_files:
                     process_info.links.append({
@@ -335,23 +285,24 @@ class IngestExporter:
 
         return None
 
-    def prepare_metadata_files(self, metadata_info) -> 'dict':
+    def prepare_metadata_files(self, metadata_info,  is_indexed=True) -> 'dict':
         metadata_files_by_type = dict()
 
         for entity_type in ['biomaterial', 'file', 'project', 'protocol', 'process']:
             metadata_files_by_type[entity_type] = list()
-            specific_types_counter = dict()
+            concrete_type_ctr = dict()
             for (metadata_uuid, doc) in metadata_info[entity_type].items():
-                specific_entity_type = self.get_concrete_entity_type(doc)
-                specific_types_counter[specific_entity_type] = 0 if specific_entity_type not in specific_types_counter else specific_types_counter[specific_entity_type] + 1
+                concrete_type = self.get_concrete_entity_type(doc)
 
-                file_name = '{0}_{1}.json'.format(specific_entity_type, specific_types_counter[specific_entity_type])
-                upload_filename = '{0}_{1}.json'.format(specific_entity_type, metadata_uuid)
+                concrete_type_ctr[concrete_type] = 0 if concrete_type not in concrete_type_ctr else concrete_type_ctr[concrete_type] + 1
+
+                file_name = '{0}_{1}.json'.format(concrete_type, concrete_type_ctr[concrete_type])
+                upload_filename = '{0}_{1}.json'.format(concrete_type, metadata_uuid)
 
                 prepared_doc = {
                     'content': self.bundle_metadata(doc, metadata_uuid),
                     'content_type': '"metadata/{0}"'.format(entity_type),
-                    'indexed': True,
+                    'indexed': is_indexed,
                     'dss_filename': file_name,
                     'dss_uuid': metadata_uuid,
                     'upload_filename': upload_filename
@@ -361,10 +312,21 @@ class IngestExporter:
 
         return metadata_files_by_type
 
+    def bundle_metadata(self, metadata_doc, uuid):
+        provenance_core = dict()
+        provenance_core['document_id'] = uuid
+        provenance_core['submission_date'] = metadata_doc['submissionDate']
+        provenance_core['update_date'] = metadata_doc['updateDate']
+
+        bundle_doc = metadata_doc['content']
+        bundle_doc['provenance'] = provenance_core
+
+        return bundle_doc
+
     def bundle_links(self, links):
         # TODO do not hard code schema, query latest from schema endpoint
         return {
-            'describedBy': 'http://schema.dev.data.humancellatlas.org/system/1.1.1/links',
+            'describedBy': urljoin(self.schema_url, '/system/1.1.1/links'),
             'schema_type': 'link_bundle',
             'schema_version': '1.1.1',
             'links': links
@@ -426,7 +388,7 @@ class IngestExporter:
                 metadata_files.append({
                     'name': metadata_file['upload_filename'],
                     'submittedName': metadata_file['dss_filename'],
-                    'url': metadata_file['upload_file_url'],
+                    'url': metadata_file.get('upload_file_url'),
                     'dss_uuid': metadata_file['dss_uuid'],
                     'indexed': metadata_file['indexed'],
                     'content-type': metadata_file['content_type']
@@ -479,6 +441,24 @@ class IngestExporter:
 
         return bundle_manifest
 
+    def get_concrete_entity_type(self, schema_uri):
+        return schema_uri["content"]["describedBy"].rsplit('/', 1)[-1]
+
+    def upload_file(self, submission_uuid, filename, content, content_type):
+        self.logger.info("writing to staging area..." + filename)
+        file_description = self.staging_api.stageFile(submission_uuid, filename, content, content_type)
+        self.logger.info("File staged at " + file_description.url)
+        return file_description
+
+    def dump_to_file(self, content, filename, output_dir='output'):
+        directory = os.path.abspath(output_dir)
+
+        if not os.path.exists(directory):
+            os.makedirs(directory)
+
+        tmp_file = open(directory + "/" + filename + ".json", "w")
+        tmp_file.write(content)
+        tmp_file.close()
 
 class File:
     def __init__(self):
@@ -499,6 +479,7 @@ class ProcessInfo:
         self.input_files = {}
         self.derived_files = {}
         self.protocols = {}
+        self.supplementary_files = {}
 
         self.links = []
 
@@ -533,39 +514,3 @@ class FileDSSError(Error):
 
 class NoUploadAreaFoundError(Error):
     """Export couldn't be as no upload area found"""
-
-if __name__ == '__main__':
-    logging.basicConfig(stream=sys.stdout, level=logging.INFO)
-
-    parser = OptionParser()
-    parser.add_option("-e", "--subsEnvUuid", dest="submissionsEnvelopeUuid",
-                      help="Submission envelope UUID for which to generate the bundle")
-    parser.add_option("-p", "--processUrl", dest="processUrl",
-                      help="Process Url")
-    parser.add_option("-D", "--dry", help="do a dry run without submitting to ingest", action="store_true",
-                      default=False)
-    parser.add_option("-o", "--output", dest="output",
-                      help="output directory where to dump json files submitted to ingest", metavar="FILE",
-                      default=None)
-    parser.add_option("-i", "--ingest", help="the URL to the ingest API")
-    parser.add_option("-s", "--staging", help="the URL to the staging API")
-    parser.add_option("-d", "--dss", help="the URL to the datastore service")
-    parser.add_option("-l", "--log", help="the logging level", default='INFO')
-    parser.add_option("-v", "--version", dest="schema_version", help="Metadata schema version", default=None)
-
-    (options, args) = parser.parse_args()
-
-    if not options.submissionsEnvelopeUuid:
-        print("You must supply a submission envelope UUID")
-        exit(2)
-
-    if not options.processUrl:
-        print("You must supply a processUrl")
-        exit(2)
-
-    ex = IngestExporter(options)
-
-    ex.export_bundle(options.submissionsEnvelopeUuid, options.processUrl)
-
-
-

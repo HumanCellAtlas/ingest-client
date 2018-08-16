@@ -14,7 +14,7 @@ import logging
 from time import sleep
 from urllib.parse import urljoin
 
-DEFAULT_STAGING_URL = os.environ.get('STAGING_API', 'https://staging.dev.data.humancellatlas.org')
+DEFAULT_STAGING_URL = os.environ.get('STAGING_API', 'https://upload.dev.data.humancellatlas.org')
 DEFAULT_STAGING_VERSION = os.environ.get('STAGING_API_VERSION', 'v1')
 INGEST_API_KEY = os.environ.get('INGEST_API_KEY', 'zero-pupil-until-funny')
 

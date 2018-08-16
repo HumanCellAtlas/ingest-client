@@ -2,13 +2,15 @@
 """
 desc goes here
 """
+import json
+import logging
+import os
+import requests
 import time
+import uuid
+
 from requests import HTTPError
-
-__author__ = "jupp"
-__license__ = "Apache 2.0"
-
-import json, os, requests, logging, uuid
+from urllib.parse import urljoin
 
 
 class IngestApi:
@@ -29,7 +31,6 @@ class IngestApi:
         self.submission_links = {}
         self.token = None
         self.ingest_api_root = ingest_api_root if ingest_api_root is not None else self.get_root_url()
-
 
     def set_token(self, token):
         self.token = token
@@ -120,7 +121,12 @@ class IngestApi:
         return self.getEntityByUuid('projects', uuid)
 
     def getEntityByUuid(self, entity_type, uuid):
-        url =  self.url + f'/{entity_type}/search/findByUuid?uuid=' + uuid
+        url = self.url + f'/{entity_type}/search/findByUuid?uuid=' + uuid
+
+        # TODO make the endpoint consistent
+        if entity_type == 'submissionEnvelopes':
+            url = self.url + f'/{entity_type}/search/findByUuidUuid?uuid=' + uuid
+
         r = requests.get(url, headers=self.headers)
         r.raise_for_status()
         return r.json()
@@ -227,15 +233,13 @@ class IngestApi:
     def getSubmissionUri(self, submissionId):
         return self.ingest_api_root["submissionEnvelopes"]["href"].rsplit("{")[0] + "/" + submissionId
 
-    def getAssayUrl(self, assayCallbackLink):
-        # TODO check if callback link already has a leading slash
-        return self.url + "/" + assayCallbackLink
+    def get_full_url(self, callback_link):
+        return urljoin(self.url, callback_link)
 
-    def getAssay(self, assayUrl):
-        r = requests.get(assayUrl, headers=self.headers)
-        if r.status_code == requests.codes.ok:
-            return r.json()
-
+    def get_process(self, process_url):
+        r = requests.get(process_url, headers=self.headers)
+        r.raise_for_status()
+        return r.json()
 
     def getAnalyses(self, submissionUrl):
         return self.getEntities(submissionUrl, "analyses")
@@ -255,6 +259,7 @@ class IngestApi:
             params = {"size": pageSize}
 
         r = requests.get(url, headers=self.headers, params=params)
+        r.raise_for_status()
         if r.status_code == requests.codes.ok:
             if "_embedded" in json.loads(r.text):
                 for entity in json.loads(r.text)["_embedded"][entityType]:
@@ -285,6 +290,9 @@ class IngestApi:
     def createSubmissionManifest(self, submissionUrl, jsonObject):
         return self.createEntity(submissionUrl, jsonObject, 'submissionManifest')
 
+    def createSubmissionError(self, submissionUrl, jsonObject):
+        return self.createEntity(submissionUrl, jsonObject, 'submissionErrors')
+
     def createProtocol(self, submissionUrl, jsonObject):
         return self.createEntity(submissionUrl, jsonObject, "protocols")
 
@@ -308,7 +316,6 @@ class IngestApi:
         raise ValueError('Create file failed: File ' + fileName + " - " + r.text)
 
     def createEntity(self, submissionUrl, jsonObject, entityType, token=None):
-        self.logger.debug(".", )
         auth_headers = {'Content-type': 'application/json',
                         'Authorization': token
                         }

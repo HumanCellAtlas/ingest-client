@@ -1,4 +1,5 @@
 import copy
+import logging
 
 from openpyxl.worksheet import Worksheet
 
@@ -17,6 +18,7 @@ class TemplateManager:
     def __init__(self, template:SchemaTemplate, ingest_api:IngestApi):
         self.template = template
         self.ingest_api = ingest_api
+        self.logger = logging.getLogger(__name__)
 
     def create_template_node(self, worksheet: Worksheet):
         concrete_entity = self.get_concrete_entity_of_tab(worksheet.title)
@@ -31,11 +33,21 @@ class TemplateManager:
         object_type = self.get_concrete_entity_of_tab(tab_name)
         header_row = self.get_header_row(worksheet)
         cell_conversions = []
+
+        header_ctr = {}
+
         for cell in header_row:
             header = cell.value
-            column_spec = self._define_column_spec(header, object_type)
+
+            if not header_ctr.get(header):
+                header_ctr[header] = 0
+
+            header_ctr[header] = header_ctr[header] + 1
+
+            column_spec = self._define_column_spec(header, object_type, order_of_occurence=header_ctr[header])
             strategy = conversion_strategy.determine_strategy(column_spec)
             cell_conversions.append(strategy)
+
         default_values = self._define_default_values(object_type)
         return RowTemplate(cell_conversions, default_values=default_values)
 
@@ -43,6 +55,7 @@ class TemplateManager:
         tab_name = worksheet.title
         object_type = self.get_concrete_entity_of_tab(tab_name)
         header_row = self.get_header_row(worksheet)
+
         cell_conversions = []
         for cell in header_row:
             header = cell.value
@@ -52,7 +65,6 @@ class TemplateManager:
 
         default_values = self._define_default_values(object_type)
         return RowTemplate(cell_conversions, default_values=default_values)
-
 
     # TODO move this outside template manager
     @staticmethod
@@ -69,15 +81,16 @@ class TemplateManager:
 
         return clean_header_row
 
-    def _define_column_spec(self, header, object_type):
+    def _define_column_spec(self, header, object_type, order_of_occurence=1):
         if header is not None:
             parent_path, __ = utils.split_field_chain(header)
             raw_spec = self.lookup(header)
             raw_parent_spec = self.lookup(parent_path)
             concrete_type = utils.extract_root_field(header)
             main_category = self.get_domain_entity(concrete_type)
-            column_spec = ColumnSpecification.build_raw(header, object_type, main_category,
-                                                        raw_spec, parent=raw_parent_spec)
+            column_spec = ColumnSpecification.build_raw(header, object_type, main_category, raw_spec,
+                                                        parent=raw_parent_spec,
+                                                        order_of_occurence=order_of_occurence)
         else:
             column_spec = None
         return column_spec
@@ -119,26 +132,29 @@ class TemplateManager:
         return spec.get('schema') if spec else None
 
     def get_concrete_entity_of_tab(self, tab_name):
+        concrete_entity = None
         try:
             tabs_config = self.template.get_tabs_config()
             concrete_entity = tabs_config.get_key_for_label(tab_name)
-        except:
-            print(f'No entity found for tab {tab_name}')
-            return None
+        except schema_template.UnknownKeyException as e:
+            pass
+        except KeyError as e:
+            pass
+
         return concrete_entity
 
     def get_key_for_label(self, header_name, tab_name):
         try:
             key = self.template.get_key_for_label(header_name, tab_name)
         except:
-            print(f'{header_name} in "{tab_name}" tab is not found in schema template')
+            self.logger.warning(f'{header_name} in "{tab_name}" tab is not found in schema template')
         return key
 
     def lookup(self, header_name):
         try:
             spec = self.template.lookup(header_name)
         except schema_template.UnknownKeyException:
-            print(f'schema_template.UnknownKeyException: Could not lookup {header_name} in template.')
+            self.logger.warning(f'schema_template.UnknownKeyException: Could not lookup {header_name} in template.')
             return {}
 
         return spec
@@ -148,9 +164,9 @@ def build(schemas, ingest_api) -> TemplateManager:
     template = None
 
     if not schemas:
-        template = SchemaTemplate()
+        template = SchemaTemplate(ingest_api_url=ingest_api.url)
     else:
-        template = SchemaTemplate(list_of_schema_urls=schemas)
+        template = SchemaTemplate(ingest_api_url=ingest_api.url, list_of_schema_urls=schemas)
 
     template_mgr = TemplateManager(template, ingest_api)
     return template_mgr
@@ -178,3 +194,4 @@ class ParentFieldNotFound(Exception):
         super(ParentFieldNotFound, self).__init__(message)
 
         self.header_name = header_name
+
