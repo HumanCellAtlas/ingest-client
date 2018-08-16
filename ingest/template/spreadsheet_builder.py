@@ -20,9 +20,11 @@ class SpreadsheetBuilder:
         self.locked_format = self.workbook.add_format({'locked': True})
         self.required_header_format = self.workbook.add_format({'bold': True, 'bg_color': '#FFFF00'})
         self.desc_format = self.workbook.add_format({'font_color': '#808080', 'italic': True, 'text_wrap': True})
+        self.include_schemas_tab = False
 
-    def generate_workbook(self, tabs_template=None, schema_urls=list()):
+    def generate_workbook(self, tabs_template=None, schema_urls=list(), include_schemas_tab=False):
 
+        self.include_schemas_tab = include_schemas_tab
         if tabs_template:
 
             tabs_parser = TabConfig()
@@ -99,7 +101,8 @@ class SpreadsheetBuilder:
 
                 worksheet.merge_range(first_col=0, first_row=4, last_col= len(detail["columns"]), last_row=4, cell_format= self.header_format, data="Add your data below this line")
 
-        self._write_schemas(template.get_schema_urls())
+        if self.include_schemas_tab:
+            self._write_schemas(template.get_schema_urls())
 
         return self
 
