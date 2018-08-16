@@ -25,13 +25,13 @@ class TestSchemaTemplate(TestCase):
     def test_no_schemas(self):
         data = '{"id" : "' + self.dummyDonorUri + '", "properties": {"foo_bar": {"user_friendly" : "Foo bar", "description" : "this is a foo bar", "example" : "e.g. foo"}} }'
 
-        file = "foo1.xlsx"
+        file = "foo.xlsx"
         spreadsheet_builder = SpreadsheetBuilder(file)
         template = schema_mock.get_template_for_json(data=data)
         spreadsheet_builder._build(template)
         spreadsheet_builder.save_workbook()
 
-        reader = Reader(file)
+        reader = Reader("foo.xlsx")
         sheet = reader["Donor organism"]
 
         self.assertEqual("this is a foo bar", sheet.cell(row=1, column=1).value)
