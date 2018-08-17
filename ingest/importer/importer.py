@@ -215,11 +215,11 @@ class IdentifiableWorksheetImporter(WorksheetImporter):
     def do_import(self, worksheet, template: TemplateManager):
         records = super(IdentifiableWorksheetImporter, self).do_import(worksheet, template)
 
-        if self.unknown_id_ctr:
-            raise RowIdNotFound(worksheet.title)
-
         if not self.concrete_entity:
             raise InvalidTabName(worksheet.title)
+
+        if self.unknown_id_ctr:
+            raise RowIdNotFound(worksheet.title)
 
         return records
 
