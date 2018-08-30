@@ -9,8 +9,9 @@ import requests
 import time
 import uuid
 
+
 from requests import HTTPError
-from urllib.parse import urljoin
+from urllib.parse import urljoin, quote
 
 
 class IngestApi:
@@ -70,7 +71,6 @@ class IngestApi:
             all_schemas = list(filter(lambda schema: schema.get('concreteEntity') == concrete_entity, all_schemas))
 
         return all_schemas
-
 
     def get_schemas_url(self):
         if "schemas" in self.ingest_api_root:
@@ -296,24 +296,24 @@ class IngestApi:
     def createProtocol(self, submissionUrl, jsonObject):
         return self.createEntity(submissionUrl, jsonObject, "protocols")
 
-    def createFile(self, submissionUrl, fileName, jsonObject):
+    def createFile(self, submissionUrl, file_name, jsonObject):
         # TODO: why do we need the submission's links before we can create a file on it?
         # TODO: submission_links should be a cache;
         # TODO: getting a submission's links should look in the cache before retrieving it from the API
 
         fileSubmissionsUrl = self.get_link_in_submisssion(submissionUrl, 'files')
-        fileSubmissionsUrl = fileSubmissionsUrl + "/" + fileName
+        fileSubmissionsUrl = fileSubmissionsUrl + "/" + quote(file_name)
         self.logger.debug("posting " + submissionUrl)
 
         fileToCreateObject = {
-            "fileName": fileName,
+            "fileName": file_name,
             "content": json.loads(jsonObject) # TODO jsonObject should be a dict()
         }
 
         r = requests.post(fileSubmissionsUrl, data=json.dumps(fileToCreateObject), headers=self.headers)
         if r.status_code == requests.codes.created or r.status_code == requests.codes.accepted:
             return r.json()
-        raise ValueError('Create file failed: File ' + fileName + " - " + r.text)
+        raise ValueError('Create file failed: File ' + file_name + " - " + r.text)
 
     def createEntity(self, submissionUrl, jsonObject, entityType, token=None):
         auth_headers = {'Content-type': 'application/json',
