@@ -5,7 +5,7 @@
 
 # Ingest Client
 
-This repository contain the hca-ingest Python package library which can be shared across ingest services.
+This repository contains the hca-ingest Python package library which can be shared across ingest services.
 
 ## Installation
 
