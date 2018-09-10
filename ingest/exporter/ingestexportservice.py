@@ -10,7 +10,7 @@ import json
 import logging
 import os
 import uuid
-
+import time
 
 from urllib.parse import urljoin
 
@@ -45,8 +45,11 @@ class IngestExporter:
         self.staging_api = stagingapi.StagingApi()
         self.dss_api = dssapi.DssApi()
         self.ingest_api = ingestapi.IngestApi(self.ingestUrl)
+        self.related_entities_cache = {}
 
     def export_bundle(self, submission_uuid, process_uuid):
+        start_time = time.time()
+        self.related_entities_cache = {}
         saved_bundle_uuid = None
 
         if not self.dryrun and not self.staging_api.hasStagingArea(submission_uuid):
@@ -97,6 +100,7 @@ class IngestExporter:
                     self.dump_to_file(json.dumps(content, indent=4), filename, output_dir=output_dir)
 
             self.logger.info('Dry run for bundle ' + bundle_manifest.bundleUuid)
+            self.logger.info("Execution Time: %s seconds" % (time.time() - start_time))
         else:
             self.logger.info('Uploading metadata files...')
             self.upload_metadata_files(submission_uuid, files_by_type)
@@ -120,6 +124,7 @@ class IngestExporter:
             saved_bundle_uuid = bundle_manifest.bundleUuid
 
             self.logger.info('Bundle ' + bundle_uuid + ' was successfully created!')
+            self.logger.info("Execution Time: %s seconds" % (time.time() - start_time))
 
         return saved_bundle_uuid
 
@@ -179,91 +184,47 @@ class IngestExporter:
 
     # get all related info of a process
     def recurse_process(self, process, process_info):
-        chained_processes = list(self.ingest_api.getRelatedEntities('chainedProcesses', process, 'processes'))
-
-        is_wrapper = len(chained_processes) > 0
-
-        # don't include wrapper processes in process bundle
-        if is_wrapper:
-            for chained_process in chained_processes:
-                uuid = chained_process['uuid']['uuid']
-                process_info.derived_by_processes[uuid] = chained_process
-        else:
-            uuid = process['uuid']['uuid']
-            process_info.derived_by_processes[uuid] = process
+        uuid = process['uuid']['uuid']
+        process_info.derived_by_processes[uuid] = process
 
         # get all derived by processes using input biomaterial and input files
         derived_by_processes = []
 
         # wrapper process has the links to input biomaterials and derived files to check if a process is an assay
-        input_biomaterials = list(self.ingest_api.getRelatedEntities('inputBiomaterials', process, 'biomaterials'))
+        input_biomaterials = self.get_related_entities('inputBiomaterials', process, 'biomaterials')
         for input_biomaterial in input_biomaterials:
             uuid = input_biomaterial['uuid']['uuid']
             process_info.input_biomaterials[uuid] = input_biomaterial
             derived_by_processes.extend(
-                self.ingest_api.getRelatedEntities('derivedByProcesses', input_biomaterial, 'processes'))
+                self.get_related_entities('derivedByProcesses', input_biomaterial, 'processes'))
 
-        input_files = list(self.ingest_api.getRelatedEntities('inputFiles', process, 'files'))
+        input_files = self.get_related_entities('inputFiles', process, 'files')
         for input_file in input_files:
             uuid = input_file['uuid']['uuid']
             process_info.input_files[uuid] = input_file
             derived_by_processes.extend(
-                self.ingest_api.getRelatedEntities('derivedByProcesses', input_file, 'processes'))
+                self.get_related_entities('derivedByProcesses', input_file, 'processes'))
 
-        derived_biomaterials = list(self.ingest_api.getRelatedEntities('derivedBiomaterials', process, 'biomaterials'))
-        derived_files = list(self.ingest_api.getRelatedEntities('derivedFiles', process, 'files'))
+        derived_biomaterials = self.get_related_entities('derivedBiomaterials', process, 'biomaterials')
+        derived_files = self.get_related_entities('derivedFiles', process, 'files')
 
-        # since wrapper processes are not included in process bundle,
-        #  links to it must be applied to its chained processes
-        processes_to_link = chained_processes if is_wrapper else [process]
-        for process_to_link in processes_to_link:
-            process_uuid = process_to_link['uuid']['uuid']
+        process_uuid = process['uuid']['uuid']
 
-            protocols = list(self.ingest_api.getRelatedEntities('protocols', process_to_link, 'protocols'))
-            for protocol in protocols:
-                uuid = protocol['uuid']['uuid']
-                process_info.protocols[uuid] = protocol
+        protocols = self.get_related_entities('protocols', process, 'protocols')
+        for protocol in protocols:
+            uuid = protocol['uuid']['uuid']
+            process_info.protocols[uuid] = protocol
 
-            for derived_file in derived_files:
-                uuid = derived_file['uuid']['uuid']
-                process_info.derived_files[uuid] = derived_file
+        for derived_file in derived_files:
+            uuid = derived_file['uuid']['uuid']
+            process_info.derived_files[uuid] = derived_file
 
-            if input_biomaterials:
-                if derived_files:
-                    process_info.links.append({
-                        'process': process_uuid,
-                        'inputs': [input_biomaterial['uuid']['uuid'] for input_biomaterial in input_biomaterials],
-                        'input_type': 'biomaterial',
-                        'outputs': [derived_file['uuid']['uuid'] for derived_file in derived_files],
-                        'output_type': 'file',
-                        'protocols': [
-                            {
-                                'protocol_type': self.get_concrete_entity_type(protocol),
-                                'protocol_id': protocol['uuid']['uuid']
-                            } for protocol in protocols
-                        ]
-                    })
-
-                if derived_biomaterials:
-                    process_info.links.append({
-                        'process': process_uuid,
-                        'inputs': [input_biomaterial['uuid']['uuid'] for input_biomaterial in input_biomaterials],
-                        'input_type': 'biomaterial',
-                        'outputs': [derived_biomaterial['uuid']['uuid'] for derived_biomaterial in derived_biomaterials],
-                        'output_type': 'biomaterial',
-                        'protocols': [
-                            {
-                                'protocol_type': self.get_concrete_entity_type(protocol),
-                                'protocol_id': protocol['uuid']['uuid']
-                            } for protocol in protocols
-                        ]
-                    })
-
-            if input_files and derived_files:
+        if input_biomaterials:
+            if derived_files:
                 process_info.links.append({
                     'process': process_uuid,
-                    'inputs': [input_file['uuid']['uuid'] for input_file in input_files],
-                    'input_type': 'file',
+                    'inputs': [input_biomaterial['uuid']['uuid'] for input_biomaterial in input_biomaterials],
+                    'input_type': 'biomaterial',
                     'outputs': [derived_file['uuid']['uuid'] for derived_file in derived_files],
                     'output_type': 'file',
                     'protocols': [
@@ -274,8 +235,56 @@ class IngestExporter:
                     ]
                 })
 
+            if derived_biomaterials:
+                process_info.links.append({
+                    'process': process_uuid,
+                    'inputs': [input_biomaterial['uuid']['uuid'] for input_biomaterial in input_biomaterials],
+                    'input_type': 'biomaterial',
+                    'outputs': [derived_biomaterial['uuid']['uuid'] for derived_biomaterial in derived_biomaterials],
+                    'output_type': 'biomaterial',
+                    'protocols': [
+                        {
+                            'protocol_type': self.get_concrete_entity_type(protocol),
+                            'protocol_id': protocol['uuid']['uuid']
+                        } for protocol in protocols
+                    ]
+                })
+
+        if input_files and derived_files:
+            process_info.links.append({
+                'process': process_uuid,
+                'inputs': [input_file['uuid']['uuid'] for input_file in input_files],
+                'input_type': 'file',
+                'outputs': [derived_file['uuid']['uuid'] for derived_file in derived_files],
+                'output_type': 'file',
+                'protocols': [
+                    {
+                        'protocol_type': self.get_concrete_entity_type(protocol),
+                        'protocol_id': protocol['uuid']['uuid']
+                    } for protocol in protocols
+                ]
+            })
+
         for derived_by_process in derived_by_processes:
             self.recurse_process(derived_by_process, process_info)
+
+    def get_related_entities(self, relationship, entity, entity_type):
+        entity_uuid = entity['uuid']['uuid']
+
+        if self.related_entities_cache.get(entity_uuid) and self.related_entities_cache.get(entity_uuid).get(relationship):
+            return self.related_entities_cache.get(entity_uuid).get(relationship)
+
+        related_entities = list(self.ingest_api.getRelatedEntities(relationship, entity, entity_type))
+
+        if not self.related_entities_cache.get(entity_uuid):
+            self.related_entities_cache[entity_uuid] = {}
+
+        if not self.related_entities_cache.get(entity_uuid).get(relationship):
+            self.related_entities_cache[entity_uuid][relationship] = []
+
+        self.related_entities_cache[entity_uuid][relationship] = related_entities
+
+        return related_entities
 
     def get_input_bundle(self, process):
         bundle_manifests = list(self.ingest_api.getRelatedEntities('inputBundleManifests', process, 'bundleManifests'))
