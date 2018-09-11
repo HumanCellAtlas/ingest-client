@@ -7,6 +7,7 @@ import hca
 import json
 import logging
 import os
+import time
 
 
 __author__ = "jupp"
@@ -40,25 +41,35 @@ class DssApi:
 
         version = datetime.datetime.utcnow().strftime("%Y-%m-%dT%H%M%S.%fZ")
 
-        try:
-            bundle_file = self.hca_client.put_file(
-                uuid=uuid,
-                version=version,
-                bundle_uuid=bundle_uuid,
-                creator_uid=self.creator_uid,
-                source_url=url
-            )
-        except Exception as e:
-            params = {
-                'uuid': uuid,
-                'bundle_uuid': bundle_uuid,
-                'creator_uid': self.creator_uid,
-                'source_url': url
-            }
-            self.logger.error('Error in hca_client.put_file method call with params:' + json.dumps(params))
-            raise Error(e)
+        # retrying file creation 20 times
+        max_retries = 20
+        tries = 0
+        file_create_complete = False
 
-        return bundle_file
+        while not file_create_complete and tries < max_retries:
+            try:
+                tries += 1
+                bundle_file = self.hca_client.put_file(
+                    uuid=uuid,
+                    version=version,
+                    bundle_uuid=bundle_uuid,
+                    creator_uid=self.creator_uid,
+                    source_url=url
+                )
+                file_create_complete = True
+                return bundle_file
+            except Exception as e:
+                params = {
+                    'uuid': uuid,
+                    'bundle_uuid': bundle_uuid,
+                    'creator_uid': self.creator_uid,
+                    'source_url': url
+                }
+                self.logger.error('Attempt {0} out of {0}: Error in hca_client.put_file method call with params:'.format(str(tries), str(max_retries)) + json.dumps(params))
+                if not tries < max_retries:
+                    raise Error(e)
+                else:
+                    time.sleep(60)
 
     def put_bundle(self, bundle_uuid, bundle_files):
         bundle = None
@@ -66,27 +77,37 @@ class DssApi:
         # Generate version client-side for idempotent PUT /bundle
         version = datetime.datetime.utcnow().strftime("%Y-%m-%dT%H%M%S.%fZ")
 
-        # finally create the bundle
-        try:
-            bundle = self.hca_client.put_bundle(
-                uuid=bundle_uuid,
-                version=version,
-                replica="aws",
-                files=bundle_files,
-                creator_uid=self.creator_uid
-            )
-        except Exception as e:
-            params = {
-                'uuid': bundle_uuid,
-                'version': version,
-                'replica': "aws",
-                'files': bundle_files,
-                'creator_uid': self.creator_uid
-            }
-            self.logger.error('Error in hca_client.put_bundle method call with params:' + json.dumps(params))
-            raise Error(e)
+        # retrying file creation 20 times
+        max_retries = 20
+        tries = 0
+        bundle_create_complete = False
 
-        return bundle
+        # finally create the bundle
+        while not bundle_create_complete and tries < max_retries:
+            try:
+                tries += 1
+                bundle = self.hca_client.put_bundle(
+                    uuid=bundle_uuid,
+                    version=version,
+                    replica="aws",
+                    files=bundle_files,
+                    creator_uid=self.creator_uid
+                )
+                bundle_create_complete = True
+                return bundle
+            except Exception as e:
+                params = {
+                    'uuid': bundle_uuid,
+                    'version': version,
+                    'replica': "aws",
+                    'files': bundle_files,
+                    'creator_uid': self.creator_uid
+                }
+                self.logger.error('Attempt {0} out of {0}: Error in hca_client.put_bundle method call with params:'.format(str(tries), str(max_retries)) + json.dumps(params))
+                if not tries < max_retries:
+                    raise Error(e)
+                else:
+                    time.sleep(60)
 
     def head_file(self, file_uuid ):
         # finally create the bundle
