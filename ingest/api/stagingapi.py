@@ -65,6 +65,7 @@ class StagingApi:
         try:
 
             r = requests.delete(base, headers=self.header)
+            r.raise_for_status()
             if r.status_code == requests.codes.no_content:
                 print ("staging area deleted!")
                 return base
