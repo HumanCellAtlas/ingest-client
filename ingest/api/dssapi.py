@@ -7,6 +7,7 @@ import hca
 import json
 import logging
 import os
+import time
 
 
 __author__ = "jupp"
@@ -67,6 +68,8 @@ class DssApi:
                 self.logger.error('Attempt {0} out of {0}: Error in hca_client.put_file method call with params:'.format(str(tries), str(max_retries)) + json.dumps(params))
                 if not tries < max_retries:
                     raise Error(e)
+                else:
+                    time.sleep(60)
 
     def put_bundle(self, bundle_uuid, bundle_files):
         bundle = None
@@ -103,6 +106,8 @@ class DssApi:
                 self.logger.error('Attempt {0} out of {0}: Error in hca_client.put_bundle method call with params:'.format(str(tries), str(max_retries)) + json.dumps(params))
                 if not tries < max_retries:
                     raise Error(e)
+                else:
+                    time.sleep(60)
 
     def head_file(self, file_uuid ):
         # finally create the bundle
