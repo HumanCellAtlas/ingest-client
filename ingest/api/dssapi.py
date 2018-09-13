@@ -1,120 +1,94 @@
 #!/usr/bin/env python
-"""
-Description goes here
-"""
 import datetime
 import hca
 import json
 import logging
 import os
-import time
 
-
-__author__ = "jupp"
-__license__ = "Apache 2.0"
-__date__ = "12/09/2017"
+from hca.util import RetryPolicy
 
 
 class DssApi:
     def __init__(self, url=None):
         format = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
         logging.basicConfig(format=format)
-        logging.getLogger("requests").setLevel(logging.WARNING)
         self.logger = logging.getLogger(__name__)
 
-        self.url = url if url else "https://dss.dev.data.humancellatlas.org"
+        self.url = url if url else 'https://dss.dev.data.humancellatlas.org'
         if not url and 'DSS_API' in os.environ:
             url = os.environ['DSS_API']
             # expand interpolated env vars
             self.url = os.path.expandvars(url)
-            self.logger.info("using " + url + " for dss API")
+            self.logger.info(f'using {url} for dss API')
 
         self.headers = {'Content-type': 'application/json'}
 
         self.hca_client = hca.dss.DSSClient()
-        self.hca_client.host = self.url + "/v1"
+        retry_policy = RetryPolicy(read=10, status=15, status_forcelist=frozenset({500, 502, 503, 504}), backoff_factor=0.3)
+        self.hca_client.retry_policy = retry_policy
+        self.hca_client.host = self.url + '/v1'
         self.creator_uid = 8008
 
     def put_file(self, bundle_uuid, file):
-        url = file["url"]
-        uuid = file["dss_uuid"]
+        url = file['url']
+        uuid = file['dss_uuid']
 
-        version = datetime.datetime.utcnow().strftime("%Y-%m-%dT%H%M%S.%fZ")
+        version = datetime.datetime.utcnow().strftime('%Y-%m-%dT%H%M%S.%fZ')
 
-        # retrying file creation 20 times
-        max_retries = 20
-        tries = 0
-        file_create_complete = False
+        try:
+            bundle_file = self.hca_client.put_file(
+                uuid=uuid,
+                version=version,
+                bundle_uuid=bundle_uuid,
+                creator_uid=self.creator_uid,
+                source_url=url
+            )
+        except Exception as e:
+            params = {
+                'uuid': uuid,
+                'bundle_uuid': bundle_uuid,
+                'creator_uid': self.creator_uid,
+                'source_url': url
+            }
+            self.logger.error(f'Error in hca_client.put_file method call with params:{json.dumps(params)}')
 
-        while not file_create_complete and tries < max_retries:
-            try:
-                tries += 1
-                bundle_file = self.hca_client.put_file(
-                    uuid=uuid,
-                    version=version,
-                    bundle_uuid=bundle_uuid,
-                    creator_uid=self.creator_uid,
-                    source_url=url
-                )
-                file_create_complete = True
-                return bundle_file
-            except Exception as e:
-                params = {
-                    'uuid': uuid,
-                    'bundle_uuid': bundle_uuid,
-                    'creator_uid': self.creator_uid,
-                    'source_url': url
-                }
-                self.logger.error('Attempt {0} out of {0}: Error in hca_client.put_file method call with params:'.format(str(tries), str(max_retries)) + json.dumps(params))
-                if not tries < max_retries:
-                    raise Error(e)
-                else:
-                    time.sleep(60)
+            raise
+
+        return bundle_file
 
     def put_bundle(self, bundle_uuid, bundle_files):
         bundle = None
 
         # Generate version client-side for idempotent PUT /bundle
-        version = datetime.datetime.utcnow().strftime("%Y-%m-%dT%H%M%S.%fZ")
+        version = datetime.datetime.utcnow().strftime('%Y-%m-%dT%H%M%S.%fZ')
 
-        # retrying file creation 20 times
-        max_retries = 20
-        tries = 0
-        bundle_create_complete = False
+        try:
+            bundle = self.hca_client.put_bundle(
+                uuid=bundle_uuid,
+                version=version,
+                replica="aws",
+                files=bundle_files,
+                creator_uid=self.creator_uid
+            )
+            return bundle
+        except Exception as e:
+            params = {
+                'uuid': bundle_uuid,
+                'version': version,
+                'replica': "aws",
+                'files': bundle_files,
+                'creator_uid': self.creator_uid
+            }
+            self.logger.error(f'Error in hca_client.put_bundle method call with params: {json.dumps(params)}')
 
-        # finally create the bundle
-        while not bundle_create_complete and tries < max_retries:
-            try:
-                tries += 1
-                bundle = self.hca_client.put_bundle(
-                    uuid=bundle_uuid,
-                    version=version,
-                    replica="aws",
-                    files=bundle_files,
-                    creator_uid=self.creator_uid
-                )
-                bundle_create_complete = True
-                return bundle
-            except Exception as e:
-                params = {
-                    'uuid': bundle_uuid,
-                    'version': version,
-                    'replica': "aws",
-                    'files': bundle_files,
-                    'creator_uid': self.creator_uid
-                }
-                self.logger.error('Attempt {0} out of {0}: Error in hca_client.put_bundle method call with params:'.format(str(tries), str(max_retries)) + json.dumps(params))
-                if not tries < max_retries:
-                    raise Error(e)
-                else:
-                    time.sleep(60)
+            raise
 
-    def head_file(self, file_uuid ):
+    def head_file(self, file_uuid):
         # finally create the bundle
         try:
             return self.hca_client.head_file(
                 uuid=file_uuid,
-                replica="aws"
+                replica='aws'
             )
         except Exception as e:
             raise Error(e)

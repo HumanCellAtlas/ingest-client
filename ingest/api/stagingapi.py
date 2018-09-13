@@ -7,23 +7,36 @@ __license__ = "Apache 2.0"
 __date__ = "12/09/2017"
 
 import json
-import os
-import requests
 import logging
-
-from time import sleep
+import os
+from time import sleep, time
 from urllib.parse import urljoin
+
+import requests
+import requests.packages.urllib3.util.retry as retry
+
 
 DEFAULT_STAGING_URL = os.environ.get('STAGING_API', 'https://upload.dev.data.humancellatlas.org')
 DEFAULT_STAGING_VERSION = os.environ.get('STAGING_API_VERSION', 'v1')
 INGEST_API_KEY = os.environ.get('INGEST_API_KEY', 'zero-pupil-until-funny')
 
 
+class RetryPolicy(retry.Retry):
+    def __init__(self, retry_after_status_codes={301}, **kwargs):
+        super(RetryPolicy, self).__init__(**kwargs)
+        self.RETRY_AFTER_STATUS_CODES = frozenset(retry_after_status_codes | retry.Retry.RETRY_AFTER_STATUS_CODES)
+
+
 class StagingApi:
     def __init__(self, url=None, apikey=None, apiversion=None):
         formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
         logging.basicConfig(formatter=formatter)
-        logging.getLogger("requests").setLevel(logging.WARNING)
+
+        retry_policy = RetryPolicy(read=5, status=10, status_forcelist=frozenset({500, 502, 503, 504}), backoff_factor=0.3)
+        self.session = requests.Session()
+        adapter = requests.adapters.HTTPAdapter(max_retries=retry_policy)
+        self.session.mount('https://', adapter)
+
         self.logger = logging.getLogger(__name__)
 
         if not apiversion and DEFAULT_STAGING_VERSION:
@@ -35,7 +48,7 @@ class StagingApi:
             # expand interpolated env vars
             self.url = os.path.expandvars(url)
             self.logger.info("using " + url + " for staging API")
-        self.url = url if url else "https://staging.dev.data.humancellatlas.org"
+        self.url = url if url else "https://upload.dev.data.humancellatlas.org"
 
         if not apikey and INGEST_API_KEY:
             apikey = INGEST_API_KEY
@@ -44,86 +57,44 @@ class StagingApi:
         self.header = {'Api-Key': self.apikey, 'Content-type': 'application/json'}
 
     def createStagingArea(self, submissionId):
+        start_time = time()
+        self.logger.info("Creating staging area!")
         base = urljoin(self.url, self.apiversion + '/area/' + submissionId)
 
-        num_retries = 5
-        retry_wait_time = 15
-        for i in range(0, num_retries):
-            r = requests.post(base, headers=self.header)
-            if 200 <= r.status_code < 300:
-                print ("Waiting 10 seconds for IAM policy to take effect..."),
-                sleep(10)
-                print ("staging area created!:" + base)
-                return json.loads(r.text)
-            else:
-                self.logger.info("Received non-2XX response creating a staging URN, retrying in " + str(retry_wait_time) + " seconds")
-                sleep(retry_wait_time)
-        raise ValueError('Can\'t create staging area for sub id:' + submissionId + ', Error:' + r.text)
+        r = self.session.post(base, headers=self.header)
+        r.raise_for_status()
+        self.logger.info("Waiting 10 seconds for IAM policy to take effect..."),
+        sleep(10)
+        self.logger.info("Staging area created!:" + base)
+        self.logger.info("Execution Time: %s seconds" % (time() - start_time))
+        return r.json()
 
     def deleteStagingArea(self, submissionId):
+        self.logger.info("Deleting staging area!")
         base = urljoin(self.url, self.apiversion + '/area/' + submissionId)
-        try:
-
-            r = requests.delete(base, headers=self.header)
-            r.raise_for_status()
-            if r.status_code == requests.codes.no_content:
-                print ("staging area deleted!")
-                return base
-            else:
-                return base
-        except:
-            raise ValueError('Can\'t delete staging area for sub id:' + submissionId)
+        r = self.session.delete(base, headers=self.header)
+        r.raise_for_status()
+        self.logger.info("Staging area deleted!")
+        return base
 
     def stageFile(self, submissionId, filename, body, type):
-
         fileUrl = urljoin(self.url, self.apiversion + '/area/' + submissionId + "/" + filename)
+        self.logger.info(f"Staging file: {fileUrl}")
 
         header = dict(self.header)
         header['Content-type'] = 'application/json; dcp-type=' + type
 
-        r = self._retry_when_http_error(0, self._put_file, fileUrl, body, header)
-
-        if r and (r.status_code == requests.codes.ok or requests.codes.created):
-            responseObject = json.loads(r.text)
-            return FileDescription(responseObject["checksums"], type, responseObject["name"], responseObject["size"],
-                                   responseObject["url"], )
-
-        raise ValueError('Can\'t create staging area for sub id:' + submissionId)
-
-    def _put_file(self, fileUrl, body, header):
-        r = requests.put(fileUrl, data=json.dumps(body, indent=4), headers=header)
-        return r
+        r = self.session.put(fileUrl, data=json.dumps(body, indent=4), headers=header)
+        r.raise_for_status()
+        response = r.json()
+        return FileDescription(response["checksums"], type, response["name"], response["size"],
+                                   response["url"], )
 
     def hasStagingArea(self, submissionId):
         base = urljoin(self.url, self.apiversion + '/area/' + submissionId + '/files_info')
 
-        r = requests.put(base, data="{}", headers=self.header)
+        r = self.session.put(base, data="{}", headers=self.header)
         return r.status_code == requests.codes.ok
-
-    """
-        func should return http response r
-    """
-
-    def _retry_when_http_error(self, tries, func, *args):
-        max_retries = 5
-
-        if tries < max_retries:
-            self.logger.debug("no of tries: " + str(tries + 1))
-            r = func(*args)
-
-            try:
-                r.raise_for_status()
-            except requests.HTTPError:
-                self.logger.error("\nResponse was: " + str(r.status_code) + " (" + r.text + ")")
-                tries += 1
-                sleep(1)
-                r = self._retry_when_http_error(tries, func, *args)
-
-            return r
-        else:
-            error_message = "Maximum no of tries reached: " + str(max_retries)
-            self.logger.error(error_message)
-            return None
 
 
 class FileDescription:
