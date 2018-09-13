@@ -31,7 +31,8 @@ class ModuleTest(TestCase):
     def test_determine_strategy_for_field_of_list_element(self):
         # expect:
         self._assert_correct_strategy(ConversionType.FIELD_OF_LIST_ELEMENT,
-                                      ListElementCellConversion)
+                                      ListElementCellConversion,
+                                      expected_converter_type=ListConverter)
 
     def test_determine_strategy_for_identity_field(self):
         # expect:
