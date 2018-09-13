@@ -196,6 +196,25 @@ class ListElementCellConversionTest(TestCase):
         list_element = metadata.get_content('user')[0]
         self.assertTrue('name' not in list_element.keys(), '[name] should not be added to element.')
 
+    def test_apply_multiple(self):
+        # given:
+        converter = _create_mock_string_converter()
+        cell_conversion = ListElementCellConversion('group.members.name', converter)
+
+        # when:
+        metadata = MetadataEntity()
+        cell_conversion.apply(metadata, 'Juan||Pedro||Jane')
+
+        # then:
+        members = metadata.get_content('members')
+        self.assertEqual(3, len(members))
+
+        # and:
+        expected_names = ['Juan - converted', 'Pedro - converted', 'Jane - converted']
+        for member in members:
+            member_name = member.get('name')
+            self.assertIn(member_name, expected_names)
+
 
 class IdentityCellConversionTest(TestCase):
 
