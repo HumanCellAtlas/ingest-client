@@ -215,6 +215,30 @@ class ListElementCellConversionTest(TestCase):
             member_name = member.get('name')
             self.assertIn(member_name, expected_names)
 
+    def test_apply_multiple_with_previous_values(self):
+        # given:
+        converter = _create_mock_string_converter()
+        cell_conversion = ListElementCellConversion('staff.developers.name', converter)
+
+        # and:
+        metadata = MetadataEntity()
+        metadata.define_content('developers', [{'age': 32}, {'age': 23}])
+
+        # when:
+        cell_conversion.apply(metadata, 'John||Paul||George||Ringo')
+
+        # then:
+        developers = metadata.get_content('developers')
+        self.assertEqual(4, len(developers))
+
+        # and:
+        expected_names = ['John - converted', 'Paul - converted', 'George - converted',
+                          'Ringo - converted']
+        expected_ages = [32, 23, None, None]
+        for index, developer in enumerate(developers):
+            self.assertEqual(expected_names[index], developer.get('name'))
+            self.assertEqual(expected_ages[index], developer.get('age'))
+
 
 class IdentityCellConversionTest(TestCase):
 

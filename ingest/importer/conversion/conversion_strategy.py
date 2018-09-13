@@ -56,10 +56,13 @@ class ListElementCellConversion(CellConversion):
     def _prepare_array(metadata, path, child_count):
         parent = metadata.get_content(path)
         if parent is None:
-            parent = [{} for _ in range(0, child_count)]
+            parent = []
             metadata.define_content(path, parent)
-        # TODO what if the next batch is of fields is larger than the first batch?
-        # e.g. [ {age: 1, name: x}, {age: 2, name: y}, {name: z} ] <- 2 ages, 3 names
+        current_count = len(parent)
+        missing_child_count = child_count - current_count
+        if missing_child_count > 0:
+            missing_children = [{} for _ in range(0, missing_child_count)]
+            parent.extend(missing_children)
         return parent
 
 
