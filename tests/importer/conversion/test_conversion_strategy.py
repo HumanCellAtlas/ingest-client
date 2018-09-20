@@ -31,7 +31,8 @@ class ModuleTest(TestCase):
     def test_determine_strategy_for_field_of_list_element(self):
         # expect:
         self._assert_correct_strategy(ConversionType.FIELD_OF_LIST_ELEMENT,
-                                      ListElementCellConversion)
+                                      ListElementCellConversion,
+                                      expected_converter_type=ListConverter)
 
     def test_determine_strategy_for_identity_field(self):
         # expect:
@@ -195,6 +196,49 @@ class ListElementCellConversionTest(TestCase):
         # then:
         list_element = metadata.get_content('user')[0]
         self.assertTrue('name' not in list_element.keys(), '[name] should not be added to element.')
+
+    def test_apply_multiple(self):
+        # given:
+        converter = _create_mock_string_converter()
+        cell_conversion = ListElementCellConversion('group.members.name', converter)
+
+        # when:
+        metadata = MetadataEntity()
+        cell_conversion.apply(metadata, 'Juan||Pedro||Jane')
+
+        # then:
+        members = metadata.get_content('members')
+        self.assertEqual(3, len(members))
+
+        # and:
+        expected_names = ['Juan - converted', 'Pedro - converted', 'Jane - converted']
+        for member in members:
+            member_name = member.get('name')
+            self.assertIn(member_name, expected_names)
+
+    def test_apply_multiple_with_previous_values(self):
+        # given:
+        converter = _create_mock_string_converter()
+        cell_conversion = ListElementCellConversion('staff.developers.name', converter)
+
+        # and:
+        metadata = MetadataEntity()
+        metadata.define_content('developers', [{'age': 32}, {'age': 23}])
+
+        # when:
+        cell_conversion.apply(metadata, 'John||Paul||George||Ringo')
+
+        # then:
+        developers = metadata.get_content('developers')
+        self.assertEqual(4, len(developers))
+
+        # and:
+        expected_names = ['John - converted', 'Paul - converted', 'George - converted',
+                          'Ringo - converted']
+        expected_ages = [32, 23, None, None]
+        for index, developer in enumerate(developers):
+            self.assertEqual(expected_names[index], developer.get('name'))
+            self.assertEqual(expected_ages[index], developer.get('age'))
 
 
 class IdentityCellConversionTest(TestCase):

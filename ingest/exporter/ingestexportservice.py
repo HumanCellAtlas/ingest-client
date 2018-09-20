@@ -40,7 +40,6 @@ class IngestExporter:
 
         self.stagingUrl = options.staging if options and options.staging else os.path.expandvars(DEFAULT_STAGING_URL)
         self.dssUrl = options.dss if options and options.dss else os.path.expandvars(DEFAULT_DSS_URL)
-        self.schema_url = os.path.expandvars(BUNDLE_SCHEMA_BASE_URL)
 
         self.staging_api = stagingapi.StagingApi()
         self.dss_api = dssapi.DssApi()
@@ -333,11 +332,21 @@ class IngestExporter:
         return bundle_doc
 
     def bundle_links(self, links):
-        # TODO do not hard code schema, query latest from schema endpoint
+
+        latest_schema = self.ingest_api.get_schemas(
+            latest_only=True,
+            high_level_entity='system',
+            domain_entity='',
+            concrete_entity='links'
+        )
+
+        schema_url = latest_schema[0]['_links']['json-schema']['href'] if latest_schema else None
+        schema_version = latest_schema[0]['schemaVersion'] if latest_schema else None
+
         return {
-            'describedBy': urljoin(self.schema_url, '/system/1.1.1/links'),
+            'describedBy': schema_url,
             'schema_type': 'link_bundle',
-            'schema_version': '1.1.1',
+            'schema_version': schema_version,
             'links': links
         }
 

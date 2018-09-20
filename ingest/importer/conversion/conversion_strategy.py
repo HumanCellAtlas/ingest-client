@@ -39,23 +39,31 @@ class DirectCellConversion(CellConversion):
 
 class ListElementCellConversion(CellConversion):
 
+    def __init__(self, field: str, converter: Converter):
+        list_converter = ListConverter(base_converter=converter)
+        super(ListElementCellConversion, self).__init__(field, list_converter)
+
     def apply(self, metadata: MetadataEntity, cell_data):
         if cell_data is not None:
             parent_path, target_field = split_field_chain(self.applied_field)
-            target_object = self._determine_target_object(metadata, parent_path)
-            data = self.converter.convert(cell_data)
-            target_object[target_field] = data
+            data_list = self.converter.convert(cell_data)
+            parent = self._prepare_array(metadata, parent_path, len(data_list))
+            for index, data in enumerate(data_list):
+                target_object = parent[index]
+                target_object[target_field] = data
 
     @staticmethod
-    def _determine_target_object(metadata, parent_path):
-        parent = metadata.get_content(parent_path)
+    def _prepare_array(metadata, path, child_count):
+        parent = metadata.get_content(path)
         if parent is None:
-            target_object = {}
-            parent = [target_object]
-            metadata.define_content(parent_path, parent)
-        else:
-            target_object = parent[0]
-        return target_object
+            parent = []
+            metadata.define_content(path, parent)
+        current_count = len(parent)
+        missing_child_count = child_count - current_count
+        if missing_child_count > 0:
+            missing_children = [{} for _ in range(0, missing_child_count)]
+            parent.extend(missing_children)
+        return parent
 
 
 class IdentityCellConversion(CellConversion):

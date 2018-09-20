@@ -75,14 +75,18 @@ CONVERTER_MAP = {
 
 class ListConverter(Converter):
 
-    def __init__(self, data_type:DataType=DataType.STRING):
+    def __init__(self, data_type: DataType=DataType.STRING, base_converter: Converter=None):
         self.base_type = data_type
-        self.converter = CONVERTER_MAP.get(data_type, CONVERTER_MAP[DataType.STRING])
+        if base_converter is not None:
+            self.base_type = DataType.UNDEFINED
+            self.base_converter = base_converter
+        else:
+            self.base_converter = CONVERTER_MAP.get(data_type, CONVERTER_MAP[DataType.STRING])
 
     def convert(self, data):
         data = str(data)
         value = data.split('||')
-        value = [self.converter.convert(elem) for elem in value]
+        value = [self.base_converter.convert(elem) for elem in value]
         return value
 
 
