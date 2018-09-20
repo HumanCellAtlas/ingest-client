@@ -66,6 +66,26 @@ class ListElementCellConversion(CellConversion):
         return parent
 
 
+class FieldOfSingleElementListCellConversion(CellConversion):
+
+    def apply(self, metadata: MetadataEntity, cell_data):
+        if cell_data is not None:
+            parent_path, target_field = split_field_chain(self.applied_field)
+            target_object = self._determine_target_object(metadata, parent_path)
+            data = self.converter.convert(cell_data)
+            target_object[target_field] = data
+
+    @staticmethod
+    def _determine_target_object(metadata, parent_path):
+        parent = metadata.get_content(parent_path)
+        if parent is None:
+            target_object = {}
+            parent = [target_object]
+            metadata.define_content(parent_path, parent)
+        else:
+            target_object = parent[0]
+        return target_object
+
 class IdentityCellConversion(CellConversion):
 
     def apply(self, metadata: MetadataEntity, cell_data):

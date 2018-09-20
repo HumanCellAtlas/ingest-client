@@ -7,7 +7,8 @@ import ingest.template.schema_template as schema_template
 from ingest.api.ingestapi import IngestApi
 from ingest.importer.conversion import utils, conversion_strategy
 from ingest.importer.conversion.column_specification import ColumnSpecification
-from ingest.importer.conversion.conversion_strategy import CellConversion, ListElementCellConversion
+from ingest.importer.conversion.conversion_strategy import CellConversion, \
+    ListElementCellConversion, FieldOfSingleElementListCellConversion
 from ingest.importer.conversion.metadata_entity import MetadataEntity
 from ingest.importer.data_node import DataNode
 from ingest.template.schema_template import SchemaTemplate
@@ -34,17 +35,16 @@ class TemplateManager:
         header_row = self.get_header_row(worksheet)
         cell_conversions = []
 
-        header_ctr = {}
-
+        header_counter = {}
         for cell in header_row:
             header = cell.value
 
-            if not header_ctr.get(header):
-                header_ctr[header] = 0
+            if not header_counter.get(header):
+                header_counter[header] = 0
+            header_counter[header] = header_counter[header] + 1
 
-            header_ctr[header] = header_ctr[header] + 1
-
-            column_spec = self._define_column_spec(header, object_type, order_of_occurence=header_ctr[header])
+            column_spec = self._define_column_spec(header, object_type,
+                                                   order_of_occurence=header_counter[header])
             strategy = conversion_strategy.determine_strategy(column_spec)
             cell_conversions.append(strategy)
 
@@ -60,7 +60,8 @@ class TemplateManager:
         for cell in header_row:
             header = cell.value
             column_spec = self._define_column_spec(header, object_type)
-            strategy = ListElementCellConversion(column_spec.field_name, column_spec.determine_converter())
+            strategy = FieldOfSingleElementListCellConversion(column_spec.field_name,
+                                                 column_spec.determine_converter())
             cell_conversions.append(strategy)
 
         default_values = self._define_default_values(object_type)
