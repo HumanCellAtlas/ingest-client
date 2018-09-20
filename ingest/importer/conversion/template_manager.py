@@ -7,7 +7,8 @@ import ingest.template.schema_template as schema_template
 from ingest.api.ingestapi import IngestApi
 from ingest.importer.conversion import utils, conversion_strategy
 from ingest.importer.conversion.column_specification import ColumnSpecification
-from ingest.importer.conversion.conversion_strategy import CellConversion, ListElementCellConversion
+from ingest.importer.conversion.conversion_strategy import CellConversion, \
+    ListElementCellConversion, FieldOfSingleElementListCellConversion
 from ingest.importer.conversion.metadata_entity import MetadataEntity
 from ingest.importer.data_node import DataNode
 from ingest.template.schema_template import SchemaTemplate
@@ -59,7 +60,7 @@ class TemplateManager:
         for cell in header_row:
             header = cell.value
             column_spec = self._define_column_spec(header, object_type)
-            strategy = ListElementCellConversion(column_spec.field_name,
+            strategy = FieldOfSingleElementListCellConversion(column_spec.field_name,
                                                  column_spec.determine_converter())
             cell_conversions.append(strategy)
 
