@@ -60,10 +60,7 @@ class TemplateManager:
         for cell in header_row:
             header = cell.value
             column_spec = self._define_column_spec(header, object_type)
-            converter = column_spec.determine_converter()
-            if column_spec.is_multivalue():
-                converter = converter.base_converter
-            strategy = ListElementCellConversion(column_spec.field_name, converter)
+            strategy = ListElementCellConversion(column_spec.field_name, column_spec.determine_converter())
             cell_conversions.append(strategy)
 
         default_values = self._define_default_values(object_type)
