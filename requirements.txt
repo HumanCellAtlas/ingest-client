@@ -7,7 +7,6 @@ chardet==3.0.4
 CommonMark==0.7.5
 coverage==4.5.1
 crcmod==1.7
-dcplib==1.1.0
 docutils==0.14
 et-xmlfile==1.0.1
 flake8==3.5.0
