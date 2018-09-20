@@ -59,8 +59,7 @@ class TemplateManager:
         for cell in header_row:
             header = cell.value
             column_spec = self._define_column_spec(header, object_type)
-            strategy = ListElementCellConversion(column_spec.field_name,
-                                                 column_spec.determine_converter())
+            strategy = conversion_strategy.determine_strategy(column_spec)
             cell_conversions.append(strategy)
 
         default_values = self._define_default_values(object_type)

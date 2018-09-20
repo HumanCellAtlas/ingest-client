@@ -137,11 +137,9 @@ class WorkbookImporter:
         for worksheet in workbook.module_worksheets():
             if worksheet:
                 module_importer = ModuleWorksheetImporter('project', workbook.get_module_field(worksheet.title))
-                records = module_importer.do_import(worksheet, self.template_mgr)
                 field_name = module_importer.property
-                project_record['content'][field_name] = list(
-                    map(lambda record: record['content'][field_name][0], records))
-
+                records = module_importer.do_import(worksheet, self.template_mgr)
+                project_record['content'][field_name] = records
         return project_dict
 
     def _create_project_dict(self, project_id):
