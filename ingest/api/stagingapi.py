@@ -32,7 +32,7 @@ class StagingApi:
         formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
         logging.basicConfig(formatter=formatter)
 
-        retry_policy = RetryPolicy(read=5, status=10, status_forcelist=frozenset({500, 502, 503, 504}), backoff_factor=0.3)
+        retry_policy = RetryPolicy(read=10, status=10, status_forcelist=frozenset({500, 502, 503, 504}), backoff_factor=0.3)
         self.session = requests.Session()
         adapter = requests.adapters.HTTPAdapter(max_retries=retry_policy)
         self.session.mount('https://', adapter)
