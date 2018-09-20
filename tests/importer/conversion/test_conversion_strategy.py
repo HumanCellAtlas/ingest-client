@@ -6,7 +6,8 @@ from ingest.importer.conversion import conversion_strategy
 from ingest.importer.conversion.column_specification import ColumnSpecification, ConversionType
 from ingest.importer.conversion.conversion_strategy import DirectCellConversion, \
     ListElementCellConversion, CellConversion, IdentityCellConversion, LinkedIdentityCellConversion, \
-    DoNothing, ExternalReferenceCellConversion, LinkingDetailCellConversion
+    DoNothing, ExternalReferenceCellConversion, LinkingDetailCellConversion, \
+    FieldOfSingleElementListCellConversion
 from ingest.importer.conversion.data_converter import StringConverter, ListConverter
 from ingest.importer.conversion.exceptions import UnknownMainCategory
 from ingest.importer.conversion.metadata_entity import MetadataEntity
@@ -239,6 +240,50 @@ class ListElementCellConversionTest(TestCase):
         for index, developer in enumerate(developers):
             self.assertEqual(expected_names[index], developer.get('name'))
             self.assertEqual(expected_ages[index], developer.get('age'))
+
+
+class FieldOfSingleElementListCellConversionTest(TestCase):
+
+    def test_apply(self):
+        # given:
+        converter = _create_mock_string_converter()
+        cell_conversion = FieldOfSingleElementListCellConversion('library.books.title', converter)
+
+        # when:
+        metadata = MetadataEntity()
+        cell_conversion.apply(metadata, 'Harry Potter')
+
+        # then:
+        books = metadata.get_content('books')
+        self.assertIsNotNone(books)
+        self.assertEqual(1, len(books))
+
+        # and:
+        thing = books[0]
+        self.assertEqual('Harry Potter - converted', thing.get('title'))
+
+    def test_apply_multiple_value_field(self):
+        # given:
+        converter = ListConverter(base_converter=_create_mock_string_converter())
+        cell_conversion = FieldOfSingleElementListCellConversion('library.books.authors', converter)
+
+        # and:
+        metadata = MetadataEntity(content={
+            'books': [
+                {'title': 'Once Upon a Time'}
+            ]
+        })
+
+        # when:
+        cell_conversion.apply(metadata, 'J dela Cruz||P Smith')
+
+        # then:
+        books = metadata.get_content('books')
+        self.assertEqual(1, len(books))
+
+        # and:
+        book = books[0]
+        self.assertEqual(['J dela Cruz - converted', 'P Smith - converted'], book.get('authors'))
 
 
 class IdentityCellConversionTest(TestCase):
