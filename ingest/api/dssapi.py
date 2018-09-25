@@ -35,6 +35,7 @@ class DssApi:
 
         version = datetime.datetime.utcnow().strftime('%Y-%m-%dT%H%M%S.%fZ')
 
+        self.logger.info(f'Creating file in DSS {uuid}:{version}')
         try:
             bundle_file = self.hca_client.put_file(
                 uuid=uuid,
@@ -43,6 +44,7 @@ class DssApi:
                 creator_uid=self.creator_uid,
                 source_url=url
             )
+            self.logger.info(f'Created file in DSS {uuid}:{version}')
         except Exception as e:
             params = {
                 'uuid': uuid,
@@ -63,6 +65,7 @@ class DssApi:
         version = datetime.datetime.utcnow().strftime('%Y-%m-%dT%H%M%S.%fZ')
 
         try:
+            self.logger.info(f'Creating bundle in DSS {bundle_uuid}:{version}')
             bundle = self.hca_client.put_bundle(
                 uuid=bundle_uuid,
                 version=version,
@@ -70,6 +73,7 @@ class DssApi:
                 files=bundle_files,
                 creator_uid=self.creator_uid
             )
+            self.logger.info(f'Created bundle in DSS {bundle_uuid}:{version}')
             return bundle
         except Exception as e:
             params = {
