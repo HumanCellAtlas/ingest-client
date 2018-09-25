@@ -32,7 +32,13 @@ class StagingApi:
         formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
         logging.basicConfig(formatter=formatter)
 
-        retry_policy = RetryPolicy(read=10, status=10, status_forcelist=frozenset({500, 502, 503, 504}), backoff_factor=0.6)
+        retry_policy = RetryPolicy(
+            read=10,
+            status=10,
+            status_forcelist=frozenset({500, 502, 503, 504}),
+            backoff_factor=0.6
+        )
+
         self.session = requests.Session()
         adapter = requests.adapters.HTTPAdapter(max_retries=retry_policy)
         self.session.mount('https://', adapter)
@@ -47,34 +53,34 @@ class StagingApi:
             url = DEFAULT_STAGING_URL
             # expand interpolated env vars
             self.url = os.path.expandvars(url)
-            self.logger.info("using " + url + " for staging API")
-        self.url = url if url else "https://upload.dev.data.humancellatlas.org"
+            self.logger.info(f'Using {url} for staging API')
+        self.url = url if url else 'https://upload.dev.data.humancellatlas.org'
 
         if not apikey and INGEST_API_KEY:
             apikey = INGEST_API_KEY
-        self.apikey = apikey if apikey else "zero-pupil-until-funny"
+        self.apikey = apikey if apikey else 'zero-pupil-until-funny'
 
         self.header = {'Api-Key': self.apikey, 'Content-type': 'application/json'}
 
     def createStagingArea(self, submissionId):
         start_time = time()
-        self.logger.info("Creating staging area!")
+        self.logger.info('Creating staging area!')
         base = urljoin(self.url, self.apiversion + '/area/' + submissionId)
 
         r = self.session.post(base, headers=self.header)
         r.raise_for_status()
-        self.logger.info("Waiting 10 seconds for IAM policy to take effect..."),
+        self.logger.info('Waiting 10 seconds for IAM policy to take effect...'),
         sleep(10)
-        self.logger.info("Staging area created!:" + base)
+        self.logger.info(f'Staging area created!: {base}')
         self.logger.info("Execution Time: %s seconds" % (time() - start_time))
         return r.json()
 
     def deleteStagingArea(self, submissionId):
-        self.logger.info("Deleting staging area!")
+        self.logger.info('Deleting staging area!')
         base = urljoin(self.url, self.apiversion + '/area/' + submissionId)
         r = self.session.delete(base, headers=self.header)
         r.raise_for_status()
-        self.logger.info("Staging area deleted!")
+        self.logger.info'Staging area deleted!')
         return base
 
     def stageFile(self, submissionId, filename, body, type):
@@ -89,7 +95,7 @@ class StagingApi:
 
         r.raise_for_status()
         res = r.json()
-        return FileDescription(res["checksums"], type, res["name"], res["size"], res["url"])
+        return FileDescription(res['checksums'], type, res['name'], res['size'], res['url'])
 
     def getFile(self, submissionId, filename):
         fileUrl = urljoin(self.url, self.apiversion + '/area/' + submissionId + "/" + filename)
@@ -101,8 +107,8 @@ class StagingApi:
         else:
             r.raise_for_status()
 
-        response = r.json()
-        return FileDescription(response["checksums"], type, response["name"], response["size"], response["url"])
+        res = r.json()
+        return FileDescription(res['checksums'], type, res['name'], res['size'], res['url'])
 
     def hasStagingArea(self, submissionId):
         base = urljoin(self.url, self.apiversion + '/area/' + submissionId)
