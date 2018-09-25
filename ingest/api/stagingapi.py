@@ -79,22 +79,34 @@ class StagingApi:
 
     def stageFile(self, submissionId, filename, body, type):
         fileUrl = urljoin(self.url, self.apiversion + '/area/' + submissionId + "/" + filename)
-        self.logger.info(f"Staging file: {fileUrl}")
+
+        self.logger.info(f'Staging file: {fileUrl}')
 
         header = dict(self.header)
         header['Content-type'] = 'application/json; dcp-type=' + type
 
         r = self.session.put(fileUrl, data=json.dumps(body, indent=4), headers=header)
+
         r.raise_for_status()
+        res = r.json()
+        return FileDescription(res["checksums"], type, res["name"], res["size"], res["url"])
+
+    def getFile(self, submissionId, filename):
+        fileUrl = urljoin(self.url, self.apiversion + '/area/' + submissionId + "/" + filename)
+        self.logger.info(f'GET file: {fileUrl}')
+        r = self.session.get(fileUrl, headers=self.header)
+
+        if r.status_code == requests.codes.not_found:
+            return None
+        else:
+            r.raise_for_status()
+
         response = r.json()
-        return FileDescription(response["checksums"], type, response["name"], response["size"],
-                                   response["url"], )
+        return FileDescription(response["checksums"], type, response["name"], response["size"], response["url"])
 
     def hasStagingArea(self, submissionId):
         base = urljoin(self.url, self.apiversion + '/area/' + submissionId)
-
         r = self.session.head(base, headers=self.header)
-        r.raise_for_status()
         return r.status_code == requests.codes.ok
 
 

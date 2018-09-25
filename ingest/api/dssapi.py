@@ -44,7 +44,7 @@ class DssApi:
                 creator_uid=self.creator_uid,
                 source_url=url
             )
-            self.logger.info(f'Created file in DSS {uuid}:{version}')
+            self.logger.info('Created!')
         except Exception as e:
             params = {
                 'uuid': uuid,
@@ -73,7 +73,7 @@ class DssApi:
                 files=bundle_files,
                 creator_uid=self.creator_uid
             )
-            self.logger.info(f'Created bundle in DSS {bundle_uuid}:{version}')
+            self.logger.info('Created!')
             return bundle
         except Exception as e:
             params = {

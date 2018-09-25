@@ -475,9 +475,15 @@ class IngestExporter:
         return schema_uri["content"]["describedBy"].rsplit('/', 1)[-1]
 
     def upload_file(self, submission_uuid, filename, content, content_type):
-        self.logger.info("writing to staging area..." + filename)
-        file_description = self.staging_api.stageFile(submission_uuid, filename, content, content_type)
-        self.logger.info("File staged at " + file_description.url)
+        file_description = self.staging_api.getFile(submission_uuid, filename)
+
+        if file_description:
+            self.logger.info(f"The file {filename} already exists in the Upload area {submission_uuid}.")
+        else:
+            self.logger.info("Writing to staging area..." + filename)
+            file_description = self.staging_api.stageFile(submission_uuid, filename, content, content_type)
+            self.logger.info("File staged at " + file_description.url)
+
         return file_description
 
     def dump_to_file(self, content, filename, output_dir='output'):
