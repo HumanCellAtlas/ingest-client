@@ -32,7 +32,7 @@ class StagingApi:
         formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
         logging.basicConfig(formatter=formatter)
 
-        retry_policy = RetryPolicy(read=10, status=10, status_forcelist=frozenset({500, 502, 503, 504}), backoff_factor=0.3)
+        retry_policy = RetryPolicy(read=10, status=10, status_forcelist=frozenset({500, 502, 503, 504}), backoff_factor=0.6)
         self.session = requests.Session()
         adapter = requests.adapters.HTTPAdapter(max_retries=retry_policy)
         self.session.mount('https://', adapter)
@@ -91,9 +91,10 @@ class StagingApi:
                                    response["url"], )
 
     def hasStagingArea(self, submissionId):
-        base = urljoin(self.url, self.apiversion + '/area/' + submissionId + '/files_info')
+        base = urljoin(self.url, self.apiversion + '/area/' + submissionId)
 
-        r = self.session.put(base, data="{}", headers=self.header)
+        r = self.session.head(base, headers=self.header)
+        r.raise_for_status()
         return r.status_code == requests.codes.ok
 
 
