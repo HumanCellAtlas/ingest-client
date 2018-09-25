@@ -80,7 +80,7 @@ class StagingApi:
         base = urljoin(self.url, self.apiversion + '/area/' + submissionId)
         r = self.session.delete(base, headers=self.header)
         r.raise_for_status()
-        self.logger.info'Staging area deleted!')
+        self.logger.info('Staging area deleted!')
         return base
 
     def stageFile(self, submissionId, filename, body, type):
