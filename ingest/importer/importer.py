@@ -60,7 +60,7 @@ class XlsImporter:
             error_json = json.dumps({
                 'errorCode': 'ingest.importer.submission',
                 'errorType': 'Error',
-                'message': e.message,
+                'message':  'An error during submission occurred.',
                 'details': str(e),
 
             })

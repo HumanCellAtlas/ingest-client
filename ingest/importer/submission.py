@@ -428,6 +428,7 @@ class Error(Exception):
     def __init__(self, code, message):
         super(Error, self).__init__(message)
         self.code = code
+        self.message = message
 
 class InvalidEntityIngestLink(Error):
     def __init__(self, from_entity, to_entity):
