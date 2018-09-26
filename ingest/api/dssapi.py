@@ -24,7 +24,7 @@ class DssApi:
         self.headers = {'Content-type': 'application/json'}
 
         self.hca_client = hca.dss.DSSClient()
-        retry_policy = RetryPolicy(read=10, status=10, status_forcelist=frozenset({400, 422, 500, 502, 503, 504}), backoff_factor=0.6)
+        retry_policy = RetryPolicy(read=10, status=11, status_forcelist=frozenset({400, 422, 500, 502, 503, 504}), backoff_factor=0.6)
         self.hca_client.retry_policy = retry_policy
         self.hca_client.host = self.url + '/v1'
         self.creator_uid = 8008
