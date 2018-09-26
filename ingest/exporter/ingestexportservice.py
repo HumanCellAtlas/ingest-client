@@ -17,6 +17,7 @@ from urllib.parse import urljoin
 import ingest.api.dssapi as dssapi
 import ingest.api.ingestapi as ingestapi
 import ingest.api.stagingapi as stagingapi
+from requests.exceptions import HTTPError
 
 DEFAULT_INGEST_URL = os.environ.get('INGEST_API', 'http://api.ingest.dev.data.humancellatlas.org')
 DEFAULT_STAGING_URL = os.environ.get('STAGING_API', 'http://upload.dev.data.humancellatlas.org')
@@ -481,9 +482,17 @@ class IngestExporter:
             self.logger.info(f"The file {filename} already exists in the Upload area {submission_uuid}.")
         else:
             self.logger.info("Writing to staging area..." + filename)
-            file_description = self.staging_api.stageFile(submission_uuid, filename, content, content_type)
-            self.logger.info("File staged at " + file_description.url)
+            try:
+                file_description = self.staging_api.stageFile(submission_uuid, filename, content, content_type)
+            except HTTPError as e:
+                if str(e.response.status_code) == "409":
+                    file_description = self.staging_api.getFile(submission_uuid, filename)
+                    if file_description:
+                        return file_description
+                    else:
+                        raise e
 
+        self.logger.info("File staged at " + file_description.url)
         return file_description
 
     def dump_to_file(self, content, filename, output_dir='output'):
