@@ -114,11 +114,12 @@ class DssApi:
                 else:
                     time.sleep(60)
 
-    def head_file(self, file_uuid ):
+    def head_file(self, file_uuid, version=None):
         # finally create the bundle
         try:
             return self.hca_client.head_file(
                 uuid=file_uuid,
+                version=version,
                 replica="aws"
             )
         except Exception as e:

@@ -2,6 +2,8 @@
 """
 desc goes here
 """
+import requests
+
 __author__ = "jupp"
 __license__ = "Apache 2.0"
 
@@ -11,6 +13,7 @@ import logging
 import os
 import uuid
 import time
+import polling
 
 from urllib.parse import urljoin
 
@@ -114,6 +117,10 @@ class IngestExporter:
             self.logger.info('Saving files in DSS...')
             bundle_uuid = bundle_manifest.bundleUuid
             created_files = self.put_files_in_dss(bundle_uuid, bundle_files, process_info)
+
+            # check all created files
+            self.logger.info('Verifying if all files get successfully copied to DSS...')
+            self.verify_files(created_files)
 
             self.logger.info('Saving bundle in DSS...')
             self.put_bundle_in_dss(bundle_uuid, created_files)
@@ -411,6 +418,23 @@ class IngestExporter:
             created_files.append(file_param)
 
         return created_files
+
+    def verify_files(self, created_files):
+        for created_file in created_files:
+            try:
+                polling.poll(
+                    lambda: self._is_file_copied(created_file),
+                    step=30,
+                    timeout=1200  # 20 minutes
+                )
+            except polling.TimeoutException as te:
+                self.logger.error(f'File {created_file["uuid"]}/{created_file["version"]} takes too long to be copied.')
+                raise
+            self.logger.info(f'File {created_file["uuid"]}/{created_file["version"]} is successfully copied!')
+
+    def _is_file_copied(self, created_file):
+        r = self.dss_api.head_file(created_file["uuid"], version=created_file["version"])
+        return (r.status_code == requests.codes.ok) or (r.status_code == requests.codes.created)
 
     def get_metadata_files(self, metadata_files_info):
         metadata_files = []
