@@ -11,7 +11,8 @@ from optparse import OptionParser
 from ingest.exporter.ingestexportservice import IngestExporter
 
 if __name__ == '__main__':
-    logging.basicConfig(stream=sys.stdout, level=logging.INFO)
+    format = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    logging.basicConfig(format=format, stream=sys.stdout, level=logging.INFO)
 
     parser = OptionParser()
     parser.add_option("-e", "--submissionEnvelopeUuid",

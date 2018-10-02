@@ -39,7 +39,8 @@ class DssApi:
         url = file["url"]
         uuid = file["dss_uuid"]
 
-        version = datetime.datetime.utcnow().strftime("%Y-%m-%dT%H%M%S.%fZ")
+        now = datetime.datetime.utcnow().strftime("%Y-%m-%dT%H%M%S.%fZ")
+        version = file["update_date"] if "update_date" in file and file["update_date"] else now
 
         # retrying file creation 20 times
         max_retries = 20
@@ -49,7 +50,7 @@ class DssApi:
         while not file_create_complete and tries < max_retries:
             try:
                 tries += 1
-                self.logger.info(f'Creating file in DSS {uuid}:{version}')
+                self.logger.info(f'Creating file {file["name"]} in DSS {uuid}:{version}')
                 bundle_file = self.hca_client.put_file(
                     uuid=uuid,
                     version=version,

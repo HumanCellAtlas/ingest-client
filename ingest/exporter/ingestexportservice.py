@@ -314,7 +314,8 @@ class IngestExporter:
                     'indexed': is_indexed,
                     'dss_filename': file_name,
                     'dss_uuid': metadata_uuid,
-                    'upload_filename': upload_filename
+                    'upload_filename': upload_filename,
+                    'update_date': doc['updateDate']
                 }
 
                 metadata_files_by_type[entity_type].append(prepared_doc)
@@ -422,7 +423,8 @@ class IngestExporter:
                     'url': metadata_file.get('upload_file_url'),
                     'dss_uuid': metadata_file['dss_uuid'],
                     'indexed': metadata_file['indexed'],
-                    'content-type': metadata_file['content_type']
+                    'content-type': metadata_file['content_type'],
+                    'update_date': metadata_file.get('update_date'),
                 })
 
         return metadata_files
