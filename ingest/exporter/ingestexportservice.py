@@ -433,8 +433,11 @@ class IngestExporter:
             self.logger.info(f'File {created_file["uuid"]}/{created_file["version"]} is successfully copied!')
 
     def _is_file_copied(self, created_file):
-        r = self.dss_api.head_file(created_file["uuid"], version=created_file["version"])
-        return (r.status_code == requests.codes.ok) or (r.status_code == requests.codes.created)
+        try:
+            r = self.dss_api.head_file(created_file["uuid"], version=created_file["version"])
+            return (r.status_code == requests.codes.ok) or (r.status_code == requests.codes.created)
+        except Exception as e:
+            return False
 
     def get_metadata_files(self, metadata_files_info):
         metadata_files = []
