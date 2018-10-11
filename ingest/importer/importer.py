@@ -70,7 +70,6 @@ class XlsImporter:
                 'errorType': 'Error',
                 'message': 'An error during submission occurred.',
                 'details': str(e),
-
             })
 
         if error_json:
@@ -83,7 +82,7 @@ class XlsImporter:
 
     @staticmethod
     def _create_ingest_workbook(file_path):
-        workbook = openpyxl.load_workbook(filename=file_path)
+        workbook = openpyxl.load_workbook(filename=file_path, read_only=True)
         return IngestWorkbook(workbook)
 
     @staticmethod
