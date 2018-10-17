@@ -71,7 +71,7 @@ class IngestExporter:
         is_indexed = submission['triggersAnalysis']
 
         metadata_by_type = self.get_metadata_by_type(process_info)
-        files_by_type = self.prepare_metadata_files(metadata_by_type, is_indexed)
+        files_by_type = self.prepare_metadata_files(metadata_by_type, process_info, is_indexed)
 
         links = self.bundle_links(process_info.links)
         links_file_uuid = str(uuid.uuid4())
@@ -301,7 +301,7 @@ class IngestExporter:
 
         return None
 
-    def prepare_metadata_files(self, metadata_info,  is_indexed=True) -> 'dict':
+    def prepare_metadata_files(self, metadata_info, process_info, is_indexed=True) -> 'dict':
         metadata_files_by_type = dict()
 
         for entity_type in ['biomaterial', 'file', 'project', 'protocol', 'process']:
@@ -322,12 +322,25 @@ class IngestExporter:
                     'dss_filename': file_name,
                     'dss_uuid': metadata_uuid,
                     'upload_filename': upload_filename,
-                    'update_date': doc['updateDate']
+                    'update_date': doc['updateDate'],
+                    'is_from_input_bundle': self._is_from_input_bundle(entity_type, metadata_uuid, process_info.input_bundle)
                 }
 
                 metadata_files_by_type[entity_type].append(prepared_doc)
 
         return metadata_files_by_type
+
+    def _is_from_input_bundle(self, entity_type, metadata_uuid, input_bundle):
+
+        field = {
+            'biomaterial': 'fileBiomaterialMap',
+            'process': 'fileProcessMap',
+            'file': 'fileFilesMap',
+            'project': 'fileProjectMap',
+            'protocol': 'fileProtocolMap',
+        }
+
+        return input_bundle and input_bundle[field[entity_type]].get(metadata_uuid)
 
     def bundle_metadata(self, metadata_doc, uuid):
         provenance_core = dict()
@@ -368,8 +381,9 @@ class IngestExporter:
                     content = bundle_file['content']
                     content_type = bundle_file['content_type']
 
-                    uploaded_file = self.upload_file(submission_uuid, filename, content, content_type)
-                    bundle_file['upload_file_url'] = uploaded_file.url
+                    if bundle_file['is_from_input_bundle']:
+                        uploaded_file = self.upload_file(submission_uuid, filename, content, content_type)
+                        bundle_file['upload_file_url'] = uploaded_file.url
         except Exception as e:
             message = "An error occurred on uploading bundle files: " + str(e)
             raise BundleFileUploadError(message)
@@ -391,11 +405,14 @@ class IngestExporter:
             file_uuid = bundle_file["dss_uuid"]
             created_file = None
             input_data_files = [input_file['dataFileUuid'] for input_file in list(process_info.input_files.values())]
+
             try:
                 # TODO if file is an input file, this file may already be in the data store, need to get the stored version
                 # This assumes that the latest version is the file version in the input bundle, should be a safe assumption for now
                 # Ideally, bundle manifest must store the file uuid and version and version must be retrieved from there
-                if file_uuid in input_data_files:
+
+                # if metadata file , check is_from_input_bundle flag, if true, do not put file to DSS again
+                if bundle_file.get('is_from_input_bundle') or file_uuid in input_data_files:
                     file_response = self.dss_api.head_file(bundle_file["dss_uuid"])
                     created_file = {
                         'version': file_response.headers['X-DSS-VERSION']
@@ -452,8 +469,8 @@ class IngestExporter:
                     'indexed': metadata_file['indexed'],
                     'content-type': metadata_file['content_type'],
                     'update_date': metadata_file.get('update_date'),
+                    'is_from_input_bundle': metadata_file.get('is_from_input_bundle')
                 })
-
         return metadata_files
 
     def get_data_files(self, uuid_file_dict):
