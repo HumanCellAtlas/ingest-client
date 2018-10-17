@@ -381,7 +381,7 @@ class IngestExporter:
                     content = bundle_file['content']
                     content_type = bundle_file['content_type']
 
-                    if bundle_file['is_from_input_bundle']:
+                    if not bundle_file.get('is_from_input_bundle'):
                         uploaded_file = self.upload_file(submission_uuid, filename, content, content_type)
                         bundle_file['upload_file_url'] = uploaded_file.url
         except Exception as e:

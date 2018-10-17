@@ -68,7 +68,14 @@ class DssApi:
                     'creator_uid': self.creator_uid,
                     'source_url': url
                 }
-                self.logger.error('Attempt {0} out of {0}: Error in hca_client.put_file method call with params:'.format(str(tries), str(max_retries)) + json.dumps(params))
+                self.logger.error(
+                    'Attempt {0} out of {1}: Error in hca_client.put_file method call with params:{2} due to {3}'.format(
+                        str(tries),
+                        str(max_retries),
+                        json.dumps(params),
+                        str(e))
+                )
+
                 if not tries < max_retries:
                     raise Error(e)
                 else:
@@ -108,7 +115,13 @@ class DssApi:
                     'files': bundle_files,
                     'creator_uid': self.creator_uid
                 }
-                self.logger.error('Attempt {0} out of {0}: Error in hca_client.put_bundle method call with params:'.format(str(tries), str(max_retries)) + json.dumps(params))
+                self.logger.error(
+                    'Attempt {0} out of {1}: Error in hca_client.put_bundle method call with params:{2} due to {3}'.format(
+                        str(tries),
+                        str(max_retries),
+                        json.dumps(params),
+                        str(e))
+                )
                 if not tries < max_retries:
                     raise Error(e)
                 else:
