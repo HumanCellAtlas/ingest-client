@@ -1,5 +1,8 @@
 from unittest import TestCase
 from unittest.mock import patch
+
+from mock import MagicMock
+
 from ingest.api.ingestapi import IngestApi
 
 import json
@@ -37,6 +40,7 @@ class IngestApiTest(TestCase):
                     mock_response = {}
                     mock_response['json'] = lambda _self: {}
                     mock_response['text'] = "{}"
+                    mock_response['raise_for_status'] = MagicMock()
 
                     if args[0] == file_create_url:
                         mock_response['status_code'] = 201
