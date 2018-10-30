@@ -64,6 +64,7 @@ class XlsImporter:
                 'details': str(e),
 
             })
+            self.logger.error(str(e), stack_info=True)
         except Exception as e:
             error_json = json.dumps({
                 'errorCode': 'ingest.importer.error',
@@ -71,9 +72,9 @@ class XlsImporter:
                 'message': 'An error during submission occurred.',
                 'details': str(e),
             })
+            self.logger.error(str(e), stack_info=True)
 
         if error_json:
-            self.logger.error('An error occured for submission, {submission_url} : ' + json.dumps(error_json))
             self.ingest_api.createSubmissionError(submission_url, error_json)
         else:
             self.logger.info(f'Submission in {submission_url} is done!')
