@@ -69,8 +69,6 @@ class StagingApi:
 
         r = self.session.post(base, headers=self.header)
         r.raise_for_status()
-        self.logger.info('Waiting 10 seconds for IAM policy to take effect...'),
-        sleep(10)
         self.logger.info(f'Staging area created!: {base}')
         self.logger.info("Execution Time: %s seconds" % (time() - start_time))
         return r.json()
