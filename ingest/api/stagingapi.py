@@ -33,11 +33,14 @@ class StagingApi:
         logging.basicConfig(formatter=formatter)
 
         retry_policy = RetryPolicy(
+            total=100,  # seems that this has a default value of 10,
+                        # setting this to a very high number so that it'll respect the status retry count
+            status=17,  # status is the no. of retries if response is in status_forcelist,
+                        # this count will retry for ~20mins with back off timeout within
             read=10,
-            status=11,
-            status_forcelist=frozenset({500, 502, 503, 504}),
+            status_forcelist=[500, 502, 503, 504],
             backoff_factor=0.6,
-            method_whitelist=frozenset(['GET', 'POST', 'PUT'])
+            method_whitelist=frozenset(['HEAD', 'GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'TRACE'])
         )
 
         self.session = requests.Session()
