@@ -34,9 +34,10 @@ class StagingApi:
 
         retry_policy = RetryPolicy(
             read=10,
-            status=10,
+            status=11,
             status_forcelist=frozenset({500, 502, 503, 504}),
-            backoff_factor=0.6
+            backoff_factor=0.6,
+            method_whitelist=frozenset(['GET', 'POST', 'PUT'])
         )
 
         self.session = requests.Session()
