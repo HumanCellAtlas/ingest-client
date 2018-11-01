@@ -193,9 +193,19 @@ class WorksheetImporter:
 
     def _get_data_rows(self, worksheet, template):
         header_row = template.get_header_row(worksheet)
-        rows = worksheet.iter_rows(row_offset=self.START_ROW_IDX,
-                                  max_row=(worksheet.max_row - self.START_ROW_IDX))
+        max_row = self._compute_max_row(worksheet) - self.START_ROW_IDX
+        rows = worksheet.iter_rows(row_offset=self.START_ROW_IDX, max_row=max_row)
         return [row[:len(header_row)] for row in rows if not WorksheetImporter._is_empty_row(row)]
+
+    # NOTE: there are no tests around this because it's too complicated to setup the
+    # scenario where the worksheet returns an erroneous max_row value.
+    @staticmethod
+    def _compute_max_row(worksheet):
+        max_row = worksheet.max_row
+        if max_row is None:
+            worksheet.calculate_dimension(force=True)
+            max_row = worksheet.max_row
+        return max_row
 
     def _determine_record_id(self, metadata):
         record_id = metadata.object_id
