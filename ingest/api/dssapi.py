@@ -47,10 +47,18 @@ class DssApi:
         tries = 0
         file_create_complete = False
 
+        params = {
+            'uuid': uuid,
+            'version': version,
+            'bundle_uuid': bundle_uuid,
+            'creator_uid': self.creator_uid,
+            'source_url': url
+        }
+
         while not file_create_complete and tries < max_retries:
             try:
                 tries += 1
-                self.logger.info(f'Creating file {file["name"]} in DSS {uuid}:{version}')
+                self.logger.info(f'Creating file {file["name"]} in DSS {uuid}:{version} with params: {json.dumps(params)}')
                 bundle_file = self.hca_client.put_file(
                     uuid=uuid,
                     version=version,
@@ -62,12 +70,6 @@ class DssApi:
                 file_create_complete = True
                 return bundle_file
             except Exception as e:
-                params = {
-                    'uuid': uuid,
-                    'bundle_uuid': bundle_uuid,
-                    'creator_uid': self.creator_uid,
-                    'source_url': url
-                }
                 self.logger.error(
                     'Attempt {0} out of {1}: Error in hca_client.put_file method call with params:{2} due to {3}'.format(
                         str(tries),

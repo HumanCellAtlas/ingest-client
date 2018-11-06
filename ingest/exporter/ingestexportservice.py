@@ -445,9 +445,9 @@ class IngestExporter:
                     timeout=1200  # 20 minutes
                 )
             except polling.TimeoutException as te:
-                self.logger.error(f'File {created_file["uuid"]}/{created_file["version"]} takes too long to be copied.')
+                self.logger.error(f'File {created_file["uuid"]}/{created_file["version"]} with name {created_file["name"]} takes too long to be copied.')
                 raise
-            self.logger.info(f'File {created_file["uuid"]}/{created_file["version"]} is successfully copied!')
+            self.logger.info(f'File {created_file["uuid"]}/{created_file["version"]} with name {created_file["name"]} is successfully copied!')
 
     def _is_file_copied(self, created_file):
         try:
