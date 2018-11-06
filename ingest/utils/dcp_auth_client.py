@@ -9,13 +9,12 @@ from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives.asymmetric import rsa
 from datetime import datetime
 
-
 class DCPAuthClient(object):
     audience = "https://dev.data.humancellatlas.org/"
     dev_deployments = ('dev', 'integration', 'test', 'staging')
 
-    def __init__(self, path_to_json_key, trusted_google_project):
-        self.path_to_json_key = path_to_json_key
+    def __init__(self, trusted_google_project, jwt_info):
+        self.auth_jwt_info = jwt_info
         self.trusted_google_project = trusted_google_project
 
         if not any(deployment in trusted_google_project for deployment in DCPAuthClient.dev_deployments):
@@ -31,7 +30,7 @@ class DCPAuthClient(object):
 
     @property
     def token(self):
-        credentials = DCPAuthClient._from_json(self.path_to_json_key)
+        credentials = self.auth_jwt_info
         tok = DCPAuthClient.get_service_jwt(service_credentials=credentials, audience=self.audience)
         self.verify_jwt(tok, audience=self.audience, trusted_google_project=self.trusted_google_project)
         return self.__token
