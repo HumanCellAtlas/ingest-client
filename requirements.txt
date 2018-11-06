@@ -45,3 +45,4 @@ tweak==0.6.7
 urllib3==1.22
 XlsxWriter==1.0.4
 polling
+google-api-python-client
