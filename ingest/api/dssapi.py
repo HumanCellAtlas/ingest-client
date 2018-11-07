@@ -9,13 +9,14 @@ import logging
 import os
 import time
 from ingest.utils.s2s_token_client import S2STokenClient
-
+from ingest.utils.token_manager import TokenManager
 
 __author__ = "jupp"
 __license__ = "Apache 2.0"
 __date__ = "12/09/2017"
 
 AUTH_INFO_ENV_VAR = "EXPORTER_AUTH_INFO"
+
 
 class DssApi:
     def __init__(self, url=None):
@@ -38,6 +39,7 @@ class DssApi:
         self.creator_uid = 8008
         self.s2s_token_client = S2STokenClient()
         self.s2s_token_client.setup_from_env_var(AUTH_INFO_ENV_VAR)
+        self.token_manager = TokenManager(token_client=self.s2s_token_client)
 
     def put_file(self, bundle_uuid, file):
         url = file["url"]
@@ -69,7 +71,7 @@ class DssApi:
                     bundle_uuid=bundle_uuid,
                     creator_uid=self.creator_uid,
                     source_url=url,
-                    header={"Authorization": "Bearer " + self.s2s_token_client.retrieve_token()}
+                    header={"Authorization": "Bearer " + token_manager.get_token()}
                 )
                 self.logger.info('Created!')
                 file_create_complete = True
@@ -110,7 +112,7 @@ class DssApi:
                     replica="aws",
                     files=bundle_files,
                     creator_uid=self.creator_uid,
-                    header={"Authorization": "Bearer " + self.s2s_token_client.retrieve_token()}
+                    header={"Authorization": "Bearer " + token_manager.get_token()}
                 )
                 self.logger.info('Created!')
                 bundle_create_complete = True
@@ -148,7 +150,6 @@ class DssApi:
 
 
 # Module Exceptions
-
 
 class Error(Exception):
     """Base-class for all exceptions raised by this module."""

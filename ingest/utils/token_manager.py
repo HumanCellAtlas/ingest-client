@@ -34,4 +34,4 @@ class Token:
     def is_expired(self):
         now = datetime.now() + timedelta(milliseconds=self.refresh_period)
         expires_at = self.created_at + timedelta(milliseconds=self.token_duration)
-        return  now > expires_at
+        return now > expires_at
