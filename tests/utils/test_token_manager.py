@@ -25,10 +25,28 @@ class TestTokenManager(TestCase):
         self.assertEqual(new_token, 'token_2')
 
     def test_valid_token(self):
-        token = Token(value='token', token_duration=3600 * 1000)
+        token = Token(value='token',
+                      token_duration=3600 * 1000,
+                      refresh_period=60 * 20 * 1000)
         self.assertFalse(token.is_expired())
 
     def test_expired_token(self):
-        token = Token(value='token', token_duration=1)
+        token = Token(value='token',
+                      token_duration=1000,
+                      refresh_period=0)
         time.sleep(1)
         self.assertTrue(token.is_expired())
+
+    def test_expired_token_outside_refresh_period(self):
+        token = Token(value='token',
+                      token_duration=4000,
+                      refresh_period=1000)
+        time.sleep(3.5)
+        self.assertTrue(token.is_expired())
+
+    def test_valid_token_within_refresh_period(self):
+        token = Token(value='token',
+                      token_duration=4000,
+                      refresh_period=1000)
+        time.sleep(2)
+        self.assertFalse(token.is_expired())

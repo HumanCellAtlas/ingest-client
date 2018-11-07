@@ -5,7 +5,8 @@ class TokenManager:
     def __init__(self, token_client):
         self.token_client = token_client
         self.token = None
-        self.TOKEN_DURATION = 3600 * 1000 # milliseconds
+        self.TOKEN_DURATION = 3600 * 1000  # 1hr in ms
+        self.REFRESH_PERIOD = 60 * 20 * 1000  # 20 min in ms
 
     def get_token(self):
         token = None
@@ -18,14 +19,19 @@ class TokenManager:
         return token.value
 
     def _create_token(self, value):
-        return Token(value=value, token_duration=self.TOKEN_DURATION)
+        return Token(value=value,
+                     token_duration=self.TOKEN_DURATION,
+                     refresh_period=self.REFRESH_PERIOD)
 
 
 class Token:
-    def __init__(self, value, token_duration):
+    def __init__(self, value, token_duration, refresh_period):
         self.value = value
         self.created_at = datetime.now()
         self.token_duration = token_duration
+        self.refresh_period = refresh_period
 
     def is_expired(self):
-        return datetime.now() > self.created_at + timedelta(milliseconds=self.token_duration)
+        now = datetime.now() + timedelta(milliseconds=self.refresh_period)
+        expires_at = self.created_at + timedelta(milliseconds=self.token_duration)
+        return  now > expires_at
