@@ -71,7 +71,7 @@ class DssApi:
                     bundle_uuid=bundle_uuid,
                     creator_uid=self.creator_uid,
                     source_url=url,
-                    header={"Authorization": "Bearer " + token_manager.get_token()}
+                    header={"Authorization": self.token_manager.get_token()}
                 )
                 self.logger.info('Created!')
                 file_create_complete = True
@@ -112,7 +112,7 @@ class DssApi:
                     replica="aws",
                     files=bundle_files,
                     creator_uid=self.creator_uid,
-                    header={"Authorization": "Bearer " + token_manager.get_token()}
+                    header={"Authorization": "Bearer " + self.token_manager.get_token()}
                 )
                 self.logger.info('Created!')
                 bundle_create_complete = True
