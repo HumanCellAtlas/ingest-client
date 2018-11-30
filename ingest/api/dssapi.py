@@ -23,6 +23,7 @@ class DssApi:
         format = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
         logging.basicConfig(format=format)
         logging.getLogger("requests").setLevel(logging.WARNING)
+        logging.getLogger("requests").setLevel(logging.INFO)
         self.logger = logging.getLogger(__name__)
 
         self.url = url if url else "https://dss.dev.data.humancellatlas.org"
@@ -34,7 +35,7 @@ class DssApi:
 
         self.headers = {'Content-type': 'application/json'}
 
-        self.hca_client = hca.dss.DSSClient()
+        self.hca_client = hca.dss.DSSClient(swagger_url=f'{self.url}/v1/swagger.json')
         self.hca_client.host = self.url + "/v1"
         self.creator_uid = 8008
         self.s2s_token_client = S2STokenClient()
@@ -71,7 +72,7 @@ class DssApi:
                     bundle_uuid=bundle_uuid,
                     creator_uid=self.creator_uid,
                     source_url=url,
-                    headers={"Authorization": "Bearer " + self.token_manager.get_token()}
+                    # headers={"Authorization": "Bearer " + self.token_manager.get_token()}
                 )
                 self.logger.info('Created!')
                 file_create_complete = True
@@ -112,7 +113,7 @@ class DssApi:
                     replica="aws",
                     files=bundle_files,
                     creator_uid=self.creator_uid,
-                    headers={"Authorization": "Bearer " + self.token_manager.get_token()}
+                    # headers={"Authorization": "Bearer " + self.token_manager.get_token()}
                 )
                 self.logger.info('Created!')
                 bundle_create_complete = True
