@@ -97,7 +97,12 @@ class SpreadsheetBuilder:
                     # set the user friendly name
                     worksheet.write(0, col_number, uf, hf)
 
-                    worksheet.set_column(col_number, col_number, len(uf))
+                    if len(uf) < 15:
+                        col_w = 15
+                    else:
+                        col_w = len(uf)
+
+                    worksheet.set_column(col_number, col_number, col_w)
 
                     # set the description
                     worksheet.write(1, col_number, desc, self.desc_format)
