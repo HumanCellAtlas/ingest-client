@@ -3,7 +3,7 @@
 Given a tabs template and list of schema URLs, will output a spreadsheet in Xls format
 """
 import urllib
-from optparse import OptionParser
+from argparse import ArgumentParser
 
 __author__ = "jupp"
 __license__ = "Apache 2.0"
@@ -20,15 +20,16 @@ DEFAULT_SCHEMAS_ENDPOINT = "/schemas/search/latestSchemas"
 
 
 class SpreadsheetBuilder:
-    def __init__(self, output_file):
+    def __init__(self, output_file, hide_row=False):
 
         self.workbook = xlsxwriter.Workbook(output_file)
 
-        self.header_format = self.workbook.add_format({'bold': True, 'bg_color': '#D0D0D0'})
+        self.header_format = self.workbook.add_format({'bold': True, 'bg_color': '#D0D0D0', 'font_size': 12})
         self.locked_format = self.workbook.add_format({'locked': True})
         # self.required_header_format = self.workbook.add_format({'bold': True, 'bg_color': '#D0D0D0'})
-        self.desc_format = self.workbook.add_format({'font_color': '#808080', 'italic': True, 'text_wrap': True})
+        self.desc_format = self.workbook.add_format({'font_color': '#808080', 'italic': True, 'text_wrap': True, 'font_size': 12})
         self.include_schemas_tab = False
+        self.hidden_row = hide_row
 
     def generate_workbook(self, tabs_template=None, schema_urls=list(), include_schemas_tab=False):
 
@@ -85,20 +86,19 @@ class SpreadsheetBuilder:
 
                     uf = self.get_user_friendly(template, cols).upper()
                     desc = self._get_value_for_column(template, cols, "description")
-                    # required = bool(self._get_value_for_column(template, cols, "required"))
+                    required = bool(self._get_value_for_column(template, cols, "required"))
                     example_text = self._get_value_for_column(template, cols, "example")
 
                     hf = self.header_format
-                    # if required:
-                    #     hf= self.required_header_format
-
+                    if required:
+                        uf = uf + " (Required)"
 
 
                     # set the user friendly name
                     worksheet.write(0, col_number, uf, hf)
 
-                    if len(uf) < 15:
-                        col_w = 15
+                    if len(uf) < 25:
+                        col_w = 25
                     else:
                         col_w = len(uf)
 
@@ -115,7 +115,8 @@ class SpreadsheetBuilder:
                     # set the key
                     worksheet.write(3, col_number, cols, self.locked_format)
 
-                    worksheet.set_row(3, None, None, {'hidden': True})
+                    if self.hidden_row:
+                        worksheet.set_row(3, None, None, {'hidden': True})
 
 
 
@@ -132,29 +133,36 @@ class SpreadsheetBuilder:
 
 
 if __name__ == '__main__':
-    parser = OptionParser()
-    parser.add_option("-y", "--yaml", dest="yaml",
+    parser = ArgumentParser()
+    parser.add_argument("-y", "--yaml", dest="yaml",
                       help="The YAML file from which to generate the spreadsheet")
-    parser.add_option("-o", "--output", dest="output",
+    parser.add_argument("-o", "--output", dest="output",
                       help="Name of the output spreadsheet")
-    parser.add_option("-u", "--url", dest="url",
+    parser.add_argument("-u", "--url", dest="url",
                       help="Optional ingest API URL - if not default (prod)")
-    (options, args) = parser.parse_args()
+    parser.add_argument("-r", "--hidden_row", action="store_true",
+                      help="Binary flag - if set, the 4th row will be hidden")
+    args = parser.parse_args()
 
-    if not options.output:
+    if not args.output:
         output_file = "template_spreadsheet.xlsx"
     else:
-        output_file = options.output
+        output_file = args.output
 
-    if not options.url:
+    if not args.url:
         ingest_url = DEFAULT_INGEST_URL
     else:
-        ingest_url = options.url
+        ingest_url = args.url
     schemas_url = ingest_url + DEFAULT_SCHEMAS_ENDPOINT
+
+    hide_row = False
+
+    if args.hidden_row:
+        hide_row = True
 
     all_schemas = schema_template.SchemaTemplate(ingest_url).get_schema_urls()
 
-    spreadsheet_builder = SpreadsheetBuilder(output_file)
-    spreadsheet_builder.generate_workbook(tabs_template=options.yaml, schema_urls=all_schemas)
+    spreadsheet_builder = SpreadsheetBuilder(output_file, hide_row)
+    spreadsheet_builder.generate_workbook(tabs_template=args.yaml, schema_urls=all_schemas)
     spreadsheet_builder.save_workbook()
 
