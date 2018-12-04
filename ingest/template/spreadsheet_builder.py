@@ -24,10 +24,10 @@ class SpreadsheetBuilder:
 
         self.workbook = xlsxwriter.Workbook(output_file)
 
-        self.header_format = self.workbook.add_format({'bold': True, 'bg_color': '#D0D0D0', 'font_size': 12})
+        self.header_format = self.workbook.add_format({'bold': True, 'bg_color': '#D0D0D0', 'font_size': 12, 'valign': 'vcenter'})
         self.locked_format = self.workbook.add_format({'locked': True})
         # self.required_header_format = self.workbook.add_format({'bold': True, 'bg_color': '#D0D0D0'})
-        self.desc_format = self.workbook.add_format({'font_color': '#808080', 'italic': True, 'text_wrap': True, 'font_size': 12})
+        self.desc_format = self.workbook.add_format({'font_color': '#808080', 'italic': True, 'text_wrap': True, 'font_size': 12, 'valign': 'top'})
         self.include_schemas_tab = False
         self.hidden_row = hide_row
 
@@ -118,11 +118,18 @@ class SpreadsheetBuilder:
                     if self.hidden_row:
                         worksheet.set_row(3, None, None, {'hidden': True})
 
+                    if col_number == 0:
+                        worksheet.set_row(0, 30)
+                        worksheet.set_row(4, 30)
 
+                        worksheet.write(4, col_number, "FILL OUT INFORMATION BELOW THIS ROW", hf)
+
+                    else:
+                        worksheet.write(4, col_number, '', hf)
 
                     col_number+=1
 
-                worksheet.merge_range(first_col=0, first_row=4, last_col= len(detail["columns"]), last_row=4, cell_format= self.header_format, data="FILL OUT INFORMATION BELOW THIS ROW")
+                    # worksheet.merge_range(first_col=0, first_row=4, last_col= len(detail["columns"]), last_row=4, cell_format= self.header_format, data="FILL OUT INFORMATION BELOW THIS ROW")
 
         if self.include_schemas_tab:
             self._write_schemas(template.get_schema_urls())
