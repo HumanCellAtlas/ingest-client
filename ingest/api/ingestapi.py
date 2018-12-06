@@ -415,10 +415,9 @@ class IngestApi:
             r = None
             
             try:
-                time.sleep(0.01)
+                time.sleep(0.001)
                 r = func(*args)
                 r.raise_for_status()
-
             except HTTPError:
                 self.logger.error("\nResponse was: " + str(r.status_code) + " (" + r.text + ")")
                 tries += 1
