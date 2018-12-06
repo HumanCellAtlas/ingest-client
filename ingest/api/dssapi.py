@@ -46,8 +46,14 @@ class DssApi:
         url = file["url"]
         uuid = file["dss_uuid"]
 
-        now = datetime.datetime.utcnow().strftime("%Y-%m-%dT%H%M%S.%fZ")
-        version = file["update_date"] if "update_date" in file and file["update_date"] else now
+        version = datetime.datetime.utcnow().strftime("%Y-%m-%dT%H%M%S.%fZ")
+
+        update_date = file.get("update_date")
+
+        if update_date:
+            update_date = datetime.datetime.strptime(update_date, "%Y-%m-%dT%H:%M:%S.%fZ")
+            update_date = update_date.strftime("%Y-%m-%dT%H%M%S.%fZ")
+            version = update_date
 
         # retrying file creation 20 times
         max_retries = 20
