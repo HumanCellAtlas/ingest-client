@@ -415,6 +415,7 @@ class IngestApi:
             r = None
             
             try:
+                time.sleep(0.01)
                 r = func(*args)
                 r.raise_for_status()
 
