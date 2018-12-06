@@ -336,6 +336,7 @@ class IngestApi:
                     content = newContent
 
                 fileUrl = fileInIngest['_links']['self']['href']
+                time.sleep(0.001)
                 r = requests.patch(fileUrl, data=json.dumps({'content': content}), headers=self.headers)
                 self.logger.debug(f'Updating existing content of file {fileUrl}.')
 
