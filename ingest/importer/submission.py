@@ -56,6 +56,7 @@ class IngestSubmitter(object):
                 except:
                     error_message = f'error in entity [{entity.type}]:\n{entity.content}'
                     self.logger.error(error_message)
+                    raise
 
 
 class EntityLinker(object):
