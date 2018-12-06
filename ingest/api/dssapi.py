@@ -8,11 +8,14 @@ import json
 import logging
 import os
 import time
-
+from ingest.utils.s2s_token_client import S2STokenClient
+from ingest.utils.token_manager import TokenManager
 
 __author__ = "jupp"
 __license__ = "Apache 2.0"
 __date__ = "12/09/2017"
+
+AUTH_INFO_ENV_VAR = "EXPORTER_AUTH_INFO"
 
 
 class DssApi:
@@ -20,6 +23,7 @@ class DssApi:
         format = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
         logging.basicConfig(format=format)
         logging.getLogger("requests").setLevel(logging.WARNING)
+        logging.getLogger("requests").setLevel(logging.INFO)
         self.logger = logging.getLogger(__name__)
 
         self.url = url if url else "https://dss.dev.data.humancellatlas.org"
@@ -31,9 +35,12 @@ class DssApi:
 
         self.headers = {'Content-type': 'application/json'}
 
-        self.hca_client = hca.dss.DSSClient()
+        self.hca_client = hca.dss.DSSClient(swagger_url=f'{self.url}/v1/swagger.json')
         self.hca_client.host = self.url + "/v1"
         self.creator_uid = 8008
+        self.s2s_token_client = S2STokenClient()
+        self.s2s_token_client.setup_from_env_var(AUTH_INFO_ENV_VAR)
+        self.token_manager = TokenManager(token_client=self.s2s_token_client)
 
     def put_file(self, bundle_uuid, file):
         url = file["url"]
@@ -64,7 +71,8 @@ class DssApi:
                     version=version,
                     bundle_uuid=bundle_uuid,
                     creator_uid=self.creator_uid,
-                    source_url=url
+                    source_url=url,
+                    # headers={"Authorization": "Bearer " + self.token_manager.get_token()}
                 )
                 self.logger.info('Created!')
                 file_create_complete = True
@@ -104,7 +112,8 @@ class DssApi:
                     version=version,
                     replica="aws",
                     files=bundle_files,
-                    creator_uid=self.creator_uid
+                    creator_uid=self.creator_uid,
+                    # headers={"Authorization": "Bearer " + self.token_manager.get_token()}
                 )
                 self.logger.info('Created!')
                 bundle_create_complete = True
@@ -142,7 +151,6 @@ class DssApi:
 
 
 # Module Exceptions
-
 
 class Error(Exception):
     """Base-class for all exceptions raised by this module."""

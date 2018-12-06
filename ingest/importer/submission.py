@@ -424,11 +424,13 @@ class EntityMap(object):
     def count_entities_of_type(self, type):
         return len(self.get_new_entities_of_type(type))
 
+
 class Error(Exception):
     def __init__(self, code, message):
         super(Error, self).__init__(message)
         self.code = code
         self.message = message
+
 
 class InvalidEntityIngestLink(Error):
     def __init__(self, from_entity, to_entity):

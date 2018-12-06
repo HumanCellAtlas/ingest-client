@@ -537,6 +537,7 @@ class IngestExporter:
                         return file_description
                     else:
                         raise e
+                raise e
 
         self.logger.info("File staged at " + file_description.url)
         return file_description
