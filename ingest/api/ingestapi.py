@@ -318,6 +318,7 @@ class IngestApi:
             "content": json.loads(jsonObject)  # TODO jsonObject should be a dict()
         }
 
+        time.sleep(0.001)
         r = requests.post(fileSubmissionsUrl, data=json.dumps(fileToCreateObject), headers=self.headers)
 
         # TODO Investigate why core is returning internal server error
