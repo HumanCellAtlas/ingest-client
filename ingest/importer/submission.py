@@ -51,7 +51,11 @@ class IngestSubmitter(object):
     def _add_entities(self, entities, submission):
         for entity in entities:
             if not entity.is_reference:
-                submission.add_entity(entity)
+                try:
+                    submission.add_entity(entity)
+                except:
+                    error_message = f'error in entity [{entity.type}]:\n{entity.content}'
+                    self.logger.error(error_message)
 
 
 class EntityLinker(object):
