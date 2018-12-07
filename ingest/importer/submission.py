@@ -51,7 +51,12 @@ class IngestSubmitter(object):
     def _add_entities(self, entities, submission):
         for entity in entities:
             if not entity.is_reference:
-                submission.add_entity(entity)
+                try:
+                    submission.add_entity(entity)
+                except:
+                    error_message = f'error in entity [{entity.type}]:\n{entity.content}'
+                    self.logger.error(error_message)
+                    raise
 
 
 class EntityLinker(object):
@@ -424,11 +429,13 @@ class EntityMap(object):
     def count_entities_of_type(self, type):
         return len(self.get_new_entities_of_type(type))
 
+
 class Error(Exception):
     def __init__(self, code, message):
         super(Error, self).__init__(message)
         self.code = code
         self.message = message
+
 
 class InvalidEntityIngestLink(Error):
     def __init__(self, from_entity, to_entity):

@@ -237,7 +237,8 @@ class SchemaParser:
         if "type" in data:
             dic["value_type"] = data["type"]
             if data["type"] == "array":
-                dic["value_type"] = data["items"]["type"]
+                items = data.get("items", {})
+                dic["value_type"] = items.get('type', 'string')
                 dic["multivalue"] = True
 
         schema = self._get_schema_from_object(data)
