@@ -54,9 +54,26 @@ class SpreadsheetBuilder:
             return ""
 
     def get_user_friendly(self, template, col_name):
-        key = col_name + ".user_friendly"
+
+        if '.text' in col_name:
+            parent = col_name.replace('.text', '')
+            key = parent + ".user_friendly"
+        elif '.ontology_label' in col_name:
+            parent = col_name.replace('.ontology_label', '')
+            key = parent + ".user_friendly"
+        elif '.ontology' in col_name:
+            parent = col_name.replace('.ontology', '')
+            key = parent + ".user_friendly"
+
+        else:
+            key = col_name + ".user_friendly"
         try:
             uf = str(template.lookup(key)) if template.lookup(key) else col_name
+            if '.ontology_label' in col_name:
+                uf = uf + " ontology label"
+            if '.ontology' in col_name:
+                uf = uf + " ontology ID"
+
             return uf
         except:
             return key
