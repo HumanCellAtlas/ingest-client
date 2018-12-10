@@ -38,9 +38,6 @@ class DssApi:
         self.hca_client = hca.dss.DSSClient(swagger_url=f'{self.url}/v1/swagger.json')
         self.hca_client.host = self.url + "/v1"
         self.creator_uid = 8008
-        self.s2s_token_client = S2STokenClient()
-        self.s2s_token_client.setup_from_env_var(AUTH_INFO_ENV_VAR)
-        self.token_manager = TokenManager(token_client=self.s2s_token_client)
 
     def put_file(self, bundle_uuid, file):
         url = file["url"]
@@ -77,8 +74,7 @@ class DssApi:
                     version=version,
                     bundle_uuid=bundle_uuid,
                     creator_uid=self.creator_uid,
-                    source_url=url,
-                    # headers={"Authorization": "Bearer " + self.token_manager.get_token()}
+                    source_url=url
                 )
                 self.logger.info('Created!')
                 file_create_complete = True
@@ -118,8 +114,7 @@ class DssApi:
                     version=version,
                     replica="aws",
                     files=bundle_files,
-                    creator_uid=self.creator_uid,
-                    # headers={"Authorization": "Bearer " + self.token_manager.get_token()}
+                    creator_uid=self.creator_uid
                 )
                 self.logger.info('Created!')
                 bundle_create_complete = True
