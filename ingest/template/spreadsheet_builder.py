@@ -50,7 +50,7 @@ class SpreadsheetBuilder:
             uf = str(template.lookup(col_name + "."+property)) if template.lookup(col_name + "."+property) else ""
             return uf
         except:
-            print("No property for " + col_name)
+            print("No property " + property + " for " + col_name)
             return ""
 
     def get_user_friendly(self, template, col_name):
@@ -88,6 +88,7 @@ class SpreadsheetBuilder:
                     desc = self._get_value_for_column(template, cols, "description")
                     required = bool(self._get_value_for_column(template, cols, "required"))
                     example_text = self._get_value_for_column(template, cols, "example")
+                    guidelines = self._get_value_for_column(template, cols, "guidelines")
 
                     hf = self.header_format
                     if required:
@@ -109,7 +110,7 @@ class SpreadsheetBuilder:
 
 
                     # write example
-                    worksheet.write(2, col_number, example_text, self.desc_format)
+                    worksheet.write(2, col_number, guidelines + ' For example: ' + example_text, self.desc_format)
 
 
                     # set the key

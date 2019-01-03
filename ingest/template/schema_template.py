@@ -228,6 +228,7 @@ class SchemaParser:
             "user_friendly" : None,
             "description": None,
             "example" : None,
+            "guidelines" : None,
             "value_type": "string"}
 
     def _extract_property(self, data, *args, **kwargs):
@@ -274,6 +275,9 @@ class SchemaParser:
 
         if "example" in data:
             dic["example"] = data["example"]
+
+        if "guidelines" in data:
+            dic["guidelines"] = data["guidelines"]
 
         return doctict.DotDict(dic)
 
