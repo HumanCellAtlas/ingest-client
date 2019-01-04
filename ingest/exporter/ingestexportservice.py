@@ -135,9 +135,8 @@ class IngestExporter:
                 self.logger.info('Bundle ' + bundle_uuid + ' was successfully created!')
                 self.logger.info("Execution Time: %s seconds" % (time.time() - start_time))
             except SwaggerAPIException as unresolvable_exception:
-                submission_links = submission.get('_links')
-                if submission_links and 'self' in submission_links:
-                    submission_url = submission_links['self']
+                submission_url = self._extract_submission_url(submission)
+                if submission_url:
                     report = {
                         'errorCode': 'ingest.exporter.error',
                         'message': 'Error occurred while attempting to export bundle.',
@@ -146,6 +145,14 @@ class IngestExporter:
                     self.ingest_api.createSubmissionError(submission_url, json.dumps(report))
                 raise
         return saved_bundle_uuid
+
+    @staticmethod
+    def _extract_submission_url(self, submission_json):
+        submission_url = None
+        submission_links = submission_json.get('_links')
+        if submission_links:
+            submission_url = submission_links.get('self')
+        return submission_url
 
     def get_metadata_by_type(self, process_info: 'ProcessInfo') -> dict:
         #  given a ProcessInfo, pull out all the metadata and return as a map of UUID->metadata documents
