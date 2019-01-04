@@ -3,6 +3,7 @@
 desc goes here
 """
 import requests
+from hca.util.exceptions import SwaggerAPIException
 
 __author__ = "jupp"
 __license__ = "Apache 2.0"
@@ -28,6 +29,10 @@ DEFAULT_DSS_URL = os.environ.get('DSS_API', 'http://dss.dev.data.humancellatlas.
 
 BUNDLE_SCHEMA_BASE_URL = os.environ.get('BUNDLE_SCHEMA_BASE_URL', 'https://schema.humancellatlas.org')
 
+ERROR_TEMPLATE = {
+    'errorCode': 'ingest.exporter.error',
+    'message': 'Error occurred while attempting to export bundle.'
+}
 
 # TODO shouldn't source from environment variables, must pass config or params instead, throw an error if not in config
 
@@ -106,7 +111,15 @@ class IngestExporter:
             self.logger.info("Execution Time: %s seconds" % (time.time() - start_time))
         else:
             self.logger.info('Uploading metadata files...')
-            self.upload_metadata_files(submission_uuid, files_by_type)
+            try:
+                self.upload_metadata_files(submission_uuid, files_by_type)
+            except BundleDSSError as bundle_error:
+                submission_url = self._extract_submission_url(submission)
+                if submission_url:
+                    report = ERROR_TEMPLATE.copy()
+                    report['details'] = str(bundle_error)
+                    self.ingest_api.createSubmissionError(submission_url, report)
+                raise
 
             metadata_files = self.get_metadata_files(files_by_type)
             data_files = self.get_data_files(metadata_by_type['file'])
@@ -116,24 +129,39 @@ class IngestExporter:
             bundle_manifest.dataFiles = [data_file['dss_uuid'] for data_file in data_files]
             self.logger.info('Saving files in DSS...')
             bundle_uuid = bundle_manifest.bundleUuid
-            created_files = self.put_files_in_dss(bundle_uuid, bundle_files, process_info)
+            try:
+                created_files = self.put_files_in_dss(bundle_uuid, bundle_files, process_info)
 
-            # check all created files
-            self.logger.info('Verifying if all files get successfully copied to DSS...')
-            self.verify_files(created_files)
+                # check all created files
+                self.logger.info('Verifying if all files get successfully copied to DSS...')
+                self.verify_files(created_files)
 
-            self.logger.info('Saving bundle in DSS...')
-            self.put_bundle_in_dss(bundle_uuid, created_files)
+                self.logger.info('Saving bundle in DSS...')
+                self.put_bundle_in_dss(bundle_uuid, created_files)
 
-            self.logger.info('Saving bundle manifest...')
-            self.ingest_api.createBundleManifest(bundle_manifest)
+                self.logger.info('Saving bundle manifest...')
+                self.ingest_api.createBundleManifest(bundle_manifest)
 
-            saved_bundle_uuid = bundle_manifest.bundleUuid
+                saved_bundle_uuid = bundle_manifest.bundleUuid
 
-            self.logger.info('Bundle ' + bundle_uuid + ' was successfully created!')
-            self.logger.info("Execution Time: %s seconds" % (time.time() - start_time))
-
+                self.logger.info('Bundle ' + bundle_uuid + ' was successfully created!')
+                self.logger.info("Execution Time: %s seconds" % (time.time() - start_time))
+            except SwaggerAPIException as unresolvable_exception:
+                submission_url = self._extract_submission_url(submission)
+                if submission_url:
+                    report = ERROR_TEMPLATE.copy()
+                    report['details'] = str(unresolvable_exception)
+                    self.ingest_api.createSubmissionError(submission_url, json.dumps(report))
+                raise
         return saved_bundle_uuid
+
+    @staticmethod
+    def _extract_submission_url(self, submission_json):
+        submission_url = None
+        submission_links = submission_json.get('_links')
+        if submission_links:
+            submission_url = submission_links.get('self')
+        return submission_url
 
     def get_metadata_by_type(self, process_info: 'ProcessInfo') -> dict:
         #  given a ProcessInfo, pull out all the metadata and return as a map of UUID->metadata documents
@@ -388,6 +416,7 @@ class IngestExporter:
             message = "An error occurred on uploading bundle files: " + str(e)
             raise BundleFileUploadError(message)
 
+    # TODO handle error #export-errors
     def put_bundle_in_dss(self, bundle_uuid, created_files):
         try:
             created_bundle = self.dss_api.put_bundle(bundle_uuid, created_files)
@@ -397,6 +426,7 @@ class IngestExporter:
 
         return created_bundle
 
+    # TODO handle error #exporter-errors
     def put_files_in_dss(self, bundle_uuid, files_to_put, process_info):
         created_files = []
 
