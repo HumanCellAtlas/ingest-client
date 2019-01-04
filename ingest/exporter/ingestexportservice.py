@@ -144,6 +144,7 @@ class IngestExporter:
                         'details': str(unresolvable_exception)
                     }
                     self.ingest_api.createSubmissionError(submission_url, json.dumps(report))
+                raise
         return saved_bundle_uuid
 
     def get_metadata_by_type(self, process_info: 'ProcessInfo') -> dict:
