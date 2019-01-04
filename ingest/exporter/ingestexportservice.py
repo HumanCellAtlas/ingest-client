@@ -29,6 +29,10 @@ DEFAULT_DSS_URL = os.environ.get('DSS_API', 'http://dss.dev.data.humancellatlas.
 
 BUNDLE_SCHEMA_BASE_URL = os.environ.get('BUNDLE_SCHEMA_BASE_URL', 'https://schema.humancellatlas.org')
 
+ERROR_TEMPLATE = {
+    'errorCode': 'ingest.exporter.error',
+    'message': 'Error occurred while attempting to export bundle.'
+}
 
 # TODO shouldn't source from environment variables, must pass config or params instead, throw an error if not in config
 
@@ -107,7 +111,15 @@ class IngestExporter:
             self.logger.info("Execution Time: %s seconds" % (time.time() - start_time))
         else:
             self.logger.info('Uploading metadata files...')
-            self.upload_metadata_files(submission_uuid, files_by_type)
+            try:
+                self.upload_metadata_files(submission_uuid, files_by_type)
+            except BundleDSSError as bundle_error:
+                submission_url = self._extract_submission_url(submission)
+                if submission_url:
+                    report = ERROR_TEMPLATE.copy()
+                    report['details'] = str(bundle_error)
+                    self.ingest_api.createSubmissionError(submission_url, report)
+                raise
 
             metadata_files = self.get_metadata_files(files_by_type)
             data_files = self.get_data_files(metadata_by_type['file'])
@@ -137,11 +149,8 @@ class IngestExporter:
             except SwaggerAPIException as unresolvable_exception:
                 submission_url = self._extract_submission_url(submission)
                 if submission_url:
-                    report = {
-                        'errorCode': 'ingest.exporter.error',
-                        'message': 'Error occurred while attempting to export bundle.',
-                        'details': str(unresolvable_exception)
-                    }
+                    report = ERROR_TEMPLATE.copy()
+                    report['details'] = str(unresolvable_exception)
                     self.ingest_api.createSubmissionError(submission_url, json.dumps(report))
                 raise
         return saved_bundle_uuid
@@ -543,7 +552,6 @@ class IngestExporter:
         return schema_uri["content"]["describedBy"].rsplit('/', 1)[-1]
 
     def upload_file(self, submission_uuid, filename, content, content_type):
-        # TODO add handler (409 conflict) #export-error
         file_description = self.staging_api.getFile(submission_uuid, filename)
 
         if file_description:
