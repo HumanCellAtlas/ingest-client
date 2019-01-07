@@ -113,7 +113,7 @@ class IngestExporter:
             self.logger.info('Uploading metadata files...')
             try:
                 self.upload_metadata_files(submission_uuid, files_by_type)
-            except BundleDSSError as bundle_error:
+            except Error as bundle_error:
                 submission_url = self._extract_submission_url(submission)
                 if submission_url:
                     report = ERROR_TEMPLATE.copy()
@@ -146,7 +146,7 @@ class IngestExporter:
 
                 self.logger.info('Bundle ' + bundle_uuid + ' was successfully created!')
                 self.logger.info("Execution Time: %s seconds" % (time.time() - start_time))
-            except SwaggerAPIException as unresolvable_exception:
+            except Exception as unresolvable_exception:
                 submission_url = self._extract_submission_url(submission)
                 if submission_url:
                     report = ERROR_TEMPLATE.copy()
