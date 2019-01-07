@@ -41,7 +41,7 @@ class SchemaTemplate:
 
         if not list_of_schema_urls:
             list_of_schema_urls = self.get_latest_submittable_schemas(self.ingest_api_url)
-            print ("Got schemas from ingest api " + "\n".join(list_of_schema_urls))
+            print ("Got schemas from ingest api\n " + "\n".join(list_of_schema_urls))
 
         self.schema_urls = list_of_schema_urls
         self._load(self.schema_urls)
@@ -228,6 +228,7 @@ class SchemaParser:
             "user_friendly" : None,
             "description": None,
             "example" : None,
+            "guidelines" : None,
             "value_type": "string"}
 
     def _extract_property(self, data, *args, **kwargs):
@@ -275,6 +276,9 @@ class SchemaParser:
 
         if "example" in data:
             dic["example"] = data["example"]
+
+        if "guidelines" in data:
+            dic["guidelines"] = data["guidelines"]
 
         return doctict.DotDict(dic)
 

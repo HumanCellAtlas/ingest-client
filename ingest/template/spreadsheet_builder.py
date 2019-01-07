@@ -50,7 +50,7 @@ class SpreadsheetBuilder:
             uf = str(template.lookup(col_name + "."+property)) if template.lookup(col_name + "."+property) else ""
             return uf
         except:
-            print("No property for " + col_name)
+            print("No property " + property + " for " + col_name)
             return ""
 
     def get_user_friendly(self, template, col_name):
@@ -105,6 +105,7 @@ class SpreadsheetBuilder:
                     desc = self._get_value_for_column(template, cols, "description")
                     required = bool(self._get_value_for_column(template, cols, "required"))
                     example_text = self._get_value_for_column(template, cols, "example")
+                    guidelines = self._get_value_for_column(template, cols, "guidelines")
 
                     hf = self.header_format
                     if required:
@@ -126,8 +127,10 @@ class SpreadsheetBuilder:
 
 
                     # write example
-                    worksheet.write(2, col_number, example_text, self.desc_format)
-
+                    if example_text:
+                        worksheet.write(2, col_number, guidelines + ' For example: ' + example_text, self.desc_format)
+                    else:
+                        worksheet.write(2, col_number, guidelines , self.desc_format)
 
                     # set the key
                     worksheet.write(3, col_number, cols, self.locked_format)
@@ -184,7 +187,22 @@ if __name__ == '__main__':
     if args.hidden_row:
         hide_row = True
 
-    all_schemas = schema_template.SchemaTemplate(ingest_url).get_schema_urls()
+    # all_schemas = schema_template.SchemaTemplate(ingest_url).get_schema_urls()
+
+    all_schemas = [
+        "http://schema.dev.data.humancellatlas.org/type/project/9.0.5/project",
+        "http://schema.dev.data.humancellatlas.org/type/biomaterial/8.6.2/cell_suspension",
+        "http://schema.dev.data.humancellatlas.org/type/biomaterial/6.3.4/specimen_from_organism",
+        "http://schema.dev.data.humancellatlas.org/type/biomaterial/12.0.0/donor_organism",
+        "http://schema.dev.data.humancellatlas.org/type/file/1.1.5/supplementary_file",
+        "http://schema.dev.data.humancellatlas.org/type/file/7.0.1/sequence_file",
+        "http://schema.dev.data.humancellatlas.org/type/protocol/biomaterial_collection/8.2.7/collection_protocol",
+        "http://schema.dev.data.humancellatlas.org/type/protocol/biomaterial_collection/5.0.4/dissociation_protocol",
+        "http://schema.dev.data.humancellatlas.org/type/protocol/biomaterial_collection/2.2.6/enrichment_protocol",
+        "http://schema.dev.data.humancellatlas.org/type/protocol/sequencing/4.4.0/library_preparation_protocol",
+        "http://schema.dev.data.humancellatlas.org/type/protocol/sequencing/9.0.3/sequencing_protocol",
+        "http://schema.dev.data.humancellatlas.org/type/process/6.0.2/process"
+    ]
 
     spreadsheet_builder = SpreadsheetBuilder(output_file, hide_row)
     spreadsheet_builder.generate_workbook(tabs_template=args.yaml, schema_urls=all_schemas)
