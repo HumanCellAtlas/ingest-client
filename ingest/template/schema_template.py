@@ -41,7 +41,7 @@ class SchemaTemplate:
 
         if not list_of_schema_urls:
             list_of_schema_urls = self.get_latest_submittable_schemas(self.ingest_api_url)
-            print ("Got schemas from ingest api " + "\n".join(list_of_schema_urls))
+            print ("Got schemas from ingest api\n " + "\n".join(list_of_schema_urls))
 
         self.schema_urls = list_of_schema_urls
         self._load(self.schema_urls)
