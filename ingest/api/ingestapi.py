@@ -318,6 +318,7 @@ class IngestApi:
             "content": json.loads(jsonObject)  # TODO jsonObject should be a dict()
         }
 
+        time.sleep(0.001)
         r = requests.post(fileSubmissionsUrl, data=json.dumps(fileToCreateObject), headers=self.headers)
 
         # TODO Investigate why core is returning internal server error
@@ -335,6 +336,7 @@ class IngestApi:
                     content = newContent
 
                 fileUrl = fileInIngest['_links']['self']['href']
+                time.sleep(0.001)
                 r = requests.patch(fileUrl, data=json.dumps({'content': content}), headers=self.headers)
                 self.logger.debug(f'Updating existing content of file {fileUrl}.')
 
@@ -415,9 +417,9 @@ class IngestApi:
             r = None
             
             try:
+                time.sleep(0.001)
                 r = func(*args)
                 r.raise_for_status()
-
             except HTTPError:
                 self.logger.error("\nResponse was: " + str(r.status_code) + " (" + r.text + ")")
                 tries += 1

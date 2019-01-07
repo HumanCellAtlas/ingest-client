@@ -8,11 +8,14 @@ import json
 import logging
 import os
 import time
-
+from ingest.utils.s2s_token_client import S2STokenClient
+from ingest.utils.token_manager import TokenManager
 
 __author__ = "jupp"
 __license__ = "Apache 2.0"
 __date__ = "12/09/2017"
+
+AUTH_INFO_ENV_VAR = "EXPORTER_AUTH_INFO"
 
 
 class DssApi:
@@ -20,6 +23,7 @@ class DssApi:
         format = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
         logging.basicConfig(format=format)
         logging.getLogger("requests").setLevel(logging.WARNING)
+        logging.getLogger("requests").setLevel(logging.INFO)
         self.logger = logging.getLogger(__name__)
 
         self.url = url if url else "https://dss.dev.data.humancellatlas.org"
@@ -31,7 +35,7 @@ class DssApi:
 
         self.headers = {'Content-type': 'application/json'}
 
-        self.hca_client = hca.dss.DSSClient()
+        self.hca_client = hca.dss.DSSClient(swagger_url=f'{self.url}/v1/swagger.json')
         self.hca_client.host = self.url + "/v1"
         self.creator_uid = 8008
 
@@ -39,8 +43,14 @@ class DssApi:
         url = file["url"]
         uuid = file["dss_uuid"]
 
-        now = datetime.datetime.utcnow().strftime("%Y-%m-%dT%H%M%S.%fZ")
-        version = file["update_date"] if "update_date" in file and file["update_date"] else now
+        version = datetime.datetime.utcnow().strftime("%Y-%m-%dT%H%M%S.%fZ")
+
+        update_date = file.get("update_date")
+
+        if update_date:
+            update_date = datetime.datetime.strptime(update_date, "%Y-%m-%dT%H:%M:%S.%fZ")
+            update_date = update_date.strftime("%Y-%m-%dT%H%M%S.%fZ")
+            version = update_date
 
         # retrying file creation 20 times
         max_retries = 20
@@ -142,7 +152,6 @@ class DssApi:
 
 
 # Module Exceptions
-
 
 class Error(Exception):
     """Base-class for all exceptions raised by this module."""
