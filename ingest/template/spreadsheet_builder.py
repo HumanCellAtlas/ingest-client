@@ -111,12 +111,17 @@ class SpreadsheetBuilder:
 
                     # write example
                     if example_text:
+                        # print("Example " + example_text)
                         worksheet.write(2, col_number, guidelines + ' For example: ' + example_text, self.desc_format)
                     else:
+                        # print("Guideline " + guidelines)
                         worksheet.write(2, col_number, guidelines , self.desc_format)
 
                     # set the key
                     worksheet.write(3, col_number, cols, self.locked_format)
+
+                    if cols.split(".")[-1] == "ontology" or cols.split(".")[-1] == "ontology_label":
+                        worksheet.set_column(col_number, col_number, None, None, {'hidden': True})
 
                     if self.hidden_row:
                         worksheet.set_row(3, None, None, {'hidden': True})
@@ -170,22 +175,22 @@ if __name__ == '__main__':
     if args.hidden_row:
         hide_row = True
 
-    # all_schemas = schema_template.SchemaTemplate(ingest_url).get_schema_urls()
+    all_schemas = schema_template.SchemaTemplate(ingest_url).get_schema_urls()
 
-    all_schemas = [
-        "http://schema.dev.data.humancellatlas.org/type/project/9.0.5/project",
-        "http://schema.dev.data.humancellatlas.org/type/biomaterial/8.6.2/cell_suspension",
-        "http://schema.dev.data.humancellatlas.org/type/biomaterial/6.3.4/specimen_from_organism",
-        "http://schema.dev.data.humancellatlas.org/type/biomaterial/12.0.0/donor_organism",
-        "http://schema.dev.data.humancellatlas.org/type/file/1.1.5/supplementary_file",
-        "http://schema.dev.data.humancellatlas.org/type/file/7.0.1/sequence_file",
-        "http://schema.dev.data.humancellatlas.org/type/protocol/biomaterial_collection/8.2.7/collection_protocol",
-        "http://schema.dev.data.humancellatlas.org/type/protocol/biomaterial_collection/5.0.4/dissociation_protocol",
-        "http://schema.dev.data.humancellatlas.org/type/protocol/biomaterial_collection/2.2.6/enrichment_protocol",
-        "http://schema.dev.data.humancellatlas.org/type/protocol/sequencing/4.4.0/library_preparation_protocol",
-        "http://schema.dev.data.humancellatlas.org/type/protocol/sequencing/9.0.3/sequencing_protocol",
-        "http://schema.dev.data.humancellatlas.org/type/process/6.0.2/process"
-    ]
+    # all_schemas = [
+    #     "http://schema.dev.data.humancellatlas.org/type/project/9.0.5/project",
+    #     "http://schema.dev.data.humancellatlas.org/type/biomaterial/8.6.2/cell_suspension",
+    #     "http://schema.dev.data.humancellatlas.org/type/biomaterial/6.3.4/specimen_from_organism",
+    #     "http://schema.dev.data.humancellatlas.org/type/biomaterial/12.0.0/donor_organism",
+    #     "http://schema.dev.data.humancellatlas.org/type/file/1.1.5/supplementary_file",
+    #     "http://schema.dev.data.humancellatlas.org/type/file/7.0.1/sequence_file",
+    #     "http://schema.dev.data.humancellatlas.org/type/protocol/biomaterial_collection/8.2.7/collection_protocol",
+    #     "http://schema.dev.data.humancellatlas.org/type/protocol/biomaterial_collection/5.0.4/dissociation_protocol",
+    #     "http://schema.dev.data.humancellatlas.org/type/protocol/biomaterial_collection/2.2.6/enrichment_protocol",
+    #     "http://schema.dev.data.humancellatlas.org/type/protocol/sequencing/4.4.0/library_preparation_protocol",
+    #     "http://schema.dev.data.humancellatlas.org/type/protocol/sequencing/9.0.3/sequencing_protocol",
+    #     "http://schema.dev.data.humancellatlas.org/type/process/6.0.2/process"
+    # ]
 
     spreadsheet_builder = SpreadsheetBuilder(output_file, hide_row)
     spreadsheet_builder.generate_workbook(tabs_template=args.yaml, schema_urls=all_schemas)
