@@ -36,7 +36,7 @@ class TestSchemaTemplate(TestCase):
 
         self.assertEqual("this is a foo bar", sheet.cell(row=2, column=1).value)
         self.assertEqual("FOO BAR", sheet.cell(row=1, column=1).value)
-        self.assertEqual("e.g. foo", sheet.cell(row=3, column=1).value)
+        self.assertEqual("For example: e.g. foo", sheet.cell(row=3, column=1).value.strip())
         self.assertEqual("donor_organism.foo_bar", sheet.cell(row=4, column=1).value)
 
 
