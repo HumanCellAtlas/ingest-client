@@ -41,7 +41,7 @@ class SchemaTemplate:
 
         if not list_of_schema_urls:
             list_of_schema_urls = self.get_latest_submittable_schemas(self.ingest_api_url)
-            print ("Got schemas from ingest api\n " + "\n".join(list_of_schema_urls))
+            # print ("Got schemas from ingest api\n " + "\n".join(list_of_schema_urls))
 
         self.schema_urls = list_of_schema_urls
         self._load(self.schema_urls)
@@ -207,7 +207,8 @@ class SchemaParser:
     def _recursive_fill_properties(self, path, data):
 
         for property_name, property_block in self._get_schema_properties_from_object(data).items():
-            self._collect_required_properties(property_block)
+            #try moving this line into the _get_schema_properties_from_object
+            # self._collect_required_properties(property_block)
 
             new_path =  self._get_path(path, property_name)
             property = self._extract_property(property_block, property_name=property_name, key=new_path)
@@ -336,6 +337,7 @@ class SchemaParser:
         return url.rsplit('/', 1)[-1]
 
     def _get_schema_properties_from_object(self, object):
+        self._collect_required_properties(object)
 
         if "items" in object and isinstance(object["items"], dict):
             return self._get_schema_properties_from_object(object["items"])
