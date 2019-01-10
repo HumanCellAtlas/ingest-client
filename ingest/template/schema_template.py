@@ -171,7 +171,8 @@ class SchemaParser:
     def _load_schema(self, json_schema):
         """load a JSON schema representation"""
         # use jsonrefs to resolve all $refs in json
-        data = jsonref.loads(json.dumps(json_schema))
+        # data = jsonref.loads(json.dumps(json_schema))
+        data = json_schema
         return self.__initialise_template(data)
 
     def key_lookup(self, key):
@@ -213,6 +214,9 @@ class SchemaParser:
             new_path =  self._get_path(path, property_name)
             property = self._extract_property(property_block, property_name=property_name, key=new_path)
             doctict.put(self.schema_template.get_template(), new_path, property)
+
+            if "$ref" in property_block:
+                property_block = jsonref.loads(json.dumps(property_block))
             self._recursive_fill_properties(new_path, property_block)
 
     def _collect_required_properties(self, data):
@@ -340,7 +344,10 @@ class SchemaParser:
         self._collect_required_properties(object)
 
         if "items" in object and isinstance(object["items"], dict):
-            return self._get_schema_properties_from_object(object["items"])
+            if "$ref" in object["items"]:
+                return self._get_schema_properties_from_object(jsonref.loads(json.dumps(object["items"])))
+            else:
+                return self._get_schema_properties_from_object(object["items"])
 
         if "properties" in object and isinstance(object["properties"], dict):
             keys_to_remove = set(self.properties_to_ignore).intersection(set(object["properties"].keys()))

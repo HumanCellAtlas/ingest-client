@@ -101,11 +101,32 @@ class SpreadsheetBuilder:
 
                 for cols in detail["columns"]:
 
-                    uf = self.get_user_friendly(template, cols).upper()
-                    desc = self._get_value_for_column(template, cols, "description")
-                    required = bool(self._get_value_for_column(template, cols, "required"))
-                    example_text = self._get_value_for_column(template, cols, "example")
-                    guidelines = self._get_value_for_column(template, cols, "guidelines")
+                    if cols.split(".")[-1] == "text":
+                        uf = self.get_user_friendly(template, cols.replace('.text', '')).upper()
+                    else:
+                        uf = self.get_user_friendly(template, cols).upper()
+                    if cols.split(".")[-1] == "text":
+                        desc = self._get_value_for_column(template, cols.replace('.text', ''), "description")
+                        if desc == "":
+                            desc = self._get_value_for_column(template, cols, "description")
+                    else:
+                        desc = self._get_value_for_column(template, cols, "description")
+                    if cols.split(".")[-1] == "text":
+                        required = bool(self._get_value_for_column(template, cols.replace('.text', ''), "required"))
+                    else:
+                        required = bool(self._get_value_for_column(template, cols, "required"))
+                    if cols.split(".")[-1] == "text":
+                        example_text = self._get_value_for_column(template, cols.replace('.text', ''), "example")
+                        if example_text == "":
+                            example_text = self._get_value_for_column(template, cols, "example")
+                    else:
+                        example_text = self._get_value_for_column(template, cols, "example")
+                    if cols.split(".")[-1] == "text":
+                        guidelines = self._get_value_for_column(template, cols.replace('.text', ''), "guidelines")
+                        if guidelines == "":
+                            guidelines = self._get_value_for_column(template, cols, "guidelines")
+                    else:
+                        guidelines = self._get_value_for_column(template, cols, "guidelines")
 
                     hf = self.header_format
                     if required:
