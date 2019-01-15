@@ -13,6 +13,8 @@ import uuid
 from requests import HTTPError
 from urllib.parse import urljoin, quote
 
+from ingest.api.requests_utils import optimistic_session
+
 
 class IngestApi:
     def __init__(self, url=None, ingest_api_root=None):
@@ -319,7 +321,9 @@ class IngestApi:
         }
 
         time.sleep(0.001)
-        r = requests.post(fileSubmissionsUrl, data=json.dumps(fileToCreateObject), headers=self.headers)
+        with optimistic_session(fileSubmissionsUrl) as session:
+            r = session.post(fileSubmissionsUrl, data=json.dumps(fileToCreateObject),
+                              headers=self.headers)
 
         # TODO Investigate why core is returning internal server error
         if r.status_code == requests.codes.conflict or r.status_code == requests.codes.internal_server_error:
