@@ -355,8 +355,9 @@ class IngestApi:
         submissionUrl = self.get_link_in_submisssion(submissionUrl, entityType)
 
         self.logger.debug("posting " + submissionUrl)
-        r = requests.post(submissionUrl, data=jsonObject, headers=auth_headers)
-        r.raise_for_status()
+        with optimistic_session(submissionUrl) as session:
+            r = session.post(submissionUrl, data=jsonObject, headers=auth_headers)
+            r.raise_for_status()
         return r.json()
 
     # given a HCA object return the URI for the object from ingest
