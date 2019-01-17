@@ -16,8 +16,6 @@ import uuid
 import time
 import polling
 
-from urllib.parse import urljoin
-
 import ingest.api.dssapi as dssapi
 import ingest.api.ingestapi as ingestapi
 import ingest.api.stagingapi as stagingapi
@@ -26,8 +24,6 @@ from requests.exceptions import HTTPError
 DEFAULT_INGEST_URL = os.environ.get('INGEST_API', 'http://api.ingest.dev.data.humancellatlas.org')
 DEFAULT_STAGING_URL = os.environ.get('STAGING_API', 'http://upload.dev.data.humancellatlas.org')
 DEFAULT_DSS_URL = os.environ.get('DSS_API', 'http://dss.dev.data.humancellatlas.org')
-
-BUNDLE_SCHEMA_BASE_URL = os.environ.get('BUNDLE_SCHEMA_BASE_URL', 'https://schema.humancellatlas.org')
 
 ERROR_TEMPLATE = {
     'errorCode': 'ingest.exporter.error',
