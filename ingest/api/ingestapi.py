@@ -5,13 +5,14 @@ desc goes here
 import json
 import logging
 import os
-import requests
 import time
 import uuid
-
-
-from requests import HTTPError
 from urllib.parse import urljoin, quote
+
+import requests
+from requests import HTTPError
+
+from ingest.api.requests_utils import optimistic_session
 
 
 class IngestApi:
@@ -319,7 +320,9 @@ class IngestApi:
         }
 
         time.sleep(0.001)
-        r = requests.post(fileSubmissionsUrl, data=json.dumps(fileToCreateObject), headers=self.headers)
+        with optimistic_session(fileSubmissionsUrl) as session:
+            r = session.post(fileSubmissionsUrl, data=json.dumps(fileToCreateObject),
+                              headers=self.headers)
 
         # TODO Investigate why core is returning internal server error
         if r.status_code == requests.codes.conflict or r.status_code == requests.codes.internal_server_error:
@@ -351,9 +354,10 @@ class IngestApi:
         submissionUrl = self.get_link_in_submisssion(submissionUrl, entityType)
 
         self.logger.debug("posting " + submissionUrl)
-        r = requests.post(submissionUrl, data=jsonObject, headers=auth_headers)
-        r.raise_for_status()
-        return r.json()
+        with optimistic_session(submissionUrl) as session:
+            r = session.post(submissionUrl, data=jsonObject, headers=auth_headers)
+            r.raise_for_status()
+            return r.json()
 
     # given a HCA object return the URI for the object from ingest
     def getObjectId(self, entity):
