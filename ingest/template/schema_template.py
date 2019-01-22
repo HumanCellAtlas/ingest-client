@@ -157,7 +157,7 @@ class SchemaParser:
 
         # always ignore these
         self.properties_to_ignore = \
-            ["describedBy", "schema_version", "schema_type"]
+            ["describedBy", "schema_version", "schema_type", "provenance"]
 
         self.schema_template = template
 
