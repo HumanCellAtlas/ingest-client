@@ -139,6 +139,14 @@ class TestSchemaTemplate(TestCase):
         with self.assertRaises(UnknownKeyException):
             self.assertTrue(template.lookup("donor_organism.format.uuid.retrievable"))
 
+    def test_referenced_property(self):
+        data = '{"id" : "' + self.dummyDonorUri + '", "properties": { "biomaterial_core" : {"user_friendly": "foo", "description" : "foo bar" , "properties" : { "biomaterial_id" : { "user_friendly" : "biomaterial id", "description" : "a biomaterial id" }}}}}'
+        template = schema_mock.get_template_for_json(data=data)
+
+        self.assertEqual(template.lookup("donor_organism.biomaterial_core.user_friendly"), "foo")
+        self.assertEqual(template.lookup("donor_organism.biomaterial_core.description"), "foo bar")
+        self.assertEqual(template.lookup("donor_organism.biomaterial_core.biomaterial_id.user_friendly"), "biomaterial id")
+        self.assertEqual(template.lookup("donor_organism.biomaterial_core.biomaterial_id.description"), "a biomaterial id")
 
 
     def test_example(self):
