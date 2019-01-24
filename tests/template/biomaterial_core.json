@@ -1,0 +1,3 @@
+{
+ "properties" : { "biomaterial_id" : { "user_friendly" : "biomaterial id", "description" : "a biomaterial id" }}
+}
