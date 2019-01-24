@@ -18,6 +18,8 @@ from ingest.template.schema_template import SchemaTemplate
 from ingest.template.schema_template import UnknownKeyException
 from ingest.template.schema_template import RootSchemaException
 
+import os
+
 class TestSchemaTemplate(TestCase):
     def setUp(self):
         self.longMessage = True
@@ -139,6 +141,18 @@ class TestSchemaTemplate(TestCase):
         with self.assertRaises(UnknownKeyException):
             self.assertTrue(template.lookup("donor_organism.format.uuid.retrievable"))
 
+
+    def test_referenced_property(self):
+        dir_path = os.path.dirname(os.path.realpath(__file__))
+
+        biomaterial_core_path = os.path.realpath(os.sep + os.sep + dir_path + os.sep + "biomaterial_core.json")
+        data = '{"id" : "' + self.dummyDonorUri + '", "properties": { "biomaterial_core" : {"user_friendly": "foo", "description" : "foo bar" , "$ref" : "file:'+biomaterial_core_path+'"}}}'
+        template = schema_mock.get_template_for_json(data=data)
+
+        self.assertEqual("foo", template.lookup("donor_organism.biomaterial_core.user_friendly"))
+        self.assertEqual("foo bar", template.lookup("donor_organism.biomaterial_core.description") )
+        self.assertEqual("biomaterial id", template.lookup("donor_organism.biomaterial_core.biomaterial_id.user_friendly"))
+        self.assertEqual("a biomaterial id", template.lookup("donor_organism.biomaterial_core.biomaterial_id.description"))
 
 
     def test_example(self):
