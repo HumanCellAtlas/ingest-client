@@ -270,8 +270,14 @@ class SchemaParser:
                 dic["user_friendly"] = data["user_friendly"]
                 self._update_label_to_key_map(data["user_friendly"], kwargs.get("key"))
 
+            elif isinstance(data, jsonref.JsonRef) and "user_friendly" in data.__reference__:
+                dic["user_friendly"] = data.__reference__["user_friendly"]
+                self._update_label_to_key_map(data.__reference__["user_friendly"], kwargs.get("key"))
+
         if "description" in data:
             dic["description"] = data["description"]
+        elif isinstance(data, jsonref.JsonRef) and "description" in data.__reference__:
+            dic["description"] = data.__reference__["description"]
 
         if "format" in data:
             dic["format"] = data["format"]
