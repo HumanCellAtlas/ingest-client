@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """
-Description goes here
+Script to demodularise the HCA metadta schemas by resolvong all $refs
 """
 __author__ = "jupp"
 __license__ = "Apache 2.0"
@@ -55,6 +55,6 @@ for uri in list_of_schema_urls:
         schema_name =  uri.rsplit('/', 1)[-1]
         domain = parser.get_domain_entity_from_url(uri).rsplit('/', 1)[0]
 
-        with open('/Users/jupp/dev/hca/metadata-schema/json_schema/demod/'+domain+'/'+schema_name+'.yaml', 'w') as outfile:
+        with open(domain+'/'+schema_name+'.yaml', 'w') as outfile:
             # yaml_dump(yaml_load(json.dump(demod_schema)), default_flow_style=False)
             json.dump(demod_schema, outfile, indent=4)
