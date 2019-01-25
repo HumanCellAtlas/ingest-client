@@ -347,7 +347,7 @@ class SchemaParser:
         self._collect_required_properties(object)
 
         if "items" in object and isinstance(object["items"], dict):
-           return self._get_schema_properties_from_object(object["items"])
+            return self._get_schema_properties_from_object(object["items"])
 
         if "properties" in object and isinstance(object["properties"], dict):
             keys_to_remove = set(self.properties_to_ignore).intersection(set(object["properties"].keys()))
