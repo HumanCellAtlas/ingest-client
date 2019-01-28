@@ -172,14 +172,14 @@ class SpreadsheetBuilder:
             # worksheet.merge_range(first_col=0, first_row=4, last_col= len(detail["columns"]), last_row=4, cell_format= self.header_format, data="FILL OUT INFORMATION BELOW THIS ROW")
         return (col_number, worksheet) # objects needed if linking is required
 
-    def _add_links(self, tab_name, worksheet, col_number, hf):
+    def _add_links(self, tab_name, worksheet, col_number, hf, display_name):
 
         link_to = self.backbone_links.get(tab_name)
         if isinstance(link_to, str):
             link_to = [link_to]
         for link in link_to:
-            uf = str('DERIVED FROM  {}'.format(link))
-            desc = str('Enter biomaterial ID from {} tab that this biomaterial was derrived from.'.format(tab_name))
+            uf = str('DERIVED FROM {}'.format(display_name.upper()))
+            desc = str('Enter biomaterial ID from {} tab that this biomaterial was derrived from.'.format(display_name))
             # TODO add a check to make sure describeby is “/biomaterial/…”
 
             key = link + '.biomaterial_core.biomaterial_id'
@@ -194,13 +194,14 @@ class SpreadsheetBuilder:
 
         tabs = template.get_tabs_config()
 
+
         for tab in tabs.lookup("tabs"):
+
+            display_name = next(iter(tab.values())).get('display_name')
 
             for tab_name, detail in tab.items():
                 metadata = tabs._dic.get("meta_data_properties")
                 domain_entity = metadata.get(tab_name).get('schema').get('domain_entity')
-                print(self.backbone_links)
-                print(domain_entity)
 
                 if domain_entity == 'biomaterial' and self.backbone_links is not False:
                     if tab_name in self.backbone_links:  # ignored if not provided
@@ -208,13 +209,11 @@ class SpreadsheetBuilder:
                         col_number = no_linking[0]
                         worksheet = no_linking[1]
                         hf = self.header_format
-                        self._add_links(tab_name, worksheet, col_number, hf)
+                        self._add_links(tab_name, worksheet, col_number, hf, display_name)
                     else:
                         pass
                 else:
                     self._tab_build(detail, template)
-
-
 
 
         if self.include_schemas_tab:
