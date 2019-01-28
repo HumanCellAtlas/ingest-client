@@ -41,4 +41,3 @@ class TabConfig:
 
     def get_key_for_label(self, label):
         return self._key_label[label.lower()]
-

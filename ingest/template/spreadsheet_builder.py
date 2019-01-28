@@ -20,7 +20,7 @@ DEFAULT_SCHEMAS_ENDPOINT = "/schemas/search/latestSchemas"
 
 
 class SpreadsheetBuilder:
-    def __init__(self, output_file, hide_row=False):
+    def __init__(self, output_file, added_links, hide_row=False):
 
         self.workbook = xlsxwriter.Workbook(output_file)
 
@@ -30,6 +30,8 @@ class SpreadsheetBuilder:
         self.desc_format = self.workbook.add_format({'font_color': '#808080', 'italic': True, 'text_wrap': True, 'font_size': 12, 'valign': 'top'})
         self.include_schemas_tab = False
         self.hidden_row = hide_row
+        self.backbone_links = added_links
+
 
     def generate_workbook(self, tabs_template=None, schema_urls=list(), include_schemas_tab=False):
 
@@ -87,6 +89,107 @@ class SpreadsheetBuilder:
         for index, url in enumerate(schema_urls):
             worksheet.write(index + 1, 0, url)
 
+    def _tab_build(self, detail, template):
+
+        worksheet = self.workbook.add_worksheet(detail["display_name"])
+
+        col_number = 0
+
+        for cols in detail["columns"]:
+
+            if cols.split(".")[-1] == "text":
+                uf = self.get_user_friendly(template, cols.replace('.text', '')).upper()
+            else:
+                uf = self.get_user_friendly(template, cols).upper()
+            if cols.split(".")[-1] == "text":
+                desc = self._get_value_for_column(template, cols.replace('.text', ''), "description")
+                if desc == "":
+                    desc = self._get_value_for_column(template, cols, "description")
+            else:
+                desc = self._get_value_for_column(template, cols, "description")
+            if cols.split(".")[-1] == "text":
+                required = bool(self._get_value_for_column(template, cols.replace('.text', ''), "required"))
+            else:
+                required = bool(self._get_value_for_column(template, cols, "required"))
+            if cols.split(".")[-1] == "text":
+                example_text = self._get_value_for_column(template, cols.replace('.text', ''), "example")
+                if example_text == "":
+                    example_text = self._get_value_for_column(template, cols, "example")
+            else:
+                example_text = self._get_value_for_column(template, cols, "example")
+            if cols.split(".")[-1] == "text":
+                guidelines = self._get_value_for_column(template, cols.replace('.text', ''), "guidelines")
+                if guidelines == "":
+                    guidelines = self._get_value_for_column(template, cols, "guidelines")
+            else:
+                guidelines = self._get_value_for_column(template, cols, "guidelines")
+
+            hf = self.header_format
+            if required:
+                uf = uf + " (Required)"
+
+            # set the user friendly name
+            worksheet.write(0, col_number, uf, hf)
+
+            if len(uf) < 25:
+                col_w = 25
+            else:
+                col_w = len(uf)
+
+            worksheet.set_column(col_number, col_number, col_w)
+
+            # set the description
+            worksheet.write(1, col_number, desc, self.desc_format)
+
+            # write example
+            if example_text:
+                # print("Example " + example_text)
+                worksheet.write(2, col_number, guidelines + ' For example: ' + example_text, self.desc_format)
+            else:
+                # print("Guideline " + guidelines)
+                worksheet.write(2, col_number, guidelines, self.desc_format)
+
+            # set the key
+            worksheet.write(3, col_number, cols, self.locked_format)
+
+            if cols.split(".")[-1] == "ontology" or cols.split(".")[-1] == "ontology_label":
+                worksheet.set_column(col_number, col_number, None, None, {'hidden': True})
+
+            if self.hidden_row:
+                worksheet.set_row(3, None, None, {'hidden': True})
+
+            if col_number == 0:
+                worksheet.set_row(0, 30)
+                worksheet.set_row(4, 30)
+
+                worksheet.write(4, col_number, "FILL OUT INFORMATION BELOW THIS ROW", hf)
+
+            else:
+                worksheet.write(4, col_number, '', hf)
+
+            col_number += 1
+
+            # worksheet.merge_range(first_col=0, first_row=4, last_col= len(detail["columns"]), last_row=4, cell_format= self.header_format, data="FILL OUT INFORMATION BELOW THIS ROW")
+        return (col_number, worksheet) # objects needed if linking is required
+
+    def _add_links(self, tab_name, worksheet, col_number, hf):
+
+        link_to = self.backbone_links.get(tab_name)
+        if isinstance(link_to, str):
+            link_to = [link_to]
+        for link in link_to:
+            uf = str('DERIVED FROM  {}'.format(link))
+            desc = str('Enter biomaterial ID from {} tab that this biomaterial was derrived from.'.format(tab_name))
+            # TODO add a check to make sure describeby is “/biomaterial/…”
+
+            key = link + '.biomaterial_core.biomaterial_id'
+            worksheet.write(0, col_number, uf, hf)  # write user friendly
+            worksheet.write(1, col_number, desc, self.desc_format)  # write description
+            worksheet.write(3, col_number, key, self.locked_format)
+            worksheet.write(4, col_number, '', hf)
+            col_number += 1
+            # print('Make link from {} to {}'.format(tab_name, link_to))
+
     def _build(self, template):
 
         tabs = template.get_tabs_config()
@@ -94,88 +197,25 @@ class SpreadsheetBuilder:
         for tab in tabs.lookup("tabs"):
 
             for tab_name, detail in tab.items():
+                metadata = tabs._dic.get("meta_data_properties")
+                domain_entity = metadata.get(tab_name).get('schema').get('domain_entity')
+                print(self.backbone_links)
+                print(domain_entity)
 
-                worksheet = self.workbook.add_worksheet(detail["display_name"])
-
-                col_number = 0
-
-                for cols in detail["columns"]:
-
-                    if cols.split(".")[-1] == "text":
-                        uf = self.get_user_friendly(template, cols.replace('.text', '')).upper()
+                if domain_entity == 'biomaterial' and self.backbone_links is not False:
+                    if tab_name in self.backbone_links:  # ignored if not provided
+                        no_linking = self._tab_build(detail, template)
+                        col_number = no_linking[0]
+                        worksheet = no_linking[1]
+                        hf = self.header_format
+                        self._add_links(tab_name, worksheet, col_number, hf)
                     else:
-                        uf = self.get_user_friendly(template, cols).upper()
-                    if cols.split(".")[-1] == "text":
-                        desc = self._get_value_for_column(template, cols.replace('.text', ''), "description")
-                        if desc == "":
-                            desc = self._get_value_for_column(template, cols, "description")
-                    else:
-                        desc = self._get_value_for_column(template, cols, "description")
-                    if cols.split(".")[-1] == "text":
-                        required = bool(self._get_value_for_column(template, cols.replace('.text', ''), "required"))
-                    else:
-                        required = bool(self._get_value_for_column(template, cols, "required"))
-                    if cols.split(".")[-1] == "text":
-                        example_text = self._get_value_for_column(template, cols.replace('.text', ''), "example")
-                        if example_text == "":
-                            example_text = self._get_value_for_column(template, cols, "example")
-                    else:
-                        example_text = self._get_value_for_column(template, cols, "example")
-                    if cols.split(".")[-1] == "text":
-                        guidelines = self._get_value_for_column(template, cols.replace('.text', ''), "guidelines")
-                        if guidelines == "":
-                            guidelines = self._get_value_for_column(template, cols, "guidelines")
-                    else:
-                        guidelines = self._get_value_for_column(template, cols, "guidelines")
-
-                    hf = self.header_format
-                    if required:
-                        uf = uf + " (Required)"
+                        pass
+                else:
+                    self._tab_build(detail, template)
 
 
-                    # set the user friendly name
-                    worksheet.write(0, col_number, uf, hf)
 
-                    if len(uf) < 25:
-                        col_w = 25
-                    else:
-                        col_w = len(uf)
-
-                    worksheet.set_column(col_number, col_number, col_w)
-
-                    # set the description
-                    worksheet.write(1, col_number, desc, self.desc_format)
-
-
-                    # write example
-                    if example_text:
-                        # print("Example " + example_text)
-                        worksheet.write(2, col_number, guidelines + ' For example: ' + example_text, self.desc_format)
-                    else:
-                        # print("Guideline " + guidelines)
-                        worksheet.write(2, col_number, guidelines , self.desc_format)
-
-                    # set the key
-                    worksheet.write(3, col_number, cols, self.locked_format)
-
-                    if cols.split(".")[-1] == "ontology" or cols.split(".")[-1] == "ontology_label":
-                        worksheet.set_column(col_number, col_number, None, None, {'hidden': True})
-
-                    if self.hidden_row:
-                        worksheet.set_row(3, None, None, {'hidden': True})
-
-                    if col_number == 0:
-                        worksheet.set_row(0, 30)
-                        worksheet.set_row(4, 30)
-
-                        worksheet.write(4, col_number, "FILL OUT INFORMATION BELOW THIS ROW", hf)
-
-                    else:
-                        worksheet.write(4, col_number, '', hf)
-
-                    col_number+=1
-
-                    # worksheet.merge_range(first_col=0, first_row=4, last_col= len(detail["columns"]), last_row=4, cell_format= self.header_format, data="FILL OUT INFORMATION BELOW THIS ROW")
 
         if self.include_schemas_tab:
             self._write_schemas(template.get_schema_urls())
@@ -195,6 +235,8 @@ if __name__ == '__main__':
                       help="Optional ingest API URL - if not default (prod)")
     parser.add_argument("-r", "--hidden_row", action="store_true",
                       help="Binary flag - if set, the 4th row will be hidden")
+    parser.add_argument("-l", "--add_links", dest="add_links",
+                        help="Optional pointer to link backbone to add linking columns")
     args = parser.parse_args()
 
     if not args.output:
@@ -213,6 +255,12 @@ if __name__ == '__main__':
     if args.hidden_row:
         hide_row = True
 
+    if not args.add_links:
+        added_links = False
+    else:
+        added_links = args.add_links
+
+
     all_schemas = schema_template.SchemaTemplate(ingest_url).get_schema_urls()
 
     # all_schemas = [
@@ -230,7 +278,7 @@ if __name__ == '__main__':
     #     "http://schema.dev.data.humancellatlas.org/type/process/6.0.2/process"
     # ]
 
-    spreadsheet_builder = SpreadsheetBuilder(output_file, hide_row)
+    spreadsheet_builder = SpreadsheetBuilder(output_file, hide_row, added_links)
     spreadsheet_builder.generate_workbook(tabs_template=args.yaml, schema_urls=all_schemas)
     spreadsheet_builder.save_workbook()
 

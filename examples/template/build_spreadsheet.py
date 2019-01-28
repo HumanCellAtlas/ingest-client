@@ -41,3 +41,15 @@ dev_schemas.append("http://schema.dev.data.humancellatlas.org/type/process/lates
 spreadsheet_builder = SpreadsheetBuilder("my_tabs_config.xlsx")
 spreadsheet_builder.generate_workbook(tabs_template="my_tabs_config.yaml", schema_urls=dev_schemas)
 spreadsheet_builder.save_workbook()
+
+
+# build a generic spreadsheet from the latest schemas with a links config
+
+added_links = {"specimen_from_organism": "donor_organism",
+               "cell_suspension": "specimen_from_organism",
+               "sequence_file": "cell_suspension"
+               }
+
+spreadsheet_builder = SpreadsheetBuilder("generic.xlsx", added_links=added_links)
+spreadsheet_builder.generate_workbook()
+spreadsheet_builder.save_workbook()
