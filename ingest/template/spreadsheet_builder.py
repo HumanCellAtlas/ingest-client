@@ -279,4 +279,3 @@ if __name__ == '__main__':
     spreadsheet_builder = SpreadsheetBuilder(output_file, hide_row, added_links)
     spreadsheet_builder.generate_workbook(tabs_template=args.yaml, schema_urls=all_schemas)
     spreadsheet_builder.save_workbook()
-
