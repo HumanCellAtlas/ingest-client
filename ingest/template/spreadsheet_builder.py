@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 """
 Given a tabs template and list of schema URLs, will output a spreadsheet in Xls format
 """
