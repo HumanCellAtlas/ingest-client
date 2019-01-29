@@ -153,6 +153,6 @@ protocol_links = {
     ]
   }
 
-spreadsheet_builder = SpreadsheetBuilder("generic.xlsx", biomaterial_links=biomaterial_links, protocol_links=protocol_links)
+spreadsheet_builder = SpreadsheetBuilder("generic.xlsx", biomaterial_links=biomaterial_links, protocol_links=protocol_links, fill_examples=True)
 spreadsheet_builder.generate_workbook()
 spreadsheet_builder.save_workbook()

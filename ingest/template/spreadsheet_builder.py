@@ -19,7 +19,7 @@ DEFAULT_SCHEMAS_ENDPOINT = "/schemas/search/latestSchemas"
 
 
 class SpreadsheetBuilder:
-    def __init__(self, output_file, biomaterial_links, protocol_links, hide_row=False):
+    def __init__(self, output_file, biomaterial_links, protocol_links, hide_row=False, fill_examples=False):
 
         self.workbook = xlsxwriter.Workbook(output_file)
 
@@ -29,6 +29,7 @@ class SpreadsheetBuilder:
         self.desc_format = self.workbook.add_format({'font_color': '#808080', 'italic': True, 'text_wrap': True, 'font_size': 12, 'valign': 'top'})
         self.include_schemas_tab = False
         self.hidden_row = hide_row
+        self.fill_examples = fill_examples
         self.backbone_links = biomaterial_links
         self.protocol_links = protocol_links
 
@@ -166,6 +167,20 @@ class SpreadsheetBuilder:
 
             else:
                 worksheet.write(4, col_number, '', hf)
+
+            if self.fill_examples:
+                double_prefix = 'Should be one of: '
+                metadata_fs = ';'
+                if example_text.startswith(double_prefix):
+                    example_text_ =  example_text[len(double_prefix):].split(',')[0] # TODO Hard coding assumptions alert!
+                elif metadata_fs in example_text:
+                    example_text_ = example_text.split(metadata_fs)[0]
+                else:
+                    example_text_ = example_text
+
+                worksheet.write(5, col_number, example_text_, self.locked_format)
+
+            # TODO noticed donor_organism.genus_species is present. Should this be donor_organism.genus_species.text?
 
             col_number += 1
 
@@ -325,6 +340,8 @@ if __name__ == '__main__':
                         help="Optional pointer to link backbone to add linking columns")
     parser.add_argument("-p", "--protocol_linking", dest="protocol_linking",
                         help="Optional pointer to link protocols")
+    parser.add_argument("-r", "--fill_examples", action="store_true",
+                        help="Binary flag - if set, where possible examples will be used as data")
     args = parser.parse_args()
 
 
@@ -344,6 +361,11 @@ if __name__ == '__main__':
 
     if args.hidden_row:
         hide_row = True
+
+    fill_examples = False
+
+    if args.fill_examples:
+        fill_examples = True
 
     if not args.biomaterial_linking:
         biomaterial_links = False
@@ -375,6 +397,6 @@ if __name__ == '__main__':
     #     "http://schema.dev.data.humancellatlas.org/type/process/6.0.2/process"
     # ]
 
-    spreadsheet_builder = SpreadsheetBuilder(output_file, hide_row, biomaterial_links, protocol_links)
+    spreadsheet_builder = SpreadsheetBuilder(output_file, hide_row, biomaterial_links, protocol_links, fill_examples)
     spreadsheet_builder.generate_workbook(tabs_template=args.yaml, schema_urls=all_schemas)
     spreadsheet_builder.save_workbook()
