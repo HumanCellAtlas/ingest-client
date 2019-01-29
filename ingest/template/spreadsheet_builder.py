@@ -177,6 +177,21 @@ class SpreadsheetBuilder:
         link_to = self.backbone_links.get(tab_name)
         if isinstance(link_to, str):
             link_to = [link_to]
+
+        protocols_links_to_add = self.include_protocol_links(tab_name)
+        # TODO make code add the links to protocols here
+        if len(protocols_links_to_add) > 0:
+            for protocol in protocols_links_to_add:
+                uf = self.entity_uf.get(protocol).get('user_friendly').upper()
+                desc = str('Enter protocol ID from {} tab that this entity was derrived from.'.format(uf))
+                key = protocol + '.protocol_core.protocol_id'
+
+                worksheet.write(0, col_number, uf, hf)  # write user friendly
+                worksheet.write(1, col_number, desc, self.desc_format)  # write description
+                worksheet.write(3, col_number, key, self.locked_format)
+                worksheet.write(4, col_number, '', hf)
+                col_number += 1
+
         for link in link_to:
             display_name = entity_uf.get(link).get('user_friendly').upper()
             uf = str('DERIVED FROM {}'.format(display_name))
@@ -216,6 +231,7 @@ class SpreadsheetBuilder:
                     for entity1, entity2 in self.backbone_links.items():
                         entities.add(entity1)
                         entities.add(entity2)
+                    self.entities = entities
 
 
                     if entity_type == 'biomaterial'or entity_type == 'file':
@@ -225,10 +241,10 @@ class SpreadsheetBuilder:
                                 col_number = no_linking[0]
                                 worksheet = no_linking[1]
                                 hf = self.header_format
-                                print('Adding links {}'.format(tab_name))
+                                # print('Adding links {}'.format(tab_name))
                                 self._add_links(tab_name, worksheet, col_number, hf, entity_uf)
                             else:
-                                print('NOT adding links {}'.format(tab_name))
+                                # print('NOT adding links {}'.format(tab_name))
                                 self._tab_build(detail, template) # adds top level entity with no link
                         else:
                             pass # skips unlinked biomaterial tabs
@@ -260,6 +276,17 @@ class SpreadsheetBuilder:
                         protocols_to_add.add(protocol)
         return protocols_to_add
 
+    def include_protocol_links(self, tab_name):
+        protocols_links_to_add = set()
+        for protocol, loc in self.protocol_links.items():
+            for pair in loc:
+                if pair.get('output') == tab_name:
+                    if pair.get('source') in self.entities:
+                        protocols_links_to_add.add(protocol)
+        return protocols_links_to_add
+
+
+
     def get_uf_names(self, tabs):
         metadata = tabs._dic.get("meta_data_properties")
 
@@ -271,6 +298,7 @@ class SpreadsheetBuilder:
             domain_entity = metadata.get(name).get('schema').get('domain_entity')
 
             entity_uf[name] = {'user_friendly' : uf_name, 'entity_type' : domain_entity}
+        self.entity_uf = entity_uf
 
 
 
