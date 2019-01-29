@@ -19,7 +19,7 @@ DEFAULT_SCHEMAS_ENDPOINT = "/schemas/search/latestSchemas"
 
 
 class SpreadsheetBuilder:
-    def __init__(self, output_file, added_links, hide_row=False):
+    def __init__(self, output_file, biomaterial_links, protocol_links, hide_row=False):
 
         self.workbook = xlsxwriter.Workbook(output_file)
 
@@ -29,7 +29,8 @@ class SpreadsheetBuilder:
         self.desc_format = self.workbook.add_format({'font_color': '#808080', 'italic': True, 'text_wrap': True, 'font_size': 12, 'valign': 'top'})
         self.include_schemas_tab = False
         self.hidden_row = hide_row
-        self.backbone_links = added_links
+        self.backbone_links = biomaterial_links
+        self.protocol_links = protocol_links
 
 
     def generate_workbook(self, tabs_template=None, schema_urls=list(), include_schemas_tab=False):
@@ -171,17 +172,22 @@ class SpreadsheetBuilder:
             # worksheet.merge_range(first_col=0, first_row=4, last_col= len(detail["columns"]), last_row=4, cell_format= self.header_format, data="FILL OUT INFORMATION BELOW THIS ROW")
         return (col_number, worksheet) # objects needed if linking is required
 
-    def _add_links(self, tab_name, worksheet, col_number, hf, display_name):
+    def _add_links(self, tab_name, worksheet, col_number, hf, entity_uf):
 
         link_to = self.backbone_links.get(tab_name)
         if isinstance(link_to, str):
             link_to = [link_to]
         for link in link_to:
-            uf = str('DERIVED FROM {}'.format(display_name.upper()))
-            desc = str('Enter biomaterial ID from {} tab that this biomaterial was derrived from.'.format(display_name))
-            # TODO add a check to make sure describeby is “/biomaterial/…”
+            display_name = entity_uf.get(link).get('user_friendly').upper()
+            uf = str('DERIVED FROM {}'.format(display_name))
+            desc = str('Enter biomaterial ID from {} tab that this entity was derrived from.'.format(display_name))
+            entity_type = entity_uf.get(link).get('entity_type')
 
-            key = link + '.biomaterial_core.biomaterial_id'
+            if entity_type == 'biomaterial':
+                key = link + '.biomaterial_core.biomaterial_id'
+            elif entity_type =='file':
+                key = link + '.file_core.file_id'
+
             worksheet.write(0, col_number, uf, hf)  # write user friendly
             worksheet.write(1, col_number, desc, self.desc_format)  # write description
             worksheet.write(3, col_number, key, self.locked_format)
@@ -192,25 +198,47 @@ class SpreadsheetBuilder:
     def _build(self, template):
 
         tabs = template.get_tabs_config()
-
+        protocols_to_add = self.include_protocols()
+        entity_uf = self.get_uf_names(tabs)
 
         for tab in tabs.lookup("tabs"):
 
-            display_name = next(iter(tab.values())).get('display_name')
+            # display_name = next(iter(tab.values())).get('display_name')
 
             for tab_name, detail in tab.items():
-                metadata = tabs._dic.get("meta_data_properties")
-                domain_entity = metadata.get(tab_name).get('schema').get('domain_entity')
+                # metadata = tabs._dic.get("meta_data_properties")
+                # domain_entity = metadata.get(tab_name).get('schema').get('domain_entity')
 
-                if domain_entity == 'biomaterial' and self.backbone_links is not False:
-                    if tab_name in self.backbone_links:  # ignored if not provided
-                        no_linking = self._tab_build(detail, template)
-                        col_number = no_linking[0]
-                        worksheet = no_linking[1]
-                        hf = self.header_format
-                        self._add_links(tab_name, worksheet, col_number, hf, display_name)
-                    else:
-                        pass
+                entity_type = entity_uf.get(tab_name).get('entity_type')
+
+                if self.backbone_links is not False:
+                    entities = set()
+                    for entity1, entity2 in self.backbone_links.items():
+                        entities.add(entity1)
+                        entities.add(entity2)
+
+
+                    if entity_type == 'biomaterial'or entity_type == 'file':
+                        if tab_name in entities:  # ignored if not provided
+                            if tab_name in self.backbone_links.keys():
+                                no_linking = self._tab_build(detail, template)
+                                col_number = no_linking[0]
+                                worksheet = no_linking[1]
+                                hf = self.header_format
+                                print('Adding links {}'.format(tab_name))
+                                self._add_links(tab_name, worksheet, col_number, hf, entity_uf)
+                            else:
+                                print('NOT adding links {}'.format(tab_name))
+                                self._tab_build(detail, template) # adds top level entity with no link
+                        else:
+                            pass # skips unlinked biomaterial tabs
+
+                    if entity_type.startswith('protocol'):
+                        if tab_name in protocols_to_add:
+                            self._tab_build(detail, template)
+                        else:
+                            pass # skip protocols that have never been used between backbone entities provided
+
                 else:
                     self._tab_build(detail, template)
 
@@ -219,6 +247,38 @@ class SpreadsheetBuilder:
             self._write_schemas(template.get_schema_urls())
 
         return self
+
+    def include_protocols(self): # generate a list of protocol tabs that should be included given a backbone and protocol linking list
+
+        protocols_to_add = set()
+        for output, source in self.backbone_links.items():
+            for protocol, context_list in self.protocol_links.items():
+                for context in context_list:
+                    context_source = context.get('source')
+                    context_output = context.get('output')
+                    if output == context_output and source == context_source:
+                        protocols_to_add.add(protocol)
+        return protocols_to_add
+
+    def get_uf_names(self, tabs):
+        metadata = tabs._dic.get("meta_data_properties")
+
+        entity_uf = {}
+        for tab in tabs.lookup("tabs"):
+            name = next(iter(tab.keys()))
+            uf_name = next(iter(tab.values())).get('display_name')
+
+            domain_entity = metadata.get(name).get('schema').get('domain_entity')
+
+            entity_uf[name] = {'user_friendly' : uf_name, 'entity_type' : domain_entity}
+
+
+
+        return entity_uf
+
+
+
+
 
 
 
@@ -233,9 +293,13 @@ if __name__ == '__main__':
                       help="Optional ingest API URL - if not default (prod)")
     parser.add_argument("-r", "--hidden_row", action="store_true",
                       help="Binary flag - if set, the 4th row will be hidden")
-    parser.add_argument("-l", "--add_links", dest="add_links",
+    parser.add_argument("-b", "--biomaterial_linking", dest="biomaterial_linking",
                         help="Optional pointer to link backbone to add linking columns")
+    parser.add_argument("-p", "--protocol_linking", dest="protocol_linking",
+                        help="Optional pointer to link protocols")
     args = parser.parse_args()
+
+
 
     if not args.output:
         output_file = "template_spreadsheet.xlsx"
@@ -253,10 +317,17 @@ if __name__ == '__main__':
     if args.hidden_row:
         hide_row = True
 
-    if not args.add_links:
-        added_links = False
+    if not args.biomaterial_linking:
+        biomaterial_links = False
     else:
-        added_links = args.add_links
+        biomaterial_links = args.biomaterial_linking
+
+    if not args.protocol_linking:
+        protocol_links = False
+    else:
+        protocol_links = args.protocol_linking
+
+
 
 
     all_schemas = schema_template.SchemaTemplate(ingest_url).get_schema_urls()
@@ -276,6 +347,6 @@ if __name__ == '__main__':
     #     "http://schema.dev.data.humancellatlas.org/type/process/6.0.2/process"
     # ]
 
-    spreadsheet_builder = SpreadsheetBuilder(output_file, hide_row, added_links)
+    spreadsheet_builder = SpreadsheetBuilder(output_file, hide_row, biomaterial_links, protocol_links)
     spreadsheet_builder.generate_workbook(tabs_template=args.yaml, schema_urls=all_schemas)
     spreadsheet_builder.save_workbook()

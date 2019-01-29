@@ -45,11 +45,114 @@ from ingest.template.spreadsheet_builder import SpreadsheetBuilder
 
 # build a generic spreadsheet from the latest schemas with a links config
 
-added_links = {"specimen_from_organism": "donor_organism",
+biomaterial_links = {"specimen_from_organism": "donor_organism",
                "cell_suspension": "specimen_from_organism",
                "sequence_file": "cell_suspension"
                }
 
-spreadsheet_builder = SpreadsheetBuilder("generic.xlsx", added_links=added_links)
+protocol_links = {
+    "collection_protocol": [
+      {
+        "source": "donor_organism",
+        "output": "specimen_from_organism"
+      }
+    ],
+    "aggregate_generation_protocol": [
+      {
+        "source": "cell_line",
+        "output": "organoid"
+      },
+      {
+        "source": "specimen_from_organism",
+        "output": "organoid"
+      }
+    ],
+    "differentiation_protocol": [
+      {
+        "source": "cell_line",
+        "output": "cell_suspension"
+      },
+      {
+        "source": "cell_line",
+        "output": "cell_line"
+      },
+      {
+        "source": "cell_line",
+        "output": "organoid"
+      }
+    ],
+    "dissociation_protocol": [
+       {
+        "source": "specimen_from_organism",
+        "output": "cell_line"
+      },
+      {
+        "source": "specimen_from_organism",
+        "output": "cell_suspension"
+      },
+      {
+        "source": "cell_line",
+        "output": "cell_suspension"
+      },
+       {
+        "source": "organoid",
+        "output": "cell_suspension"
+      }
+    ],
+    "enrichment_protocol": [
+      {
+        "source": "specimen_from_organism",
+        "output": "cell_line"
+      },
+      {
+        "source": "specimen_from_organism",
+        "output": "cell_suspension"
+      },
+      {
+        "source": "cell_line",
+        "output": "cell_suspension"
+      },
+      {
+        "source": "organoid",
+        "output": "cell_suspension"
+      }
+    ],
+    "ipsc_induction_protocol": [
+       {
+        "source": "cell_line",
+        "output": "cell_line"
+      },
+      {
+        "source": "specimen_from_organism",
+        "output": "cell_line"
+      }
+    ],
+    "imaging_preparation_protocol": [
+      {
+        "source": "specimen_from_organism",
+        "output": "imaged_specimen"
+      }
+    ],
+    "imaging_protocol": [
+      {
+        "source": "imaged_specimen",
+        "output": "image_file"
+      }
+    ],
+    "library_preparation_protocol": [
+      {
+        "source": "cell_suspension",
+        "output": "sequence_file"
+      }
+    ],
+    "sequencing_protocol": [
+      {
+        "source": "cell_suspension",
+        "output": "sequence_file"
+      }
+    ]
+  }
+
+spreadsheet_builder = SpreadsheetBuilder("generic.xlsx", biomaterial_links=biomaterial_links, protocol_links=protocol_links)
 spreadsheet_builder.generate_workbook()
 spreadsheet_builder.save_workbook()
