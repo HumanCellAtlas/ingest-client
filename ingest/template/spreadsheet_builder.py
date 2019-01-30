@@ -172,15 +172,28 @@ class SpreadsheetBuilder:
                 double_prefix = 'Should be one of: '
                 metadata_fs = ';'
                 if example_text.startswith(double_prefix):
-                    example_text_ =  example_text[len(double_prefix):].split(',')[0] # TODO Hard coding assumptions alert!
+                    example_text_ =  example_text[len(double_prefix):].split(',')[0] # TODO hard coded assumption?
                 elif metadata_fs in example_text:
                     example_text_ = example_text.split(metadata_fs)[0]
                 else:
                     example_text_ = example_text
 
+                prog_name = cols.split('.')
+
+                # the first ID field
+                if (len(prog_name) == 3) and (prog_name[2].endswith('_id') and (prog_name[1].endswith('_core') and (col_number == 0))): # TODO hard coded assumption?
+                    example_text_ = prog_name[0] + '_' + str(0) # TODO add row counter here to support multiple row fills
+                # the name field
+                if (len(prog_name) == 3) and (prog_name[2].endswith('_name') and (prog_name[1].endswith('_core'))):  # TODO hard coded assumption?
+                        example_text_ = prog_name[0] + '_' + str(0)
+                 # the description field
+                if (len(prog_name) == 3) and (prog_name[2].endswith('_description') and (prog_name[1].endswith('_core'))):  # TODO hard coded assumption?
+                            example_text_ = 'This is a description of ' + prog_name[0]
+
                 worksheet.write(5, col_number, example_text_, self.locked_format)
 
-            # TODO noticed donor_organism.genus_species is present. Should this be donor_organism.genus_species.text?
+            # TODO noticed donor_organism.genus_species is present. This is a bug. Should be donor_organism.genus_species.text.
+            # TODO noticed library_preparation_protocol.cell_barcode.barcode_offset has a 0 as the example in the schema but it doesnt show
 
             col_number += 1
 
