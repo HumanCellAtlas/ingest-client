@@ -139,7 +139,10 @@ class SchemaTemplate:
                 "Can't map the key to a known JSON schema property: " + str(column))
 
     def get_tab_key(self, label):
-        return self._tab_config.get_key_for_label(label)
+        try:
+            return self._tab_config.get_key_for_label(label)
+        except KeyError as key_error:
+            raise UnknownKeyException(f'No key found for {label}.')
 
     def _get_level_one(self, key):
         return key.split('.')[0]

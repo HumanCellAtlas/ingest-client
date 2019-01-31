@@ -133,6 +133,21 @@ class TestSchemaTemplate(TestCase):
         self.assertEqual('donor_organism', template.get_tab_key('donor_organism'))
         self.assertEqual('donor_organism', template.get_tab_key('DONOR_ORGANISM'))
 
+    def test_get_tab_key_not_found(self):
+        # given:
+        donor_organism_data = f'{{"id": "{self.dummyDonorUri}"}}'
+        template = schema_mock.get_template_for_json(data=donor_organism_data)
+
+        # when:
+        exception_raised = None
+        try:
+            template.get_tab_key('does not exist')
+        except UnknownKeyException as exception:
+            exception_raised = exception
+
+        # then:
+        self.assertIsNotNone(exception_raised)
+
     def test_description(self):
         data = '{"id" : "' + self.dummyDonorUri + '", "properties": {"foo_bar": {"description" : "Foo is a bar"}} }'
         template = schema_mock.get_template_for_json(data=data)
