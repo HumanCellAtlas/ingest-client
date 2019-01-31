@@ -9,16 +9,15 @@ __date__ = "01/05/2018"
 
 import unittest
 from unittest import TestCase
-from unittest.mock import patch, MagicMock
 
 import tests.template.schema_mock_utils as schema_mock
-
-from ingest.template.schema_template import SchemaParser
-from ingest.template.schema_template import SchemaTemplate
-from ingest.template.schema_template import UnknownKeyException
 from ingest.template.schema_template import RootSchemaException
+from ingest.template.schema_template import SchemaParser
+from ingest.template.schema_template import UnknownKeyException
+
 
 class TestSchemaTemplate(TestCase):
+
     def setUp(self):
         self.longMessage = True
         self.dummyProjectUri = "https://schema.humancellatlas.org/type/project/5.1.0/project"
