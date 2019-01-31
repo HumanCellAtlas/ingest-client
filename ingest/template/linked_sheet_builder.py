@@ -52,12 +52,9 @@ class LinkedSheetBuilder:
                         print('Too many elements provided in backbone config. Aborting.')
                         sys.exit()
 
-                    # todo add func to find protocols
-
-
-
-                    # todo add exemption for project tabs that are always needed
-                    if (tab_name not in backbone_entities) and (tab_name not in self.protocols_to_add):
+                    # todo project sub tabs contact etc need splitting out
+                    always_add = ['project'] # todo NB hardcoded
+                    if (tab_name not in backbone_entities) and (tab_name not in self.protocols_to_add) and (tab_name not in always_add):
                         continue # dont put the tab in if it isn't needed
 
 
@@ -165,28 +162,58 @@ class LinkedSheetBuilder:
         _link_to_tab = [backbone_entities[s - 1] for s in [i for i, e in enumerate(backbone_entities) if e == tab_name]]
 
 
-        # add columns
+        # add link columns
         for link_to_tab in _link_to_tab:
             display_name = self.col_name_mapping.get(link_to_tab)[0]
             prog_name = self.col_name_mapping.get(link_to_tab)[1]
             uf = str('DERIVED FROM {}'.format(display_name.upper()))
             desc = str('Enter biomaterial ID from "{}" tab that this entity was derived from.'.format(display_name))
             # todo make example, guidelines and description fancier
-
-            worksheet.write(0, col_number, uf, hf) # user friendly name
-            worksheet.write(1, col_number, desc, self.desc_format) # description
-            # worksheet.write(2, col_number, ???, self.desc_format) # example
-            worksheet.write(3, col_number, prog_name, self.locked_format) # programatic name
-            worksheet.write(4, col_number, '', hf) # blank column
+            print(prog_name)
+            col_number = self._write_column_head(worksheet, col_number, uf, hf, desc, prog_name)
 
 
-        #TODO given the tab name work out what protocols need to be added
+        # add protocol columns
+        # all_to_add = []
+        reverse_dict = {}
+        for k,v in self.protocols_to_add.items():
+            # all_to_add += v
+            for entity in v:
+                if entity in reverse_dict:
+                    reverse_dict[entity] = reverse_dict.get(entity) + [k]
+                else:
+                    reverse_dict[entity] = [k]
 
+
+        if tab_name in reverse_dict:
+            add_these = reverse_dict.get(tab_name)
+            for protocol in add_these:
+                display_name = self.col_name_mapping.get(protocol)[0]
+                prog_name = self.col_name_mapping.get(protocol)[1]
+                uf = display_name.upper()
+                desc = str('Enter protocol ID from "{}" tab that this entity was derrived from.'.format(display_name))
+                print(prog_name)
+                col_number = self._write_column_head(worksheet, col_number, uf, hf, desc, prog_name)
+
+
+
+
+
+
+    def _write_column_head(self, worksheet, col_number, uf, hf, desc, prog_name):
+        worksheet.write(0, col_number, uf, hf)  # user friendly name
+        worksheet.write(1, col_number, desc, self.desc_format)  # description
+        # worksheet.write(2, col_number, ???, self.desc_format) # example
+        worksheet.write(3, col_number, prog_name, self.locked_format)  # programatic name
+        worksheet.write(4, col_number, '', hf)  # blank column
+        col_number += 1
+        return col_number
 
 
     def _protocol_linking(self, backbone_entities):
         protocol_pairings = self.link_config[1]
-        protocols_to_add = []
+        # protocols_to_add = []
+        protocols_to_add = {}
 
         index_counter = 0
         for entity in backbone_entities:
@@ -201,7 +228,11 @@ class LinkedSheetBuilder:
                 protocol_prog_name = key
                 for pairing in value:
                     if (pairing.get('source') == the_source) and (pairing.get('output') == the_output):
-                        protocols_to_add.append(protocol_prog_name)
+                        # protocols_to_add.append(protocol_prog_name)
+                        if protocol_prog_name in protocols_to_add:
+                            protocols_to_add[protocol_prog_name] = protocols_to_add.get(protocol_prog_name).append(the_output)
+                        else:
+                            protocols_to_add[protocol_prog_name] = [the_output]
 
 
 
@@ -219,7 +250,7 @@ class LinkedSheetBuilder:
                 display_name = value.get('display_name')
                 for col in value.get('columns'):
                     dot_parse = col.split('.')
-                    if (len(dot_parse) == 3) and (dot_parse[2].endswith('_id')) and (dot_parse[1].endswith('_core')):
+                    if (len(dot_parse) == 3) and ((dot_parse[2] == 'protocol_id') or (dot_parse[2] == 'biomaterial_id')) and (dot_parse[1].endswith('_core')): #todo WARNING verging on hard coded
                         prog_name = col
 
                 col_name_mapping[key] = [display_name, prog_name]
