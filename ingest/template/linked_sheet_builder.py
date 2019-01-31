@@ -5,14 +5,14 @@ Given a tabs template and list of schema URLs, will output a spreadsheet in Xls 
 import urllib
 from argparse import ArgumentParser
 
-__author__ = "jupp"
+__author__ = "jupp & hewgreen"
 __license__ = "Apache 2.0"
-__date__ = "08/05/2018"
+__date__ = "31/01/2019"
 
 from ingest.template import schema_template, tabs
 from ingest.template.tabs import TabConfig
 import xlsxwriter
-
+import sys
 
 DEFAULT_INGEST_URL = "http://api.ingest.data.humancellatlas.org"
 DEFAULT_SCHEMAS_ENDPOINT = "/schemas/search/latestSchemas"
@@ -20,7 +20,7 @@ DEFAULT_SCHEMAS_ENDPOINT = "/schemas/search/latestSchemas"
 
 
 class LinkedSheetBuilder:
-    def __init__(self, output_file, hide_row=False):
+    def __init__(self, output_file, hide_row=False, link_config=False, autofill_scale=1):
 
         self.workbook = xlsxwriter.Workbook(output_file)
 
@@ -30,62 +30,9 @@ class LinkedSheetBuilder:
         self.desc_format = self.workbook.add_format({'font_color': '#808080', 'italic': True, 'text_wrap': True, 'font_size': 12, 'valign': 'top'})
         self.include_schemas_tab = False
         self.hidden_row = hide_row
+        self.link_config = link_config
+        self.autofill_scale = autofill_scale
 
-    def generate_workbook(self, tabs_template=None, schema_urls=list(), include_schemas_tab=False):
-
-        self.include_schemas_tab = include_schemas_tab
-        if tabs_template:
-
-            tabs_parser = TabConfig()
-            tabs = tabs_parser.load(tabs_template)
-            template = schema_template.SchemaTemplate(list_of_schema_urls=schema_urls, tab_config=tabs)
-        else:
-            template = schema_template.SchemaTemplate(list_of_schema_urls=schema_urls)
-
-        self._build(template)
-        return self
-
-    def _get_value_for_column(self, template, col_name, property):
-        try:
-            uf = str(template.lookup(col_name + "."+property)) if template.lookup(col_name + "."+property) else ""
-            return uf
-        except:
-            print("No property " + property + " for " + col_name)
-            return ""
-
-    def get_user_friendly(self, template, col_name):
-
-        if '.text' in col_name:
-            parent = col_name.replace('.text', '')
-            key = parent + ".user_friendly"
-        elif '.ontology_label' in col_name:
-            parent = col_name.replace('.ontology_label', '')
-            key = parent + ".user_friendly"
-        elif '.ontology' in col_name:
-            parent = col_name.replace('.ontology', '')
-            key = parent + ".user_friendly"
-
-        else:
-            key = col_name + ".user_friendly"
-        try:
-            uf = str(template.lookup(key)) if template.lookup(key) else col_name
-            if '.ontology_label' in col_name:
-                uf = uf + " ontology label"
-            if '.ontology' in col_name:
-                uf = uf + " ontology ID"
-
-            return uf
-        except:
-            return key
-
-    def save_workbook(self):
-        self.workbook.close()
-
-    def _write_schemas(self, schema_urls):
-        worksheet = self.workbook.add_worksheet("Schemas")
-        worksheet.write(0, 0, "Schemas")
-        for index, url in enumerate(schema_urls):
-            worksheet.write(index + 1, 0, url)
 
     def _build(self, template):
 
@@ -94,6 +41,25 @@ class LinkedSheetBuilder:
         for tab in tabs.lookup("tabs"):
 
             for tab_name, detail in tab.items():
+
+                if (self.link_config != False): # skip protocols and entities not in link_config
+                    backbone = self.link_config[0]
+                    len_check = [len(y) for y in backbone]
+                    if all(x == len_check[0] for x in len_check):
+                        backbone_entities = [list(y.keys())[0] for y in backbone]
+                        self._protocol_linking(backbone_entities)
+                    else:
+                        print('Too many elements provided in backbone config. Aborting.')
+                        sys.exit()
+
+                    # todo add func to find protocols
+
+
+
+                    # todo add exemption for project tabs that are always needed
+                    if (tab_name not in backbone_entities) and (tab_name not in self.protocols_to_add):
+                        continue # dont put the tab in if it isn't needed
+
 
                 worksheet = self.workbook.add_worksheet(detail["display_name"])
 
@@ -179,13 +145,148 @@ class LinkedSheetBuilder:
                         worksheet.write(4, col_number, '', hf)
 
                     col_number+=1
-
                     # worksheet.merge_range(first_col=0, first_row=4, last_col= len(detail["columns"]), last_row=4, cell_format= self.header_format, data="FILL OUT INFORMATION BELOW THIS ROW")
+
+                if self.link_config != False: # after normal cols added to tab add linking cols
+                    self._make_col_name_mapping(template)  # makes lookup dict for uf tab names
+                    self._add_link_cols(tab_name, col_number, worksheet, hf, backbone_entities)
+
+
 
         if self.include_schemas_tab:
             self._write_schemas(template.get_schema_urls())
 
         return self
+
+    def _add_link_cols(self, tab_name, col_number, worksheet, hf, backbone_entities):
+
+        #given the tab name work out what entity links need to be added
+
+        _link_to_tab = [backbone_entities[s - 1] for s in [i for i, e in enumerate(backbone_entities) if e == tab_name]]
+
+
+        # add columns
+        for link_to_tab in _link_to_tab:
+            display_name = self.col_name_mapping.get(link_to_tab)[0]
+            prog_name = self.col_name_mapping.get(link_to_tab)[1]
+            uf = str('DERIVED FROM {}'.format(display_name.upper()))
+            desc = str('Enter biomaterial ID from "{}" tab that this entity was derived from.'.format(display_name))
+            # todo make example, guidelines and description fancier
+
+            worksheet.write(0, col_number, uf, hf) # user friendly name
+            worksheet.write(1, col_number, desc, self.desc_format) # description
+            # worksheet.write(2, col_number, ???, self.desc_format) # example
+            worksheet.write(3, col_number, prog_name, self.locked_format) # programatic name
+            worksheet.write(4, col_number, '', hf) # blank column
+
+
+        #TODO given the tab name work out what protocols need to be added
+
+
+
+    def _protocol_linking(self, backbone_entities):
+        protocol_pairings = self.link_config[1]
+        protocols_to_add = []
+
+        index_counter = 0
+        for entity in backbone_entities:
+            index_counter += 1
+            the_source = entity
+            try:
+                the_output = backbone_entities[index_counter]
+            except IndexError:
+                self.protocols_to_add = protocols_to_add
+                return
+            for key, value in protocol_pairings.items():
+                protocol_prog_name = key
+                for pairing in value:
+                    if (pairing.get('source') == the_source) and (pairing.get('output') == the_output):
+                        protocols_to_add.append(protocol_prog_name)
+
+
+
+
+
+
+
+
+
+
+    def _make_col_name_mapping(self, template):
+        col_name_mapping = {}
+        for entity_type in template._template.get('tabs'):
+            for key, value in entity_type.items():
+                display_name = value.get('display_name')
+                for col in value.get('columns'):
+                    dot_parse = col.split('.')
+                    if (len(dot_parse) == 3) and (dot_parse[2].endswith('_id')) and (dot_parse[1].endswith('_core')):
+                        prog_name = col
+
+                col_name_mapping[key] = [display_name, prog_name]
+        self.col_name_mapping = col_name_mapping
+
+
+    def _get_value_for_column(self, template, col_name, property):
+        try:
+            uf = str(template.lookup(col_name + "."+property)) if template.lookup(col_name + "."+property) else ""
+            return uf
+        except:
+            print("No property " + property + " for " + col_name)
+            return ""
+
+    def get_user_friendly(self, template, col_name):
+
+        if '.text' in col_name:
+            parent = col_name.replace('.text', '')
+            key = parent + ".user_friendly"
+        elif '.ontology_label' in col_name:
+            parent = col_name.replace('.ontology_label', '')
+            key = parent + ".user_friendly"
+        elif '.ontology' in col_name:
+            parent = col_name.replace('.ontology', '')
+            key = parent + ".user_friendly"
+
+        else:
+            key = col_name + ".user_friendly"
+        try:
+            uf = str(template.lookup(key)) if template.lookup(key) else col_name
+            if '.ontology_label' in col_name:
+                uf = uf + " ontology label"
+            if '.ontology' in col_name:
+                uf = uf + " ontology ID"
+
+            return uf
+        except:
+            return key
+
+
+    def _write_schemas(self, schema_urls):
+        worksheet = self.workbook.add_worksheet("Schemas")
+        worksheet.write(0, 0, "Schemas")
+        for index, url in enumerate(schema_urls):
+            worksheet.write(index + 1, 0, url)
+
+    # unmodified by hewgreen
+
+
+    def generate_workbook(self, tabs_template=None, schema_urls=list(), include_schemas_tab=False):
+
+        self.include_schemas_tab = include_schemas_tab
+        if tabs_template:
+
+            tabs_parser = TabConfig()
+            tabs = tabs_parser.load(tabs_template)
+            template = schema_template.SchemaTemplate(list_of_schema_urls=schema_urls, tab_config=tabs)
+        else:
+            template = schema_template.SchemaTemplate(list_of_schema_urls=schema_urls)
+
+        self._build(template)
+        return self
+
+
+    def save_workbook(self):
+        self.workbook.close()
+
 
 
 
