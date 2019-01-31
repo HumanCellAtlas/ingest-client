@@ -103,11 +103,11 @@ class TestSchemaTemplate(TestCase):
         self.assertTrue(template.lookup("donor_organism.file_name.identifiable"))
 
     def test_get_key_for_label(self):
-        data = '{"id" : "' + self.dummyDonorUri + '", "properties": {"foo_bar": {"user_friendly" : "Foo bar"}} }'
+        data = f'{{"id" : "{self.dummyDonorUri}"}}'
         template = schema_mock.get_template_for_json(data=data)
-
         tabs = template.get_tabs_config()
-        self.assertEqual("donor_organism", tabs.get_key_for_label("donor_organism"))
+        self.assertEqual("donor_organism", tabs.get_key_for_label("Donor organism"))
+        self.assertEqual('donor_organism', tabs.get_key_for_label('donor_organism'))
 
     def test_description(self):
         data = '{"id" : "' + self.dummyDonorUri + '", "properties": {"foo_bar": {"description" : "Foo is a bar"}} }'
@@ -137,8 +137,6 @@ class TestSchemaTemplate(TestCase):
 
         with self.assertRaises(UnknownKeyException):
             self.assertTrue(template.lookup("donor_organism.format.uuid.retrievable"))
-
-
 
     def test_example(self):
         data = '{"id" : "' + self.dummyDonorUri + '", "properties": {"foo_bar": {"example" : "Foo is a bar"}} }'

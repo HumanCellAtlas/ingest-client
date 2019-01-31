@@ -129,10 +129,9 @@ class SchemaTemplate:
         return json.dumps(self._template, indent=4)
 
     def get_key_for_label(self, column, tab):
-
         try:
             tab_key = self._tab_config.get_key_for_label(tab)
-            for column_key  in self._parser.key_lookup(column.lower()):
+            for column_key in self._parser.key_lookup(column.lower()):
                 if tab_key == self._get_level_one(column_key):
                     return column_key
         except:

@@ -247,7 +247,6 @@ class TemplateManagerTest(TestCase):
 
     def test_get_entity_of_tab(self):
         # given
-
         key_label_map = {
             'Project': 'project',
             'Donor': 'donor',
@@ -269,6 +268,22 @@ class TemplateManagerTest(TestCase):
 
         # then:
         self.assertEqual('specimen_from_organism', entity)
+
+    def test_get_concrete_entity_of_module_tab(self):
+        # given:
+        schema_template = MagicMock(name='schema_template')
+
+
+        ingest_api = MagicMock(name='ingest_api')
+
+        # and:
+        template_manager = TemplateManager(schema_template, ingest_api)
+
+        # when:
+        concrete_entity = template_manager.get_concrete_entity_of_tab('User - Interests')
+
+        # then:
+        self.assertEqual('user', concrete_entity)
 
 
 class FakeConversion(CellConversion):
