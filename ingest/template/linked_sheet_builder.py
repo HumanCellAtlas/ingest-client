@@ -169,7 +169,6 @@ class LinkedSheetBuilder:
             uf = str('DERIVED FROM {}'.format(display_name.upper()))
             desc = str('Enter biomaterial ID from "{}" tab that this entity was derived from.'.format(display_name))
             # todo make example, guidelines and description fancier
-            print(prog_name)
             col_number = self._write_column_head(worksheet, col_number, uf, hf, desc, prog_name)
 
 
@@ -190,9 +189,8 @@ class LinkedSheetBuilder:
             for protocol in add_these:
                 display_name = self.col_name_mapping.get(protocol)[0]
                 prog_name = self.col_name_mapping.get(protocol)[1]
-                uf = display_name.upper()
+                uf = str('ID OF {} USED'.format(display_name.upper()))
                 desc = str('Enter protocol ID from "{}" tab that this entity was derrived from.'.format(display_name))
-                print(prog_name)
                 col_number = self._write_column_head(worksheet, col_number, uf, hf, desc, prog_name)
 
 
