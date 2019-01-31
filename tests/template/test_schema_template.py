@@ -112,19 +112,26 @@ class TestSchemaTemplate(TestCase):
     def test_get_tab_key(self):
         # given:
         project_data = f'{{"id":"{self.dummyProjectUri}"}}'
-        project_template = schema_mock.get_template_for_json(data=project_data)
-
-        # and:
-        donor_organism_data = f'{{"id": "{self.dummyDonorUri}"}}'
-        donor_organism_template = schema_mock.get_template_for_json(data=donor_organism_data)
+        template = schema_mock.get_template_for_json(data=project_data)
 
         # expect:
-        self.assertEqual('project', project_template.get_tab_key('project'))
-        self.assertEqual('project', project_template.get_tab_key('Project'))
+        self.assertEqual('project', template.get_tab_key('project'))
+        self.assertEqual('project', template.get_tab_key('Project'))
+
+    def test_get_tab_key_case_insensitive(self):
+        # given:
+        donor_organism_data = f'{{"id": "{self.dummyDonorUri}"}}'
+        template = schema_mock.get_template_for_json(data=donor_organism_data)
 
         # and:
-        self.assertEqual('donor_organism', donor_organism_template.get_tab_key('donor_organism'))
-        self.assertEqual('donor_organism', donor_organism_template.get_tab_key('Donor organism'))
+        self.assertEqual('donor_organism', template.get_tab_key('donor_organism'))
+        self.assertEqual('donor_organism', template.get_tab_key('Donor organism'))
+        self.assertEqual('donor_organism', template.get_tab_key('donOr orGanisM'))
+        self.assertEqual('donor_organism', template.get_tab_key('DONOR ORGANISM'))
+
+        # and:
+        self.assertEqual('donor_organism', template.get_tab_key('donor_organism'))
+        self.assertEqual('donor_organism', template.get_tab_key('DONOR_ORGANISM'))
 
     def test_description(self):
         data = '{"id" : "' + self.dummyDonorUri + '", "properties": {"foo_bar": {"description" : "Foo is a bar"}} }'
