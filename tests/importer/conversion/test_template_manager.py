@@ -24,11 +24,8 @@ class TemplateManagerTest(TestCase):
 
     def test_create_template_node(self):
         # given:
-        tab_config = MagicMock(name='tab_config')
-        tab_config.get_key_for_label = MagicMock(return_value='concrete_entity')
-
         schema_template = MagicMock(name='schema_template')
-        schema_template.get_tabs_config = MagicMock(return_value=tab_config)
+        schema_template.get_tab_key = MagicMock(return_value='concrete_entity')
 
         schema_url = 'https://schema.humancellatlas.org/type/biomaterial/5.1.0/donor_organsim'
 
@@ -68,10 +65,8 @@ class TemplateManagerTest(TestCase):
         ingest_api = MagicMock(name='ingest_api')
 
         # and:
-        tabs_config = MagicMock('tabs_config')
         object_type = 'sample_object'
-        tabs_config.get_key_for_label = MagicMock(return_value=object_type)
-        schema_template.get_tabs_config = MagicMock(return_value=tabs_config)
+        schema_template.get_tab_key = MagicMock(return_value=object_type)
 
         # and: set up column spec
         name_column_spec = MagicMock('name_column_spec')
@@ -183,9 +178,8 @@ class TemplateManagerTest(TestCase):
 
     @staticmethod
     def _mock_schema_lookup(schema_template, schema_url='', object_type='', main_category=None):
-        tabs_config = MagicMock('tabs_config')
-        tabs_config.get_key_for_label = MagicMock(return_value=object_type)
-        schema_template.get_tabs_config = MagicMock(return_value=tabs_config)
+        schema_template.get_tabs_config = MagicMock()
+        schema_template.get_tab_key = MagicMock(return_value=object_type)
         schema_template.get_latest_schema = MagicMock(return_value=schema_url)
 
         domain_entity = f'{main_category}/{object_type}' if main_category else object_type
@@ -245,45 +239,16 @@ class TemplateManagerTest(TestCase):
         # then:
         self.assertEqual('https://schema.humancellatlas.org/type/biomaterial/5.0.0/donor_organism', url)
 
-    def test_get_entity_of_tab(self):
+    def test_get_concrete_entity_of_tab(self):
         # given
-        key_label_map = {
-            'Project': 'project',
-            'Donor': 'donor',
-            'Specimen from organism': 'specimen_from_organism'
-        }
-
-        fake_tabs_config = MagicMock(name='tabs_config')
-        fake_tabs_config.get_key_for_label = lambda key: key_label_map.get(key)
-
         schema_template = MagicMock(name='schema_template')
-        schema_template.get_tabs_config = MagicMock(return_value=fake_tabs_config)
-
-        ingest_api = MagicMock(name='ingest_api')
-
-        template_manager = TemplateManager(schema_template, ingest_api)
-
-        # when:
-        entity = template_manager.get_concrete_entity_of_tab('Specimen from organism')
-
-        # then:
-        self.assertEqual('specimen_from_organism', entity)
-
-    def test_get_concrete_entity_of_module_tab(self):
-        # given:
-        schema_template = MagicMock(name='schema_template')
-
-
-        ingest_api = MagicMock(name='ingest_api')
+        schema_template.get_tab_key = MagicMock(return_value='user_profile')
 
         # and:
-        template_manager = TemplateManager(schema_template, ingest_api)
+        manager = TemplateManager(schema_template, MagicMock(name='ingest_api'))
 
-        # when:
-        concrete_entity = template_manager.get_concrete_entity_of_tab('User - Interests')
-
-        # then:
-        self.assertEqual('user', concrete_entity)
+        # expect:
+        self.assertEqual('user_profile', manager.get_concrete_entity_of_tab('User Profile'))
 
 
 class FakeConversion(CellConversion):

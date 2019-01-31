@@ -133,16 +133,7 @@ class TemplateManager:
         return spec.get('schema') if spec else None
 
     def get_concrete_entity_of_tab(self, tab_name):
-        concrete_entity = None
-        try:
-            tabs_config = self.template.get_tabs_config()
-            concrete_entity = tabs_config.get_key_for_label(tab_name)
-        except schema_template.UnknownKeyException as e:
-            pass
-        except KeyError as e:
-            pass
-
-        return concrete_entity
+        return self.template.get_tab_key(tab_name)
 
     def get_key_for_label(self, header_name, tab_name):
         try:
