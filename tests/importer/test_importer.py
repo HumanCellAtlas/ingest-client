@@ -116,25 +116,8 @@ class WorksheetImporterTest(TestCase):
         row_template = MagicMock('row_template')
 
         # and:
-        john_doe_content = {'name': 'John Doe'}
-        john_doe_links = {}
-        john_doe_external_links = {'organisations': ['org_88', 'org_110', 'org_452']}
-        john_doe_linking_details = {'position': 'manager'}
-        john_doe = MetadataEntity(object_id='profile_1', content=john_doe_content,
-                                  links=john_doe_links, external_links=john_doe_external_links,
-                                  linking_details=john_doe_linking_details)
-
-        # and:
-        emma_jackson_content = {'name': 'Emma Jackson'}
-        emma_jackson_links = {'friends': ['profile_19', 'profile_8']}
-        emma_jackson_external_links = {}
-        emma_jackson_linking_details = {}
-        emma_jackson = MetadataEntity(object_id='profile_2', content=emma_jackson_content,
-                                      links=emma_jackson_links,
-                                      external_links=emma_jackson_external_links,
-                                      linking_details=emma_jackson_linking_details)
-
-        # and:
+        john_doe = MetadataEntity(object_id='profile_1')
+        emma_jackson = MetadataEntity(object_id='profile_2')
         row_template.do_import = MagicMock('import_row', side_effect=[john_doe, emma_jackson])
 
         # and:
@@ -155,11 +138,8 @@ class WorksheetImporterTest(TestCase):
 
         # then:
         self.assertEqual(2, len(profile.keys()))
-        self._assert_correct_profile(profile, 'profile_1', john_doe_content, john_doe_links,
-                                     john_doe_external_links, john_doe_linking_details)
-        self._assert_correct_profile(profile, 'profile_2', emma_jackson_content,
-                                     emma_jackson_links, emma_jackson_external_links,
-                                     emma_jackson_linking_details)
+        self.assertEqual(profile.get('profile_1'), john_doe)
+        self.assertEqual(profile.get('profile_2'), emma_jackson)
 
     def test_do_import_no_id_metadata(self):
         # given:
@@ -190,15 +170,8 @@ class WorksheetImporterTest(TestCase):
 
         # then:
         self.assertEqual(2, len(result.keys()))
-
-    def _assert_correct_profile(self, profile, profile_id, expected_content, expected_links,
-                                expected_external_links, expected_linking_details):
-        actual_profile = profile.get(profile_id)
-        self.assertIsNotNone(actual_profile)
-        self.assertEqual(expected_content, actual_profile.get('content'))
-        self.assertEqual(expected_links, actual_profile.get('links_by_entity'))
-        self.assertEqual(expected_external_links, actual_profile.get('external_links_by_entity'))
-        self.assertEqual(expected_linking_details, actual_profile.get('linking_details'))
+        self.assertIn(paper_metadata, result.values())
+        self.assertIn(pen_metadata, result.values())
 
 
 class IngestImporterTest(TestCase):

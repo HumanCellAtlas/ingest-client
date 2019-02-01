@@ -168,23 +168,13 @@ class WorksheetImporter:
     def do_import(self, worksheet, template: TemplateManager):
         row_template = template.create_row_template(worksheet)
         self.concrete_entity = template.get_concrete_entity_of_tab(worksheet.title)
-        return self._import_using_row_template(template, worksheet, row_template)
 
-    def _import_using_row_template(self, template, worksheet, row_template):
         records = {}
         rows = self._get_data_rows(worksheet, template)
         for index, row in enumerate(rows):
             metadata = row_template.do_import(row)
-
             record_id = self._determine_record_id(metadata)
-
-            records[record_id] = {
-                'content': metadata.content.as_dict(),
-                'links_by_entity': metadata.links,
-                'external_links_by_entity': metadata.external_links,
-                'linking_details': metadata.linking_details,
-                'concrete_type': self.concrete_entity
-            }
+            records[record_id] = metadata
         return records
 
     @staticmethod
