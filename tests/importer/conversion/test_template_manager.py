@@ -243,12 +243,22 @@ class TemplateManagerTest(TestCase):
         # given
         schema_template = MagicMock(name='schema_template')
         schema_template.get_tab_key = MagicMock(return_value='user_profile')
-
-        # and:
         manager = TemplateManager(schema_template, MagicMock(name='ingest_api'))
 
         # expect:
         self.assertEqual('user_profile', manager.get_concrete_entity_of_tab('User Profile'))
+
+    def test_get_concrete_entity_of_module_tab(self):
+        # given:
+        schema_template = MagicMock(name='schema_template')
+        schema_template.get_tab_key = MagicMock(return_value='product')
+        manager = TemplateManager(schema_template, MagicMock(name='ingest_api'))
+
+        # expect:
+        self.assertEqual('product', manager.get_concrete_entity_of_tab('Product - Barcodes'))
+
+        # and:
+        schema_template.get_tab_key.assert_called_with('Product')
 
 
 class FakeConversion(CellConversion):

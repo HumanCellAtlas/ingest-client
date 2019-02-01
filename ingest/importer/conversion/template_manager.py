@@ -1,5 +1,6 @@
 import copy
 import logging
+import re
 
 from openpyxl.worksheet import Worksheet
 
@@ -12,6 +13,9 @@ from ingest.importer.conversion.conversion_strategy import CellConversion, \
 from ingest.importer.conversion.metadata_entity import MetadataEntity
 from ingest.importer.data_node import DataNode
 from ingest.template.schema_template import SchemaTemplate
+
+
+MODULE_TAB_TITLE_PATTERN = re.compile('^(?P<main_label>\w*)( - \w*)?')
 
 
 class TemplateManager:
@@ -133,7 +137,9 @@ class TemplateManager:
         return spec.get('schema') if spec else None
 
     def get_concrete_entity_of_tab(self, tab_name):
-        return self.template.get_tab_key(tab_name)
+        result = MODULE_TAB_TITLE_PATTERN.search(tab_name)
+        main_label = result.group('main_label')
+        return self.template.get_tab_key(main_label)
 
     def get_key_for_label(self, header_name, tab_name):
         try:
