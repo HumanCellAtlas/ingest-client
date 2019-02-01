@@ -36,6 +36,7 @@ class XlsImporter:
         try:
             template_mgr = template_manager.build(ingest_workbook.get_schemas(), self.ingest_api)
         except Exception as e:
+            self.logger.error(e)
             raise SchemaRetrievalError(
                 'An error was encountered while retrieving the schema information to process the spreadsheet.')
 

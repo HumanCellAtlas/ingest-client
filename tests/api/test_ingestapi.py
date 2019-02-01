@@ -48,7 +48,7 @@ class IngestApiTest(TestCase):
         findByUuidHref = submission_search_uri + "/findByUuidHref{?uuid}"
 
         ingestapi = IngestApi(api_url, dict())
-        with patch('ingest.api.ingestapi.IngestApi._get_url_for_link') as mock_get_url_for_link:
+        with patch('ingest.api.ingestapi.IngestApi.get_link_from_resource_url') as mock_get_url_for_link:
             def mock_get_url_for_link_patch(*args, **kwargs):
                 if args[0] == submission_search_uri and args[1] == findByUuidRel:
                     return findByUuidHref

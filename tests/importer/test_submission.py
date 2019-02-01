@@ -86,6 +86,7 @@ class SubmissionTest(TestCase):
         entity_map = MagicMock('entity_map')
         entity_map.count_total = MagicMock(return_value=total_count)
         entity_map.count_entities_of_type = lambda entity: count_per_entity.get(entity)
+        entity_map.count_links = MagicMock(return_value=total_count)
 
         # when:
         submission.define_manifest(entity_map)
@@ -105,6 +106,7 @@ class SubmissionTest(TestCase):
         self.assertEqual(count_per_entity['file'], submitted_json['expectedFiles'])
         self.assertEqual(count_per_entity['protocol'], submitted_json['expectedProtocols'])
         self.assertEqual(count_per_entity['project'], submitted_json['expectedProjects'])
+        self.assertEqual(total_count, submitted_json['expectedLinks'])
 
 
 def _create_spreadsheet_json():
@@ -195,6 +197,8 @@ class IngestSubmitterTest(TestCase):
         # given:
         ingest_api = MagicMock('ingest_api')
         ingest_api.getSubmissionEnvelope = MagicMock()
+        ingest_api.patch = MagicMock()
+        ingest_api.get_link_from_resource = MagicMock()
         submission = self._mock_submission(submission_constructor)
 
         # and:
@@ -214,6 +218,7 @@ class IngestSubmitterTest(TestCase):
 
         # when:
         submitter = IngestSubmitter(ingest_api)
+        submitter.PROGRESS_CTR = 1
         submitter.submit(entity_map, submission_url='url')
 
         # then:
@@ -221,6 +226,7 @@ class IngestSubmitterTest(TestCase):
         submission.define_manifest.assert_called_with(entity_map)
         submission.add_entity.assert_has_calls([call(user), call(linked_product)], any_order=True)
         submission.link_entity.assert_called_with(linked_product, user, relationship='wish_list')
+        ingest_api.patch.assert_called_once()
 
     @staticmethod
     def _mock_submission(submission_constructor):
@@ -228,6 +234,7 @@ class IngestSubmitterTest(TestCase):
         submission.define_manifest = MagicMock()
         submission.add_entity = MagicMock()
         submission.link_entity = MagicMock()
+        submission.manifest = {}
         submission_constructor.return_value = submission
         return submission
 
@@ -287,6 +294,25 @@ class EntityMapTest(TestCase):
         self.assertEqual(0, zero_map.count_total())
         self.assertEqual(1, one_map.count_total())
         self.assertEqual(3, three_map.count_total())
+
+    def test_count_links(self):
+        entity_map = EntityMap()
+
+        # no element
+        self.assertEqual(entity_map.count_links(), 0)
+
+        # has 1 element without links
+        entity_map.add_entity(Entity('product', 'product_0', {}))
+        self.assertEqual(entity_map.count_links(), 0)
+
+        # has 1 element with links
+        entity_map.add_entity(Entity('product', 'product_1', {}, direct_links=[{}, {}, {}]))
+        self.assertEqual(entity_map.count_links(), 3)
+
+        # has many element with links
+        entity_map.add_entity(Entity('product', 'product_2', {}, direct_links=[{}, {}, {}, {}]))
+        self.assertEqual(entity_map.count_links(), 7)
+
 
 
 class EntityLinkerTest(TestCase):
