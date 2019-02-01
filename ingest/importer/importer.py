@@ -167,14 +167,16 @@ class WorksheetImporter:
 
     def do_import(self, worksheet, template: TemplateManager):
         row_template = template.create_row_template(worksheet)
+        # TODO what are we using this for? #module-tab
         self.concrete_entity = template.get_concrete_entity_of_tab(worksheet.title)
 
-        records = {}
+        records = []
         rows = self._get_data_rows(worksheet, template)
         for index, row in enumerate(rows):
             metadata = row_template.do_import(row)
-            record_id = self._determine_record_id(metadata)
-            records[record_id] = metadata
+            if not metadata.object_id:
+                metadata.object_id = self._generate_id()
+            records.append(metadata)
         return records
 
     @staticmethod
@@ -196,14 +198,6 @@ class WorksheetImporter:
             worksheet.calculate_dimension(force=True)
             max_row = worksheet.max_row
         return max_row
-
-    def _determine_record_id(self, metadata):
-        record_id = metadata.object_id
-
-        if record_id is None:
-            record_id = self._generate_id()
-
-        return record_id
 
     def _generate_id(self):
         self.unknown_id_ctr = self.unknown_id_ctr + 1

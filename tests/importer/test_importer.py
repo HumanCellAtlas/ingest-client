@@ -134,12 +134,12 @@ class WorksheetImporterTest(TestCase):
 
         # when:
         worksheet_importer = WorksheetImporter()
-        profile = worksheet_importer.do_import(worksheet, mock_template_manager)
+        profiles = worksheet_importer.do_import(worksheet, mock_template_manager)
 
         # then:
-        self.assertEqual(2, len(profile.keys()))
-        self.assertEqual(profile.get('profile_1'), john_doe)
-        self.assertEqual(profile.get('profile_2'), emma_jackson)
+        self.assertEqual(2, len(profiles))
+        self.assertIn(john_doe, profiles)
+        self.assertIn(emma_jackson, profiles)
 
     def test_do_import_no_id_metadata(self):
         # given:
@@ -166,12 +166,19 @@ class WorksheetImporterTest(TestCase):
 
         # when:
         worksheet_importer = WorksheetImporter()
-        result = worksheet_importer.do_import(worksheet, mock_template_manager)
+        results = worksheet_importer.do_import(worksheet, mock_template_manager)
 
         # then:
-        self.assertEqual(2, len(result.keys()))
-        self.assertIn(paper_metadata, result.values())
-        self.assertIn(pen_metadata, result.values())
+        self.assertEqual(2, len(results))
+        self.assertIn(paper_metadata, results)
+        self.assertIn(pen_metadata, results)
+
+        # and: object id should be assigned
+        paper_id = paper_metadata.object_id
+        self.assertIsNotNone(paper_id)
+        pen_id = pen_metadata.object_id
+        self.assertIsNotNone(pen_id)
+        self.assertNotEqual(paper_id, pen_id)
 
 
 class IngestImporterTest(TestCase):
