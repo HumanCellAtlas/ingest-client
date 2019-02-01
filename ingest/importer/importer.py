@@ -160,18 +160,19 @@ class WorksheetImporter:
 
     UNKNOWN_ID_PREFIX = '_unknown_'
 
-    def __init__(self):
+    def __init__(self, template: TemplateManager):
+        self.template = template
         self.unknown_id_ctr = 0
         self.logger = logging.getLogger(__name__)
         self.concrete_entity = None
 
-    def do_import(self, worksheet, template: TemplateManager):
-        row_template = template.create_row_template(worksheet)
+    def do_import(self, worksheet):
+        row_template = self.template.create_row_template(worksheet)
         # TODO what are we using this for? #module-tab
-        self.concrete_entity = template.get_concrete_entity_of_tab(worksheet.title)
+        self.concrete_entity = self.template.get_concrete_entity_of_tab(worksheet.title)
 
         records = []
-        rows = self._get_data_rows(worksheet, template)
+        rows = self._get_data_rows(worksheet)
         for index, row in enumerate(rows):
             metadata = row_template.do_import(row)
             if not metadata.object_id:
@@ -183,8 +184,8 @@ class WorksheetImporter:
     def _is_empty_row(row):
         return all(cell.value is None for cell in row)
 
-    def _get_data_rows(self, worksheet, template):
-        header_row = template.get_header_row(worksheet)
+    def _get_data_rows(self, worksheet):
+        header_row = self.template.get_header_row(worksheet)
         max_row = self._compute_max_row(worksheet) - self.START_ROW_IDX
         rows = worksheet.iter_rows(row_offset=self.START_ROW_IDX, max_row=max_row)
         return [row[:len(header_row)] for row in rows if not WorksheetImporter._is_empty_row(row)]

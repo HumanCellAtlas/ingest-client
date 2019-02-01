@@ -48,7 +48,7 @@ class WorkbookImporterTest(TestCase):
         mock_template_manager.get_domain_entity = lambda key: domain_entity_map.get(key)
 
         # and: set up worksheet importer
-        worksheet_importer = IdentifiableWorksheetImporter()
+        worksheet_importer = IdentifiableWorksheetImporter(mock_template_manager)
         expected_json = self._fake_worksheet_import(worksheet_importer, mock_template_manager)
 
         # and: set up workbook
@@ -133,8 +133,8 @@ class WorksheetImporterTest(TestCase):
         worksheet['A7'] = 'emma'
 
         # when:
-        worksheet_importer = WorksheetImporter()
-        profiles = worksheet_importer.do_import(worksheet, mock_template_manager)
+        worksheet_importer = WorksheetImporter(mock_template_manager)
+        profiles = worksheet_importer.do_import(worksheet)
 
         # then:
         self.assertEqual(2, len(profiles))
@@ -165,8 +165,8 @@ class WorksheetImporterTest(TestCase):
         worksheet['A7'] = 'pen'
 
         # when:
-        worksheet_importer = WorksheetImporter()
-        results = worksheet_importer.do_import(worksheet, mock_template_manager)
+        worksheet_importer = WorksheetImporter(mock_template_manager)
+        results = worksheet_importer.do_import(worksheet)
 
         # then:
         self.assertEqual(2, len(results))
