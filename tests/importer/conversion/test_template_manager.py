@@ -6,7 +6,7 @@ from openpyxl import Workbook
 from ingest.importer.conversion import conversion_strategy
 from ingest.importer.conversion.column_specification import ColumnSpecification
 from ingest.importer.conversion.conversion_strategy import CellConversion
-from ingest.importer.conversion.template_manager import TemplateManager, RowTemplate
+from ingest.importer.conversion.template_manager import TemplateManager, RowTemplate, InvalidTabName
 from ingest.importer.data_node import DataNode
 
 
@@ -259,6 +259,22 @@ class TemplateManagerTest(TestCase):
 
         # and:
         schema_template.get_tab_key.assert_called_with('Product')
+
+    def test_get_concrete_entity_of_tab_invalid_format(self):
+        # given:
+        schema_template = MagicMock(name='schema_template')
+        manager = TemplateManager(schema_template, MagicMock(name='ingest_api'))
+
+        # when:
+        raised_exception = None
+        try:
+            manager.get_concrete_entity_of_tab('- does not match format -')
+        except InvalidTabName as exception:
+            raised_exception = exception
+
+        # then:
+        self.assertIsNotNone(raised_exception)
+        self.assertEqual('- does not match format -', raised_exception.tab_name)
 
 
 class FakeConversion(CellConversion):

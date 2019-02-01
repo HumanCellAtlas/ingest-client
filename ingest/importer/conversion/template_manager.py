@@ -9,13 +9,12 @@ from ingest.api.ingestapi import IngestApi
 from ingest.importer.conversion import utils, conversion_strategy
 from ingest.importer.conversion.column_specification import ColumnSpecification
 from ingest.importer.conversion.conversion_strategy import CellConversion, \
-    ListElementCellConversion, FieldOfSingleElementListCellConversion
+    FieldOfSingleElementListCellConversion
 from ingest.importer.conversion.metadata_entity import MetadataEntity
 from ingest.importer.data_node import DataNode
 from ingest.template.schema_template import SchemaTemplate
 
-
-MODULE_TAB_TITLE_PATTERN = re.compile('^(?P<main_label>\w*)( - \w*)?')
+MODULE_TAB_TITLE_PATTERN = re.compile(r'^(?P<main_label>\w+)( - \w+)?')
 
 
 class TemplateManager:
@@ -138,6 +137,8 @@ class TemplateManager:
 
     def get_concrete_entity_of_tab(self, tab_name):
         result = MODULE_TAB_TITLE_PATTERN.search(tab_name)
+        if not result:
+            raise InvalidTabName(tab_name)
         main_label = result.group('main_label')
         return self.template.get_tab_key(main_label)
 
@@ -193,3 +194,9 @@ class ParentFieldNotFound(Exception):
 
         self.header_name = header_name
 
+
+class InvalidTabName(Exception):
+
+    def __init__(self, tab_name):
+        super(InvalidTabName, self).__init__(f'Invalid tab name [{tab_name}]')
+        self.tab_name = tab_name
