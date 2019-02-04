@@ -276,6 +276,18 @@ class TemplateManagerTest(TestCase):
         self.assertIsNotNone(raised_exception)
         self.assertEqual('- does not match format -', raised_exception.tab_name)
 
+    def test_get_domain_entity(self):
+        # given:
+        template = MagicMock(name='schema_template')
+        schema_spec = {'schema': { 'domain_entity': 'user/profile' }}
+        template.lookup = MagicMock(return_value=schema_spec)
+
+        # and:
+        template_manager = TemplateManager(template, MagicMock(name='ingest_api'))
+
+        # expect:
+        self.assertEqual('user', template_manager.get_domain_entity('profile'))
+
 
 class FakeConversion(CellConversion):
 
