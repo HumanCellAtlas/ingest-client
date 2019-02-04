@@ -25,7 +25,7 @@ class TemplateManager:
         self.logger = logging.getLogger(__name__)
 
     def create_template_node(self, worksheet: Worksheet):
-        concrete_entity = self.get_concrete_entity_of_tab(worksheet.title)
+        concrete_entity = self.get_concrete_type(worksheet.title)
         schema = self._get_schema(concrete_entity)
         data_node = DataNode()
         data_node['describedBy'] = schema['url']
@@ -34,7 +34,7 @@ class TemplateManager:
 
     def create_row_template(self, worksheet: Worksheet):
         tab_name = worksheet.title
-        object_type = self.get_concrete_entity_of_tab(tab_name)
+        object_type = self.get_concrete_type(tab_name)
         header_row = self.get_header_row(worksheet)
         cell_conversions = []
 
@@ -56,7 +56,7 @@ class TemplateManager:
 
     def create_simple_row_template(self, worksheet: Worksheet):
         tab_name = worksheet.title
-        object_type = self.get_concrete_entity_of_tab(tab_name)
+        object_type = self.get_concrete_type(tab_name)
         header_row = self.get_header_row(worksheet)
 
         cell_conversions = []
@@ -126,17 +126,17 @@ class TemplateManager:
         spec = self.lookup(concrete_entity)
         return spec.get('schema') if spec else None
 
-    def get_concrete_entity_of_tab(self, tab_name):
+    def get_concrete_type(self, title):
         """
         Concrete Entity refers to the specific type of an object based on a given schema.
         This method determines the concrete type given the worksheet title.
 
-        :param tab_name: the title of the spreadsheet worksheet.
+        :param title: the title of the worksheet.
         :return: the Concrete Entity of a given worksheet title
         """
-        result = MODULE_TAB_TITLE_PATTERN.search(tab_name)
+        result = MODULE_TAB_TITLE_PATTERN.search(title)
         if not result:
-            raise InvalidTabName(tab_name)
+            raise InvalidTabName(title)
         main_label = result.group('main_label')
         return self.template.get_tab_key(main_label)
 

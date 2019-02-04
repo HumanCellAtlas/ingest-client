@@ -44,7 +44,7 @@ class WorkbookImporterTest(TestCase):
         }
 
         mock_template_manager = MagicMock()
-        mock_template_manager.get_concrete_entity_of_tab = lambda key: key_label_map.get(key)
+        mock_template_manager.get_concrete_type = lambda key: key_label_map.get(key)
         mock_template_manager.get_domain_type = lambda key: domain_entity_map.get(key)
 
         # and: set up worksheet importer
@@ -124,7 +124,7 @@ class WorksheetImporterTest(TestCase):
         mock_template_manager = MagicMock('template_manager')
         mock_template_manager.create_row_template = MagicMock(return_value=row_template)
         mock_template_manager.get_header_row = MagicMock(return_value=['header1', 'header2'])
-        mock_template_manager.get_concrete_entity_of_tab = MagicMock(return_value='concrete_entity')
+        mock_template_manager.get_concrete_type = MagicMock(return_value='concrete_entity')
 
         # and:
         workbook = Workbook()
@@ -156,7 +156,7 @@ class WorksheetImporterTest(TestCase):
         mock_template_manager = MagicMock('template_manager')
         mock_template_manager.create_row_template = MagicMock(return_value=row_template)
         mock_template_manager.get_header_row = MagicMock(return_value=['header1', 'header2'])
-        mock_template_manager.get_concrete_entity_of_tab = MagicMock(return_value='concrete_entity')
+        mock_template_manager.get_concrete_type = MagicMock(return_value='concrete_entity')
 
         # and:
         workbook = Workbook()

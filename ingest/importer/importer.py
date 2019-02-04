@@ -108,7 +108,7 @@ class WorkbookImporter:
         self.import_or_reference_project(project_uuid, spreadsheet_json, workbook)
 
         for worksheet in workbook.importable_worksheets():
-            concrete_entity = self.template_mgr.get_concrete_entity_of_tab(worksheet.title)
+            concrete_entity = self.template_mgr.get_concrete_type(worksheet.title)
             domain_entity = self.template_mgr.get_domain_type(concrete_entity)
 
             entities_dict = self.worksheet_importer.do_import(worksheet, self.template_mgr)
@@ -171,7 +171,7 @@ class WorksheetImporter:
         row_template = self.template.create_row_template(worksheet)
         # TODO what are we using this for? #module-tab
         # >> Looks like it's being used in the sub-class -> not good!
-        self.concrete_entity = self.template.get_concrete_entity_of_tab(worksheet.title)
+        self.concrete_entity = self.template.get_concrete_type(worksheet.title)
 
         records = []
         rows = self._get_data_rows(worksheet)

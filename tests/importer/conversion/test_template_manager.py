@@ -239,28 +239,28 @@ class TemplateManagerTest(TestCase):
         # then:
         self.assertEqual('https://schema.humancellatlas.org/type/biomaterial/5.0.0/donor_organism', url)
 
-    def test_get_concrete_entity_of_tab(self):
+    def test_get_concrete_type_of_regular_worksheet(self):
         # given
         schema_template = MagicMock(name='schema_template')
         schema_template.get_tab_key = MagicMock(return_value='user_profile')
         manager = TemplateManager(schema_template, MagicMock(name='ingest_api'))
 
         # expect:
-        self.assertEqual('user_profile', manager.get_concrete_entity_of_tab('User Profile'))
+        self.assertEqual('user_profile', manager.get_concrete_type('User Profile'))
 
-    def test_get_concrete_entity_of_module_tab(self):
+    def test_get_concrete_type_of_module_worksheet(self):
         # given:
         schema_template = MagicMock(name='schema_template')
         schema_template.get_tab_key = MagicMock(return_value='product')
         manager = TemplateManager(schema_template, MagicMock(name='ingest_api'))
 
         # expect:
-        self.assertEqual('product', manager.get_concrete_entity_of_tab('Product - Barcodes'))
+        self.assertEqual('product', manager.get_concrete_type('Product - Barcodes'))
 
         # and:
         schema_template.get_tab_key.assert_called_with('Product')
 
-    def test_get_concrete_entity_of_tab_invalid_format(self):
+    def test_get_concrete_type_of_worksheet_invalid_format(self):
         # given:
         schema_template = MagicMock(name='schema_template')
         manager = TemplateManager(schema_template, MagicMock(name='ingest_api'))
@@ -268,7 +268,7 @@ class TemplateManagerTest(TestCase):
         # when:
         raised_exception = None
         try:
-            manager.get_concrete_entity_of_tab('- does not match format -')
+            manager.get_concrete_type('- does not match format -')
         except InvalidTabName as exception:
             raised_exception = exception
 
