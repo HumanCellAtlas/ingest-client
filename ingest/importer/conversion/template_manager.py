@@ -142,22 +142,22 @@ class TemplateManager:
 
     def get_domain_type(self, concrete_type):
         """
-        Domain Entity is the high level classification of Concrete Entities. For example,
+        Domain Entity Type is the high level classification of Concrete Entities. For example,
         Donor Organism belongs to the Biomaterial domain; all Donor Organisms are considered
         Biomaterials.
 
         :param concrete_type: the actual metadata entity type
-        :return: the domain entity for the given concrete_entity
+        :return: the Domain Entity Type for the given concrete_entity
         """
-        domain_entity = None
+        domain_type = None
         spec = self.lookup(concrete_type)
         schema = spec.get('schema') if spec else None
         if schema:
-            domain_entity = schema.get('domain_entity', '')
-            subdomain = domain_entity.split('/')
-            if subdomain:
-                domain_entity = subdomain[0]
-        return domain_entity
+            domain_type = schema.get('domain_entity', '')
+            type_components = domain_type.split('/')
+            if type_components:
+                domain_type = type_components[0]
+        return domain_type
 
     def get_key_for_label(self, header_name, tab_name):
         try:
