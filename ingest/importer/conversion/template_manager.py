@@ -121,16 +121,7 @@ class TemplateManager:
         # TODO use schema version that is specified in spreadsheet for now
         return schema.get('url') if schema else None
 
-    def get_domain_entity(self, concrete_entity):
-        domain_entity = None
-        schema = self._get_schema(concrete_entity)
-        if schema:
-            domain_entity = schema.get('domain_entity', '')
-            subdomain = domain_entity.split('/')
-            if subdomain:
-                domain_entity = subdomain[0]
-        return domain_entity
-
+    # TODO this just 2 lines. Perhaps we can just inline this to client code?
     def _get_schema(self, concrete_entity):
         spec = self.lookup(concrete_entity)
         return spec.get('schema') if spec else None
@@ -141,6 +132,25 @@ class TemplateManager:
             raise InvalidTabName(tab_name)
         main_label = result.group('main_label')
         return self.template.get_tab_key(main_label)
+
+    def get_domain_entity(self, concrete_type):
+        """
+        Domain Entity is the high level classification of Concrete Entities. For example,
+        Donor Organism belongs to the Biomaterial domain; all Donor Organisms are considered
+        Biomaterials.
+
+        :param concrete_type: the actual metadata entity type
+        :return: the domain entity for the given concrete_entity
+        """
+        domain_entity = None
+        spec = self.lookup(concrete_type)
+        schema = spec.get('schema') if spec else None
+        if schema:
+            domain_entity = schema.get('domain_entity', '')
+            subdomain = domain_entity.split('/')
+            if subdomain:
+                domain_entity = subdomain[0]
+        return domain_entity
 
     def get_key_for_label(self, header_name, tab_name):
         try:
