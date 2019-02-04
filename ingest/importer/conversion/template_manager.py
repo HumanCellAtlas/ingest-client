@@ -159,6 +159,12 @@ class TemplateManager:
                 domain_type = type_components[0]
         return domain_type
 
+    # Created this convenience method so that clients don't have to call template manager twice.
+    # Unlike _get_schema, this will be used outside the context of this class.
+    def get_worksheet_domain_type(self, title):
+        concrete_type = self.get_concrete_type(title)
+        return self.get_domain_type(concrete_type)
+
     def get_key_for_label(self, header_name, tab_name):
         try:
             key = self.template.get_key_for_label(header_name, tab_name)
