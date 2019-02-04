@@ -127,6 +127,13 @@ class TemplateManager:
         return spec.get('schema') if spec else None
 
     def get_concrete_entity_of_tab(self, tab_name):
+        """
+        Concrete Entity refers to the specific type of an object based on a given schema.
+        This method determines the concrete type given the worksheet title.
+
+        :param tab_name: the title of the spreadsheet worksheet.
+        :return: the Concrete Entity of a given worksheet title
+        """
         result = MODULE_TAB_TITLE_PATTERN.search(tab_name)
         if not result:
             raise InvalidTabName(tab_name)
