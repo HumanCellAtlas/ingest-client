@@ -179,16 +179,3 @@ class WorksheetImporterTest(TestCase):
         pen_id = pen_metadata.object_id
         self.assertIsNotNone(pen_id)
         self.assertNotEqual(paper_id, pen_id)
-
-
-class IngestImporterTest(TestCase):
-
-    # TODO why is this hitting servers?
-    @unittest.skip
-    def test_import_spreadsheet(self):
-
-        spreadsheet_file = BASE_PATH + '/metadata_spleen_new_protocols.xlsx'
-
-        submission = XlsImporter(MagicMock()).import_file(file_path=spreadsheet_file, submission_url=None, dry_run=True)
-
-        self.assertTrue(submission)

@@ -169,6 +169,7 @@ class WorksheetImporter:
     def do_import(self, worksheet):
         row_template = self.template.create_row_template(worksheet)
         # TODO what are we using this for? #module-tab
+        # >> Looks like it's being used in the sub-class -> not good!
         self.concrete_entity = self.template.get_concrete_entity_of_tab(worksheet.title)
 
         records = []
