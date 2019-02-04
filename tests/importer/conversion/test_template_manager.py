@@ -209,7 +209,7 @@ class TemplateManagerTest(TestCase):
         template_manager = TemplateManager(schema_template, ingest_api)
 
         # when:
-        domain_entity = template_manager.get_domain_entity('cell_suspension')
+        domain_entity = template_manager.get_domain_type('cell_suspension')
 
         # then:
         self.assertEqual('biomaterial', domain_entity)
@@ -276,7 +276,7 @@ class TemplateManagerTest(TestCase):
         self.assertIsNotNone(raised_exception)
         self.assertEqual('- does not match format -', raised_exception.tab_name)
 
-    def test_get_domain_entity(self):
+    def test_get_domain_type(self):
         # given:
         template = MagicMock(name='schema_template')
         schema_spec = {'schema': { 'domain_entity': 'user/profile' }}
@@ -286,7 +286,7 @@ class TemplateManagerTest(TestCase):
         template_manager = TemplateManager(template, MagicMock(name='ingest_api'))
 
         # expect:
-        self.assertEqual('user', template_manager.get_domain_entity('profile'))
+        self.assertEqual('user', template_manager.get_domain_type('profile'))
 
 
 class FakeConversion(CellConversion):

@@ -45,7 +45,7 @@ class WorkbookImporterTest(TestCase):
 
         mock_template_manager = MagicMock()
         mock_template_manager.get_concrete_entity_of_tab = lambda key: key_label_map.get(key)
-        mock_template_manager.get_domain_entity = lambda key: domain_entity_map.get(key)
+        mock_template_manager.get_domain_type = lambda key: domain_entity_map.get(key)
 
         # and: set up worksheet importer
         worksheet_importer = IdentifiableWorksheetImporter(mock_template_manager)

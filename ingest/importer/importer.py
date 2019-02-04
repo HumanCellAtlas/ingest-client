@@ -109,7 +109,7 @@ class WorkbookImporter:
 
         for worksheet in workbook.importable_worksheets():
             concrete_entity = self.template_mgr.get_concrete_entity_of_tab(worksheet.title)
-            domain_entity = self.template_mgr.get_domain_entity(concrete_entity)
+            domain_entity = self.template_mgr.get_domain_type(concrete_entity)
 
             entities_dict = self.worksheet_importer.do_import(worksheet, self.template_mgr)
             if spreadsheet_json.get(domain_entity) is None:

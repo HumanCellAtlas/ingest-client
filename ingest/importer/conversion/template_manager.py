@@ -91,7 +91,7 @@ class TemplateManager:
             raw_spec = self.lookup(header)
             raw_parent_spec = self.lookup(parent_path)
             concrete_type = utils.extract_root_field(header)
-            main_category = self.get_domain_entity(concrete_type)
+            main_category = self.get_domain_type(concrete_type)
             column_spec = ColumnSpecification.build_raw(header, object_type, main_category, raw_spec,
                                                         parent=raw_parent_spec,
                                                         order_of_occurence=order_of_occurence)
@@ -102,7 +102,7 @@ class TemplateManager:
     def _define_default_values(self, object_type):
         default_values = {
             'describedBy': self.get_schema_url(object_type),
-            'schema_type': self.get_domain_entity(object_type)
+            'schema_type': self.get_domain_type(object_type)
         }
         return default_values
 
@@ -140,7 +140,7 @@ class TemplateManager:
         main_label = result.group('main_label')
         return self.template.get_tab_key(main_label)
 
-    def get_domain_entity(self, concrete_type):
+    def get_domain_type(self, concrete_type):
         """
         Domain Entity is the high level classification of Concrete Entities. For example,
         Donor Organism belongs to the Biomaterial domain; all Donor Organisms are considered
