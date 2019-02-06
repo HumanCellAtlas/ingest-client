@@ -23,6 +23,8 @@ Make one multitab spreadsheet per backbone (this is not a list as initally discu
 Add all potential protocols from protocol_pairings where matched in backbone
 autofill_scale should be applied to all items in backbone (i.e. sheets)
 Special handling of the last process to ensure bundling is done correctly in exporter
+No support yet for automatically filling in linking to multiple protocols
+Only symmetrical linking between entities can be automatically filled
 '''
 
 # NOT SUPPORTED GEN SHEET SHOULD BE RAN MULTIPLE TIMES FOR THIS FUNC
@@ -55,8 +57,10 @@ Special handling of the last process to ensure bundling is done correctly in exp
 backbone = [
         {'donor_organism': 1},
         {'specimen_from_organism': 1},
+        {'cell_line': 1},
+        {'organiod': 3},
         {'cell_suspension': 1},
-        {'sequence_file': 1}
+        {'sequence_file': 3}
 ]
 
 protocol_pairings = {
@@ -164,7 +168,7 @@ protocol_pairings = {
 
 
 link_config = [backbone, protocol_pairings]
-autofill_scale = 1
+autofill_scale = 69
 
 
 # build a generic spreadsheet from the latest schemas
