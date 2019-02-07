@@ -37,7 +37,7 @@ class LinkedSheetBuilder:
     def _build(self, template):
 
         tabs = template.get_tabs_config()
-        if (self.link_config != False): # some precalculation for whole sheet
+        if (self.link_config != False) and (self.autofill_scale != 0): # some precalculation for whole sheet
             self._value_linking()
 
         for tab in tabs.lookup("tabs"):
@@ -156,6 +156,10 @@ class LinkedSheetBuilder:
 
                     self._make_col_name_mapping(template)  # makes lookup dict for uf tab names
                     self._add_link_cols(tab_name, col_number, worksheet, hf, self.backbone_entities)
+
+
+
+                    # todo add process column if on seq tab
 
 
 
@@ -315,11 +319,14 @@ class LinkedSheetBuilder:
         reverse_dict = {}
         for k,v in self.protocols_to_add.items():
             # all_to_add += v
-            for entity in v:
-                if entity in reverse_dict:
-                    reverse_dict[entity] = reverse_dict.get(entity) + [k]
-                else:
-                    reverse_dict[entity] = [k]
+            try:
+                for entity in v:
+                    if entity in reverse_dict:
+                        reverse_dict[entity] = reverse_dict.get(entity) + [k]
+                    else:
+                        reverse_dict[entity] = [k]
+            except TypeError:
+                continue
 
         if tab_name in reverse_dict:
             add_these = reverse_dict.get(tab_name)
@@ -343,7 +350,7 @@ class LinkedSheetBuilder:
         # todo loop to fill in values for links (this func only fill link back
         # AKA ADD EXAMPLES
 
-        if self.link_config != False:
+        if (self.link_config != False) and (self.autofill_scale != 0):
             prog_name_list = prog_name.split('.')
             link_fill = self.tab_multiplier.get(tab_name).get('pre_comb_linking')
             row_no = 5

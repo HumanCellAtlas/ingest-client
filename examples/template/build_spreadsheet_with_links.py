@@ -31,37 +31,27 @@ Only symmetrical linking between entities can be automatically filled
 # to make three sheets
 
 
-# backbone = [
-#      [
-#         { "donor" : 1},
-#         {"specimen_from_organism": 1},
-#         {"cell_suspension": 1},
-#         {"sequence_file": 1},
-#     ],
-#     [
-#         {"donor": 1},
-#         {"specimen_from_organism": 1},
-#         {"cell_suspension": 1},
-#         {"sequence_file": 3},
-#     ],
-#     [
-#         {"donor": 1},
-#         {"cell_suspension": 1},
-#         {"cell_suspension": 1},
-#         {"sequence_file": 2},
-#     ]
-# ]
 
 # to make one sheet
+
+# backbone = [
+#         {'donor_organism': 1},
+#         {'specimen_from_organism': 1},
+#         {'cell_line': 1},
+#         {'cell_line': 1},
+#         {'organoid': 5},
+#         {'cell_suspension': 1},
+#         {'sequence_file': 3}
+# ]
 
 backbone = [
         {'donor_organism': 1},
         {'specimen_from_organism': 1},
-        {'cell_line': 1},
-        {'organiod': 3},
         {'cell_suspension': 1},
         {'sequence_file': 3}
 ]
+
+
 
 protocol_pairings = {
     "collection_protocol": [
@@ -168,11 +158,15 @@ protocol_pairings = {
 
 
 link_config = [backbone, protocol_pairings]
-autofill_scale = 69
+autofill_scale = 1
 
 
 # build a generic spreadsheet from the latest schemas
+
+# spreadsheet_builder = LinkedSheetBuilder("generic_with_links.xlsx")
+
 spreadsheet_builder = LinkedSheetBuilder("generic_with_links.xlsx", link_config=link_config, autofill_scale=autofill_scale)
+
 # spreadsheet_builder = LinkedSheetBuilder("generic_with_links.xlsx")
 spreadsheet_builder.generate_workbook()
 spreadsheet_builder.save_workbook()
