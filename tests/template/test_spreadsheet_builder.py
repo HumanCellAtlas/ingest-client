@@ -2,6 +2,8 @@
 """
 Description goes here
 """
+import os
+
 __author__ = "jupp"
 __license__ = "Apache 2.0"
 __date__ = "25/05/2018"
@@ -15,15 +17,23 @@ from openpyxl import load_workbook as Reader
 
 
 class TestSchemaTemplate(TestCase):
+
     def setUp(self):
         self.longMessage = True
-        self.dummyProjectUri = "https://schema.humancellatlas.org/type/project/5.1.0/project"
-        self.dummyDonorUri = "https://schema.humancellatlas.org/type/biomaterial/5.1.0/donor_organism"
-        pass
-
+        self.projectUri = "https://schema.humancellatlas.org/type/project/5.1.0/project"
+        self.donorUri = "https://schema.humancellatlas.org/type/biomaterial/5.1.0/donor_organism"
 
     def test_no_schemas(self):
-        data = '{"id" : "' + self.dummyDonorUri + '", "properties": {"foo_bar": {"user_friendly" : "Foo bar", "description" : "this is a foo bar", "example" : "e.g. foo"}} }'
+        data = \
+            f'''{{
+                "id" : "{self.donorUri}", 
+                "properties": {{
+                    "foo_bar": {{
+                        "user_friendly" : "Foo bar", 
+                        "description" : "this is a foo bar", "example" : "e.g. foo"
+                    }}
+                }} 
+            }}'''
 
         file = "foo.xlsx"
         spreadsheet_builder = SpreadsheetBuilder(file)
@@ -39,7 +49,8 @@ class TestSchemaTemplate(TestCase):
         self.assertEqual("For example: e.g. foo", sheet.cell(row=3, column=1).value.strip())
         self.assertEqual("donor_organism.foo_bar", sheet.cell(row=4, column=1).value)
 
-
+        # clean up
+        os.remove(file)
 
     # TODO fixme
     @unittest.skip
@@ -53,7 +64,6 @@ class TestSchemaTemplate(TestCase):
     def test_add_columns(self):
         # spreadsheet_builder.generate_spreadsheet("generic.xlsx", schema_urls=schemas)
         pass
-
 
     # TODO fixme
     @unittest.skip
