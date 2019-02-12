@@ -1,8 +1,6 @@
 import copy
 import logging
 
-from openpyxl.worksheet import Worksheet
-
 import ingest.template.schema_template as schema_template
 from ingest.api.ingestapi import IngestApi
 from ingest.importer.conversion import utils, conversion_strategy
@@ -12,6 +10,7 @@ from ingest.importer.conversion.conversion_strategy import CellConversion, \
 from ingest.importer.conversion.metadata_entity import MetadataEntity
 from ingest.importer.data_node import DataNode
 from ingest.template.schema_template import SchemaTemplate
+from openpyxl.worksheet.worksheet import Worksheet
 
 
 class TemplateManager:
