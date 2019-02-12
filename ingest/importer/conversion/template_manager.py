@@ -10,8 +10,6 @@ from ingest.importer.conversion.conversion_strategy import CellConversion, \
 from ingest.importer.conversion.metadata_entity import MetadataEntity
 from ingest.importer.data_node import DataNode
 from ingest.template.schema_template import SchemaTemplate
-from openpyxl.worksheet.worksheet import Worksheet
-
 
 class TemplateManager:
 
@@ -20,7 +18,7 @@ class TemplateManager:
         self.ingest_api = ingest_api
         self.logger = logging.getLogger(__name__)
 
-    def create_template_node(self, worksheet: Worksheet):
+    def create_template_node(self, worksheet):
         concrete_entity = self.get_concrete_entity_of_tab(worksheet.title)
         schema = self._get_schema(concrete_entity)
         data_node = DataNode()
@@ -28,7 +26,7 @@ class TemplateManager:
         data_node['schema_type'] = schema['domain_entity']
         return data_node
 
-    def create_row_template(self, worksheet: Worksheet):
+    def create_row_template(self, worksheet):
         tab_name = worksheet.title
         object_type = self.get_concrete_entity_of_tab(tab_name)
         header_row = self.get_header_row(worksheet)
@@ -50,7 +48,7 @@ class TemplateManager:
         default_values = self._define_default_values(object_type)
         return RowTemplate(cell_conversions, default_values=default_values)
 
-    def create_simple_row_template(self, worksheet: Worksheet):
+    def create_simple_row_template(self, worksheet):
         tab_name = worksheet.title
         object_type = self.get_concrete_entity_of_tab(tab_name)
         header_row = self.get_header_row(worksheet)
