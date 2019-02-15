@@ -37,7 +37,8 @@ class WorkbookImporterTest(TestCase):
         worksheet_importer_constructor.return_value = worksheet_importer
 
         # and:
-        user = MetadataEntity(concrete_type='user', domain_type='user', object_id=1)
+        user = MetadataEntity(concrete_type='user', domain_type='user', object_id=1,
+                              content={'user_name': 'jdelacruz'})
         worksheet_importer.do_import = MagicMock(side_effect=[[user], []])
 
         # and:
@@ -61,6 +62,7 @@ class WorkbookImporterTest(TestCase):
         user_map = workbook_json.get('user')
         self.assertIsNotNone(user_map)
         self.assertIn(user.object_id, user_map.keys())
+        self.assertEqual({'user_name': 'jdelacruz'}, user_map.get(1)['content'])
 
     @patch('ingest.importer.importer.IdentifiableWorksheetImporter')
     @unittest.skip

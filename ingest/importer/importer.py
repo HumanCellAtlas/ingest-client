@@ -112,7 +112,7 @@ class WorkbookImporter:
                 if not type_map:
                     type_map = {}
                     spreadsheet_json[domain_type] = type_map
-                type_map[entity.object_id] = entity
+                type_map[entity.object_id] = entity.map_for_submission()
 
         return spreadsheet_json
 
