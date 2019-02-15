@@ -1,7 +1,7 @@
 import copy
 import logging
 
-from openpyxl.worksheet import Worksheet
+from openpyxl.worksheet.worksheet import Worksheet
 
 import ingest.template.schema_template as schema_template
 from ingest.api.ingestapi import IngestApi
@@ -70,7 +70,7 @@ class TemplateManager:
     # TODO move this outside template manager
     @staticmethod
     def get_header_row(worksheet):
-        for row in worksheet.iter_rows(row_offset=3, max_row=1):
+        for row in worksheet.iter_rows(min_row=4, max_row=4):
             header_row = row
 
         clean_header_row = []

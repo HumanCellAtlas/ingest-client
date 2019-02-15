@@ -194,8 +194,8 @@ class WorksheetImporter:
 
     def _get_data_rows(self, worksheet, template):
         header_row = template.get_header_row(worksheet)
-        max_row = self._compute_max_row(worksheet) - self.START_ROW_IDX
-        rows = worksheet.iter_rows(row_offset=self.START_ROW_IDX, max_row=max_row)
+        max_row = self._compute_max_row(worksheet)
+        rows = worksheet.iter_rows(min_row=self.START_ROW_IDX + 1, max_row=max_row)
         return [row[:len(header_row)] for row in rows if not WorksheetImporter._is_empty_row(row)]
 
     # NOTE: there are no tests around this because it's too complicated to setup the
