@@ -97,10 +97,22 @@ class MetadataEntityTest(TestCase):
 
     def test_map_for_submission(self):
         # given:
-        metadata_entity = MetadataEntity()
+        test_content = {'description': 'test'}
+        test_links = {'items': ['123', '456']}
+        test_external_links = {'producer': ['abc', 'def', 'ghi']}
+        test_linking_details = {'link': 'details', 'test': '123'}
+        metadata_entity = MetadataEntity(concrete_type='warehouse', content=test_content,
+                                         links=test_links,
+                                         external_links=test_external_links,
+                                         linking_details=test_linking_details)
 
         # when:
         submission_dict = metadata_entity.map_for_submission()
 
-        # expect:
-        self.assertEqual({}, submission_dict.get('content'))
+        # then:
+        self.assertEqual('warehouse', submission_dict.get('concrete_type'))
+        self.assertEqual(test_content, submission_dict.get('content'))
+        self.assertEqual(test_links, submission_dict.get('links_by_entity'))
+        self.assertEqual(test_external_links, submission_dict.get('external_links_by_entity'))
+        self.assertEqual(test_linking_details, submission_dict.get('linking_details'))
+

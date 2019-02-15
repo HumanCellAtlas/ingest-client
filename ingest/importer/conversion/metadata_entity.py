@@ -77,5 +77,9 @@ class MetadataEntity:
 
     def map_for_submission(self):
         return {
-            'content': {}
+            'concrete_type': self.concrete_type,
+            'content': self._content.as_dict(),
+            'links_by_entity': self.links,
+            'external_links_by_entity': self.external_links,
+            'linking_details': self.linking_details
         }
