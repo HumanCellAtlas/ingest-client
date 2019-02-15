@@ -1,3 +1,4 @@
+import json
 from abc import abstractmethod
 from enum import Enum
 
@@ -9,6 +10,7 @@ class DataType(Enum):
     STRING = 'string'
     INTEGER = 'integer'
     BOOLEAN = 'boolean'
+    NUMBER = 'number'
     UNDEFINED = 'undefined'
 
     @staticmethod
@@ -47,6 +49,12 @@ class IntegerConverter(Converter):
         return int(data)
 
 
+class NumberConverter(Converter):
+
+    def convert(self, data):
+        return float(data)
+
+
 BOOLEAN_TABLE = {
     'true': True,
     'yes': True,
@@ -65,10 +73,10 @@ class BooleanConverter(Converter):
 
 
 CONVERTER_MAP = {
-
     DataType.STRING: StringConverter(),
     DataType.INTEGER: IntegerConverter(),
-    DataType.BOOLEAN: BooleanConverter()
+    DataType.BOOLEAN: BooleanConverter(),
+    DataType.NUMBER: NumberConverter()
 
 }
 
