@@ -74,3 +74,8 @@ class MetadataEntity:
             existent_links = []
             link_map[link_entity_type] = existent_links
         existent_links.extend(new_links)
+
+    def map_for_submission(self):
+        return {
+            'content': {}
+        }

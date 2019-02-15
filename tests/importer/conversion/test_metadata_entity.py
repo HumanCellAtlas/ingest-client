@@ -94,3 +94,13 @@ class MetadataEntityTest(TestCase):
         self.assertIsNotNone(product_core)
         self.assertEqual('Apple Juice', product_core.get('name'))
         self.assertEqual('pasteurised fruit juice', product_core.get('description'))
+
+    def test_map_for_submission(self):
+        # given:
+        metadata_entity = MetadataEntity()
+
+        # when:
+        submission_dict = metadata_entity.map_for_submission()
+
+        # expect:
+        self.assertEqual({}, submission_dict.get('content'))
