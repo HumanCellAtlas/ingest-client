@@ -5,10 +5,9 @@ from unittest import TestCase
 from mock import MagicMock, patch
 from openpyxl import Workbook
 
-from ingest.importer.conversion import conversion_strategy
 from ingest.importer.conversion.metadata_entity import MetadataEntity
-from ingest.importer.data_node import DataNode
-from ingest.importer.importer import WorksheetImporter, WorkbookImporter, XlsImporter, IdentifiableWorksheetImporter
+from ingest.importer.importer import WorksheetImporter, WorkbookImporter, \
+    IdentifiableWorksheetImporter
 from ingest.importer.spreadsheet.ingest_workbook import IngestWorkbook
 
 BASE_PATH = os.path.dirname(__file__)
@@ -32,6 +31,40 @@ class WorkbookImporterTest(TestCase):
 
     @patch('ingest.importer.importer.IdentifiableWorksheetImporter')
     def test_do_import(self, worksheet_importer_constructor):
+        # given:
+        template_mgr = MagicMock(name='template_manager')
+        worksheet_importer = WorksheetImporter(template_mgr)
+        worksheet_importer_constructor.return_value = worksheet_importer
+
+        # and:
+        user = MetadataEntity(concrete_type='user', domain_type='user', object_id=1)
+        worksheet_importer.do_import = MagicMock(side_effect=[[user], []])
+
+        # and:
+        workbook = Workbook()
+        workbook.create_sheet('Users')
+        workbook.create_sheet('Items')
+
+        # and: remove the magical default worksheet
+        default_sheet = workbook.get_sheet_by_name('Sheet')
+        workbook.remove(default_sheet)
+
+        # when:
+        ingest_workbook = IngestWorkbook(workbook)
+        workbook_importer = WorkbookImporter(template_mgr)
+        workbook_json = workbook_importer.do_import(ingest_workbook)
+
+        # then:
+        self.assertIsNotNone(workbook_json)
+
+        # and:
+        user_map = workbook_json.get('user')
+        self.assertIsNotNone(user_map)
+        self.assertIn(user.object_id, user_map.keys())
+
+    @patch('ingest.importer.importer.IdentifiableWorksheetImporter')
+    @unittest.skip
+    def test_old_do_import(self, worksheet_importer_constructor):
         # given: set up template manager
         key_label_map = {
             'Project': 'project',

@@ -1,14 +1,13 @@
 import json
 import logging
+
 import openpyxl
 
 import ingest.importer.submission
-
 from ingest.importer.conversion import template_manager
 from ingest.importer.conversion.template_manager import TemplateManager
 from ingest.importer.spreadsheet.ingest_workbook import IngestWorkbook
 from ingest.importer.submission import IngestSubmitter, EntityMap, EntityLinker
-
 
 format = '[%(filename)s:%(lineno)s - %(funcName)20s() ] %(asctime)s - %(name)s - %(levelname)s - %(message)s'
 logging.basicConfig(format=format)
@@ -98,24 +97,22 @@ class XlsImporter:
 class WorkbookImporter:
 
     def __init__(self, template_mgr):
-        self.worksheet_importer = IdentifiableWorksheetImporter()
+        self.worksheet_importer = IdentifiableWorksheetImporter(template_mgr)
         self.template_mgr = template_mgr
         self.logger = logging.getLogger(__name__)
 
     def do_import(self, workbook: IngestWorkbook, project_uuid=None):
         spreadsheet_json = {}
 
-        self.import_or_reference_project(project_uuid, spreadsheet_json, workbook)
-
         for worksheet in workbook.importable_worksheets():
-            concrete_entity = self.template_mgr.get_concrete_type(worksheet.title)
-            domain_entity = self.template_mgr.get_domain_type(concrete_entity)
-
-            entities_dict = self.worksheet_importer.do_import(worksheet, self.template_mgr)
-            if spreadsheet_json.get(domain_entity) is None:
-                spreadsheet_json[domain_entity] = {}
-
-            spreadsheet_json[domain_entity].update(entities_dict)
+            metadata_entities = self.worksheet_importer.do_import(worksheet)
+            for entity in metadata_entities:
+                domain_type = entity.domain_type
+                type_map = spreadsheet_json.get(domain_type)
+                if not type_map:
+                    type_map = {}
+                    spreadsheet_json[domain_type] = type_map
+                type_map[entity.object_id] = entity
 
         return spreadsheet_json
 
@@ -209,8 +206,8 @@ class WorksheetImporter:
 
 class IdentifiableWorksheetImporter(WorksheetImporter):
 
-    def do_import(self, worksheet, template: TemplateManager):
-        records = super(IdentifiableWorksheetImporter, self).do_import(worksheet, template)
+    def do_import(self, worksheet):
+        records = super(IdentifiableWorksheetImporter, self).do_import(worksheet)
 
         if not self.concrete_entity:
             raise InvalidTabName(worksheet.title)
