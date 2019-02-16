@@ -11,6 +11,7 @@ from ingest.importer.conversion.conversion_strategy import CellConversion, \
     ListElementCellConversion, FieldOfSingleElementListCellConversion
 from ingest.importer.conversion.metadata_entity import MetadataEntity
 from ingest.importer.data_node import DataNode
+from ingest.importer.spreadsheet.ingest_worksheet import IngestWorksheet
 from ingest.template.schema_template import SchemaTemplate
 
 
@@ -29,16 +30,14 @@ class TemplateManager:
         data_node['schema_type'] = schema['domain_entity']
         return data_node
 
-    def create_row_template(self, worksheet: Worksheet):
-        tab_name = worksheet.title
+    def create_row_template(self, ingest_worksheet: IngestWorksheet):
+        tab_name = ingest_worksheet.title
         object_type = self.get_concrete_entity_of_tab(tab_name)
-        header_row = self.get_header_row(worksheet)
+        column_headers = ingest_worksheet.get_column_headers()
         cell_conversions = []
 
         header_counter = {}
-        for cell in header_row:
-            header = cell.value
-
+        for header in column_headers:
             if not header_counter.get(header):
                 header_counter[header] = 0
             header_counter[header] = header_counter[header] + 1
@@ -57,8 +56,7 @@ class TemplateManager:
         header_row = self.get_header_row(worksheet)
 
         cell_conversions = []
-        for cell in header_row:
-            header = cell.value
+        for header in header_row:
             column_spec = self._define_column_spec(header, object_type)
             strategy = FieldOfSingleElementListCellConversion(column_spec.field_name,
                                                  column_spec.determine_converter())
@@ -76,9 +74,10 @@ class TemplateManager:
         clean_header_row = []
 
         for cell in header_row:
-            if cell.value is None:
+            cell_value = cell.value.strip() if cell.value else None
+            if cell_value is None:
                 continue
-            clean_header_row.append(cell)
+            clean_header_row.append(cell_value)
 
         return clean_header_row
 

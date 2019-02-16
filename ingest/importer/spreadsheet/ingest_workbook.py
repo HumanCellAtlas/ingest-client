@@ -73,4 +73,3 @@ class IngestWorkbook:
     def get_module_field(self, module_tab_name):
         return MODULE_TABS[module_tab_name]['field'] if MODULE_TABS.get(module_tab_name) and \
                                                         MODULE_TABS[module_tab_name].get('field') else None
-
