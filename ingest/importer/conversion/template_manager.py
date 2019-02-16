@@ -50,13 +50,13 @@ class TemplateManager:
         default_values = self._define_default_values(object_type)
         return RowTemplate(cell_conversions, default_values=default_values)
 
-    def create_simple_row_template(self, worksheet: Worksheet):
-        tab_name = worksheet.title
+    def create_simple_row_template(self, ingest_worksheet: IngestWorksheet):
+        tab_name = ingest_worksheet.title
         object_type = self.get_concrete_entity_of_tab(tab_name)
-        header_row = self.get_header_row(worksheet)
+        headers = ingest_worksheet.get_column_headers()
 
         cell_conversions = []
-        for header in header_row:
+        for header in headers:
             column_spec = self._define_column_spec(header, object_type)
             strategy = FieldOfSingleElementListCellConversion(column_spec.field_name,
                                                  column_spec.determine_converter())
@@ -64,22 +64,6 @@ class TemplateManager:
 
         default_values = self._define_default_values(object_type)
         return RowTemplate(cell_conversions, default_values=default_values)
-
-    # TODO move this outside template manager
-    @staticmethod
-    def get_header_row(worksheet):
-        for row in worksheet.iter_rows(min_row=4, max_row=4):
-            header_row = row
-
-        clean_header_row = []
-
-        for cell in header_row:
-            cell_value = cell.value.strip() if cell.value else None
-            if cell_value is None:
-                continue
-            clean_header_row.append(cell_value)
-
-        return clean_header_row
 
     def _define_column_spec(self, header, object_type, order_of_occurence=1):
         if header is not None:

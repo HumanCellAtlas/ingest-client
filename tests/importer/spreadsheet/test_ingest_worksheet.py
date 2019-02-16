@@ -90,7 +90,7 @@ class IngestWorksheetTest(TestCase):
             data_row_values.append(cell_values)
 
         # then:
-        self.assertEqual(len(data_row_values), len(1))
+        self.assertEqual(len(data_row_values), 1)
         self.assertEqual(data_row_values, [expected_data_row])
 
     def test_get_data_row_cells_skip_blank_rows(self):
