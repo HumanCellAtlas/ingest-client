@@ -158,7 +158,7 @@ class WorksheetImporter:
 
     KEY_HEADER_ROW_IDX = 4
     USER_FRIENDLY_HEADER_ROW_IDX = 2
-    START_ROW_IDX = 5
+    START_ROW_IDX = 6
 
     UNKNOWN_ID_PREFIX = '_unknown_'
 
@@ -168,14 +168,14 @@ class WorksheetImporter:
         self.concrete_entity = None
 
     def do_import(self, worksheet, template: TemplateManager):
-        ingest_worksheet = IngestWorksheet(worksheet, header_row_idx=self.KEY_HEADER_ROW_IDX)
+        ingest_worksheet = IngestWorksheet(worksheet, self.KEY_HEADER_ROW_IDX)
         row_template = template.create_row_template(ingest_worksheet)
         self.concrete_entity = template.get_concrete_entity_of_tab(worksheet.title)
         return self._import_using_row_template(ingest_worksheet, row_template)
 
     def _import_using_row_template(self, ingest_worksheet: IngestWorksheet, row_template):
         records = {}
-        data_rows = ingest_worksheet.get_data_row_cells(start_row=self.START_ROW_IDX + 1)
+        data_rows = ingest_worksheet.get_row_cells(start_row=self.START_ROW_IDX)
         for index, row in enumerate(data_rows):
             metadata = row_template.do_import(row)
 

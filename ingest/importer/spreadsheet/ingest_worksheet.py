@@ -10,7 +10,8 @@ class IngestWorksheet(object):
         self.title = worksheet.title
 
     def get_column_headers(self):
-        rows = self.worksheet.iter_rows(min_row=self.header_row_idx, max_row=self.header_row_idx)
+        rows = self.worksheet.iter_rows(min_row=self.header_row_idx,
+                                        max_row=self.header_row_idx)
         header_row = next(rows)
 
         headers = []
@@ -23,14 +24,14 @@ class IngestWorksheet(object):
 
         return headers
 
-    def get_data_row_cells(self, start_row=1, end_row=None):
-        header_row = self.get_column_headers()
+    def get_row_cells(self, start_row=1, end_row=None):
+        headers = self.get_column_headers()
         max_row = end_row or self.compute_max_row()
         rows = self.worksheet.iter_rows(min_row=start_row, max_row=max_row)
-        return [row[:len(header_row)] for row in rows if not self._is_empty_row(row)]
+        return [row[:len(headers)] for row in rows if not self.is_empty(row)]
 
-    # NOTE: there are no tests around this because it's too complicated to setup the
-    # scenario where the worksheet returns an erroneous max_row value.
+    # NOTE: there are no tests around this because it's too complicated to
+    # setup the scenario where the worksheet returns an erroneous max_row value
     def compute_max_row(self):
         max_row = self.worksheet.max_row
         if max_row is None:
@@ -39,5 +40,5 @@ class IngestWorksheet(object):
         return max_row
 
     @staticmethod
-    def _is_empty_row(row):
+    def is_empty(row):
         return all(cell.value is None for cell in row)
