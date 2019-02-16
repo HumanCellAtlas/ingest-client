@@ -28,6 +28,8 @@ class StringConverterTest(TestCase):
 
         # expect:
         self.assertEqual('data', converter.convert('data'))
+        self.assertEqual('data', converter.convert('data    '))
+        self.assertEqual('data', converter.convert('      data    '))
         self.assertEqual('278', converter.convert(278))
         self.assertEqual('True', converter.convert(True))
         self.assertEqual('3.1416', converter.convert(3.1416))

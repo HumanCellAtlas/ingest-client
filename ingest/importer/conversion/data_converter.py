@@ -39,7 +39,7 @@ class DefaultConverter(Converter):
 class StringConverter(Converter):
 
     def convert(self, data):
-        return str(data)
+        return str(data).strip()
 
 
 class IntegerConverter(Converter):
