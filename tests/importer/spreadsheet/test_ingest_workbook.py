@@ -40,7 +40,7 @@ class IngestWorkbookTest(TestCase):
         workbook = Workbook()
 
         # and:
-        importable_names = ['Organ From Donor', 'Cell Suspension']
+        importable_names = ['Organ From Donor', 'Cell Suspension', 'Project']
         expected_worksheets = [workbook.create_sheet(name) for name in importable_names]
         workbook.create_sheet('Schemas')
 
