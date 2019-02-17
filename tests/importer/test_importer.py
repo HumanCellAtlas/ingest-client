@@ -37,14 +37,15 @@ class WorkbookImporterTest(TestCase):
         worksheet_importer_constructor.return_value = worksheet_importer
 
         # and:
-        user = MetadataEntity(concrete_type='user', domain_type='user', object_id=1,
+        jdelacruz = MetadataEntity(concrete_type='user', domain_type='user', object_id=1,
                               content={'user_name': 'jdelacruz'})
-        worksheet_importer.do_import = MagicMock(side_effect=[[user], []])
+        setsuna_f_seiei = MetadataEntity(concrete_type='user', domain_type='user', object_id=96,
+                                       content={'user_name': 'sayyeah'})
+        worksheet_importer.do_import = MagicMock(side_effect=[[jdelacruz, setsuna_f_seiei]])
 
         # and:
         workbook = Workbook()
         workbook.create_sheet('Users')
-        workbook.create_sheet('Items')
 
         # and: remove the magical default worksheet
         default_sheet = workbook.get_sheet_by_name('Sheet')
@@ -61,9 +62,14 @@ class WorkbookImporterTest(TestCase):
         # and:
         user_map = workbook_json.get('user')
         self.assertIsNotNone(user_map)
-        self.assertIn(user.object_id, user_map.keys())
-        self.assertEqual({'user_name': 'jdelacruz'}, user_map.get(1)['content'])
+        self.assertEqual(2, len(user_map))
+        self.assertEqual([jdelacruz.object_id, setsuna_f_seiei.object_id], list(user_map.keys()))
 
+        # and:
+        self.assertEqual({'user_name': 'jdelacruz'}, user_map.get(1)['content'])
+        self.assertEqual({'user_name': 'sayyeah'}, user_map.get(96)['content'])
+
+    # TODO remove this test #module-tab
     @patch('ingest.importer.importer.IdentifiableWorksheetImporter')
     @unittest.skip
     def test_old_do_import(self, worksheet_importer_constructor):
