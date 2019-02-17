@@ -91,6 +91,15 @@ class IngestWorksheet:
         return self._worksheet.title
 
     def source(self):
+        """
+        This method was created to retrofit this new IngestWorksheet framework with the original
+        WorksheetImporter. Avoid using this method in new code as much as possible.
+
+        Moving forward, the intention is for IngestWorksheet to meld with
+        WorksheetImporter in a way that IngestWorksheet takes care of importing itself.
+
+        :return: the internal Openpyxl Worksheet.
+        """
         return self._worksheet
 
     def is_module_tab(self):
