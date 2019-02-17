@@ -66,7 +66,7 @@ class IngestWorkbook:
         return schemas
 
     def importable_worksheets(self):
-        return [worksheet for worksheet in self.workbook.worksheets
+        return [IngestWorksheet(worksheet) for worksheet in self.workbook.worksheets
                 if worksheet.title not in SPECIAL_TABS]
 
     def module_worksheets(self):

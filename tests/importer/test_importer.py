@@ -8,7 +8,7 @@ from openpyxl import Workbook
 from ingest.importer.conversion.metadata_entity import MetadataEntity
 from ingest.importer.importer import WorksheetImporter, WorkbookImporter, \
     IdentifiableWorksheetImporter
-from ingest.importer.spreadsheet.ingest_workbook import IngestWorkbook
+from ingest.importer.spreadsheet.ingest_workbook import IngestWorkbook, IngestWorksheet
 from tests.importer.utils.test_utils import create_test_workbook
 
 BASE_PATH = os.path.dirname(__file__)
@@ -122,7 +122,7 @@ class WorkbookImporterTest(TestCase):
         project_worksheet = workbook.create_sheet('Project')
         cell_suspension_worksheet = workbook.create_sheet('Cell Suspension')
         ingest_workbook.importable_worksheets = MagicMock(return_value=[
-            project_worksheet, cell_suspension_worksheet
+            IngestWorksheet(project_worksheet), IngestWorksheet(cell_suspension_worksheet)
         ])
 
     def _fake_worksheet_import(self, worksheet_importer: WorksheetImporter, mock_template_manager):
