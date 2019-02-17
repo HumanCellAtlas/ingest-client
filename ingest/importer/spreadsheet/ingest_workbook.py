@@ -1,3 +1,5 @@
+import re
+
 from openpyxl import Workbook
 
 # TODO clean this up #module-tab
@@ -25,7 +27,6 @@ MODULE_TABS = {
         'parent_entity': 'project'
     },
 }
-
 
 class IngestWorkbook:
 
@@ -77,10 +78,14 @@ class IngestWorkbook:
                                                         else None
 
 
+MODULE_TITLE_PATTERN = re.compile(r'^(?P<main_label>\w+)( - (?P<field_name>\w+))?')
+
+
 class IngestWorksheet:
 
     def __init__(self, worksheet):
         self._worksheet = worksheet
 
     def is_module_tab(self):
-        return '-' in self._worksheet.title
+        match = MODULE_TITLE_PATTERN.match(self._worksheet.title)
+        return match and match.group('field_name')

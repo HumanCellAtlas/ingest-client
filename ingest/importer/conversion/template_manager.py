@@ -1,6 +1,5 @@
 import copy
 import logging
-import re
 
 from openpyxl.worksheet import Worksheet
 
@@ -12,9 +11,8 @@ from ingest.importer.conversion.conversion_strategy import CellConversion, \
     FieldOfSingleElementListCellConversion
 from ingest.importer.conversion.metadata_entity import MetadataEntity
 from ingest.importer.data_node import DataNode
+from ingest.importer.spreadsheet.ingest_workbook import MODULE_TITLE_PATTERN
 from ingest.template.schema_template import SchemaTemplate
-
-MODULE_TAB_TITLE_PATTERN = re.compile(r'^(?P<main_label>\w+)( - \w+)?')
 
 
 class TemplateManager:
@@ -134,7 +132,7 @@ class TemplateManager:
         :param title: the title of the worksheet.
         :return: the Concrete Entity of a given worksheet title
         """
-        result = MODULE_TAB_TITLE_PATTERN.search(title)
+        result = MODULE_TITLE_PATTERN.search(title)
         if not result:
             raise InvalidTabName(title)
         main_label = result.group('main_label')
