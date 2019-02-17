@@ -9,6 +9,7 @@ from ingest.importer.conversion.metadata_entity import MetadataEntity
 from ingest.importer.importer import WorksheetImporter, WorkbookImporter, \
     IdentifiableWorksheetImporter
 from ingest.importer.spreadsheet.ingest_workbook import IngestWorkbook
+from tests.importer.utils.test_utils import create_test_workbook
 
 BASE_PATH = os.path.dirname(__file__)
 
@@ -25,18 +26,6 @@ def _create_single_row_worksheet(worksheet_data: dict):
         worksheet[f'{column}6'] = value
 
     return worksheet
-
-
-def _create_test_workbook(*worksheet_titles, include_default_sheet=False):
-    workbook = Workbook()
-    for title in worksheet_titles:
-        workbook.create_sheet(title)
-
-    if not include_default_sheet:
-        default_sheet = workbook.get_sheet_by_name('Sheet')
-        workbook.remove(default_sheet)
-
-    return workbook
 
 
 class WorkbookImporterTest(TestCase):
@@ -56,7 +45,7 @@ class WorkbookImporterTest(TestCase):
         worksheet_importer.do_import = MagicMock(side_effect=[[jdelacruz, setsuna_f_seiei]])
 
         # and:
-        workbook = _create_test_workbook('Users')
+        workbook = create_test_workbook('Users')
         ingest_workbook = IngestWorkbook(workbook)
         workbook_importer = WorkbookImporter(template_mgr)
 
