@@ -55,6 +55,20 @@ class IngestWorkbookTest(TestCase):
 
 class IngestWorksheetTest(TestCase):
 
+    def test_get_title(self):
+        # given:
+        workbook = create_test_workbook('User', 'User - SN Profiles')
+        user_sheet = workbook.get_sheet_by_name('User')
+        sn_profiles_sheet = workbook.get_sheet_by_name('User - SN Profiles')
+
+        # and:
+        user = IngestWorksheet(user_sheet)
+        sn_profiles = IngestWorksheet(sn_profiles_sheet)
+
+        # expect:
+        self.assertEqual('User', user.title)
+        self.assertEqual('User - SN Profiles', sn_profiles.title)
+
     def test_is_module_tab(self):
         # given:
         workbook = create_test_workbook('Product', 'Product - History')

@@ -86,6 +86,10 @@ class IngestWorksheet:
     def __init__(self, worksheet):
         self._worksheet = worksheet
 
+    @property
+    def title(self):
+        return self._worksheet.title
+
     def is_module_tab(self):
         match = MODULE_TITLE_PATTERN.match(self._worksheet.title)
         return match and match.group('field_name')
