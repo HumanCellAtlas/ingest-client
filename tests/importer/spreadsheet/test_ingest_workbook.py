@@ -2,7 +2,7 @@ from unittest import TestCase
 
 from openpyxl import Workbook
 
-from ingest.importer.spreadsheet.ingest_workbook import IngestWorkbook
+from ingest.importer.spreadsheet.ingest_workbook import IngestWorkbook, IngestWorksheet
 from tests.importer.utils.test_utils import create_test_workbook
 
 
@@ -51,3 +51,20 @@ class IngestWorkbookTest(TestCase):
         # then:
         actual_titles = [ingest_worksheet.title for ingest_worksheet in actual_worksheets]
         self.assertEqual(importable_names, actual_titles)
+
+
+class IngestWorksheetTest(TestCase):
+
+    def test_is_module_tab(self):
+        # given:
+        workbook = create_test_workbook('Product', 'Product - History')
+        product_sheet = workbook.get_sheet_by_name('Product')
+        history_sheet = workbook.get_sheet_by_name('Product - History')
+
+        # and:
+        product = IngestWorksheet(product_sheet)
+        history = IngestWorksheet(history_sheet)
+
+        # expect:
+        self.assertFalse(product.is_module_tab())
+        self.assertTrue(history.is_module_tab())
