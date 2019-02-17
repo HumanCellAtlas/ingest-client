@@ -3,6 +3,7 @@ from unittest import TestCase
 from openpyxl import Workbook
 
 from ingest.importer.spreadsheet.ingest_workbook import IngestWorkbook
+from tests.importer.utils.test_utils import create_test_workbook
 
 
 class IngestWorkbookTest(TestCase):
@@ -37,16 +38,9 @@ class IngestWorkbookTest(TestCase):
 
     def test_importable_worksheets(self):
         # given:
-        workbook = Workbook()
-
-        # and:
         importable_names = ['Organ From Donor', 'Cell Suspension', 'Project']
-        expected_worksheets = [workbook.create_sheet(name) for name in importable_names]
+        workbook = create_test_workbook(*importable_names)
         workbook.create_sheet('Schemas')
-
-        # and:
-        default_worksheet = workbook.get_sheet_by_name('Sheet')
-        workbook.remove_sheet(default_worksheet)
 
         # and:
         ingest_workbook = IngestWorkbook(workbook)
@@ -55,4 +49,5 @@ class IngestWorkbookTest(TestCase):
         actual_worksheets = ingest_workbook.importable_worksheets()
 
         # then:
-        self.assertEqual(expected_worksheets, actual_worksheets)
+        actual_titles = [ingest_worksheet.title for ingest_worksheet in actual_worksheets]
+        self.assertEqual(importable_names, actual_titles)
