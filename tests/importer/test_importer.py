@@ -171,7 +171,7 @@ class WorksheetImporterTest(TestCase):
 
         # when:
         worksheet_importer = WorksheetImporter(mock_template_manager)
-        profiles = worksheet_importer.do_import(worksheet)
+        profiles = worksheet_importer.do_import(IngestWorksheet(worksheet))
 
         # then:
         self.assertEqual(2, len(profiles))
@@ -203,7 +203,7 @@ class WorksheetImporterTest(TestCase):
 
         # when:
         worksheet_importer = WorksheetImporter(mock_template_manager)
-        results = worksheet_importer.do_import(worksheet)
+        results = worksheet_importer.do_import(IngestWorksheet(worksheet))
 
         # then:
         self.assertEqual(2, len(results))

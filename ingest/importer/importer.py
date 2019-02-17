@@ -171,7 +171,7 @@ class WorksheetImporter:
         self.concrete_entity = self.template.get_concrete_type(worksheet.title)
 
         records = []
-        rows = self._get_data_rows(worksheet)
+        rows = self._get_data_rows(worksheet.source())
         for index, row in enumerate(rows):
             metadata = row_template.do_import(row)
             if not metadata.object_id:
