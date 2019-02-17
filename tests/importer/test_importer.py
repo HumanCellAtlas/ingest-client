@@ -27,6 +27,18 @@ def _create_single_row_worksheet(worksheet_data: dict):
     return worksheet
 
 
+def _create_test_workbook(*worksheet_titles, include_default_sheet=False):
+    workbook = Workbook()
+    for title in worksheet_titles:
+        workbook.create_sheet(title)
+
+    if not include_default_sheet:
+        default_sheet = workbook.get_sheet_by_name('Sheet')
+        workbook.remove(default_sheet)
+
+    return workbook
+
+
 class WorkbookImporterTest(TestCase):
 
     @patch('ingest.importer.importer.IdentifiableWorksheetImporter')
@@ -44,16 +56,11 @@ class WorkbookImporterTest(TestCase):
         worksheet_importer.do_import = MagicMock(side_effect=[[jdelacruz, setsuna_f_seiei]])
 
         # and:
-        workbook = Workbook()
-        workbook.create_sheet('Users')
-
-        # and: remove the magical default worksheet
-        default_sheet = workbook.get_sheet_by_name('Sheet')
-        workbook.remove(default_sheet)
-
-        # when:
+        workbook = _create_test_workbook('Users')
         ingest_workbook = IngestWorkbook(workbook)
         workbook_importer = WorkbookImporter(template_mgr)
+
+        # when:
         workbook_json = workbook_importer.do_import(ingest_workbook)
 
         # then:
