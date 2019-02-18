@@ -104,4 +104,4 @@ class IngestWorksheet:
 
     def is_module_tab(self):
         match = MODULE_TITLE_PATTERN.match(self._worksheet.title)
-        return match and match.group('field_name')
+        return bool(match and match.group('field_name'))
