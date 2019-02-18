@@ -95,6 +95,17 @@ class MetadataEntityTest(TestCase):
         self.assertEqual('Apple Juice', product_core.get('name'))
         self.assertEqual('pasteurised fruit juice', product_core.get('description'))
 
+    def test_retain_content_fields(self):
+        # given:
+        content = {'user_name': 'jdelacruz', 'password': 'dontrevealthis', 'description': 'temp'}
+        metadata_entity = MetadataEntity(domain_type='user', concrete_type='user', object_id=1,
+                                         content=content)
+        # when:
+        metadata_entity.retain_content_fields('user_name')
+
+        # then:
+        self.assertEqual(['user_name'], list(metadata_entity.content.as_dict().keys()))
+
     def test_add_module_entity(self):
         # given:
         product = MetadataEntity(domain_type='product', concrete_type='product', object_id=12,

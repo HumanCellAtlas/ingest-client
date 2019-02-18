@@ -34,5 +34,8 @@ class DataNode:
     def remove_field(self, field):
         del self.node[field]
 
+    def keys(self):
+        return list(self.node.keys())
+
     def as_dict(self):
         return copy.deepcopy(self.node)
