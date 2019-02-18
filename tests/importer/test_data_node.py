@@ -50,3 +50,17 @@ class DataNodeTest(TestCase):
         # TODO this should probably throw exception instead, indicating path does not exist
         self.assertIsNone(data_node['product.path.does.not.exist'])
         self.assertIsNone(data_node['simply.does.not.exist'])
+
+    # TODO in the future, it might be worth being able to remove nested keys.
+    #  For now, let's remove only high level keys
+    def test_remove_field(self):
+        # given:
+        source = {'description': 'test source', 'count': 101, 'id': 'a3b7880'}
+        data_node = DataNode(defaults=source)
+
+        # when:
+        data_node.remove_field('count')
+        data_node.remove_field('description')
+
+        # then:
+        self.assertEqual(['id'], list(data_node.as_dict().keys()))
