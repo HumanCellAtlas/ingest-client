@@ -170,7 +170,8 @@ class WorkbookImporter:
 
         for worksheet in workbook.module_worksheets():
             if worksheet:
-                module_importer = ModuleWorksheetImporter('project', workbook.get_module_field(worksheet.title))
+                module_field = workbook.get_module_field(worksheet.title)
+                module_importer = ModuleWorksheetImporter('project', module_field)
                 records = module_importer.do_import(worksheet, self.template_mgr)
                 field_name = module_importer.property
                 project_record['content'][field_name] = list(
