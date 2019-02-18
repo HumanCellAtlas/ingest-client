@@ -103,37 +103,24 @@ class _ImportRegistry:
     def __init__(self):
         self._submittable_registry = {}
         self._module_registry = {}
+        self._module_list = []
 
     def add_submittable(self, metadata: MetadataEntity):
-        type_map = self._get_type_map(metadata.domain_type, self._submittable_registry)
+        domain_type = metadata.domain_type
+        type_map = self._submittable_registry.get(domain_type)
+        if not type_map:
+            type_map = {}
+            self._submittable_registry[domain_type] = type_map
         type_map[metadata.object_id] = metadata
 
     def add_module(self, metadata: MetadataEntity):
-        type_map = self._get_type_map(metadata.domain_type, self._module_registry)
-        object_id = metadata.object_id
-        module_list = type_map.get(object_id)
-        if not module_list:
-            module_list = []
-            type_map[object_id] = module_list
-        module_list.append(metadata)
-
-    @staticmethod
-    # Not very object oriented, but this is "simpler" than having to define another abstraction
-    # just to capture this logic. This is just more of a helper function.
-    def _get_type_map(domain_type, registry):
-        type_map = registry.get(domain_type)
-        if not type_map:
-            type_map = {}
-            registry[domain_type] = type_map
-        return type_map
+        self._module_list.append(metadata)
 
     def import_modules(self):
-        for domain_type, type_map in self._module_registry.items():
-            submittable_map = self._submittable_registry.get(domain_type)
-            for object_id, object_module_list in type_map.items():
-                submittable_entity = submittable_map.get(object_id)
-                for module_entity in object_module_list:
-                    submittable_entity.add_module_entity(module_entity)
+        for module_entity in self._module_list:
+            type_map = self._submittable_registry.get(module_entity.domain_type)
+            submittable_entity = type_map.get(module_entity.object_id)
+            submittable_entity.add_module_entity(module_entity)
 
     def flatten(self):
         flat_map = {}
