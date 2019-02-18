@@ -75,6 +75,14 @@ class MetadataEntity:
             link_map[link_entity_type] = existent_links
         existent_links.extend(new_links)
 
+    def add_module_entity(self, module_entity):
+        for field, values in module_entity.content.as_dict().items():
+            module_list = self._content[field]
+            if not module_list:
+                module_list = []
+                self._content[field] = module_list
+            module_list.extend(values)
+
     def map_for_submission(self):
         return {
             'concrete_type': self.concrete_type,

@@ -95,6 +95,28 @@ class MetadataEntityTest(TestCase):
         self.assertEqual('Apple Juice', product_core.get('name'))
         self.assertEqual('pasteurised fruit juice', product_core.get('description'))
 
+    def test_add_module_entity(self):
+        # given:
+        product = MetadataEntity(domain_type='product', concrete_type='product', object_id=12,
+                                 content={'name': 'test product'})
+        john_review = MetadataEntity(domain_type='product', concrete_type='product', object_id=12,
+                                 content={'reviews': [{'user': 'john', 'rating': 5}]})
+        mary_review = MetadataEntity(domain_type='product', concrete_type='product', object_id=12,
+                                 content={'reviews': [{'user': 'mary', 'rating': 3}]})
+
+        # when:
+        product.add_module_entity(john_review)
+        product.add_module_entity(mary_review)
+
+        # then:
+        content_reviews = product.content['reviews']
+        self.assertIsNotNone(content_reviews)
+        self.assertEqual(2, len(content_reviews))
+
+        # and:
+        self.assertEqual({'user': 'john', 'rating': 5}, content_reviews[0])
+        self.assertEqual({'user': 'mary', 'rating': 3}, content_reviews[1])
+
     def test_map_for_submission(self):
         # given:
         test_content = {'description': 'test'}
