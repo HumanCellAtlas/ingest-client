@@ -237,7 +237,8 @@ class ModuleWorksheetImporter(WorksheetImporter):
         self.parent_entity = parent_entity
         self.property = property
 
-    def do_import(self, ingest_worksheet: IngestWorksheet, template: TemplateManager):
+    def do_import(self, worksheet, template: TemplateManager):
+        ingest_worksheet = IngestWorksheet(worksheet, self.KEY_HEADER_ROW_IDX)
         row_template = template.create_simple_row_template(ingest_worksheet)
         records = self._import_using_row_template(ingest_worksheet, row_template)
         return list(records.values())
