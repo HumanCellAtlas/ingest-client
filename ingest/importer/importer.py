@@ -5,6 +5,7 @@ import openpyxl
 
 import ingest.importer.submission
 from ingest.importer.conversion import template_manager
+from ingest.importer.conversion.metadata_entity import MetadataEntity
 from ingest.importer.conversion.template_manager import TemplateManager
 from ingest.importer.spreadsheet.ingest_workbook import IngestWorkbook
 from ingest.importer.submission import IngestSubmitter, EntityMap, EntityLinker
@@ -94,6 +95,55 @@ class XlsImporter:
         return entity_map
 
 
+class _ImportRegistry:
+    """
+    This is a helper class for managing metadata entities during Workbook import.
+    """
+
+    def __init__(self):
+        self._submittable_registry = {}
+        self._module_registry = {}
+
+    def add_submittable(self, metadata: MetadataEntity):
+        type_map = self._get_type_map(metadata.domain_type, self._submittable_registry)
+        type_map[metadata.object_id] = metadata
+
+    def add_module(self, metadata: MetadataEntity):
+        type_map = self._get_type_map(metadata.domain_type, self._module_registry)
+        object_id = metadata.object_id
+        module_list = type_map.get(object_id)
+        if not module_list:
+            module_list = []
+            type_map[object_id] = module_list
+        module_list.append(metadata)
+
+    @staticmethod
+    # Not very object oriented, but this is "simpler" than having to define another abstraction
+    # just to capture this logic. This is just more of a helper function.
+    def _get_type_map(domain_type, registry):
+        type_map = registry.get(domain_type)
+        if not type_map:
+            type_map = {}
+            registry[domain_type] = type_map
+        return type_map
+
+    def import_modules(self):
+        for domain_type, type_map in self._module_registry.items():
+            submittable_map = self._submittable_registry.get(domain_type)
+            for object_id, object_module_list in type_map.items():
+                submittable_entity = submittable_map.get(object_id)
+                for module_entity in object_module_list:
+                    submittable_entity.add_module_entity(module_entity)
+
+    def flatten(self):
+        flat_map = {}
+        for domain_type, type_map in self._submittable_registry.items():
+            flat_type_map = {object_id: metadata.map_for_submission()
+                             for object_id, metadata in type_map.items()}
+            flat_map[domain_type] = flat_type_map
+        return flat_map
+
+
 class WorkbookImporter:
 
     def __init__(self, template_mgr):
@@ -102,19 +152,18 @@ class WorkbookImporter:
         self.logger = logging.getLogger(__name__)
 
     def do_import(self, workbook: IngestWorkbook, project_uuid=None):
-        spreadsheet_json = {}
+        registry = _ImportRegistry()
 
         for worksheet in workbook.importable_worksheets():
             metadata_entities = self.worksheet_importer.do_import(worksheet)
             for entity in metadata_entities:
-                domain_type = entity.domain_type
-                type_map = spreadsheet_json.get(domain_type)
-                if not type_map:
-                    type_map = {}
-                    spreadsheet_json[domain_type] = type_map
-                type_map[entity.object_id] = entity.map_for_submission()
+                if worksheet.is_module_tab():
+                    registry.add_module(entity)
+                else:
+                    registry.add_submittable(entity)
 
-        return spreadsheet_json
+        registry.import_modules()
+        return registry.flatten()
 
     def import_or_reference_project(self, project_uuid, spreadsheet_json, workbook):
         project_dict = None

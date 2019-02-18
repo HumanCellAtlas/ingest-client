@@ -65,6 +65,52 @@ class WorkbookImporterTest(TestCase):
         self.assertEqual({'user_name': 'jdelacruz'}, user_map.get(1)['content'])
         self.assertEqual({'user_name': 'sayyeah'}, user_map.get(96)['content'])
 
+    @patch('ingest.importer.importer.IdentifiableWorksheetImporter')
+    def test_do_import_with_module_tab(self, worksheet_importer_constructor):
+        # given:
+        template_mgr = MagicMock(name='template_manager')
+        worksheet_importer = WorksheetImporter(template_mgr)
+        worksheet_importer_constructor.return_value = worksheet_importer
+
+        # and: stub worksheet importer
+        user = MetadataEntity(concrete_type='user', domain_type='user', object_id=773,
+                              content={'user_name': 'janedoe'})
+        fb_profile = MetadataEntity(concrete_type='sn_profile', domain_type='user', object_id=773,
+                                    content={'sn_profiles': [{'name': 'facebook', 'id': '392'}]})
+        ig_profile = MetadataEntity(concrete_type='sn_profile', domain_type='user', object_id=773,
+                                    content={'sn_profiles': [{'name': 'instagram', 'id': 'a92'}]})
+        worksheet_importer.do_import = MagicMock(side_effect=[[user], [fb_profile, ig_profile]])
+
+        # and: create test workbook
+        workbook = create_test_workbook('User', 'User - SN Profiles')
+        ingest_workbook = IngestWorkbook(workbook)
+        workbook_importer = WorkbookImporter(template_mgr)
+
+        # when:
+        spreadsheet_json = workbook_importer.do_import(ingest_workbook)
+
+        # then:
+        self.assertIsNotNone(spreadsheet_json)
+        self.assertEqual(1, len(spreadsheet_json))
+
+        # and:
+        user_map = spreadsheet_json.get('user')
+        self.assertIsNotNone(user_map)
+
+        # and:
+        janedoe = user_map.get(773)
+        self.assertIsNotNone(janedoe)
+        self.assertEqual('janedoe', janedoe.get('content').get('user_name'))
+
+        # and:
+        sn_profiles = janedoe.get('content').get('sn_profiles')
+        self.assertIsNotNone(sn_profiles)
+        self.assertEqual(2, len(sn_profiles))
+
+        # and:
+        self.assertEqual({'name': 'facebook', 'id': '392'}, sn_profiles[0])
+        self.assertEqual({'name': 'instagram', 'id': 'a92'}, sn_profiles[1])
+
     # TODO remove this test #module-tab
     @patch('ingest.importer.importer.IdentifiableWorksheetImporter')
     @unittest.skip
