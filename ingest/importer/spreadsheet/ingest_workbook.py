@@ -78,7 +78,7 @@ class IngestWorkbook:
                                                         else None
 
 
-MODULE_TITLE_PATTERN = re.compile(r'^(?P<main_label>\w+( \w+)*)( - (?P<field_name>\w+))?')
+MODULE_TITLE_PATTERN = re.compile(r'^(?P<main_label>\w+( \w+)*)( - (?P<field_name>\w+([ -]\w+)*))?')
 
 
 class IngestWorksheet:
@@ -103,5 +103,13 @@ class IngestWorksheet:
         return self._worksheet
 
     def is_module_tab(self):
-        match = MODULE_TITLE_PATTERN.match(self._worksheet.title)
+        match = MODULE_TITLE_PATTERN.match(self.title)
         return bool(match and match.group('field_name'))
+
+    def get_module_field_name(self):
+        match = MODULE_TITLE_PATTERN.match(self.title)
+        field_name = match.group('field_name')
+        if field_name:
+            field_name = re.sub('[\s-]', '_', field_name.lower())
+        return field_name
+

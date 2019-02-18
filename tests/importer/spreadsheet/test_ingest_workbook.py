@@ -82,3 +82,30 @@ class IngestWorksheetTest(TestCase):
         # expect:
         self.assertFalse(product.is_module_tab())
         self.assertTrue(history.is_module_tab())
+
+    def test_get_module_field_name(self):
+        # given:
+        workbook = create_test_workbook('Product - Reviews', 'User - SN Profiles',
+                                        'Log - file-names', 'Account')
+
+        # and: simple
+        reviews_sheet = workbook.get_sheet_by_name('Product - Reviews')
+        reviews = IngestWorksheet(reviews_sheet)
+
+        # and: with space in between
+        sn_profiles_sheet = workbook.get_sheet_by_name('User - SN Profiles')
+        sn_profiles = IngestWorksheet(sn_profiles_sheet)
+
+        # and: with hyphen
+        file_names_sheet = workbook.get_sheet_by_name('Log - file-names')
+        file_names = IngestWorksheet(file_names_sheet)
+
+        # and: not module worksheet
+        account_sheet = workbook.get_sheet_by_name('Account')
+        account = IngestWorksheet(account_sheet)
+
+        # expect:
+        self.assertEqual('reviews', reviews.get_module_field_name())
+        self.assertEqual('sn_profiles', sn_profiles.get_module_field_name())
+        self.assertEqual('file_names', file_names.get_module_field_name())
+        self.assertIsNone(account.get_module_field_name())
