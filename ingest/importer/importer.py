@@ -7,7 +7,7 @@ import ingest.importer.submission
 from ingest.importer.conversion import template_manager
 from ingest.importer.conversion.metadata_entity import MetadataEntity
 from ingest.importer.conversion.template_manager import TemplateManager
-from ingest.importer.spreadsheet.ingest_workbook import IngestWorkbook
+from ingest.importer.spreadsheet.ingest_workbook import IngestWorkbook, IngestWorksheet
 from ingest.importer.submission import IngestSubmitter, EntityMap, EntityLinker
 
 format = '[%(filename)s:%(lineno)s - %(funcName)20s() ] %(asctime)s - %(name)s - %(levelname)s - %(message)s'
@@ -201,14 +201,15 @@ class WorksheetImporter:
         self.logger = logging.getLogger(__name__)
         self.concrete_entity = None
 
-    def do_import(self, worksheet):
+    def do_import(self, ingest_worksheet: IngestWorksheet):
+        worksheet = ingest_worksheet.source()
         row_template = self.template.create_row_template(worksheet)
         # TODO what are we using this for? #module-tab
         # >> Looks like it's being used in the sub-class -> not good!
         self.concrete_entity = self.template.get_concrete_type(worksheet.title)
 
         records = []
-        rows = self._get_data_rows(worksheet.source())
+        rows = self._get_data_rows(worksheet)
         for index, row in enumerate(rows):
             metadata = row_template.do_import(row)
             if not metadata.object_id:
