@@ -78,7 +78,7 @@ class IngestWorkbook:
                                                         else None
 
 
-MODULE_TITLE_PATTERN = re.compile(r'^(?P<main_label>\w+)( - (?P<field_name>\w+))?')
+MODULE_TITLE_PATTERN = re.compile(r'^(?P<main_label>\w+( \w+)*)( - (?P<field_name>\w+))?')
 
 
 class IngestWorksheet:

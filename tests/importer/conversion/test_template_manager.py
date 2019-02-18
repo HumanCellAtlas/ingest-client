@@ -247,6 +247,7 @@ class TemplateManagerTest(TestCase):
 
         # expect:
         self.assertEqual('user_profile', manager.get_concrete_type('User Profile'))
+        schema_template.get_tab_key.assert_called_with('User Profile')
 
     def test_get_concrete_type_of_module_worksheet(self):
         # given:
