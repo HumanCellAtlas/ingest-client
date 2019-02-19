@@ -54,23 +54,6 @@ class TemplateManager:
         return RowTemplate(domain_type, concrete_type, cell_conversions,
                            default_values=default_values)
 
-    # TODO can probably get rid of this one #module-tab
-    def create_simple_row_template(self, worksheet: Worksheet):
-        tab_name = worksheet.title
-        object_type = self.get_concrete_type(tab_name)
-        header_row = self.get_header_row(worksheet)
-
-        cell_conversions = []
-        for cell in header_row:
-            header = cell.value
-            column_spec = self._define_column_spec(header, object_type)
-            strategy = FieldOfSingleElementListCellConversion(column_spec.field_name,
-                                                 column_spec.determine_converter())
-            cell_conversions.append(strategy)
-
-        default_values = self._define_default_values(object_type)
-        return RowTemplate(cell_conversions, default_values=default_values)
-
     # TODO move this outside template manager
     @staticmethod
     def get_header_row(worksheet):

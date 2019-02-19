@@ -159,40 +159,6 @@ class WorkbookImporter:
         registry.import_modules()
         return registry.flatten()
 
-    def import_or_reference_project(self, project_uuid, spreadsheet_json, workbook):
-        project_dict = None
-        if not project_uuid:
-            project_dict = self.import_project(workbook)
-        else:
-            project_dict = self._create_project_dict(project_uuid)
-        spreadsheet_json['project'] = project_dict
-
-    def import_project(self, workbook):
-        project_worksheet = workbook.get_project_worksheet()
-        project_importer = ProjectWorksheetImporter()
-
-        project_dict = project_importer.do_import(project_worksheet, self.template_mgr)
-
-        project_record = list(project_dict.values())[0]
-
-        for worksheet in workbook.module_worksheets():
-            if worksheet:
-                module_field = workbook.get_module_field(worksheet.title)
-                module_importer = ModuleWorksheetImporter('project', module_field)
-                records = module_importer.do_import(worksheet, self.template_mgr)
-                field_name = module_importer.property
-                project_record['content'][field_name] = list(
-                    map(lambda record: record['content'][field_name][0], records))
-
-        return project_dict
-
-    def _create_project_dict(self, project_id):
-        project_dict = {}
-        project_dict[project_id] = {}
-        project_dict[project_id]['is_reference'] = True
-
-        return project_dict
-
 
 class WorksheetImporter:
 
@@ -275,18 +241,6 @@ class ProjectWorksheetImporter(WorksheetImporter):
             raise MultipleProjectsFound()
 
         return records
-
-
-class ModuleWorksheetImporter(WorksheetImporter):
-    def __init__(self, parent_entity, property):
-        super(ModuleWorksheetImporter, self).__init__()
-        self.parent_entity = parent_entity
-        self.property = property
-
-    def do_import(self, worksheet, template: TemplateManager):
-        row_template = template.create_simple_row_template(worksheet)
-        records = self._import_using_row_template(template, worksheet, row_template)
-        return list(records.values())
 
 
 class MultipleProjectsFound(Exception):
