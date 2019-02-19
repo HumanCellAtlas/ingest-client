@@ -190,6 +190,9 @@ class WorksheetImporterTest(TestCase):
         self.assertIn(john_doe, profiles)
         self.assertIn(emma_jackson, profiles)
 
+        # and: domain and concrete type should be set
+        pass
+
     def test_do_import_no_id_metadata(self):
         # given:
         row_template = MagicMock('row_template')

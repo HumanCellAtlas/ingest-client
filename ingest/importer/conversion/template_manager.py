@@ -32,7 +32,7 @@ class TemplateManager:
 
     def create_row_template(self, worksheet: Worksheet):
         tab_name = worksheet.title
-        object_type = self.get_concrete_type(tab_name)
+        concrete_type = self.get_concrete_type(tab_name)
         header_row = self.get_header_row(worksheet)
         cell_conversions = []
 
@@ -44,14 +44,17 @@ class TemplateManager:
                 header_counter[header] = 0
             header_counter[header] = header_counter[header] + 1
 
-            column_spec = self._define_column_spec(header, object_type,
+            column_spec = self._define_column_spec(header, concrete_type,
                                                    order_of_occurence=header_counter[header])
             strategy = conversion_strategy.determine_strategy(column_spec)
             cell_conversions.append(strategy)
 
-        default_values = self._define_default_values(object_type)
-        return RowTemplate(cell_conversions, default_values=default_values)
+        default_values = self._define_default_values(concrete_type)
+        domain_type = self.get_domain_type(concrete_type)
+        return RowTemplate(domain_type, concrete_type, cell_conversions,
+                           default_values=default_values)
 
+    # TODO can probably get rid of this one #module-tab
     def create_simple_row_template(self, worksheet: Worksheet):
         tab_name = worksheet.title
         object_type = self.get_concrete_type(tab_name)
@@ -194,7 +197,9 @@ def build(schemas, ingest_api) -> TemplateManager:
 
 class RowTemplate:
 
-    def __init__(self, cell_conversions, default_values={}):
+    def __init__(self, domain_type, object_type, cell_conversions, default_values={}):
+        self.domain_type = domain_type
+        self.concrete_type = object_type
         self.cell_conversions = cell_conversions
         self.default_values = copy.deepcopy(default_values)
 

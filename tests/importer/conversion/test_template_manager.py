@@ -65,12 +65,12 @@ class TemplateManagerTest(TestCase):
         ingest_api = MagicMock(name='ingest_api')
 
         # and:
-        object_type = 'sample_object'
-        schema_template.get_tab_key = MagicMock(return_value=object_type)
+        concrete_type = 'user'
+        schema_template.get_tab_key = MagicMock(return_value=concrete_type)
 
         # and: set up column spec
-        name_column_spec = MagicMock('name_column_spec')
-        numbers_column_spec = MagicMock('numbers_column_spec')
+        name_column_spec = MagicMock(name='name_column_spec')
+        numbers_column_spec = MagicMock(name='numbers_column_spec')
         build_raw.side_effect = [name_column_spec, numbers_column_spec]
 
         # and: set up raw spec
@@ -106,15 +106,18 @@ class TemplateManagerTest(TestCase):
 
         # then:
         expected_calls = [
-            call('user.profile.first_name', 'sample_object', 'main_category', name_raw_spec,
+            call('user.profile.first_name', concrete_type, 'main_category', name_raw_spec,
                  order_of_occurence=1, parent=name_raw_parent_spec),
-            call('numbers', 'sample_object', None, numbers_raw_spec, order_of_occurence=1, parent=None)
+            call('numbers', concrete_type, None, numbers_raw_spec, order_of_occurence=1,
+                 parent=None)
         ]
         build_raw.assert_has_calls(expected_calls)
         determine_strategy.assert_has_calls([call(name_column_spec), call(numbers_column_spec)])
 
         # and:
         self.assertIsNotNone(row_template)
+        self.assertEqual('main_category', row_template.domain_type)
+        self.assertEqual(concrete_type, row_template.concrete_type)
         self.assertEqual(2, len(row_template.cell_conversions))
         self.assertTrue(name_strategy in row_template.cell_conversions)
         self.assertTrue(numbers_strategy in row_template.cell_conversions)
@@ -305,7 +308,7 @@ class RowTemplateTest(TestCase):
         # given:
         cell_conversions = [FakeConversion('first_name'), FakeConversion('last_name'),
                             FakeConversion('address.city'), FakeConversion('address.country')]
-        row_template = RowTemplate(cell_conversions)
+        row_template = RowTemplate('user', 'user', cell_conversions)
 
         # and:
         workbook = Workbook()
@@ -340,7 +343,7 @@ class RowTemplateTest(TestCase):
 
         # and:
         cell_conversions = [FakeConversion('name'), FakeConversion('description')]
-        row_template = RowTemplate(cell_conversions, default_values=default_values)
+        row_template = RowTemplate('user', 'user', cell_conversions, default_values=default_values)
 
         # and:
         workbook = Workbook()
