@@ -95,11 +95,12 @@ class XlsImporter:
         return entity_map
 
 
+_PROJECT_ID = 'project_0'
+
 class _ImportRegistry:
     """
     This is a helper class for managing metadata entities during Workbook import.
     """
-
     def __init__(self):
         self._submittable_registry = {}
         self._module_registry = {}
@@ -111,9 +112,13 @@ class _ImportRegistry:
         if not type_map:
             type_map = {}
             self._submittable_registry[domain_type] = type_map
+        if domain_type.lower() == 'project':
+            metadata.object_id = _PROJECT_ID
         type_map[metadata.object_id] = metadata
 
     def add_module(self, metadata: MetadataEntity):
+        if metadata.domain_type.lower() == 'project':
+            metadata.object_id = _PROJECT_ID
         self._module_list.append(metadata)
 
     def import_modules(self):

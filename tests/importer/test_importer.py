@@ -115,6 +115,48 @@ class WorkbookImporterTest(TestCase):
         self.assertEqual({'name': 'facebook', 'id': '392'}, sn_profiles[0])
         self.assertEqual({'name': 'instagram', 'id': 'a92'}, sn_profiles[1])
 
+    # NOTE: this is added because the team chose not to define an identity label for Project schema
+    # This breaks the schema agnosticism of the importer framework.
+    # The assumption is that there's only one Project per submission
+    @patch('ingest.importer.importer.IdentifiableWorksheetImporter')
+    def test_do_import_project_worksheet(self, worksheet_importer_constructor):
+        # given:
+        template_mgr = MagicMock(name='template_manager')
+        worksheet_importer = WorkbookImporter(template_mgr)
+        worksheet_importer_constructor.return_value = worksheet_importer
+
+        # and:
+        workbook = create_test_workbook('Project', 'Project - Contributors')
+        project = MetadataEntity(domain_type='project', concrete_type='project',
+                                        content={'description': 'test project'})
+        jsmith = MetadataEntity(domain_type='project', concrete_type='contact',
+                                content={'contributors': [{'name': 'John',
+                                                           'email': 'jsmith@email.com'}]})
+        ppan = MetadataEntity(domain_type='project', concrete_type='contact',
+                              content={'contributors': [{'name': 'Peter',
+                                                         'email': 'peterpan@email.com'}]})
+        worksheet_importer.do_import = MagicMock(side_effect=[[project], [jsmith, ppan]])
+
+        # and:
+        workbook = create_test_workbook('Project', 'Project - Contributors')
+        ingest_workbook = IngestWorkbook(workbook)
+        workbook_importer = WorkbookImporter(template_mgr)
+
+        # when:
+        spreadsheet_json = workbook_importer.do_import(ingest_workbook)
+
+        # then:
+        project_map = spreadsheet_json.get('project')
+        self.assertEqual(1, len(project_map))
+        project_content = list(project_map.values())[0].get('content')
+        self.assertEqual('test project', project_content.get('description'))
+
+        # and:
+        contributors = project_content.get('contributors')
+        self.assertEqual(2, len(contributors))
+        self.assertIn({'name': 'John', 'email': 'jsmith@email.com'}, contributors)
+        self.assertIn({'name': 'Peter', 'email': 'peterpan@email.com'}, contributors)
+
 
 class WorksheetImporterTest(TestCase):
 
