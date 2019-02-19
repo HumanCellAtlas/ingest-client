@@ -76,9 +76,11 @@ class WorkbookImporterTest(TestCase):
         user = MetadataEntity(concrete_type='user', domain_type='user', object_id=773,
                               content={'user_name': 'janedoe'})
         fb_profile = MetadataEntity(concrete_type='sn_profile', domain_type='user', object_id=773,
-                                    content={'sn_profiles': [{'name': 'facebook', 'id': '392'}]})
+                                    content={'sn_profiles': [{'name': 'facebook', 'id': '392'}],
+                                             'description': 'extra field'})
         ig_profile = MetadataEntity(concrete_type='sn_profile', domain_type='user', object_id=773,
-                                    content={'sn_profiles': [{'name': 'instagram', 'id': 'a92'}]})
+                                    content={'sn_profiles': [{'name': 'instagram', 'id': 'a92'}],
+                                             'description': 'extra field'})
         worksheet_importer.do_import = MagicMock(side_effect=[[user], [fb_profile, ig_profile]])
 
         # and: create test workbook
@@ -100,10 +102,12 @@ class WorkbookImporterTest(TestCase):
         # and:
         janedoe = user_map.get(773)
         self.assertIsNotNone(janedoe)
-        self.assertEqual('janedoe', janedoe.get('content').get('user_name'))
+        content = janedoe.get('content')
+        self.assertEqual('janedoe', content.get('user_name'))
+        self.assertEqual(['user_name', 'sn_profiles'], list(content.keys()))
 
         # and:
-        sn_profiles = janedoe.get('content').get('sn_profiles')
+        sn_profiles = content.get('sn_profiles')
         self.assertIsNotNone(sn_profiles)
         self.assertEqual(2, len(sn_profiles))
 

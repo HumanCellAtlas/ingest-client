@@ -143,8 +143,10 @@ class WorkbookImporter:
 
         for worksheet in workbook.importable_worksheets():
             metadata_entities = self.worksheet_importer.do_import(worksheet)
+            module_field_name = worksheet.get_module_field_name()
             for entity in metadata_entities:
                 if worksheet.is_module_tab():
+                    entity.retain_content_fields(module_field_name)
                     registry.add_module(entity)
                 else:
                     registry.add_submittable(entity)
