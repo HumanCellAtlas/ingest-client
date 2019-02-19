@@ -308,7 +308,7 @@ class RowTemplateTest(TestCase):
         # given:
         cell_conversions = [FakeConversion('first_name'), FakeConversion('last_name'),
                             FakeConversion('address.city'), FakeConversion('address.country')]
-        row_template = RowTemplate('user', 'user', cell_conversions)
+        row_template = RowTemplate('user', 'user_profile', cell_conversions)
 
         # and:
         workbook = Workbook()
@@ -324,6 +324,8 @@ class RowTemplateTest(TestCase):
 
         # then:
         self.assertIsNotNone(result)
+        self.assertEqual('user', result.domain_type)
+        self.assertEqual('user_profile', result.concrete_type)
         self.assertEqual('Juan', result.get_content('first_name'))
         self.assertEqual('dela Cruz', result.get_content('last_name'))
 

@@ -187,7 +187,8 @@ class RowTemplate:
         self.default_values = copy.deepcopy(default_values)
 
     def do_import(self, row):
-        metadata = MetadataEntity(content=self.default_values)
+        metadata = MetadataEntity(domain_type=self.domain_type, concrete_type=self.concrete_type,
+                                  content=self.default_values)
         for index, cell in enumerate(row):
             if cell.value is None:
                 continue
