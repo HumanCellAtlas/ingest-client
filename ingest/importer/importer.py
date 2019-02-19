@@ -139,7 +139,7 @@ class _ImportRegistry:
 class WorkbookImporter:
 
     def __init__(self, template_mgr):
-        self.worksheet_importer = IdentifiableWorksheetImporter(template_mgr)
+        self.worksheet_importer = WorksheetImporter(template_mgr)
         self.template_mgr = template_mgr
         self.logger = logging.getLogger(__name__)
 
@@ -215,6 +215,7 @@ class WorksheetImporter:
         return f'{self.UNKNOWN_ID_PREFIX}{self.unknown_id_ctr}'
 
 
+# TODO remove this #module-tab
 class IdentifiableWorksheetImporter(WorksheetImporter):
 
     def do_import(self, worksheet):
@@ -229,6 +230,7 @@ class IdentifiableWorksheetImporter(WorksheetImporter):
         return records
 
 
+# TODO remove this #module-tab
 class ProjectWorksheetImporter(WorksheetImporter):
 
     def do_import(self, worksheet, template: TemplateManager):

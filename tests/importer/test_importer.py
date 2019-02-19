@@ -30,7 +30,7 @@ def _create_single_row_worksheet(worksheet_data: dict):
 
 class WorkbookImporterTest(TestCase):
 
-    @patch('ingest.importer.importer.IdentifiableWorksheetImporter')
+    @patch('ingest.importer.importer.WorksheetImporter')
     def test_do_import(self, worksheet_importer_constructor):
         # given:
         template_mgr = MagicMock(name='template_manager')
@@ -65,7 +65,7 @@ class WorkbookImporterTest(TestCase):
         self.assertEqual({'user_name': 'jdelacruz'}, user_map.get(1)['content'])
         self.assertEqual({'user_name': 'sayyeah'}, user_map.get(96)['content'])
 
-    @patch('ingest.importer.importer.IdentifiableWorksheetImporter')
+    @patch('ingest.importer.importer.WorksheetImporter')
     def test_do_import_with_module_tab(self, worksheet_importer_constructor):
         # given:
         template_mgr = MagicMock(name='template_manager')
@@ -118,7 +118,7 @@ class WorkbookImporterTest(TestCase):
     # NOTE: this is added because the team chose not to define an identity label for Project schema
     # This breaks the schema agnosticism of the importer framework.
     # The assumption is that there's only one Project per submission
-    @patch('ingest.importer.importer.IdentifiableWorksheetImporter')
+    @patch('ingest.importer.importer.WorksheetImporter')
     def test_do_import_project_worksheet(self, worksheet_importer_constructor):
         # given:
         template_mgr = MagicMock(name='template_manager')
