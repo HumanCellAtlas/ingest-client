@@ -57,7 +57,7 @@ class IngestWorkbook:
         if not worksheet:
             return schemas
 
-        for row in worksheet.iter_rows(row_offset=1, max_row=(worksheet.max_row - 1)):
+        for row in worksheet.iter_rows(min_row=2, max_row=worksheet.max_row):
             schema_cell = row[0]
             schemas.append(schema_cell.value)
         return schemas
@@ -73,4 +73,3 @@ class IngestWorkbook:
     def get_module_field(self, module_tab_name):
         return MODULE_TABS[module_tab_name]['field'] if MODULE_TABS.get(module_tab_name) and \
                                                         MODULE_TABS[module_tab_name].get('field') else None
-

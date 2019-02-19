@@ -1,7 +1,7 @@
 import copy
 import logging
 
-from openpyxl.worksheet import Worksheet
+from openpyxl.worksheet.worksheet import Worksheet
 
 import ingest.template.schema_template as schema_template
 from ingest.api.ingestapi import IngestApi
@@ -11,6 +11,7 @@ from ingest.importer.conversion.conversion_strategy import CellConversion, \
     ListElementCellConversion, FieldOfSingleElementListCellConversion
 from ingest.importer.conversion.metadata_entity import MetadataEntity
 from ingest.importer.data_node import DataNode
+from ingest.importer.spreadsheet.ingest_worksheet import IngestWorksheet
 from ingest.template.schema_template import SchemaTemplate
 
 
@@ -29,16 +30,14 @@ class TemplateManager:
         data_node['schema_type'] = schema['domain_entity']
         return data_node
 
-    def create_row_template(self, worksheet: Worksheet):
-        tab_name = worksheet.title
+    def create_row_template(self, ingest_worksheet: IngestWorksheet):
+        tab_name = ingest_worksheet.title
         object_type = self.get_concrete_entity_of_tab(tab_name)
-        header_row = self.get_header_row(worksheet)
+        column_headers = ingest_worksheet.get_column_headers()
         cell_conversions = []
 
         header_counter = {}
-        for cell in header_row:
-            header = cell.value
-
+        for header in column_headers:
             if not header_counter.get(header):
                 header_counter[header] = 0
             header_counter[header] = header_counter[header] + 1
@@ -51,14 +50,13 @@ class TemplateManager:
         default_values = self._define_default_values(object_type)
         return RowTemplate(cell_conversions, default_values=default_values)
 
-    def create_simple_row_template(self, worksheet: Worksheet):
-        tab_name = worksheet.title
+    def create_simple_row_template(self, ingest_worksheet: IngestWorksheet):
+        tab_name = ingest_worksheet.title
         object_type = self.get_concrete_entity_of_tab(tab_name)
-        header_row = self.get_header_row(worksheet)
+        headers = ingest_worksheet.get_column_headers()
 
         cell_conversions = []
-        for cell in header_row:
-            header = cell.value
+        for header in headers:
             column_spec = self._define_column_spec(header, object_type)
             strategy = FieldOfSingleElementListCellConversion(column_spec.field_name,
                                                  column_spec.determine_converter())
@@ -66,21 +64,6 @@ class TemplateManager:
 
         default_values = self._define_default_values(object_type)
         return RowTemplate(cell_conversions, default_values=default_values)
-
-    # TODO move this outside template manager
-    @staticmethod
-    def get_header_row(worksheet):
-        for row in worksheet.iter_rows(row_offset=3, max_row=1):
-            header_row = row
-
-        clean_header_row = []
-
-        for cell in header_row:
-            if cell.value is None:
-                continue
-            clean_header_row.append(cell)
-
-        return clean_header_row
 
     def _define_column_spec(self, header, object_type, order_of_occurence=1):
         if header is not None:

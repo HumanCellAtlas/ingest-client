@@ -9,6 +9,7 @@ class DataType(Enum):
     STRING = 'string'
     INTEGER = 'integer'
     BOOLEAN = 'boolean'
+    NUMBER = 'number'
     UNDEFINED = 'undefined'
 
     @staticmethod
@@ -38,13 +39,19 @@ class DefaultConverter(Converter):
 class StringConverter(Converter):
 
     def convert(self, data):
-        return str(data)
+        return str(data).strip()
 
 
 class IntegerConverter(Converter):
 
     def convert(self, data):
         return int(data)
+
+
+class NumberConverter(Converter):
+
+    def convert(self, data):
+        return float(data)
 
 
 BOOLEAN_TABLE = {
@@ -65,10 +72,10 @@ class BooleanConverter(Converter):
 
 
 CONVERTER_MAP = {
-
     DataType.STRING: StringConverter(),
     DataType.INTEGER: IntegerConverter(),
-    DataType.BOOLEAN: BooleanConverter()
+    DataType.BOOLEAN: BooleanConverter(),
+    DataType.NUMBER: NumberConverter()
 
 }
 

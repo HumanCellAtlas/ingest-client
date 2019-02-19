@@ -8,6 +8,7 @@ from ingest.importer.conversion.column_specification import ColumnSpecification
 from ingest.importer.conversion.conversion_strategy import CellConversion
 from ingest.importer.conversion.template_manager import TemplateManager, RowTemplate
 from ingest.importer.data_node import DataNode
+from ingest.importer.spreadsheet.ingest_worksheet import IngestWorksheet
 
 
 def _mock_schema_template_lookup(value_type='string', multivalue=False):
@@ -100,14 +101,17 @@ class TemplateManagerTest(TestCase):
         determine_strategy.side_effect = [name_strategy, numbers_strategy]
 
         # and: prepare worksheet
+        header_row_idx = 4
         workbook = Workbook()
         worksheet = workbook.create_sheet('sample')
-        worksheet['A4'] = 'user.profile.first_name'
-        worksheet['B4'] = 'numbers'
+        worksheet[f'A{header_row_idx}'] = 'user.profile.first_name'
+        worksheet[f'B{header_row_idx}'] = 'numbers'
+
+        ingest_worksheet = IngestWorksheet(worksheet, header_row_idx=header_row_idx)
 
         # when:
         template_manager = TemplateManager(schema_template, ingest_api)
-        row_template: RowTemplate = template_manager.create_row_template(worksheet)
+        row_template: RowTemplate = template_manager.create_row_template(ingest_worksheet)
 
         # then:
         expected_calls = [
@@ -144,11 +148,12 @@ class TemplateManagerTest(TestCase):
         workbook = Workbook()
         worksheet = workbook.create_sheet('profile')
         worksheet['A4'] = 'profile.name'
+        ingest_worksheet = IngestWorksheet(worksheet)
 
         # when:
         template_manager = TemplateManager(schema_template, ingest_api)
         template_manager.get_schema_url = MagicMock(return_value=schema_url)
-        row_template = template_manager.create_row_template(worksheet)
+        row_template = template_manager.create_row_template(ingest_worksheet)
 
         # then:
         content_defaults = row_template.default_values
@@ -173,10 +178,11 @@ class TemplateManagerTest(TestCase):
         workbook = Workbook()
         worksheet = workbook.create_sheet('sample')
         worksheet['A4'] = None
+        ingest_worksheet = IngestWorksheet(worksheet)
 
         # when:
         template_manager = TemplateManager(schema_template, ingest_api)
-        row_template = template_manager.create_row_template(worksheet)
+        row_template = template_manager.create_row_template(ingest_worksheet)
 
         # then:
         self.assertEqual(0, len(row_template.cell_conversions))

@@ -7,6 +7,7 @@ import ingest.importer.submission
 from ingest.importer.conversion import template_manager
 from ingest.importer.conversion.template_manager import TemplateManager
 from ingest.importer.spreadsheet.ingest_workbook import IngestWorkbook
+from ingest.importer.spreadsheet.ingest_worksheet import IngestWorksheet
 from ingest.importer.submission import IngestSubmitter, EntityMap, EntityLinker
 
 
@@ -36,6 +37,7 @@ class XlsImporter:
         try:
             template_mgr = template_manager.build(ingest_workbook.get_schemas(), self.ingest_api)
         except Exception as e:
+            self.logger.error(e)
             raise SchemaRetrievalError(
                 'An error was encountered while retrieving the schema information to process the spreadsheet.')
 
@@ -156,7 +158,7 @@ class WorksheetImporter:
 
     KEY_HEADER_ROW_IDX = 4
     USER_FRIENDLY_HEADER_ROW_IDX = 2
-    START_ROW_IDX = 5
+    START_ROW_IDX = 6
 
     UNKNOWN_ID_PREFIX = '_unknown_'
 
@@ -166,14 +168,15 @@ class WorksheetImporter:
         self.concrete_entity = None
 
     def do_import(self, worksheet, template: TemplateManager):
-        row_template = template.create_row_template(worksheet)
+        ingest_worksheet = IngestWorksheet(worksheet, self.KEY_HEADER_ROW_IDX)
+        row_template = template.create_row_template(ingest_worksheet)
         self.concrete_entity = template.get_concrete_entity_of_tab(worksheet.title)
-        return self._import_using_row_template(template, worksheet, row_template)
+        return self._import_using_row_template(ingest_worksheet, row_template)
 
-    def _import_using_row_template(self, template, worksheet, row_template):
+    def _import_using_row_template(self, ingest_worksheet: IngestWorksheet, row_template):
         records = {}
-        rows = self._get_data_rows(worksheet, template)
-        for index, row in enumerate(rows):
+        data_rows = ingest_worksheet.get_row_cells(start_row=self.START_ROW_IDX)
+        for index, row in enumerate(data_rows):
             metadata = row_template.do_import(row)
 
             record_id = self._determine_record_id(metadata)
@@ -186,26 +189,6 @@ class WorksheetImporter:
                 'concrete_type': self.concrete_entity
             }
         return records
-
-    @staticmethod
-    def _is_empty_row(row):
-        return all(cell.value is None for cell in row)
-
-    def _get_data_rows(self, worksheet, template):
-        header_row = template.get_header_row(worksheet)
-        max_row = self._compute_max_row(worksheet) - self.START_ROW_IDX
-        rows = worksheet.iter_rows(row_offset=self.START_ROW_IDX, max_row=max_row)
-        return [row[:len(header_row)] for row in rows if not WorksheetImporter._is_empty_row(row)]
-
-    # NOTE: there are no tests around this because it's too complicated to setup the
-    # scenario where the worksheet returns an erroneous max_row value.
-    @staticmethod
-    def _compute_max_row(worksheet):
-        max_row = worksheet.max_row
-        if max_row is None:
-            worksheet.calculate_dimension(force=True)
-            max_row = worksheet.max_row
-        return max_row
 
     def _determine_record_id(self, metadata):
         record_id = metadata.object_id
@@ -255,8 +238,9 @@ class ModuleWorksheetImporter(WorksheetImporter):
         self.property = property
 
     def do_import(self, worksheet, template: TemplateManager):
-        row_template = template.create_simple_row_template(worksheet)
-        records = self._import_using_row_template(template, worksheet, row_template)
+        ingest_worksheet = IngestWorksheet(worksheet, self.KEY_HEADER_ROW_IDX)
+        row_template = template.create_simple_row_template(ingest_worksheet)
+        records = self._import_using_row_template(ingest_worksheet, row_template)
         return list(records.values())
 
 

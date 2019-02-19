@@ -2,6 +2,8 @@
 """
 Description goes here
 """
+import os
+
 __author__ = "jupp"
 __license__ = "Apache 2.0"
 __date__ = "25/05/2018"
@@ -10,7 +12,6 @@ from unittest import TestCase
 from ingest.template.spreadsheet_builder import SpreadsheetBuilder
 import unittest
 import tests.template.schema_mock_utils as schema_mock
-import xlsxwriter
 from openpyxl import load_workbook as Reader
 
 
@@ -20,7 +21,6 @@ class TestSchemaTemplate(TestCase):
         self.dummyProjectUri = "https://schema.humancellatlas.org/type/project/5.1.0/project"
         self.dummyDonorUri = "https://schema.humancellatlas.org/type/biomaterial/5.1.0/donor_organism"
         pass
-
 
     def test_no_schemas(self):
         data = '{"id" : "' + self.dummyDonorUri + '", "properties": {"foo_bar": {"user_friendly" : "Foo bar", "description" : "this is a foo bar", "example" : "e.g. foo"}} }'
@@ -39,6 +39,7 @@ class TestSchemaTemplate(TestCase):
         self.assertEqual("For example: e.g. foo", sheet.cell(row=3, column=1).value.strip())
         self.assertEqual("donor_organism.foo_bar", sheet.cell(row=4, column=1).value)
 
+        os.remove(file)
 
 
     # TODO fixme

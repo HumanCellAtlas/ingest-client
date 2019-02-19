@@ -1,8 +1,10 @@
 import json
 import logging
+import requests
 
 format = '[%(filename)s:%(lineno)s - %(funcName)20s() ] %(asctime)s - %(name)s - %(levelname)s - %(message)s'
 logging.basicConfig(format=format)
+
 
 class IngestSubmitter(object):
 
@@ -10,6 +12,7 @@ class IngestSubmitter(object):
         # TODO the IngestSubmitter should probably build its own instance of IngestApi
         self.ingest_api = ingest_api
         self.logger = logging.getLogger(__name__)
+        self.PROGRESS_CTR = 50
 
     def submit(self, entity_map, submission_url):
         submission = Submission(self.ingest_api, submission_url)
@@ -37,16 +40,24 @@ class IngestSubmitter(object):
         submission.link_entity(project, submission_entity, 'submissionEnvelopes')
 
     def _link_entities(self, entities, entity_map, submission):
+        progress = 0
         for entity in entities:
             for link in entity.direct_links:
                 to_entity = entity_map.get_entity(link['entity'], link['id'])
                 try:
                     submission.link_entity(entity, to_entity, relationship=link['relationship'])
+                    progress = progress + 1
+                    if progress % self.PROGRESS_CTR == 0 or (progress == int(submission.manifest.get('expectedLinks', 0))):
+                        manifest_url = self.ingest_api.get_link_from_resource(submission.manifest, 'self')
+                        self.ingest_api.patch(manifest_url, {'actualLinks': progress})
+                        self.logger.info(f"links progress: {progress}/ {submission.manifest.get('expectedLinks')}")
+
                 except Exception as link_error:
                     error_message = f'''The {entity.type} with id {entity.id} could not be 
                     linked to {to_entity.type} with id {to_entity.id}.'''
                     self.logger.error(error_message)
                     self.logger.error(f'{str(link_error)}')
+                    raise
 
     def _add_entities(self, entities, submission):
         for entity in entities:
@@ -271,6 +282,7 @@ class Submission(object):
         self.ingest_api = ingest_api
         self.submission_url = submission_url
         self.metadata_dict = {}
+        self.manifest = None
 
     def get_submission_url(self):
         return self.submission_url
@@ -317,10 +329,12 @@ class Submission(object):
             'expectedProcesses': entity_map.count_entities_of_type('process'),
             'expectedFiles': entity_map.count_entities_of_type('file'),
             'expectedProtocols': entity_map.count_entities_of_type('protocol'),
-            'expectedProjects': entity_map.count_entities_of_type('project')
+            'expectedProjects': entity_map.count_entities_of_type('project'),
+            'expectedLinks': entity_map.count_links()
         })
 
-        self.ingest_api.createSubmissionManifest(self.submission_url, manifest_json)
+        self.manifest = self.ingest_api.createSubmissionManifest(self.submission_url, manifest_json)
+        return self.manifest
 
 
 class EntityMap(object):
@@ -429,6 +443,12 @@ class EntityMap(object):
     def count_entities_of_type(self, type):
         return len(self.get_new_entities_of_type(type))
 
+    def count_links(self):
+        count = 0
+        for entity in self.get_entities():
+            count = count + len(entity.direct_links)
+        return count
+
 
 class Error(Exception):
     def __init__(self, code, message):
@@ -471,3 +491,6 @@ class MultipleProcessesFound(Error):
         self.process_ids = process_ids
         self.from_entity = from_entity
 
+
+class SubmissionError(Error):
+    pass

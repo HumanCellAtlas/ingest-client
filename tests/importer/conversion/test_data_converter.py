@@ -2,7 +2,7 @@ from unittest import TestCase
 
 from ingest.importer.conversion.data_converter import (
     BooleanConverter, ListConverter, DataType, IntegerConverter,
-    StringConverter)
+    StringConverter, NumberConverter)
 from ingest.importer.conversion.exceptions import InvalidBooleanValue
 
 
@@ -28,6 +28,8 @@ class StringConverterTest(TestCase):
 
         # expect:
         self.assertEqual('data', converter.convert('data'))
+        self.assertEqual('data', converter.convert('data    '))
+        self.assertEqual('data', converter.convert('      data    '))
         self.assertEqual('278', converter.convert(278))
         self.assertEqual('True', converter.convert(True))
         self.assertEqual('3.1416', converter.convert(3.1416))
@@ -58,6 +60,24 @@ class IntegerConverterTest(TestCase):
         # expect:
         self.assertEqual(755, converter.convert(755))
         self.assertEqual(89221, converter.convert(89221))
+
+
+class NumberConverterTest(TestCase):
+
+    def test_convert_from_string(self):
+        converter = NumberConverter()
+        self.assertEqual(1.2, converter.convert("1.2"))
+        self.assertEqual(5, converter.convert("5"))
+        self.assertEqual(-1, converter.convert("-1"))
+        self.assertEqual(2.99, converter.convert("2.99"))
+        self.assertEqual(3.1415, converter.convert("3.1415"))
+
+    def test_convert_from_number(self):
+        converter = NumberConverter()
+        self.assertEqual(1.2, converter.convert(1.2))
+        self.assertEqual(2.00, converter.convert(2.00))
+        self.assertEqual(-2, converter.convert(-2))
+        self.assertEqual(3.1415, converter.convert(3.1415))
 
 
 class BooleanConverterTest(TestCase):
