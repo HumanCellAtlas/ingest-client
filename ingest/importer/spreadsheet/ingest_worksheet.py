@@ -5,6 +5,7 @@ from xlsxwriter.worksheet import Worksheet
 MODULE_TITLE_PATTERN = re.compile(r'^(?P<main_label>\w+( \w+)*)( - (?P<field_name>\w+([ -]\w+)*))?')
 
 HEADER_ROW_IDX = 4
+START_DATA_ROW = 5
 
 
 class IngestWorksheet(object):
@@ -35,7 +36,7 @@ class IngestWorksheet(object):
 
         return headers
 
-    def get_row_cells(self, start_row=1, end_row=None):
+    def get_data_rows(self, start_row=START_DATA_ROW, end_row=None):
         headers = self.get_column_headers()
         max_row = end_row or self.compute_max_row()
         rows = self._worksheet.iter_rows(min_row=start_row, max_row=max_row)

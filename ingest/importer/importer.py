@@ -178,39 +178,14 @@ class WorksheetImporter:
 
     def do_import(self, ingest_worksheet: IngestWorksheet):
         row_template = self.template.create_row_template(ingest_worksheet)
-        worksheet = ingest_worksheet.source()
-        # TODO what are we using this for? #module-tab
-        # >> Looks like it's being used in the sub-class -> not good!
-        self.concrete_entity = self.template.get_concrete_type(worksheet.title)
-
         records = []
-        rows = self._get_data_rows(worksheet)
+        rows = ingest_worksheet.get_data_rows()
         for index, row in enumerate(rows):
             metadata = row_template.do_import(row)
             if not metadata.object_id:
                 metadata.object_id = self._generate_id()
             records.append(metadata)
         return records
-
-    @staticmethod
-    def _is_empty_row(row):
-        return all(cell.value is None for cell in row)
-
-    def _get_data_rows(self, worksheet):
-        header_row = self.template.get_header_row(worksheet)
-        max_row = self._compute_max_row(worksheet) - self.START_ROW_OFFSET
-        rows = worksheet.iter_rows(row_offset=self.START_ROW_OFFSET, max_row=max_row)
-        return [row[:len(header_row)] for row in rows if not WorksheetImporter._is_empty_row(row)]
-
-    # NOTE: there are no tests around this because it's too complicated to setup the
-    # scenario where the worksheet returns an erroneous max_row value.
-    @staticmethod
-    def _compute_max_row(worksheet):
-        max_row = worksheet.max_row
-        if max_row is None:
-            worksheet.calculate_dimension(force=True)
-            max_row = worksheet.max_row
-        return max_row
 
     def _generate_id(self):
         self.unknown_id_ctr = self.unknown_id_ctr + 1

@@ -81,7 +81,7 @@ class IngestWorksheetTest(TestCase):
         self.assertEqual(len(column_headers), 3)
         self.assertEqual(column_headers, ['name', 'address', 'email'])
 
-    def test_get_row_cells(self):
+    def test_get_data_rows(self):
         # given:
         start_row_idx = 6
         header_row_idx = 4
@@ -97,7 +97,7 @@ class IngestWorksheetTest(TestCase):
 
         # when
         ingest_worksheet = IngestWorksheet(worksheet, header_row_idx=header_row_idx)
-        data_rows = ingest_worksheet.get_row_cells(start_row=start_row_idx)
+        data_rows = ingest_worksheet.get_data_rows(start_row=start_row_idx)
 
         data_row_values = []
         for row in data_rows:
@@ -108,7 +108,7 @@ class IngestWorksheetTest(TestCase):
         self.assertEqual(len(data_row_values), 1)
         self.assertEqual(data_row_values, [expected_data_row])
 
-    def test_get_row_cells_skip_blank_rows(self):
+    def test_get_data_rows_skip_blank_rows(self):
         # given:
         start_row_idx = 6
         header_row_idx = 4
@@ -126,7 +126,7 @@ class IngestWorksheetTest(TestCase):
 
         # when
         ingest_worksheet = IngestWorksheet(worksheet, header_row_idx=header_row_idx)
-        data_rows = ingest_worksheet.get_row_cells(start_row=start_row_idx)
+        data_rows = ingest_worksheet.get_data_rows(start_row=start_row_idx)
 
         data_row_values = []
         for row in data_rows:
