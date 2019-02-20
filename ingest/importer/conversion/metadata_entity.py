@@ -2,15 +2,30 @@ import copy
 
 from ingest.importer.data_node import DataNode
 
+TYPE_UNDEFINED = 'undefined'
+
 
 class MetadataEntity:
 
-    def __init__(self, object_id=None, content={}, links={}, external_links={}, linking_details={}):
+    # TODO enforce definition of concrete and domain types for all MetadataEntity
+    # It's only currently done this way to minimise friction with other parts of the system
+    def __init__(self, concrete_type=TYPE_UNDEFINED, domain_type=TYPE_UNDEFINED, object_id=None,
+                 content={}, links={}, external_links={}, linking_details={}):
+        self._concrete_type = concrete_type
+        self._domain_type = domain_type
         self.object_id = object_id
         self._content = DataNode(defaults=copy.deepcopy(content))
         self._links = copy.deepcopy(links)
         self._external_links = copy.deepcopy(external_links)
         self._linking_details = DataNode(defaults=copy.deepcopy(linking_details))
+
+    @property
+    def concrete_type(self):
+        return self._concrete_type
+
+    @property
+    def domain_type(self):
+        return self._domain_type
 
     @property
     def content(self):
@@ -59,3 +74,25 @@ class MetadataEntity:
             existent_links = []
             link_map[link_entity_type] = existent_links
         existent_links.extend(new_links)
+
+    def retain_content_fields(self, *fields):
+        for key in self._content.keys():
+            if key not in fields:
+                self._content.remove_field(key)
+
+    def add_module_entity(self, module_entity):
+        for field, values in module_entity.content.as_dict().items():
+            module_list = self._content[field]
+            if not module_list:
+                module_list = []
+                self._content[field] = module_list
+            module_list.extend(values)
+
+    def map_for_submission(self):
+        return {
+            'concrete_type': self.concrete_type,
+            'content': self._content.as_dict(),
+            'links_by_entity': self.links,
+            'external_links_by_entity': self.external_links,
+            'linking_details': self.linking_details
+        }

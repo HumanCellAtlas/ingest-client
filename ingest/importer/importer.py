@@ -1,15 +1,14 @@
 import json
 import logging
+
 import openpyxl
 
 import ingest.importer.submission
-
 from ingest.importer.conversion import template_manager
+from ingest.importer.conversion.metadata_entity import MetadataEntity
 from ingest.importer.conversion.template_manager import TemplateManager
-from ingest.importer.spreadsheet.ingest_workbook import IngestWorkbook
-from ingest.importer.spreadsheet.ingest_worksheet import IngestWorksheet
+from ingest.importer.spreadsheet.ingest_workbook import IngestWorkbook, IngestWorksheet
 from ingest.importer.submission import IngestSubmitter, EntityMap, EntityLinker
-
 
 format = '[%(filename)s:%(lineno)s - %(funcName)20s() ] %(asctime)s - %(name)s - %(levelname)s - %(message)s'
 logging.basicConfig(format=format)
@@ -46,6 +45,7 @@ class XlsImporter:
 
         return spreadsheet_json, template_mgr
 
+    # TODO nothing seems to be using the project_uuid argument. Why is this even here?
     def import_file(self, file_path, submission_url, project_uuid=None):
         error_json = None
         submission = None
@@ -96,117 +96,131 @@ class XlsImporter:
         return entity_map
 
 
+_PROJECT_ID = 'project_0'
+
+class _ImportRegistry:
+    """
+    This is a helper class for managing metadata entities during Workbook import.
+    """
+    def __init__(self):
+        self._submittable_registry = {}
+        self._module_registry = {}
+        self._module_list = []
+
+    def add_submittable(self, metadata: MetadataEntity):
+        domain_type = metadata.domain_type
+        type_map = self._submittable_registry.get(domain_type)
+        if not type_map:
+            type_map = {}
+            self._submittable_registry[domain_type] = type_map
+        if domain_type.lower() == 'project':
+            metadata.object_id = _PROJECT_ID
+        type_map[metadata.object_id] = metadata
+
+    def add_module(self, metadata: MetadataEntity):
+        if metadata.domain_type.lower() == 'project':
+            metadata.object_id = _PROJECT_ID
+        self._module_list.append(metadata)
+
+    def import_modules(self):
+        for module_entity in self._module_list:
+            type_map = self._submittable_registry.get(module_entity.domain_type)
+            submittable_entity = type_map.get(module_entity.object_id)
+            submittable_entity.add_module_entity(module_entity)
+
+    def flatten(self):
+        flat_map = {}
+        for domain_type, type_map in self._submittable_registry.items():
+            flat_type_map = {object_id: metadata.map_for_submission()
+                             for object_id, metadata in type_map.items()}
+            flat_map[domain_type] = flat_type_map
+        return flat_map
+
+
 class WorkbookImporter:
 
     def __init__(self, template_mgr):
-        self.worksheet_importer = IdentifiableWorksheetImporter()
+        self.worksheet_importer = WorksheetImporter(template_mgr)
         self.template_mgr = template_mgr
         self.logger = logging.getLogger(__name__)
 
     def do_import(self, workbook: IngestWorkbook, project_uuid=None):
-        spreadsheet_json = {}
-
-        self.import_or_reference_project(project_uuid, spreadsheet_json, workbook)
+        registry = _ImportRegistry()
 
         for worksheet in workbook.importable_worksheets():
-            concrete_entity = self.template_mgr.get_concrete_entity_of_tab(worksheet.title)
-            domain_entity = self.template_mgr.get_domain_entity(concrete_entity)
+            metadata_entities = self.worksheet_importer.do_import(worksheet)
+            module_field_name = worksheet.get_module_field_name()
+            for entity in metadata_entities:
+                if worksheet.is_module_tab():
+                    entity.retain_content_fields(module_field_name)
+                    registry.add_module(entity)
+                else:
+                    registry.add_submittable(entity)
 
-            entities_dict = self.worksheet_importer.do_import(worksheet, self.template_mgr)
-            if spreadsheet_json.get(domain_entity) is None:
-                spreadsheet_json[domain_entity] = {}
-
-            spreadsheet_json[domain_entity].update(entities_dict)
-
-        return spreadsheet_json
-
-    def import_or_reference_project(self, project_uuid, spreadsheet_json, workbook):
-        project_dict = None
-        if not project_uuid:
-            project_dict = self.import_project(workbook)
-        else:
-            project_dict = self._create_project_dict(project_uuid)
-        spreadsheet_json['project'] = project_dict
-
-    def import_project(self, workbook):
-        project_worksheet = workbook.get_project_worksheet()
-        project_importer = ProjectWorksheetImporter()
-
-        project_dict = project_importer.do_import(project_worksheet, self.template_mgr)
-
-        project_record = list(project_dict.values())[0]
-
-        for worksheet in workbook.module_worksheets():
-            if worksheet:
-                module_importer = ModuleWorksheetImporter('project', workbook.get_module_field(worksheet.title))
-                records = module_importer.do_import(worksheet, self.template_mgr)
-                field_name = module_importer.property
-                project_record['content'][field_name] = list(
-                    map(lambda record: record['content'][field_name][0], records))
-
-        return project_dict
-
-    def _create_project_dict(self, project_id):
-        project_dict = {}
-        project_dict[project_id] = {}
-        project_dict[project_id]['is_reference'] = True
-
-        return project_dict
+        registry.import_modules()
+        return registry.flatten()
 
 
 class WorksheetImporter:
 
     KEY_HEADER_ROW_IDX = 4
     USER_FRIENDLY_HEADER_ROW_IDX = 2
-    START_ROW_IDX = 6
+    START_ROW_OFFSET = 5
 
     UNKNOWN_ID_PREFIX = '_unknown_'
 
-    def __init__(self):
+    def __init__(self, template: TemplateManager):
+        self.template = template
         self.unknown_id_ctr = 0
         self.logger = logging.getLogger(__name__)
         self.concrete_entity = None
 
-    def do_import(self, worksheet, template: TemplateManager):
-        ingest_worksheet = IngestWorksheet(worksheet, self.KEY_HEADER_ROW_IDX)
-        row_template = template.create_row_template(ingest_worksheet)
-        self.concrete_entity = template.get_concrete_entity_of_tab(worksheet.title)
-        return self._import_using_row_template(ingest_worksheet, row_template)
+    def do_import(self, ingest_worksheet: IngestWorksheet):
+        worksheet = ingest_worksheet.source()
+        row_template = self.template.create_row_template(worksheet)
+        # TODO what are we using this for? #module-tab
+        # >> Looks like it's being used in the sub-class -> not good!
+        self.concrete_entity = self.template.get_concrete_type(worksheet.title)
 
-    def _import_using_row_template(self, ingest_worksheet: IngestWorksheet, row_template):
-        records = {}
-        data_rows = ingest_worksheet.get_row_cells(start_row=self.START_ROW_IDX)
-        for index, row in enumerate(data_rows):
+        records = []
+        rows = self._get_data_rows(worksheet)
+        for index, row in enumerate(rows):
             metadata = row_template.do_import(row)
-
-            record_id = self._determine_record_id(metadata)
-
-            records[record_id] = {
-                'content': metadata.content.as_dict(),
-                'links_by_entity': metadata.links,
-                'external_links_by_entity': metadata.external_links,
-                'linking_details': metadata.linking_details,
-                'concrete_type': self.concrete_entity
-            }
+            if not metadata.object_id:
+                metadata.object_id = self._generate_id()
+            records.append(metadata)
         return records
 
-    def _determine_record_id(self, metadata):
-        record_id = metadata.object_id
+    @staticmethod
+    def _is_empty_row(row):
+        return all(cell.value is None for cell in row)
 
-        if record_id is None:
-            record_id = self._generate_id()
+    def _get_data_rows(self, worksheet):
+        header_row = self.template.get_header_row(worksheet)
+        max_row = self._compute_max_row(worksheet) - self.START_ROW_OFFSET
+        rows = worksheet.iter_rows(row_offset=self.START_ROW_OFFSET, max_row=max_row)
+        return [row[:len(header_row)] for row in rows if not WorksheetImporter._is_empty_row(row)]
 
-        return record_id
+    # NOTE: there are no tests around this because it's too complicated to setup the
+    # scenario where the worksheet returns an erroneous max_row value.
+    @staticmethod
+    def _compute_max_row(worksheet):
+        max_row = worksheet.max_row
+        if max_row is None:
+            worksheet.calculate_dimension(force=True)
+            max_row = worksheet.max_row
+        return max_row
 
     def _generate_id(self):
         self.unknown_id_ctr = self.unknown_id_ctr + 1
         return f'{self.UNKNOWN_ID_PREFIX}{self.unknown_id_ctr}'
 
 
+# TODO remove this #module-tab
 class IdentifiableWorksheetImporter(WorksheetImporter):
 
-    def do_import(self, worksheet, template: TemplateManager):
-        records = super(IdentifiableWorksheetImporter, self).do_import(worksheet, template)
+    def do_import(self, worksheet):
+        records = super(IdentifiableWorksheetImporter, self).do_import(worksheet)
 
         if not self.concrete_entity:
             raise InvalidTabName(worksheet.title)
@@ -217,6 +231,7 @@ class IdentifiableWorksheetImporter(WorksheetImporter):
         return records
 
 
+# TODO remove this #module-tab
 class ProjectWorksheetImporter(WorksheetImporter):
 
     def do_import(self, worksheet, template: TemplateManager):
@@ -229,19 +244,6 @@ class ProjectWorksheetImporter(WorksheetImporter):
             raise MultipleProjectsFound()
 
         return records
-
-
-class ModuleWorksheetImporter(WorksheetImporter):
-    def __init__(self, parent_entity, property):
-        super(ModuleWorksheetImporter, self).__init__()
-        self.parent_entity = parent_entity
-        self.property = property
-
-    def do_import(self, worksheet, template: TemplateManager):
-        ingest_worksheet = IngestWorksheet(worksheet, self.KEY_HEADER_ROW_IDX)
-        row_template = template.create_simple_row_template(ingest_worksheet)
-        records = self._import_using_row_template(ingest_worksheet, row_template)
-        return list(records.values())
 
 
 class MultipleProjectsFound(Exception):

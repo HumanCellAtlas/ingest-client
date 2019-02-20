@@ -8,10 +8,11 @@ from ingest.api.ingestapi import IngestApi
 from ingest.importer.conversion import utils, conversion_strategy
 from ingest.importer.conversion.column_specification import ColumnSpecification
 from ingest.importer.conversion.conversion_strategy import CellConversion, \
-    ListElementCellConversion, FieldOfSingleElementListCellConversion
+    FieldOfSingleElementListCellConversion
 from ingest.importer.conversion.metadata_entity import MetadataEntity
 from ingest.importer.data_node import DataNode
 from ingest.importer.spreadsheet.ingest_worksheet import IngestWorksheet
+from ingest.importer.spreadsheet.ingest_workbook import MODULE_TITLE_PATTERN
 from ingest.template.schema_template import SchemaTemplate
 
 
@@ -23,7 +24,7 @@ class TemplateManager:
         self.logger = logging.getLogger(__name__)
 
     def create_template_node(self, worksheet: Worksheet):
-        concrete_entity = self.get_concrete_entity_of_tab(worksheet.title)
+        concrete_entity = self.get_concrete_type(worksheet.title)
         schema = self._get_schema(concrete_entity)
         data_node = DataNode()
         data_node['describedBy'] = schema['url']
@@ -32,7 +33,7 @@ class TemplateManager:
 
     def create_row_template(self, ingest_worksheet: IngestWorksheet):
         tab_name = ingest_worksheet.title
-        object_type = self.get_concrete_entity_of_tab(tab_name)
+        concrete_type = self.get_concrete_type(tab_name)
         column_headers = ingest_worksheet.get_column_headers()
         cell_conversions = []
 
@@ -42,28 +43,15 @@ class TemplateManager:
                 header_counter[header] = 0
             header_counter[header] = header_counter[header] + 1
 
-            column_spec = self._define_column_spec(header, object_type,
+            column_spec = self._define_column_spec(header, concrete_type,
                                                    order_of_occurence=header_counter[header])
             strategy = conversion_strategy.determine_strategy(column_spec)
             cell_conversions.append(strategy)
 
-        default_values = self._define_default_values(object_type)
-        return RowTemplate(cell_conversions, default_values=default_values)
-
-    def create_simple_row_template(self, ingest_worksheet: IngestWorksheet):
-        tab_name = ingest_worksheet.title
-        object_type = self.get_concrete_entity_of_tab(tab_name)
-        headers = ingest_worksheet.get_column_headers()
-
-        cell_conversions = []
-        for header in headers:
-            column_spec = self._define_column_spec(header, object_type)
-            strategy = FieldOfSingleElementListCellConversion(column_spec.field_name,
-                                                 column_spec.determine_converter())
-            cell_conversions.append(strategy)
-
-        default_values = self._define_default_values(object_type)
-        return RowTemplate(cell_conversions, default_values=default_values)
+        default_values = self._define_default_values(concrete_type)
+        domain_type = self.get_domain_type(concrete_type)
+        return RowTemplate(domain_type, concrete_type, cell_conversions,
+                           default_values=default_values)
 
     def _define_column_spec(self, header, object_type, order_of_occurence=1):
         if header is not None:
@@ -71,7 +59,7 @@ class TemplateManager:
             raw_spec = self.lookup(header)
             raw_parent_spec = self.lookup(parent_path)
             concrete_type = utils.extract_root_field(header)
-            main_category = self.get_domain_entity(concrete_type)
+            main_category = self.get_domain_type(concrete_type)
             column_spec = ColumnSpecification.build_raw(header, object_type, main_category, raw_spec,
                                                         parent=raw_parent_spec,
                                                         order_of_occurence=order_of_occurence)
@@ -82,7 +70,7 @@ class TemplateManager:
     def _define_default_values(self, object_type):
         default_values = {
             'describedBy': self.get_schema_url(object_type),
-            'schema_type': self.get_domain_entity(object_type)
+            'schema_type': self.get_domain_type(object_type)
         }
         return default_values
 
@@ -101,31 +89,49 @@ class TemplateManager:
         # TODO use schema version that is specified in spreadsheet for now
         return schema.get('url') if schema else None
 
-    def get_domain_entity(self, concrete_entity):
-        domain_entity = None
-        schema = self._get_schema(concrete_entity)
-        if schema:
-            domain_entity = schema.get('domain_entity', '')
-            subdomain = domain_entity.split('/')
-            if subdomain:
-                domain_entity = subdomain[0]
-        return domain_entity
-
+    # TODO this just 2 lines. Perhaps we can just inline this to client code?
     def _get_schema(self, concrete_entity):
         spec = self.lookup(concrete_entity)
         return spec.get('schema') if spec else None
 
-    def get_concrete_entity_of_tab(self, tab_name):
-        concrete_entity = None
-        try:
-            tabs_config = self.template.get_tabs_config()
-            concrete_entity = tabs_config.get_key_for_label(tab_name)
-        except schema_template.UnknownKeyException as e:
-            pass
-        except KeyError as e:
-            pass
+    def get_concrete_type(self, title):
+        """
+        Concrete Entity refers to the specific type of an object based on a given schema.
+        This method determines the concrete type given the worksheet title.
 
-        return concrete_entity
+        :param title: the title of the worksheet.
+        :return: the Concrete Entity of a given worksheet title
+        """
+        result = MODULE_TITLE_PATTERN.search(title)
+        if not result:
+            raise InvalidTabName(title)
+        main_label = result.group('main_label')
+        return self.template.get_tab_key(main_label)
+
+    def get_domain_type(self, concrete_type):
+        """
+        Domain Entity Type is the high level classification of Concrete Entities. For example,
+        Donor Organism belongs to the Biomaterial domain; all Donor Organisms are considered
+        Biomaterials.
+
+        :param concrete_type: the actual metadata entity type
+        :return: the Domain Entity Type for the given concrete_entity
+        """
+        domain_type = None
+        spec = self.lookup(concrete_type)
+        schema = spec.get('schema') if spec else None
+        if schema:
+            domain_type = schema.get('domain_entity', '')
+            type_components = domain_type.split('/')
+            if type_components:
+                domain_type = type_components[0]
+        return domain_type
+
+    # Created this convenience method so that clients don't have to call template manager twice.
+    # Unlike _get_schema, this will be used outside the context of this class.
+    def get_worksheet_domain_type(self, title):
+        concrete_type = self.get_concrete_type(title)
+        return self.get_domain_type(concrete_type)
 
     def get_key_for_label(self, header_name, tab_name):
         try:
@@ -158,12 +164,15 @@ def build(schemas, ingest_api) -> TemplateManager:
 
 class RowTemplate:
 
-    def __init__(self, cell_conversions, default_values={}):
+    def __init__(self, domain_type, object_type, cell_conversions, default_values={}):
+        self.domain_type = domain_type
+        self.concrete_type = object_type
         self.cell_conversions = cell_conversions
         self.default_values = copy.deepcopy(default_values)
 
     def do_import(self, row):
-        metadata = MetadataEntity(content=self.default_values)
+        metadata = MetadataEntity(domain_type=self.domain_type, concrete_type=self.concrete_type,
+                                  content=self.default_values)
         for index, cell in enumerate(row):
             if cell.value is None:
                 continue
@@ -179,3 +188,10 @@ class ParentFieldNotFound(Exception):
 
         self.header_name = header_name
 
+
+# TODO there's another exception with this name; change this (or that) #module-tab
+class InvalidTabName(Exception):
+
+    def __init__(self, tab_name):
+        super(InvalidTabName, self).__init__(f'Invalid tab name [{tab_name}]')
+        self.tab_name = tab_name

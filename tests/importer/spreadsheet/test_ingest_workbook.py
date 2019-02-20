@@ -2,7 +2,8 @@ from unittest import TestCase
 
 from openpyxl import Workbook
 
-from ingest.importer.spreadsheet.ingest_workbook import IngestWorkbook
+from ingest.importer.spreadsheet.ingest_workbook import IngestWorkbook, IngestWorksheet
+from tests.importer.utils.test_utils import create_test_workbook
 
 
 class IngestWorkbookTest(TestCase):
@@ -37,16 +38,9 @@ class IngestWorkbookTest(TestCase):
 
     def test_importable_worksheets(self):
         # given:
-        workbook = Workbook()
-
-        # and:
-        importable_names = ['Organ From Donor', 'Cell Suspension']
-        expected_worksheets = [workbook.create_sheet(name) for name in importable_names]
+        importable_names = ['Organ From Donor', 'Cell Suspension', 'Project']
+        workbook = create_test_workbook(*importable_names)
         workbook.create_sheet('Schemas')
-
-        # and:
-        default_worksheet = workbook.get_sheet_by_name('Sheet')
-        workbook.remove_sheet(default_worksheet)
 
         # and:
         ingest_workbook = IngestWorkbook(workbook)
@@ -55,4 +49,63 @@ class IngestWorkbookTest(TestCase):
         actual_worksheets = ingest_workbook.importable_worksheets()
 
         # then:
-        self.assertEqual(expected_worksheets, actual_worksheets)
+        actual_titles = [ingest_worksheet.title for ingest_worksheet in actual_worksheets]
+        self.assertEqual(importable_names, actual_titles)
+
+
+class IngestWorksheetTest(TestCase):
+
+    def test_get_title(self):
+        # given:
+        workbook = create_test_workbook('User', 'User - SN Profiles')
+        user_sheet = workbook.get_sheet_by_name('User')
+        sn_profiles_sheet = workbook.get_sheet_by_name('User - SN Profiles')
+
+        # and:
+        user = IngestWorksheet(user_sheet)
+        sn_profiles = IngestWorksheet(sn_profiles_sheet)
+
+        # expect:
+        self.assertEqual('User', user.title)
+        self.assertEqual('User - SN Profiles', sn_profiles.title)
+
+    def test_is_module_tab(self):
+        # given:
+        workbook = create_test_workbook('Product', 'Product - History')
+        product_sheet = workbook.get_sheet_by_name('Product')
+        history_sheet = workbook.get_sheet_by_name('Product - History')
+
+        # and:
+        product = IngestWorksheet(product_sheet)
+        history = IngestWorksheet(history_sheet)
+
+        # expect:
+        self.assertFalse(product.is_module_tab())
+        self.assertTrue(history.is_module_tab())
+
+    def test_get_module_field_name(self):
+        # given:
+        workbook = create_test_workbook('Product - Reviews', 'User - SN Profiles',
+                                        'Log - file-names', 'Account')
+
+        # and: simple
+        reviews_sheet = workbook.get_sheet_by_name('Product - Reviews')
+        reviews = IngestWorksheet(reviews_sheet)
+
+        # and: with space in between
+        sn_profiles_sheet = workbook.get_sheet_by_name('User - SN Profiles')
+        sn_profiles = IngestWorksheet(sn_profiles_sheet)
+
+        # and: with hyphen
+        file_names_sheet = workbook.get_sheet_by_name('Log - file-names')
+        file_names = IngestWorksheet(file_names_sheet)
+
+        # and: not module worksheet
+        account_sheet = workbook.get_sheet_by_name('Account')
+        account = IngestWorksheet(account_sheet)
+
+        # expect:
+        self.assertEqual('reviews', reviews.get_module_field_name())
+        self.assertEqual('sn_profiles', sn_profiles.get_module_field_name())
+        self.assertEqual('file_names', file_names.get_module_field_name())
+        self.assertIsNone(account.get_module_field_name())
