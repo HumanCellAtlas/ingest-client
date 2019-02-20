@@ -11,8 +11,7 @@ from ingest.importer.conversion.conversion_strategy import CellConversion, \
     FieldOfSingleElementListCellConversion
 from ingest.importer.conversion.metadata_entity import MetadataEntity
 from ingest.importer.data_node import DataNode
-from ingest.importer.spreadsheet.ingest_worksheet import IngestWorksheet
-from ingest.importer.spreadsheet.ingest_workbook import MODULE_TITLE_PATTERN
+from ingest.importer.spreadsheet.ingest_worksheet import IngestWorksheet, MODULE_TITLE_PATTERN
 from ingest.template.schema_template import SchemaTemplate
 
 

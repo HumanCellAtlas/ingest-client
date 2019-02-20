@@ -1,8 +1,8 @@
-import re
-
 from openpyxl import Workbook
 
 # TODO clean this up #module-tab
+from ingest.importer.spreadsheet.ingest_worksheet import IngestWorksheet
+
 SCHEMAS_WORKSHEET = 'Schemas'
 PROJECT_WORKSHEET = 'Project'
 CONTACT_WORKSHEET = 'Contact'
@@ -76,39 +76,3 @@ class IngestWorkbook:
         return MODULE_TABS[module_tab_name]['field'] if MODULE_TABS.get(module_tab_name) and \
                                                         MODULE_TABS[module_tab_name].get('field') \
                                                         else None
-
-
-MODULE_TITLE_PATTERN = re.compile(r'^(?P<main_label>\w+( \w+)*)( - (?P<field_name>\w+([ -]\w+)*))?')
-
-
-class IngestWorksheet:
-
-    def __init__(self, worksheet):
-        self._worksheet = worksheet
-
-    @property
-    def title(self):
-        return self._worksheet.title
-
-    def source(self):
-        """
-        This method was created to retrofit this new IngestWorksheet framework with the original
-        WorksheetImporter. Avoid using this method in new code as much as possible.
-
-        Moving forward, the intention is for IngestWorksheet to meld with
-        WorksheetImporter in a way that IngestWorksheet takes care of importing itself.
-
-        :return: the internal Openpyxl Worksheet.
-        """
-        return self._worksheet
-
-    def is_module_tab(self):
-        match = MODULE_TITLE_PATTERN.match(self.title)
-        return bool(match and match.group('field_name'))
-
-    def get_module_field_name(self):
-        match = MODULE_TITLE_PATTERN.match(self.title)
-        field_name = match.group('field_name')
-        if field_name:
-            field_name = re.sub('[\s-]', '_', field_name.lower())
-        return field_name

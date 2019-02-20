@@ -3,9 +3,24 @@ from unittest import TestCase
 from ingest.importer.spreadsheet.ingest_worksheet import IngestWorksheet
 
 import ingest.utils.spreadsheet as spreadsheet_utils
+from tests.importer.utils.test_utils import create_test_workbook
 
 
 class IngestWorksheetTest(TestCase):
+
+    def test_get_title(self):
+        # given:
+        workbook = create_test_workbook('User', 'User - SN Profiles')
+        user_sheet = workbook.get_sheet_by_name('User')
+        sn_profiles_sheet = workbook.get_sheet_by_name('User - SN Profiles')
+
+        # and:
+        user = IngestWorksheet(user_sheet)
+        sn_profiles = IngestWorksheet(sn_profiles_sheet)
+
+        # expect:
+        self.assertEqual('User', user.title)
+        self.assertEqual('User - SN Profiles', sn_profiles.title)
 
     def test_get_column_headers(self):
         # given:
@@ -121,3 +136,45 @@ class IngestWorksheetTest(TestCase):
         # then:
         self.assertEqual(len(data_row_values), 1)
         self.assertEqual(data_row_values, [expected_data_row])
+
+    def test_is_module_tab(self):
+        # given:
+        workbook = create_test_workbook('Product', 'Product - History')
+        product_sheet = workbook.get_sheet_by_name('Product')
+        history_sheet = workbook.get_sheet_by_name('Product - History')
+
+        # and:
+        product = IngestWorksheet(product_sheet)
+        history = IngestWorksheet(history_sheet)
+
+        # expect:
+        self.assertFalse(product.is_module_tab())
+        self.assertTrue(history.is_module_tab())
+
+    def test_get_module_field_name(self):
+        # given:
+        workbook = create_test_workbook('Product - Reviews', 'User - SN Profiles',
+                                        'Log - file-names', 'Account')
+
+        # and: simple
+        reviews_sheet = workbook.get_sheet_by_name('Product - Reviews')
+        reviews = IngestWorksheet(reviews_sheet)
+
+        # and: with space in between
+        sn_profiles_sheet = workbook.get_sheet_by_name('User - SN Profiles')
+        sn_profiles = IngestWorksheet(sn_profiles_sheet)
+
+        # and: with hyphen
+        file_names_sheet = workbook.get_sheet_by_name('Log - file-names')
+        file_names = IngestWorksheet(file_names_sheet)
+
+        # and: not module worksheet
+        account_sheet = workbook.get_sheet_by_name('Account')
+        account = IngestWorksheet(account_sheet)
+
+        # expect:
+        self.assertEqual('reviews', reviews.get_module_field_name())
+        self.assertEqual('sn_profiles', sn_profiles.get_module_field_name())
+        self.assertEqual('file_names', file_names.get_module_field_name())
+        self.assertIsNone(account.get_module_field_name())
+

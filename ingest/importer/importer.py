@@ -7,7 +7,8 @@ import ingest.importer.submission
 from ingest.importer.conversion import template_manager
 from ingest.importer.conversion.metadata_entity import MetadataEntity
 from ingest.importer.conversion.template_manager import TemplateManager
-from ingest.importer.spreadsheet.ingest_workbook import IngestWorkbook, IngestWorksheet
+from ingest.importer.spreadsheet.ingest_workbook import IngestWorkbook
+from ingest.importer.spreadsheet.ingest_worksheet import IngestWorksheet
 from ingest.importer.submission import IngestSubmitter, EntityMap, EntityLinker
 
 format = '[%(filename)s:%(lineno)s - %(funcName)20s() ] %(asctime)s - %(name)s - %(levelname)s - %(message)s'
