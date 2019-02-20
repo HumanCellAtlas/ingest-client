@@ -177,8 +177,8 @@ class WorksheetImporter:
         self.concrete_entity = None
 
     def do_import(self, ingest_worksheet: IngestWorksheet):
+        row_template = self.template.create_row_template(ingest_worksheet)
         worksheet = ingest_worksheet.source()
-        row_template = self.template.create_row_template(worksheet)
         # TODO what are we using this for? #module-tab
         # >> Looks like it's being used in the sub-class -> not good!
         self.concrete_entity = self.template.get_concrete_type(worksheet.title)
