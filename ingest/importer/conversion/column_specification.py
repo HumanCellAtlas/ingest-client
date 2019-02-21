@@ -2,6 +2,7 @@ from enum import Enum
 
 from ingest.importer.conversion import utils, data_converter
 from ingest.importer.conversion.data_converter import DataType, CONVERTER_MAP, ListConverter
+from ingest.template.schema_template import SchemaTemplate
 
 
 class ConversionType(Enum):
@@ -89,3 +90,17 @@ class ColumnSpecification:
                                    multivalue=multivalue, multivalue_parent=multivalue_parent,
                                    identity=identity, external_reference=external_reference,
                                    order_of_occurence=order_of_occurence)
+
+
+def look_up(schema_template: SchemaTemplate, header):
+    concrete_type = utils.extract_root_field(header)
+
+    type_spec = schema_template.lookup(concrete_type)
+    schema = type_spec.get('schema')
+    domain_type, *_ = schema.get('domain_entity').split('/')
+
+    field_spec = schema_template.lookup(header)
+    data_type = field_spec.get('value_type')
+    return ColumnSpecification(header, concrete_type, domain_type, data_type,
+                               identity=field_spec.get('identifiable'),
+                               multivalue=field_spec.get('multivalue'))

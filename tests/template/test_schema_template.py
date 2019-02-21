@@ -7,6 +7,7 @@ __author__ = "jupp"
 __license__ = "Apache 2.0"
 __date__ = "01/05/2018"
 
+import os
 import unittest
 from unittest import TestCase
 
@@ -15,8 +16,6 @@ from ingest.template.schema_template import RootSchemaException
 from ingest.template.schema_template import SchemaParser
 from ingest.template.schema_template import UnknownKeyException
 
-
-import os
 
 class TestSchemaTemplate(TestCase):
 
@@ -75,7 +74,6 @@ class TestSchemaTemplate(TestCase):
         template = schema_mock.get_template_for_json(data=data)
         self.assertEqual("string", template.lookup("donor_organism.foo_bar.value_type"))
         self.assertFalse(template.lookup("donor_organism.foo_bar.multivalue"))
-
 
     def test_has_type_list(self):
         data = '{"id" : "' + self.dummyDonorUri + '", "properties": { "foo_bar": {"type" : "array" , "items" : {"type": "string"}} } }'

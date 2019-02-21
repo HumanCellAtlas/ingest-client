@@ -2,6 +2,9 @@ from unittest import TestCase
 
 import copy
 
+from mock import MagicMock
+
+from ingest.importer.conversion import column_specification
 from ingest.importer.conversion.column_specification import ColumnSpecification, ConversionType
 from ingest.importer.conversion.data_converter import DataType, IntegerConverter, \
     BooleanConverter, ListConverter, StringConverter, DefaultConverter
@@ -101,6 +104,63 @@ class ColumnSpecificationTest(TestCase):
         # then:
         self.assertFalse(single_column_spec.is_field_of_list_element())
         self.assertTrue(multi_column_spec.is_field_of_list_element())
+
+    def test_look_up(self):
+        # given:
+        schema_template = self._prepare_mock_schema_template()
+
+        # when:
+        id_spec = column_specification.look_up(schema_template, 'product.id')
+        name_spec = column_specification.look_up(schema_template, 'product.name')
+        remarks_spec = column_specification.look_up(schema_template, 'product.remarks')
+
+        # then:
+        self.assertTrue(id_spec.is_identity())
+        self.assertEqual('product.id', id_spec.field_name)
+        self.assertEqual('integer', id_spec.data_type)
+
+        # and:
+        self.assertFalse(name_spec.multivalue)
+        self.assertEqual('product.name', name_spec.field_name)
+        self.assertEqual('product', name_spec.object_type)
+        self.assertEqual('merchandise', name_spec.main_category)
+        self.assertEqual('string', name_spec.data_type)
+
+        # and:
+        self.assertTrue(remarks_spec.multivalue)
+        self.assertEqual('product.remarks', remarks_spec.field_name)
+
+    @staticmethod
+    def _prepare_mock_schema_template():
+        type_spec = {
+            'schema': {'domain_entity': 'merchandise/product'}
+        }
+
+        id_spec = {
+            'value_type': 'integer',
+            'multivalue': False,
+            'identifiable': True
+        }
+
+        name_spec = {
+            'value_type': 'string',
+            'multivalue': False
+        }
+
+        remarks_spec = {
+            'value_type': 'string',
+            'multivalue': True
+        }
+
+        schema_template = MagicMock(name='schema_template')
+        spec_map = {
+            'product.name': name_spec,
+            'product.id': id_spec,
+            'product.remarks': remarks_spec,
+            'product': type_spec
+        }
+        schema_template.lookup = lambda key: spec_map[key]
+        return schema_template
 
     def test_determine_converter_for_single_value(self):
         # expect:
