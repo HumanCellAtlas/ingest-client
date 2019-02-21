@@ -92,6 +92,7 @@ class ColumnSpecification:
                                    order_of_occurence=order_of_occurence)
 
 
+# TODO this should be in the SchemaTemplate class
 def look_up(schema_template: SchemaTemplate, header):
     concrete_type = utils.extract_root_field(header)
 
@@ -99,8 +100,12 @@ def look_up(schema_template: SchemaTemplate, header):
     schema = type_spec.get('schema')
     domain_type, *_ = schema.get('domain_entity').split('/')
 
+    parent_field, *_ = utils.split_field_chain(header)
+    parent_spec = schema_template.lookup(parent_field)
+
     field_spec = schema_template.lookup(header)
     data_type = field_spec.get('value_type')
     return ColumnSpecification(header, concrete_type, domain_type, data_type,
                                identity=field_spec.get('identifiable'),
-                               multivalue=field_spec.get('multivalue'))
+                               multivalue=field_spec.get('multivalue'),
+                               multivalue_parent=parent_spec.get('multivalue'))
