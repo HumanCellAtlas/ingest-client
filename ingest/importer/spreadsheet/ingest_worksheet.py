@@ -5,7 +5,7 @@ from xlsxwriter.worksheet import Worksheet
 MODULE_TITLE_PATTERN = re.compile(r'^(?P<main_label>\w+( \w+)*)( - (?P<field_name>\w+([ -]\w+)*))?')
 
 HEADER_ROW_IDX = 4
-START_DATA_ROW = 5
+START_DATA_ROW = 6
 
 
 class IngestWorksheet(object):
