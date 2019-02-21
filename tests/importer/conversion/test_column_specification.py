@@ -114,6 +114,8 @@ class ColumnSpecificationTest(TestCase):
         name_spec = column_specification.look_up(schema_template, 'product.name')
         remarks_spec = column_specification.look_up(schema_template, 'product.remarks')
         review_rating_spec = column_specification.look_up(schema_template, 'product.reviews.rating')
+        manufacturer_id_spec = column_specification.look_up(schema_template,
+                                                            'product.manufacturer_id')
 
         # then:
         self.assertTrue(id_spec.is_identity())
@@ -130,6 +132,12 @@ class ColumnSpecificationTest(TestCase):
         # and:
         self.assertTrue(remarks_spec.multivalue)
         self.assertEqual('product.remarks', remarks_spec.field_name)
+
+        # and:
+        self.assertTrue(manufacturer_id_spec.identity)
+        self.assertTrue(manufacturer_id_spec.external_reference)
+        self.assertEqual('product.manufacturer_id', manufacturer_id_spec.field_name)
+        self.assertEqual('integer', manufacturer_id_spec.data_type)
 
         # and:
         self.assertFalse(review_rating_spec.multivalue)
@@ -167,10 +175,18 @@ class ColumnSpecificationTest(TestCase):
             'multivalue': False
         }
 
+        manufacturer_id_spec = {
+            'value_type': 'integer',
+            'multivalue': False,
+            'identifiable': True,
+            'external_reference': True
+        }
+
         schema_template = MagicMock(name='schema_template')
         spec_map = {
             'product.reviews.rating': review_rating_spec,
             'product.reviews': reviews_spec,
+            'product.manufacturer_id': manufacturer_id_spec,
             'product.name': name_spec,
             'product.id': id_spec,
             'product.remarks': remarks_spec,

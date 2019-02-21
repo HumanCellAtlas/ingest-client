@@ -107,5 +107,6 @@ def look_up(schema_template: SchemaTemplate, header):
     data_type = field_spec.get('value_type')
     return ColumnSpecification(header, concrete_type, domain_type, data_type,
                                identity=field_spec.get('identifiable'),
+                               external_reference=field_spec.get('external_reference'),
                                multivalue=field_spec.get('multivalue'),
                                multivalue_parent=parent_spec.get('multivalue'))
