@@ -105,94 +105,100 @@ class ColumnSpecificationTest(TestCase):
         self.assertFalse(single_column_spec.is_field_of_list_element())
         self.assertTrue(multi_column_spec.is_field_of_list_element())
 
-    def test_look_up(self):
+    def test_look_up_id_field(self):
         # given:
-        schema_template = self._prepare_mock_schema_template()
-
+        schema_spec = {
+            'product.id': {'value_type': 'integer', 'multivalue': False, 'identifiable': True}
+        }
+        schema_template = self._prepare_mock_schema_template('product', 'merchandise/product',
+                                                             schema_spec)
         # when:
         id_spec = column_specification.look_up(schema_template, 'product.id')
-        name_spec = column_specification.look_up(schema_template, 'product.name')
-        remarks_spec = column_specification.look_up(schema_template, 'product.remarks')
-        review_rating_spec = column_specification.look_up(schema_template, 'product.reviews.rating')
-        manufacturer_id_spec = column_specification.look_up(schema_template,
-                                                            'product.manufacturer_id')
 
         # then:
         self.assertTrue(id_spec.is_identity())
         self.assertEqual('product.id', id_spec.field_name)
         self.assertEqual('integer', id_spec.data_type)
 
-        # and:
+    def test_look_up_object_field(self):
+        # given:
+        schema_spec = {'product.name': {'value_type': 'string', 'multivalue': False}}
+        schema_template = self._prepare_mock_schema_template('product', 'merchandise/product',
+                                                             schema_spec)
+
+        # when:
+        name_spec = column_specification.look_up(schema_template, 'product.name')
+
+        # then:
         self.assertFalse(name_spec.multivalue)
         self.assertEqual('product.name', name_spec.field_name)
         self.assertEqual('product', name_spec.object_type)
         self.assertEqual('merchandise', name_spec.main_category)
         self.assertEqual('string', name_spec.data_type)
 
-        # and:
+    def test_look_up_multivalue_object_field(self):
+        # given:
+        schema_spec = {'product.remarks': {'value_type': 'string', 'multivalue': True}}
+        schema_template = self._prepare_mock_schema_template('product', 'merchandise/product',
+                                                             schema_spec)
+
+        # when:
+        remarks_spec = column_specification.look_up(schema_template, 'product.remarks')
+
+        # then:
         self.assertTrue(remarks_spec.multivalue)
         self.assertEqual('product.remarks', remarks_spec.field_name)
 
-        # and:
+    def test_look_up_nested_object_field(self):
+        # given:
+        schema_spec = {
+            'product.reviews.rating': {'value_type': 'integer','multivalue': False},
+            'product.reviews': {'value_type': 'object', 'multivalue': True}
+        }
+        schema_template = self._prepare_mock_schema_template('product', 'merchandise/product',
+                                                             schema_spec)
+
+        # when:
+        review_rating_spec = column_specification.look_up(schema_template, 'product.reviews.rating')
+
+        # then:
+        self.assertFalse(review_rating_spec.multivalue)
+        self.assertTrue(review_rating_spec.multivalue_parent)
+
+    def test_look_up_external_id(self):
+        # given:
+        schema_spec = {
+            'product.manufacturer_id': {
+                'value_type': 'integer',
+                'multivalue': False,
+                'identifiable': True,
+                'external_reference': True
+            }
+        }
+        schema_template = self._prepare_mock_schema_template('product', 'merchandise/product',
+                                                             schema_spec)
+
+        # when:
+        manufacturer_id_spec = column_specification.look_up(schema_template,
+                                                            'product.manufacturer_id')
+
+        # then:
         self.assertTrue(manufacturer_id_spec.identity)
         self.assertTrue(manufacturer_id_spec.external_reference)
         self.assertEqual('product.manufacturer_id', manufacturer_id_spec.field_name)
         self.assertEqual('integer', manufacturer_id_spec.data_type)
 
-        # and:
-        self.assertFalse(review_rating_spec.multivalue)
-        self.assertTrue(review_rating_spec.multivalue_parent)
-
     @staticmethod
-    def _prepare_mock_schema_template():
-        type_spec = {
-            'schema': {'domain_entity': 'merchandise/product'}
-        }
-
-        id_spec = {
-            'value_type': 'integer',
-            'multivalue': False,
-            'identifiable': True
-        }
-
-        name_spec = {
-            'value_type': 'string',
-            'multivalue': False
-        }
-
-        remarks_spec = {
-            'value_type': 'string',
-            'multivalue': True
-        }
-
-        reviews_spec = {
-            'value_type': 'object',
-            'multivalue': True
-        }
-
-        review_rating_spec = {
-            'value_type': 'integer',
-            'multivalue': False
-        }
-
-        manufacturer_id_spec = {
-            'value_type': 'integer',
-            'multivalue': False,
-            'identifiable': True,
-            'external_reference': True
-        }
+    def _prepare_mock_schema_template(domain_type, domain_entity=None, schema_spec_map=None):
+        value_map = copy.deepcopy(schema_spec_map)
+        if domain_entity:
+            type_spec = {
+                'schema': {'domain_entity': domain_entity}
+            }
+            value_map.update({domain_type: type_spec})
 
         schema_template = MagicMock(name='schema_template')
-        spec_map = {
-            'product.reviews.rating': review_rating_spec,
-            'product.reviews': reviews_spec,
-            'product.manufacturer_id': manufacturer_id_spec,
-            'product.name': name_spec,
-            'product.id': id_spec,
-            'product.remarks': remarks_spec,
-            'product': type_spec
-        }
-        schema_template.lookup = lambda key: spec_map[key]
+        schema_template.lookup = lambda key: value_map[key]
         return schema_template
 
     def test_determine_converter_for_single_value(self):
