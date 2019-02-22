@@ -93,20 +93,15 @@ class ColumnSpecification:
 
 
 # TODO this should be in the SchemaTemplate class
-def look_up(schema_template: SchemaTemplate, header, context=None):
-    # Context refers to the context by which the header is being specified for.
+def look_up(schema_template: SchemaTemplate, header, concrete_type, domain_type, context=None):
+    # Context refers to the context in which the header is being specified for.
     # For example, the property `project.contributors.email` will have a slightly different
     # specification in the context of `project.contributors`, than in the context of `project`.
     # In the former, email does not have a multivalue parent, whereas it has in the latter.
     # Framing it differently, in the former, it is the `contributors` that's being defined; in
     # the latter it is the `project` that's being defined.
-    concrete_type = utils.extract_root_field(header)
     if not context:
         context = concrete_type
-
-    type_spec = schema_template.lookup(concrete_type)
-    schema = type_spec.get('schema')
-    domain_type, *_ = schema.get('domain_entity').split('/')
 
     parent_field, *_ = utils.split_field_chain(header)
     parent_spec = schema_template.lookup(parent_field) if parent_field != context else None

@@ -110,24 +110,26 @@ class ColumnSpecificationTest(TestCase):
         schema_spec = {
             'product.id': {'value_type': 'integer', 'multivalue': False, 'identifiable': True}
         }
-        schema_template = self._prepare_mock_schema_template('product', 'merchandise/product',
-                                                             schema_spec)
+        schema_template = self._prepare_mock_schema_template(schema_spec)
         # when:
-        id_spec = column_specification.look_up(schema_template, 'product.id')
+        id_spec = column_specification.look_up(schema_template, 'product.id', 'product',
+                                               'merchandise')
 
         # then:
         self.assertTrue(id_spec.is_identity())
+        self.assertEqual('product', id_spec.object_type)
+        self.assertEqual('merchandise', id_spec.main_category)
         self.assertEqual('product.id', id_spec.field_name)
         self.assertEqual('integer', id_spec.data_type)
 
     def test_look_up_object_field(self):
         # given:
         schema_spec = {'product.name': {'value_type': 'string', 'multivalue': False}}
-        schema_template = self._prepare_mock_schema_template('product', 'merchandise/product',
-                                                             schema_spec)
+        schema_template = self._prepare_mock_schema_template(schema_spec)
 
         # when:
-        name_spec = column_specification.look_up(schema_template, 'product.name')
+        name_spec = column_specification.look_up(schema_template, 'product.name', 'product',
+                                                 'merchandise')
 
         # then:
         self.assertFalse(name_spec.multivalue)
@@ -139,11 +141,11 @@ class ColumnSpecificationTest(TestCase):
     def test_look_up_multivalue_object_field(self):
         # given:
         schema_spec = {'product.remarks': {'value_type': 'string', 'multivalue': True}}
-        schema_template = self._prepare_mock_schema_template('product', 'merchandise/product',
-                                                             schema_spec)
+        schema_template = self._prepare_mock_schema_template(schema_spec)
 
         # when:
-        remarks_spec = column_specification.look_up(schema_template, 'product.remarks')
+        remarks_spec = column_specification.look_up(schema_template, 'product.remarks', 'product',
+                                                    'merchandise')
 
         # then:
         self.assertTrue(remarks_spec.multivalue)
@@ -155,11 +157,11 @@ class ColumnSpecificationTest(TestCase):
             'product.reviews.rating': {'value_type': 'integer','multivalue': False},
             'product.reviews': {'value_type': 'object', 'multivalue': True}
         }
-        schema_template = self._prepare_mock_schema_template('product', 'merchandise/product',
-                                                             schema_spec)
+        schema_template = self._prepare_mock_schema_template(schema_spec)
 
         # when:
-        review_rating_spec = column_specification.look_up(schema_template, 'product.reviews.rating')
+        review_rating_spec = column_specification.look_up(schema_template, 'product.reviews.rating',
+                                                          'product', 'merchandise')
 
         # then:
         self.assertFalse(review_rating_spec.multivalue)
@@ -175,12 +177,12 @@ class ColumnSpecificationTest(TestCase):
                 'external_reference': True
             }
         }
-        schema_template = self._prepare_mock_schema_template('product', 'merchandise/product',
-                                                             schema_spec)
+        schema_template = self._prepare_mock_schema_template(schema_spec)
 
         # when:
         manufacturer_id_spec = column_specification.look_up(schema_template,
-                                                            'product.manufacturer_id')
+                                                            'product.manufacturer_id', 'product',
+                                                            'merchandise')
 
         # then:
         self.assertTrue(manufacturer_id_spec.identity)
@@ -197,15 +199,15 @@ class ColumnSpecificationTest(TestCase):
                 'multivalue': True
             }
         }
-        schema_template = self._prepare_mock_schema_template('user', 'user/user', schema_spec)
+        schema_template = self._prepare_mock_schema_template(schema_spec)
 
         # when:
         account_id_spec = column_specification.look_up(schema_template,
-                                                       'user.sn_profiles.account_id',
-                                                       context='user.sn_profiles')
+                                                       'user.sn_profiles.account_id', 'user',
+                                                       'user', context='user.sn_profiles')
         account_id_user_spec = column_specification.look_up(schema_template,
-                                                            'user.sn_profiles.account_id',
-                                                            context='user')
+                                                            'user.sn_profiles.account_id', 'user',
+                                                            'user', context='user')
 
         # then:
         self.assertFalse(account_id_spec.is_field_of_list_element())
@@ -216,16 +218,9 @@ class ColumnSpecificationTest(TestCase):
         self.assertTrue(account_id_user_spec.is_field_of_list_element())
 
     @staticmethod
-    def _prepare_mock_schema_template(domain_type, domain_entity=None, schema_spec_map=None):
-        value_map = copy.deepcopy(schema_spec_map)
-        if domain_entity:
-            type_spec = {
-                'schema': {'domain_entity': domain_entity}
-            }
-            value_map.update({domain_type: type_spec})
-
+    def _prepare_mock_schema_template(schema_spec_map=None):
         schema_template = MagicMock(name='schema_template')
-        schema_template.lookup = lambda key: value_map[key]
+        schema_template.lookup = lambda key: schema_spec_map[key]
         return schema_template
 
     def test_determine_converter_for_single_value(self):
