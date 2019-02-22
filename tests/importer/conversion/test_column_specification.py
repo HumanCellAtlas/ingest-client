@@ -188,6 +188,33 @@ class ColumnSpecificationTest(TestCase):
         self.assertEqual('product.manufacturer_id', manufacturer_id_spec.field_name)
         self.assertEqual('integer', manufacturer_id_spec.data_type)
 
+    def test_look_up_with_field_anchor(self):
+        # given:
+        schema_spec = {
+            'user.sn_profiles.account_id': {'value_type': 'string', 'multivalue': False},
+            'user.sn_profiles': {
+                'value_type': 'object',
+                'multivalue': True
+            }
+        }
+        schema_template = self._prepare_mock_schema_template('user', 'user/user', schema_spec)
+
+        # when:
+        account_id_spec = column_specification.look_up(schema_template,
+                                                       'user.sn_profiles.account_id',
+                                                       context='user.sn_profiles')
+        account_id_user_spec = column_specification.look_up(schema_template,
+                                                            'user.sn_profiles.account_id',
+                                                            context='user')
+
+        # then:
+        self.assertFalse(account_id_spec.is_field_of_list_element())
+        self.assertEqual('string', account_id_spec.data_type)
+        self.assertFalse(account_id_spec.multivalue)
+
+        # and:
+        self.assertTrue(account_id_user_spec.is_field_of_list_element())
+
     @staticmethod
     def _prepare_mock_schema_template(domain_type, domain_entity=None, schema_spec_map=None):
         value_map = copy.deepcopy(schema_spec_map)
