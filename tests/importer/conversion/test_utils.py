@@ -28,29 +28,6 @@ class ModuleTest(TestCase):
         self.assertEqual('user.address', triple_parent)
         self.assertEqual('city', triple_target)
 
-    def test_slice_field_chain(self):
-        # given:
-        field = 'one.two.three.four.five.six.seven'
-
-        # when:
-        degree0_head, degree0_tail = utils.slice_field_chain(field)
-        degree2_head, degree2_tail = utils.slice_field_chain(field, anchor=2)
-        degree5_head, degree5_tail = utils.slice_field_chain(field, anchor=5)
-
-        # then:
-        self.assertEqual('', degree0_head)
-        self.assertEqual('one.two.three.four.five.six.seven', degree0_tail)
-
-        # and:
-        self.assertEqual('one.two', degree2_head)
-        self.assertEqual('three.four.five.six.seven', degree2_tail)
-
-        # and:
-        self.assertEqual('one.two.three.four.five', degree5_head)
-        self.assertEqual('six.seven', degree5_tail)
-
-    # TODO define out of index handling for slice #module-tabs
-
     def test_extract_root_field(self):
         # given:
         single = 'user'
