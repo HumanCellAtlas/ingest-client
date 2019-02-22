@@ -3,7 +3,7 @@ from unittest import TestCase
 from ingest.importer.conversion import utils
 
 
-class ModuleTest(TestCase):
+class ModuleoTest(TestCase):
 
     def test_split_field_chain(self):
         # given:
