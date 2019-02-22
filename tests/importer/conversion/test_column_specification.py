@@ -129,7 +129,7 @@ class ColumnSpecificationTest(TestCase):
 
         # when:
         name_spec = column_specification.look_up(schema_template, 'product.name', 'product',
-                                                 'merchandise')
+                                                 'merchandise', order_of_occurrence=7)
 
         # then:
         self.assertFalse(name_spec.multivalue)
@@ -137,6 +137,7 @@ class ColumnSpecificationTest(TestCase):
         self.assertEqual('product', name_spec.object_type)
         self.assertEqual('merchandise', name_spec.main_category)
         self.assertEqual('string', name_spec.data_type)
+        self.assertEqual(7, name_spec.order_of_occurrence)
 
     def test_look_up_multivalue_object_field(self):
         # given:
@@ -293,7 +294,7 @@ class ColumnSpecificationTest(TestCase):
     def test_get_conversion_type_linked_identity_order(self):
         # given:
         column_spec = ColumnSpecification('account.number', 'account', 'profile_type',
-                                          DataType.STRING, identity=True, order_of_occurence=2)
+                                          DataType.STRING, identity=True, order_of_occurrence=2)
 
         # expect:
         self.assertEqual(ConversionType.LINKED_IDENTITY, column_spec.get_conversion_type())

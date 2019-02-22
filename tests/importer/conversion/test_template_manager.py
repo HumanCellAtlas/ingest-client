@@ -3,7 +3,7 @@ from unittest import TestCase
 from mock import MagicMock, patch, call
 from openpyxl import Workbook
 
-from ingest.importer.conversion import conversion_strategy
+from ingest.importer.conversion import conversion_strategy, column_specification
 from ingest.importer.conversion.column_specification import ColumnSpecification
 from ingest.importer.conversion.conversion_strategy import CellConversion
 from ingest.importer.conversion.template_manager import TemplateManager, RowTemplate, InvalidTabName

@@ -19,7 +19,7 @@ class ColumnSpecification:
 
     def __init__(self, field_name, object_type, main_category, data_type, multivalue=False,
                  multivalue_parent=False, identity: bool=False, external_reference: bool=False,
-                 order_of_occurence: int = 1):
+                 order_of_occurrence: int = 1):
         self.field_name = field_name
         self.object_type = object_type
         self.main_category = main_category
@@ -28,7 +28,7 @@ class ColumnSpecification:
         self.multivalue_parent = multivalue_parent
         self.identity = identity
         self.external_reference = external_reference
-        self.order_of_occurence = order_of_occurence
+        self.order_of_occurrence = order_of_occurrence
 
     def is_multivalue(self):
         return self.multivalue
@@ -51,7 +51,7 @@ class ColumnSpecification:
 
     def _represents_an_object_field(self):
         entity_type = utils.extract_root_field(self.field_name)
-        return entity_type == self.object_type and self.order_of_occurence == 1
+        return entity_type == self.object_type and self.order_of_occurrence == 1
 
     def _determine_conversion_type_for_object_field(self):
         if self.identity:
@@ -89,11 +89,12 @@ class ColumnSpecification:
         return ColumnSpecification(field_name, object_type, main_category, data_type,
                                    multivalue=multivalue, multivalue_parent=multivalue_parent,
                                    identity=identity, external_reference=external_reference,
-                                   order_of_occurence=order_of_occurence)
+                                   order_of_occurrence=order_of_occurence)
 
 
 # TODO this should be in the SchemaTemplate class
-def look_up(schema_template: SchemaTemplate, header, concrete_type, domain_type, context=None):
+def look_up(schema_template: SchemaTemplate, header, concrete_type, domain_type, context=None,
+            order_of_occurrence=1):
     # Context refers to the context in which the header is being specified for.
     # For example, the property `project.contributors.email` will have a slightly different
     # specification in the context of `project.contributors`, than in the context of `project`.
@@ -112,4 +113,5 @@ def look_up(schema_template: SchemaTemplate, header, concrete_type, domain_type,
                                identity=field_spec.get('identifiable'),
                                external_reference=field_spec.get('external_reference'),
                                multivalue=field_spec.get('multivalue'),
-                               multivalue_parent=(parent_spec and parent_spec.get('multivalue')))
+                               multivalue_parent=(parent_spec and parent_spec.get('multivalue')),
+                               order_of_occurrence=order_of_occurrence)
