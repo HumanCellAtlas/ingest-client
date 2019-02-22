@@ -31,12 +31,12 @@ class TemplateManager:
         return data_node
 
     def create_row_template(self, ingest_worksheet: IngestWorksheet):
-        tab_name = ingest_worksheet.title
-        concrete_type = self.get_concrete_type(tab_name)
+        concrete_type = self.get_concrete_type(ingest_worksheet.title)
         domain_type = self.get_domain_type(concrete_type)
         column_headers = ingest_worksheet.get_column_headers()
         cell_conversions = []
 
+        context = self._determine_context(concrete_type, ingest_worksheet)
         header_counter = {}
         for header in column_headers:
             if not header_counter.get(header):
@@ -44,7 +44,7 @@ class TemplateManager:
             header_counter[header] = header_counter[header] + 1
 
             column_spec = column_specification.look_up(self.template, header, concrete_type,
-                                                       domain_type,
+                                                       domain_type, context=context,
                                                        order_of_occurrence=header_counter[header])
             strategy = conversion_strategy.determine_strategy(column_spec)
             cell_conversions.append(strategy)
@@ -52,6 +52,15 @@ class TemplateManager:
         default_values = self._define_default_values(concrete_type)
         return RowTemplate(domain_type, concrete_type, cell_conversions,
                            default_values=default_values)
+
+    @staticmethod
+    def _determine_context(concrete_type, ingest_worksheet):
+        context_components = [concrete_type]
+        module_field_name = ingest_worksheet.get_module_field_name()
+        if module_field_name:
+            context_components.append(module_field_name)
+        context = '.'.join(context_components)
+        return context
 
     def _define_default_values(self, object_type):
         default_values = {

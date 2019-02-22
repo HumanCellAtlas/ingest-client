@@ -9,6 +9,7 @@ from ingest.importer.conversion.conversion_strategy import CellConversion
 from ingest.importer.conversion.template_manager import TemplateManager, RowTemplate, InvalidTabName
 from ingest.importer.data_node import DataNode
 from ingest.importer.spreadsheet.ingest_worksheet import IngestWorksheet
+from tests.importer.utils.test_utils import create_test_workbook
 
 
 def _mock_schema_template_lookup(value_type='string', multivalue=False):
@@ -70,16 +71,16 @@ class TemplateManagerTest(TestCase):
         concrete_type = 'user'
         template.get_tab_key = MagicMock(return_value=concrete_type)
 
-        # and: set up column spec
-        name_column_spec = MagicMock(name='name_column_spec')
-        numbers_column_spec = MagicMock(name='numbers_column_spec')
-        look_up.side_effect = [name_column_spec, numbers_column_spec]
-
         # and:
         spec_map = {
             'user': {'schema': {'domain_entity': 'main_category/subdomain'}}
         }
         template.lookup = lambda key: spec_map.get(key, None)
+
+        # and: set up column spec
+        name_column_spec = MagicMock(name='name_column_spec')
+        numbers_column_spec = MagicMock(name='numbers_column_spec')
+        look_up.side_effect = [name_column_spec, numbers_column_spec]
 
         # and:
         name_strategy = MagicMock('name_strategy')
@@ -102,8 +103,9 @@ class TemplateManagerTest(TestCase):
         # then:
         expected_calls = [
             call(template, 'user.profile.first_name', concrete_type, 'main_category',
-                 order_of_occurrence=1),
-            call(template, 'numbers', concrete_type, 'main_category', order_of_occurrence=1)
+                 context=concrete_type, order_of_occurrence=1),
+            call(template, 'numbers', concrete_type, 'main_category', context=concrete_type,
+                 order_of_occurrence=1)
         ]
         look_up.assert_has_calls(expected_calls)
         determine_strategy.assert_has_calls([call(name_column_spec), call(numbers_column_spec)])
@@ -148,6 +150,62 @@ class TemplateManagerTest(TestCase):
         self.assertIsNotNone(content_defaults)
         self.assertEqual(schema_url, content_defaults.get('describedBy'))
         self.assertEqual('profile', content_defaults.get('schema_type'))
+
+    @patch.object(column_specification, 'look_up')
+    @patch.object(conversion_strategy, 'determine_strategy')
+    def test_create_row_template_for_module_worksheet(self, determine_strategy, look_up):
+        # given:
+        template = MagicMock(name='schema_template')
+        ingest_api = MagicMock(name='ingest_api')
+
+        # TODO define method in SchemaTemplate that returns domain and concrete types #module-tabs
+        # and:
+        concrete_type = 'product'
+        template.get_tab_key = MagicMock(return_value=concrete_type)
+
+        # and:
+        spec_map = {
+            'product': {'schema': {'domain_entity': 'merchandise/product'}}
+        }
+        template.lookup = lambda key: spec_map.get(key, None)
+
+        # and:
+        template_mgr = TemplateManager(template, ingest_api)
+
+        # and:
+        workbook = create_test_workbook('Product - Reviews')
+        reviews_worksheet = workbook.get_sheet_by_name('Product - Reviews')
+        reviews_worksheet['A4'] = 'product.info.id'
+        reviews_worksheet['B4'] = 'product.reviews.rating'
+
+        # and: set up dummy look up results
+        id_spec = MagicMock(name='id_spec')
+        rating_spec = MagicMock(name='rating_spec')
+        look_up.side_effect = [id_spec, rating_spec]
+
+        # and: set up strategies
+        id_strategy = MagicMock(name='id_strategy')
+        rating_strategy = MagicMock(name='rating_strategy')
+        determine_strategy.side_effect = {
+            id_spec: id_strategy, rating_spec: rating_strategy
+        }.get
+
+        # when:
+        row_template = template_mgr.create_row_template(IngestWorksheet(reviews_worksheet))
+
+        # then:
+        expected_calls = [
+            call(template, 'product.info.id', concrete_type, 'merchandise', order_of_occurrence=1,
+                 context='product.reviews'),
+            call(template, 'product.reviews.rating', concrete_type, 'merchandise',
+                 order_of_occurrence=1, context='product.reviews')
+        ]
+        look_up.assert_has_calls(expected_calls)
+
+        # and:
+        self.assertIsNotNone(row_template)
+        self.assertIn(id_strategy, row_template.cell_conversions)
+        self.assertIn(rating_strategy, row_template.cell_conversions)
 
     @patch.object(conversion_strategy, 'determine_strategy')
     def test_create_row_template_with_none_header(self, determine_strategy):
