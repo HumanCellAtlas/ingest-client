@@ -58,37 +58,28 @@ class TemplateManagerTest(TestCase):
         self.assertEqual(schema_url, data.get('describedBy'))
         self.assertEqual('biomaterial', data.get('schema_type'))
 
-    @patch.object(ColumnSpecification, 'build_raw')
+    # TODO move the logic of creating the column spec to SchemaTemplate
+    @patch.object(column_specification, 'look_up')
     @patch.object(conversion_strategy, 'determine_strategy')
-    def test_create_row_template(self, determine_strategy, build_raw):
+    def test_create_row_template(self, determine_strategy, look_up):
         # given:
-        schema_template = MagicMock(name='schema_template')
+        template = MagicMock(name='schema_template')
         ingest_api = MagicMock(name='ingest_api')
 
         # and:
         concrete_type = 'user'
-        schema_template.get_tab_key = MagicMock(return_value=concrete_type)
+        template.get_tab_key = MagicMock(return_value=concrete_type)
 
         # and: set up column spec
         name_column_spec = MagicMock(name='name_column_spec')
         numbers_column_spec = MagicMock(name='numbers_column_spec')
-        build_raw.side_effect = [name_column_spec, numbers_column_spec]
+        look_up.side_effect = [name_column_spec, numbers_column_spec]
 
-        # and: set up raw spec
-        name_raw_spec = MagicMock('name_raw_spec')
-        name_raw_parent_spec = MagicMock('name_raw_parent_spec')
-        numbers_raw_spec = MagicMock('numbers_raw_spec')
-
-        # TODO move the logic of creating the column spec to SchemaTemplate
         # and:
-        schema = {'schema': {'domain_entity': 'main_category/subdomain'}}
         spec_map = {
-            'user.profile.first_name': name_raw_spec,
-            'user.profile': name_raw_parent_spec,
-            'numbers': numbers_raw_spec,
-            'user': schema
+            'user': {'schema': {'domain_entity': 'main_category/subdomain'}}
         }
-        schema_template.lookup = lambda key: spec_map.get(key, None)
+        template.lookup = lambda key: spec_map.get(key, None)
 
         # and:
         name_strategy = MagicMock('name_strategy')
@@ -105,17 +96,16 @@ class TemplateManagerTest(TestCase):
         ingest_worksheet = IngestWorksheet(worksheet, header_row_idx=header_row_idx)
 
         # when:
-        template_manager = TemplateManager(schema_template, ingest_api)
+        template_manager = TemplateManager(template, ingest_api)
         row_template: RowTemplate = template_manager.create_row_template(ingest_worksheet)
 
         # then:
         expected_calls = [
-            call('user.profile.first_name', concrete_type, 'main_category', name_raw_spec,
-                 order_of_occurence=1, parent=name_raw_parent_spec),
-            call('numbers', concrete_type, None, numbers_raw_spec, order_of_occurence=1,
-                 parent=None)
+            call(template, 'user.profile.first_name', concrete_type, 'main_category',
+                 order_of_occurrence=1),
+            call(template, 'numbers', concrete_type, 'main_category', order_of_occurrence=1)
         ]
-        build_raw.assert_has_calls(expected_calls)
+        look_up.assert_has_calls(expected_calls)
         determine_strategy.assert_has_calls([call(name_column_spec), call(numbers_column_spec)])
 
         # and:
@@ -126,9 +116,9 @@ class TemplateManagerTest(TestCase):
         self.assertTrue(name_strategy in row_template.cell_conversions)
         self.assertTrue(numbers_strategy in row_template.cell_conversions)
 
-    @patch.object(ColumnSpecification, 'build_raw')
+    @patch.object(column_specification, 'look_up')
     @patch.object(conversion_strategy, 'determine_strategy')
-    def test_create_row_template_with_default_values(self, determine_strategy, build_raw):
+    def test_create_row_template_with_default_values(self, determine_strategy, look_up):
         # given:
         schema_template = MagicMock('schema_template')
         ingest_api = MagicMock(name='ingest_api')
@@ -139,7 +129,7 @@ class TemplateManagerTest(TestCase):
                                  object_type='profile_type')
 
         # and:
-        build_raw.return_value = MagicMock('column_spec')
+        look_up.return_value = MagicMock('column_spec')
         determine_strategy.return_value = FakeConversion('')
 
         # and:

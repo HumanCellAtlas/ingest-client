@@ -5,7 +5,7 @@ from openpyxl.worksheet.worksheet import Worksheet
 
 import ingest.template.schema_template as schema_template
 from ingest.api.ingestapi import IngestApi
-from ingest.importer.conversion import utils, conversion_strategy
+from ingest.importer.conversion import utils, conversion_strategy, column_specification
 from ingest.importer.conversion.column_specification import ColumnSpecification
 from ingest.importer.conversion.conversion_strategy import CellConversion, \
     FieldOfSingleElementListCellConversion
@@ -33,6 +33,7 @@ class TemplateManager:
     def create_row_template(self, ingest_worksheet: IngestWorksheet):
         tab_name = ingest_worksheet.title
         concrete_type = self.get_concrete_type(tab_name)
+        domain_type = self.get_domain_type(concrete_type)
         column_headers = ingest_worksheet.get_column_headers()
         cell_conversions = []
 
@@ -42,29 +43,15 @@ class TemplateManager:
                 header_counter[header] = 0
             header_counter[header] = header_counter[header] + 1
 
-            column_spec = self._define_column_spec(header, concrete_type,
-                                                   order_of_occurence=header_counter[header])
+            column_spec = column_specification.look_up(self.template, header, concrete_type,
+                                                       domain_type,
+                                                       order_of_occurrence=header_counter[header])
             strategy = conversion_strategy.determine_strategy(column_spec)
             cell_conversions.append(strategy)
 
         default_values = self._define_default_values(concrete_type)
-        domain_type = self.get_domain_type(concrete_type)
         return RowTemplate(domain_type, concrete_type, cell_conversions,
                            default_values=default_values)
-
-    def _define_column_spec(self, header, object_type, order_of_occurence=1):
-        if header is not None:
-            parent_path, __ = utils.split_field_chain(header)
-            raw_spec = self.lookup(header)
-            raw_parent_spec = self.lookup(parent_path)
-            concrete_type = utils.extract_root_field(header)
-            main_category = self.get_domain_type(concrete_type)
-            column_spec = ColumnSpecification.build_raw(header, object_type, main_category, raw_spec,
-                                                        parent=raw_parent_spec,
-                                                        order_of_occurence=order_of_occurence)
-        else:
-            column_spec = None
-        return column_spec
 
     def _define_default_values(self, object_type):
         default_values = {
