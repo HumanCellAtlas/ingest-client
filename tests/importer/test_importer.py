@@ -76,10 +76,10 @@ class WorkbookImporterTest(TestCase):
         user = MetadataEntity(concrete_type='user', domain_type='user', object_id=773,
                               content={'user_name': 'janedoe'})
         fb_profile = MetadataEntity(concrete_type='sn_profile', domain_type='user', object_id=773,
-                                    content={'sn_profiles': [{'name': 'facebook', 'id': '392'}],
+                                    content={'sn_profiles': {'name': 'facebook', 'id': '392'},
                                              'description': 'extra field'})
         ig_profile = MetadataEntity(concrete_type='sn_profile', domain_type='user', object_id=773,
-                                    content={'sn_profiles': [{'name': 'instagram', 'id': 'a92'}],
+                                    content={'sn_profiles': {'name': 'instagram', 'id': 'a92'},
                                              'description': 'extra field'})
         worksheet_importer.do_import = MagicMock(side_effect=[[user], [fb_profile, ig_profile]])
 
@@ -130,11 +130,11 @@ class WorkbookImporterTest(TestCase):
         project = MetadataEntity(domain_type='project', concrete_type='project',
                                         content={'description': 'test project'})
         jsmith = MetadataEntity(domain_type='project', concrete_type='contact',
-                                content={'contributors': [{'name': 'John',
-                                                           'email': 'jsmith@email.com'}]})
+                                content={'contributors': {'name': 'John',
+                                                           'email': 'jsmith@email.com'}})
         ppan = MetadataEntity(domain_type='project', concrete_type='contact',
-                              content={'contributors': [{'name': 'Peter',
-                                                         'email': 'peterpan@email.com'}]})
+                              content={'contributors': {'name': 'Peter',
+                                                         'email': 'peterpan@email.com'}})
         worksheet_importer.do_import = MagicMock(side_effect=[[project], [jsmith, ppan]])
 
         # and:
