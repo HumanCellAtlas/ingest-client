@@ -80,6 +80,7 @@ class ColumnSpecification:
         return converter
 
     @staticmethod
+    # TODO this has pretty much been replaced with look_up; delete this #module-tabs
     def build_raw(field_name, object_type, main_category, raw_spec, order_of_occurence=1, parent=None):
         data_type = DataType.find(raw_spec.get('value_type'))
         multivalue = bool(raw_spec.get('multivalue'))

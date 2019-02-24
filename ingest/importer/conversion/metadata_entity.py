@@ -81,12 +81,12 @@ class MetadataEntity:
                 self._content.remove_field(key)
 
     def add_module_entity(self, module_entity):
-        for field, values in module_entity.content.as_dict().items():
+        for field, value in module_entity.content.as_dict().items():
             module_list = self._content[field]
             if not module_list:
                 module_list = []
                 self._content[field] = module_list
-            module_list.extend(values)
+            module_list.append(value)
 
     def map_for_submission(self):
         return {

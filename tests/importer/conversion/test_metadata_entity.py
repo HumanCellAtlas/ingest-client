@@ -111,9 +111,9 @@ class MetadataEntityTest(TestCase):
         product = MetadataEntity(domain_type='product', concrete_type='product', object_id=12,
                                  content={'name': 'test product'})
         john_review = MetadataEntity(domain_type='product', concrete_type='product', object_id=12,
-                                 content={'reviews': [{'user': 'john', 'rating': 5}]})
+                                 content={'reviews': {'user': 'john', 'rating': 5}})
         mary_review = MetadataEntity(domain_type='product', concrete_type='product', object_id=12,
-                                 content={'reviews': [{'user': 'mary', 'rating': 3}]})
+                                 content={'reviews': {'user': 'mary', 'rating': 3}})
 
         # when:
         product.add_module_entity(john_review)
