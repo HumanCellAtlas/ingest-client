@@ -99,8 +99,8 @@ def look_up(schema_template: SchemaTemplate, header, concrete_type, domain_type,
     # For example, the property `project.contributors.email` will have a slightly different
     # specification in the context of `project.contributors`, than in the context of `project`.
     # In the former, email does not have a multivalue parent, whereas it has in the latter.
-    # Framing it differently, in the former, it is the `contributors` that's being defined; in
-    # the latter it is the `project` that's being defined.
+    # Framing it differently, in the former, it is each of the `contributors` that's being defined;
+    # in the latter it is the `project` that's being defined.
     if not context:
         context = concrete_type
 
