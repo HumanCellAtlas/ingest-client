@@ -1,13 +1,11 @@
 import os
-import unittest
 from unittest import TestCase
 
 from mock import MagicMock, patch
 from openpyxl import Workbook
 
 from ingest.importer.conversion.metadata_entity import MetadataEntity
-from ingest.importer.importer import WorksheetImporter, WorkbookImporter, \
-    IdentifiableWorksheetImporter
+from ingest.importer.importer import WorksheetImporter, WorkbookImporter
 from ingest.importer.spreadsheet.ingest_workbook import IngestWorkbook, IngestWorksheet
 from tests.importer.utils.test_utils import create_test_workbook
 

@@ -192,21 +192,6 @@ class WorksheetImporter:
         return f'{self.UNKNOWN_ID_PREFIX}{self.unknown_id_ctr}'
 
 
-# TODO remove this #module-tab
-class IdentifiableWorksheetImporter(WorksheetImporter):
-
-    def do_import(self, worksheet):
-        records = super(IdentifiableWorksheetImporter, self).do_import(worksheet)
-
-        if not self.concrete_entity:
-            raise InvalidTabName(worksheet.title)
-
-        if self.unknown_id_ctr:
-            raise RowIdNotFound(worksheet.title)
-
-        return records
-
-
 # TODO add code to check if multiple projects are found in the spreadsheet #module-tabs
 class MultipleProjectsFound(Exception):
     def __init__(self):
@@ -221,6 +206,15 @@ class NoProjectFound(Exception):
         super(NoProjectFound, self).__init__(message)
 
 
+# TODO add code to check if worksheet/tab name is recognised/valid #module-tabs
+class InvalidTabName(Exception):
+    def __init__(self, tab_name):
+        message = f'The {tab_name} tab does not correspond to any entity in metadata schema.'
+        super(InvalidTabName, self).__init__(message)
+        self.tab_name = tab_name
+
+
+# TODO add code to check if any of the data rows does not have object id #module-tabs
 class RowIdNotFound(Exception):
     def __init__(self, tab_name):
         message = f'No identifier was found for some rows in "{tab_name}" tab.'
@@ -230,11 +224,3 @@ class RowIdNotFound(Exception):
 
 class SchemaRetrievalError(Exception):
     pass
-
-
-class InvalidTabName(Exception):
-    def __init__(self, tab_name):
-        message = f'The {tab_name} tab does not correspond to any entity in metadata schema.'
-        super(InvalidTabName, self).__init__(message)
-        self.tab_name = tab_name
-
