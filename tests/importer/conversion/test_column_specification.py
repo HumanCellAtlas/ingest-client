@@ -26,7 +26,7 @@ class ColumnSpecificationTest(TestCase):
 
         # then:
         self.assertEqual('user.name', string_column_spec.field_name)
-        self.assertEqual('profile_entry', string_column_spec.main_category)
+        self.assertEqual('profile_entry', string_column_spec.domain_type)
         self.assertEqual(DataType.STRING, string_column_spec.data_type)
         self.assertFalse(string_column_spec.is_multivalue())
         self.assertTrue(string_column_spec.is_identity())
@@ -44,7 +44,7 @@ class ColumnSpecificationTest(TestCase):
 
         # then:
         self.assertEqual('sample.numbers', int_array_column_spec.field_name)
-        self.assertEqual('profile_entry', int_array_column_spec.main_category)
+        self.assertEqual('profile_entry', int_array_column_spec.domain_type)
         self.assertEqual(DataType.INTEGER, int_array_column_spec.data_type)
         self.assertTrue(int_array_column_spec.is_multivalue())
         self.assertFalse(int_array_column_spec.is_identity())
@@ -69,8 +69,8 @@ class ColumnSpecificationTest(TestCase):
 
         # then:
         self.assertEqual('profile.uuid', external_spec.field_name)
-        self.assertEqual('profile', external_spec.object_type)
-        self.assertEqual('personal_info', external_spec.main_category)
+        self.assertEqual('profile', external_spec.context_concrete_type)
+        self.assertEqual('personal_info', external_spec.domain_type)
         # self.assertEqual(DataType.STRING, external_spec.data_type)
         self.assertTrue(external_spec.is_external_reference())
 
