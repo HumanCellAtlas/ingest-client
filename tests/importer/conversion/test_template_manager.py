@@ -102,10 +102,9 @@ class TemplateManagerTest(TestCase):
 
         # then:
         expected_calls = [
-            call(template, 'user.profile.first_name', concrete_type, 'main_category',
-                 context=concrete_type, order_of_occurrence=1),
-            call(template, 'numbers', concrete_type, 'main_category', context=concrete_type,
-                 order_of_occurrence=1)
+            call(template, 'user.profile.first_name', concrete_type, context=concrete_type,
+                 order_of_occurrence=1),
+            call(template, 'numbers', concrete_type, context=concrete_type, order_of_occurrence=1)
         ]
         look_up.assert_has_calls(expected_calls)
         determine_strategy.assert_has_calls([call(name_column_spec), call(numbers_column_spec)])
@@ -195,10 +194,10 @@ class TemplateManagerTest(TestCase):
 
         # then:
         expected_calls = [
-            call(template, 'product.info.id', concrete_type, 'merchandise', order_of_occurrence=1,
+            call(template, 'product.info.id', concrete_type, order_of_occurrence=1,
                  context='product.reviews'),
-            call(template, 'product.reviews.rating', concrete_type, 'merchandise',
-                 order_of_occurrence=1, context='product.reviews')
+            call(template, 'product.reviews.rating', concrete_type, order_of_occurrence=1,
+                 context='product.reviews')
         ]
         look_up.assert_has_calls(expected_calls)
 

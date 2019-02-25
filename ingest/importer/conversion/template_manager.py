@@ -44,7 +44,7 @@ class TemplateManager:
             header_counter[header] = header_counter[header] + 1
 
             column_spec = column_specification.look_up(self.template, header, concrete_type,
-                                                       domain_type, context=context,
+                                                       context=context,
                                                        order_of_occurrence=header_counter[header])
             strategy = conversion_strategy.determine_strategy(column_spec)
             cell_conversions.append(strategy)
