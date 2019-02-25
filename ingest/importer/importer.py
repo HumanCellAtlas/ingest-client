@@ -207,27 +207,14 @@ class IdentifiableWorksheetImporter(WorksheetImporter):
         return records
 
 
-# TODO remove this #module-tab
-class ProjectWorksheetImporter(WorksheetImporter):
-
-    def do_import(self, worksheet, template: TemplateManager):
-        records = super(ProjectWorksheetImporter, self).do_import(worksheet, template)
-
-        if len(records.keys()) == 0:
-            raise NoProjectFound()
-
-        if len(records.keys()) > 1:
-            raise MultipleProjectsFound()
-
-        return records
-
-
+# TODO add code to check if multiple projects are found in the spreadsheet #module-tabs
 class MultipleProjectsFound(Exception):
     def __init__(self):
         message = f'The spreadsheet should only be associated to a single project.'
         super(MultipleProjectsFound, self).__init__(message)
 
 
+# TODO add code to check if no project is defined #module-tabs
 class NoProjectFound(Exception):
     def __init__(self):
         message = f'The spreadsheet should be associated to a project.'
