@@ -153,7 +153,7 @@ def determine_strategy(column_spec: ColumnSpecification):
         elif ConversionType.IDENTITY == conversion_type:
             strategy = IdentityCellConversion(field_name, converter)
         elif ConversionType.LINKED_IDENTITY == conversion_type:
-            strategy = LinkedIdentityCellConversion(field_name, column_spec.main_category)
+            strategy = LinkedIdentityCellConversion(field_name, column_spec.domain_type)
         elif ConversionType.EXTERNAL_REFERENCE == conversion_type:
-            strategy = ExternalReferenceCellConversion(field_name, column_spec.main_category)
+            strategy = ExternalReferenceCellConversion(field_name, column_spec.domain_type)
     return strategy

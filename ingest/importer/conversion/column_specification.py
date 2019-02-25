@@ -17,12 +17,14 @@ class ConversionType(Enum):
 
 class ColumnSpecification:
 
-    def __init__(self, field_name, object_type, main_category, data_type, multivalue=False,
-                 multivalue_parent=False, identity: bool=False, external_reference: bool=False,
-                 order_of_occurrence: int = 1):
+    # context_concrete_type is the concrete type of the Metadata Entity for which the column
+    # represented by this object is specified for.
+    def __init__(self, field_name, context_concrete_type, domain_type, data_type,
+                 multivalue=False, multivalue_parent=False, identity: bool=False,
+                 external_reference: bool=False, order_of_occurrence: int = 1):
         self.field_name = field_name
-        self.object_type = object_type
-        self.main_category = main_category
+        self.context_concrete_type = context_concrete_type
+        self.domain_type = domain_type
         self.data_type = data_type
         self.multivalue = multivalue
         self.multivalue_parent = multivalue_parent
@@ -51,7 +53,7 @@ class ColumnSpecification:
 
     def _represents_an_object_field(self):
         entity_type = utils.extract_root_field(self.field_name)
-        return entity_type == self.object_type and self.order_of_occurrence == 1
+        return entity_type == self.context_concrete_type and self.order_of_occurrence == 1
 
     def _determine_conversion_type_for_object_field(self):
         if self.identity:
@@ -94,7 +96,7 @@ class ColumnSpecification:
 
 
 # TODO this should be in the SchemaTemplate class
-def look_up(schema_template: SchemaTemplate, header, concrete_type, domain_type, context=None,
+def look_up(schema_template: SchemaTemplate, header, context_concrete_type, context=None,
             order_of_occurrence=1):
     # Context refers to the context in which the header is being specified for.
     # For example, the property `project.contributors.email` will have a slightly different
@@ -103,14 +105,24 @@ def look_up(schema_template: SchemaTemplate, header, concrete_type, domain_type,
     # Framing it differently, in the former, it is each of the `contributors` that's being defined;
     # in the latter it is the `project` that's being defined.
     if not context:
-        context = concrete_type
+        context = context_concrete_type
 
     parent_field, *_ = utils.split_field_chain(header)
     parent_spec = schema_template.lookup(parent_field) if parent_field != context else None
 
     field_spec = schema_template.lookup(header)
     data_type = field_spec.get('value_type')
-    return ColumnSpecification(header, concrete_type, domain_type, data_type,
+
+    # concrete_type is the actual concrete type that the header represents. Particularly in cases
+    # where the column represents a linking detail to another type, concrete_type is different from
+    # context_concrete_type. concrete_type is the "inherent" type of the column whichever context
+    # it is specified in.
+    concrete_type = utils.extract_root_field(header)
+    type_spec = schema_template.lookup(concrete_type)
+    schema = type_spec.get('schema')
+    domain_type, *_ = schema.get('domain_entity').split('/')
+
+    return ColumnSpecification(header, context_concrete_type, domain_type, data_type,
                                identity=field_spec.get('identifiable'),
                                external_reference=field_spec.get('external_reference'),
                                multivalue=field_spec.get('multivalue'),
