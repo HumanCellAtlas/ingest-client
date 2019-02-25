@@ -7,20 +7,18 @@ __author__ = "jupp"
 __license__ = "Apache 2.0"
 __date__ = "01/05/2018"
 
+import os
 import unittest
 from unittest import TestCase
-from unittest.mock import patch, MagicMock
 
 import tests.template.schema_mock_utils as schema_mock
-
-from ingest.template.schema_template import SchemaParser
-from ingest.template.schema_template import SchemaTemplate
-from ingest.template.schema_template import UnknownKeyException
 from ingest.template.schema_template import RootSchemaException
+from ingest.template.schema_template import SchemaParser
+from ingest.template.schema_template import UnknownKeyException
 
-import os
 
 class TestSchemaTemplate(TestCase):
+
     def setUp(self):
         self.longMessage = True
         self.dummyProjectUri = "https://schema.humancellatlas.org/type/project/5.1.0/project"
@@ -77,7 +75,6 @@ class TestSchemaTemplate(TestCase):
         self.assertEqual("string", template.lookup("donor_organism.foo_bar.value_type"))
         self.assertFalse(template.lookup("donor_organism.foo_bar.multivalue"))
 
-
     def test_has_type_list(self):
         data = '{"id" : "' + self.dummyDonorUri + '", "properties": { "foo_bar": {"type" : "array" , "items" : {"type": "string"}} } }'
         template = schema_mock.get_template_for_json(data=data)
@@ -106,11 +103,50 @@ class TestSchemaTemplate(TestCase):
         self.assertTrue(template.lookup("donor_organism.file_name.identifiable"))
 
     def test_get_key_for_label(self):
-        data = '{"id" : "' + self.dummyDonorUri + '", "properties": {"foo_bar": {"user_friendly" : "Foo bar"}} }'
+        data = f'{{"id" : "{self.dummyDonorUri}"}}'
         template = schema_mock.get_template_for_json(data=data)
-
         tabs = template.get_tabs_config()
-        self.assertEqual("donor_organism", tabs.get_key_for_label("donor_organism"))
+        self.assertEqual("donor_organism", tabs.get_key_for_label("Donor organism"))
+        self.assertEqual('donor_organism', tabs.get_key_for_label('donor_organism'))
+
+    def test_get_tab_key(self):
+        # given:
+        project_data = f'{{"id":"{self.dummyProjectUri}"}}'
+        template = schema_mock.get_template_for_json(data=project_data)
+
+        # expect:
+        self.assertEqual('project', template.get_tab_key('project'))
+        self.assertEqual('project', template.get_tab_key('Project'))
+
+    def test_get_tab_key_case_insensitive(self):
+        # given:
+        donor_organism_data = f'{{"id": "{self.dummyDonorUri}"}}'
+        template = schema_mock.get_template_for_json(data=donor_organism_data)
+
+        # and:
+        self.assertEqual('donor_organism', template.get_tab_key('donor_organism'))
+        self.assertEqual('donor_organism', template.get_tab_key('Donor organism'))
+        self.assertEqual('donor_organism', template.get_tab_key('donOr orGanisM'))
+        self.assertEqual('donor_organism', template.get_tab_key('DONOR ORGANISM'))
+
+        # and:
+        self.assertEqual('donor_organism', template.get_tab_key('donor_organism'))
+        self.assertEqual('donor_organism', template.get_tab_key('DONOR_ORGANISM'))
+
+    def test_get_tab_key_not_found(self):
+        # given:
+        donor_organism_data = f'{{"id": "{self.dummyDonorUri}"}}'
+        template = schema_mock.get_template_for_json(data=donor_organism_data)
+
+        # when:
+        exception_raised = None
+        try:
+            template.get_tab_key('does not exist')
+        except UnknownKeyException as exception:
+            exception_raised = exception
+
+        # then:
+        self.assertIsNotNone(exception_raised)
 
     def test_description(self):
         data = '{"id" : "' + self.dummyDonorUri + '", "properties": {"foo_bar": {"description" : "Foo is a bar"}} }'
@@ -141,7 +177,6 @@ class TestSchemaTemplate(TestCase):
         with self.assertRaises(UnknownKeyException):
             self.assertTrue(template.lookup("donor_organism.format.uuid.retrievable"))
 
-
     def test_referenced_property(self):
         dir_path = os.path.dirname(os.path.realpath(__file__))
 
@@ -153,7 +188,6 @@ class TestSchemaTemplate(TestCase):
         self.assertEqual("foo bar", template.lookup("donor_organism.biomaterial_core.description") )
         self.assertEqual("biomaterial id", template.lookup("donor_organism.biomaterial_core.biomaterial_id.user_friendly"))
         self.assertEqual("a biomaterial id", template.lookup("donor_organism.biomaterial_core.biomaterial_id.description"))
-
 
     def test_example(self):
         data = '{"id" : "' + self.dummyDonorUri + '", "properties": {"foo_bar": {"example" : "Foo is a bar"}} }'

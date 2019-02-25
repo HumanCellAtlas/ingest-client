@@ -3,9 +3,24 @@ from unittest import TestCase
 from ingest.importer.spreadsheet.ingest_worksheet import IngestWorksheet
 
 import ingest.utils.spreadsheet as spreadsheet_utils
+from tests.importer.utils.test_utils import create_test_workbook
 
 
 class IngestWorksheetTest(TestCase):
+
+    def test_get_title(self):
+        # given:
+        workbook = create_test_workbook('User', 'User - SN Profiles')
+        user_sheet = workbook.get_sheet_by_name('User')
+        sn_profiles_sheet = workbook.get_sheet_by_name('User - SN Profiles')
+
+        # and:
+        user = IngestWorksheet(user_sheet)
+        sn_profiles = IngestWorksheet(sn_profiles_sheet)
+
+        # expect:
+        self.assertEqual('User', user.title)
+        self.assertEqual('User - SN Profiles', sn_profiles.title)
 
     def test_get_column_headers(self):
         # given:
@@ -66,7 +81,7 @@ class IngestWorksheetTest(TestCase):
         self.assertEqual(len(column_headers), 3)
         self.assertEqual(column_headers, ['name', 'address', 'email'])
 
-    def test_get_row_cells(self):
+    def test_get_data_rows(self):
         # given:
         start_row_idx = 6
         header_row_idx = 4
@@ -82,7 +97,7 @@ class IngestWorksheetTest(TestCase):
 
         # when
         ingest_worksheet = IngestWorksheet(worksheet, header_row_idx=header_row_idx)
-        data_rows = ingest_worksheet.get_row_cells(start_row=start_row_idx)
+        data_rows = ingest_worksheet.get_data_rows(start_row=start_row_idx)
 
         data_row_values = []
         for row in data_rows:
@@ -93,7 +108,7 @@ class IngestWorksheetTest(TestCase):
         self.assertEqual(len(data_row_values), 1)
         self.assertEqual(data_row_values, [expected_data_row])
 
-    def test_get_row_cells_skip_blank_rows(self):
+    def test_get_data_rows_skip_blank_rows(self):
         # given:
         start_row_idx = 6
         header_row_idx = 4
@@ -111,7 +126,7 @@ class IngestWorksheetTest(TestCase):
 
         # when
         ingest_worksheet = IngestWorksheet(worksheet, header_row_idx=header_row_idx)
-        data_rows = ingest_worksheet.get_row_cells(start_row=start_row_idx)
+        data_rows = ingest_worksheet.get_data_rows(start_row=start_row_idx)
 
         data_row_values = []
         for row in data_rows:
@@ -121,3 +136,45 @@ class IngestWorksheetTest(TestCase):
         # then:
         self.assertEqual(len(data_row_values), 1)
         self.assertEqual(data_row_values, [expected_data_row])
+
+    def test_is_module_tab(self):
+        # given:
+        workbook = create_test_workbook('Product', 'Product - History')
+        product_sheet = workbook.get_sheet_by_name('Product')
+        history_sheet = workbook.get_sheet_by_name('Product - History')
+
+        # and:
+        product = IngestWorksheet(product_sheet)
+        history = IngestWorksheet(history_sheet)
+
+        # expect:
+        self.assertFalse(product.is_module_tab())
+        self.assertTrue(history.is_module_tab())
+
+    def test_get_module_field_name(self):
+        # given:
+        workbook = create_test_workbook('Product - Reviews', 'User - SN Profiles',
+                                        'Log - file-names', 'Account')
+
+        # and: simple
+        reviews_sheet = workbook.get_sheet_by_name('Product - Reviews')
+        reviews = IngestWorksheet(reviews_sheet)
+
+        # and: with space in between
+        sn_profiles_sheet = workbook.get_sheet_by_name('User - SN Profiles')
+        sn_profiles = IngestWorksheet(sn_profiles_sheet)
+
+        # and: with hyphen
+        file_names_sheet = workbook.get_sheet_by_name('Log - file-names')
+        file_names = IngestWorksheet(file_names_sheet)
+
+        # and: not module worksheet
+        account_sheet = workbook.get_sheet_by_name('Account')
+        account = IngestWorksheet(account_sheet)
+
+        # expect:
+        self.assertEqual('reviews', reviews.get_module_field_name())
+        self.assertEqual('sn_profiles', sn_profiles.get_module_field_name())
+        self.assertEqual('file_names', file_names.get_module_field_name())
+        self.assertIsNone(account.get_module_field_name())
+

@@ -94,3 +94,58 @@ class MetadataEntityTest(TestCase):
         self.assertIsNotNone(product_core)
         self.assertEqual('Apple Juice', product_core.get('name'))
         self.assertEqual('pasteurised fruit juice', product_core.get('description'))
+
+    def test_retain_content_fields(self):
+        # given:
+        content = {'user_name': 'jdelacruz', 'password': 'dontrevealthis', 'description': 'temp'}
+        metadata_entity = MetadataEntity(domain_type='user', concrete_type='user', object_id=1,
+                                         content=content)
+        # when:
+        metadata_entity.retain_content_fields('user_name')
+
+        # then:
+        self.assertEqual(['user_name'], list(metadata_entity.content.as_dict().keys()))
+
+    def test_add_module_entity(self):
+        # given:
+        product = MetadataEntity(domain_type='product', concrete_type='product', object_id=12,
+                                 content={'name': 'test product'})
+        john_review = MetadataEntity(domain_type='product', concrete_type='product', object_id=12,
+                                 content={'reviews': {'user': 'john', 'rating': 5}})
+        mary_review = MetadataEntity(domain_type='product', concrete_type='product', object_id=12,
+                                 content={'reviews': {'user': 'mary', 'rating': 3}})
+
+        # when:
+        product.add_module_entity(john_review)
+        product.add_module_entity(mary_review)
+
+        # then:
+        content_reviews = product.content['reviews']
+        self.assertIsNotNone(content_reviews)
+        self.assertEqual(2, len(content_reviews))
+
+        # and:
+        self.assertEqual({'user': 'john', 'rating': 5}, content_reviews[0])
+        self.assertEqual({'user': 'mary', 'rating': 3}, content_reviews[1])
+
+    def test_map_for_submission(self):
+        # given:
+        test_content = {'description': 'test'}
+        test_links = {'items': ['123', '456']}
+        test_external_links = {'producer': ['abc', 'def', 'ghi']}
+        test_linking_details = {'link': 'details', 'test': '123'}
+        metadata_entity = MetadataEntity(concrete_type='warehouse', content=test_content,
+                                         links=test_links,
+                                         external_links=test_external_links,
+                                         linking_details=test_linking_details)
+
+        # when:
+        submission_dict = metadata_entity.map_for_submission()
+
+        # then:
+        self.assertEqual('warehouse', submission_dict.get('concrete_type'))
+        self.assertEqual(test_content, submission_dict.get('content'))
+        self.assertEqual(test_links, submission_dict.get('links_by_entity'))
+        self.assertEqual(test_external_links, submission_dict.get('external_links_by_entity'))
+        self.assertEqual(test_linking_details, submission_dict.get('linking_details'))
+

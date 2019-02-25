@@ -31,5 +31,11 @@ class DataNode:
                 current_node = current_node.get(field)
         return current_node
 
+    def remove_field(self, field):
+        del self.node[field]
+
+    def keys(self):
+        return list(self.node.keys())
+
     def as_dict(self):
         return copy.deepcopy(self.node)

@@ -17,7 +17,7 @@ def _mock_column_spec(field_name='field_name', main_category=None, converter=Non
                       conversion_type=ConversionType.UNDEFINED):
     column_spec: ColumnSpecification = MagicMock('column_spec')
     column_spec.field_name = field_name
-    column_spec.main_category = main_category
+    column_spec.domain_type = main_category
     column_spec.determine_converter = lambda: converter
     column_spec.get_conversion_type = lambda: conversion_type
     return column_spec

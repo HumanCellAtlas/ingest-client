@@ -2,6 +2,9 @@ from unittest import TestCase
 
 import copy
 
+from mock import MagicMock
+
+from ingest.importer.conversion import column_specification
 from ingest.importer.conversion.column_specification import ColumnSpecification, ConversionType
 from ingest.importer.conversion.data_converter import DataType, IntegerConverter, \
     BooleanConverter, ListConverter, StringConverter, DefaultConverter
@@ -23,7 +26,7 @@ class ColumnSpecificationTest(TestCase):
 
         # then:
         self.assertEqual('user.name', string_column_spec.field_name)
-        self.assertEqual('profile_entry', string_column_spec.main_category)
+        self.assertEqual('profile_entry', string_column_spec.domain_type)
         self.assertEqual(DataType.STRING, string_column_spec.data_type)
         self.assertFalse(string_column_spec.is_multivalue())
         self.assertTrue(string_column_spec.is_identity())
@@ -41,7 +44,7 @@ class ColumnSpecificationTest(TestCase):
 
         # then:
         self.assertEqual('sample.numbers', int_array_column_spec.field_name)
-        self.assertEqual('profile_entry', int_array_column_spec.main_category)
+        self.assertEqual('profile_entry', int_array_column_spec.domain_type)
         self.assertEqual(DataType.INTEGER, int_array_column_spec.data_type)
         self.assertTrue(int_array_column_spec.is_multivalue())
         self.assertFalse(int_array_column_spec.is_identity())
@@ -66,8 +69,8 @@ class ColumnSpecificationTest(TestCase):
 
         # then:
         self.assertEqual('profile.uuid', external_spec.field_name)
-        self.assertEqual('profile', external_spec.object_type)
-        self.assertEqual('personal_info', external_spec.main_category)
+        self.assertEqual('profile', external_spec.context_concrete_type)
+        self.assertEqual('personal_info', external_spec.domain_type)
         # self.assertEqual(DataType.STRING, external_spec.data_type)
         self.assertTrue(external_spec.is_external_reference())
 
@@ -101,6 +104,148 @@ class ColumnSpecificationTest(TestCase):
         # then:
         self.assertFalse(single_column_spec.is_field_of_list_element())
         self.assertTrue(multi_column_spec.is_field_of_list_element())
+
+    def test_look_up_id_field(self):
+        # given:
+        schema_spec = {
+            'product.id': {'value_type': 'integer', 'multivalue': False, 'identifiable': True}
+        }
+        schema_template = self._prepare_mock_schema_template('product', 'merchandise/product',
+                                                             schema_spec)
+
+        # when:
+        id_spec = column_specification.look_up(schema_template, 'product.id', 'product')
+
+        # then:
+        self.assertTrue(id_spec.is_identity())
+        self.assertEqual('product', id_spec.context_concrete_type)
+        self.assertEqual('merchandise', id_spec.domain_type)
+        self.assertEqual('product.id', id_spec.field_name)
+        self.assertEqual('integer', id_spec.data_type)
+
+    def test_look_up_object_field(self):
+        # given:
+        schema_spec = {'product.name': {'value_type': 'string', 'multivalue': False}}
+        schema_template = self._prepare_mock_schema_template('product', 'merchandise/product',
+                                                             schema_spec)
+
+        # when:
+        name_spec = column_specification.look_up(schema_template, 'product.name', 'product',
+                                                 order_of_occurrence=7)
+
+        # then:
+        self.assertFalse(name_spec.multivalue)
+        self.assertEqual('product.name', name_spec.field_name)
+        self.assertEqual('product', name_spec.context_concrete_type)
+        self.assertEqual('merchandise', name_spec.domain_type)
+        self.assertEqual('string', name_spec.data_type)
+        self.assertEqual(7, name_spec.order_of_occurrence)
+
+    def test_look_up_linked_object_field(self):
+        # given:
+        schema_spec = {'manufacturer.organisation': {'value_type': 'string', 'multivalue': False}}
+        schema_template = self._prepare_mock_schema_template('manufacturer',
+                                                             'manufacturer/manufacturer',
+                                                             schema_spec)
+
+        # when:
+        organisation_spec = column_specification.look_up(schema_template,
+                                                         'manufacturer.organisation', 'product')
+
+        # then:
+        self.assertEqual('manufacturer', organisation_spec.domain_type)
+        self.assertEqual('product', organisation_spec.context_concrete_type)
+
+    def test_look_up_multivalue_object_field(self):
+        # given:
+        schema_spec = {'product.remarks': {'value_type': 'string', 'multivalue': True}}
+        schema_template = self._prepare_mock_schema_template('product', 'merchandise/product',
+                                                             schema_spec)
+
+        # when:
+        remarks_spec = column_specification.look_up(schema_template, 'product.remarks', 'product')
+
+        # then:
+        self.assertTrue(remarks_spec.multivalue)
+        self.assertEqual('product.remarks', remarks_spec.field_name)
+
+    def test_look_up_nested_object_field(self):
+        # given:
+        schema_spec = {
+            'product.reviews.rating': {'value_type': 'integer','multivalue': False},
+            'product.reviews': {'value_type': 'object', 'multivalue': True}
+        }
+        schema_template = self._prepare_mock_schema_template('product', 'merchandise/product',
+                                                             schema_spec)
+
+        # when:
+        review_rating_spec = column_specification.look_up(schema_template, 'product.reviews.rating',
+                                                          'product')
+
+        # then:
+        self.assertFalse(review_rating_spec.multivalue)
+        self.assertTrue(review_rating_spec.multivalue_parent)
+
+    def test_look_up_external_id(self):
+        # given:
+        schema_spec = {
+            'product.manufacturer_id': {
+                'value_type': 'integer',
+                'multivalue': False,
+                'identifiable': True,
+                'external_reference': True
+            }
+        }
+        schema_template = self._prepare_mock_schema_template('product', 'merchandise/product',
+                                                             schema_spec)
+
+        # when:
+        manufacturer_id_spec = column_specification.look_up(schema_template,
+                                                            'product.manufacturer_id', 'product')
+
+        # then:
+        self.assertTrue(manufacturer_id_spec.identity)
+        self.assertTrue(manufacturer_id_spec.external_reference)
+        self.assertEqual('product.manufacturer_id', manufacturer_id_spec.field_name)
+        self.assertEqual('integer', manufacturer_id_spec.data_type)
+
+    def test_look_up_with_field_anchor(self):
+        # given:
+        schema_spec = {
+            'user.sn_profiles.account_id': {'value_type': 'string', 'multivalue': False},
+            'user.sn_profiles': {
+                'value_type': 'object',
+                'multivalue': True
+            }
+        }
+        schema_template = self._prepare_mock_schema_template('user', 'user/user', schema_spec)
+
+        # when:
+        account_id_spec = column_specification.look_up(schema_template,
+                                                       'user.sn_profiles.account_id', 'user',
+                                                       context='user.sn_profiles')
+        account_id_user_spec = column_specification.look_up(schema_template,
+                                                            'user.sn_profiles.account_id', 'user',
+                                                            context='user')
+
+        # then:
+        self.assertFalse(account_id_spec.is_field_of_list_element())
+        self.assertEqual('string', account_id_spec.data_type)
+        self.assertFalse(account_id_spec.multivalue)
+
+        # and:
+        self.assertTrue(account_id_user_spec.is_field_of_list_element())
+
+    @staticmethod
+    def _prepare_mock_schema_template(domain_type, domain_entity=None, schema_spec_map=None):
+        value_map = copy.deepcopy(schema_spec_map)
+        if domain_entity:
+            type_spec = {'schema': {'domain_entity': domain_entity}}
+            value_map.update({domain_type: type_spec})
+
+        schema_template = MagicMock(name='schema_template')
+        schema_template.lookup = lambda key: value_map[key]
+        return schema_template
 
     def test_determine_converter_for_single_value(self):
         # expect:
@@ -172,7 +317,7 @@ class ColumnSpecificationTest(TestCase):
     def test_get_conversion_type_linked_identity_order(self):
         # given:
         column_spec = ColumnSpecification('account.number', 'account', 'profile_type',
-                                          DataType.STRING, identity=True, order_of_occurence=2)
+                                          DataType.STRING, identity=True, order_of_occurrence=2)
 
         # expect:
         self.assertEqual(ConversionType.LINKED_IDENTITY, column_spec.get_conversion_type())

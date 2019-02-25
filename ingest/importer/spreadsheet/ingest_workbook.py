@@ -1,5 +1,8 @@
 from openpyxl import Workbook
 
+# TODO clean this up #module-tab
+from ingest.importer.spreadsheet.ingest_worksheet import IngestWorksheet
+
 SCHEMAS_WORKSHEET = 'Schemas'
 PROJECT_WORKSHEET = 'Project'
 CONTACT_WORKSHEET = 'Contact'
@@ -7,9 +10,9 @@ FUNDER_WORKSHEET = 'Funder'
 PUBLICATION_WORKSHEET = 'Publications'
 
 # TODO think of a better name
-SPECIAL_TABS = [SCHEMAS_WORKSHEET, PROJECT_WORKSHEET]
+SPECIAL_TABS = [SCHEMAS_WORKSHEET]
 
-# TODO figure out how to identify that a tab is a module tab to generate this config automatically
+# TODO remove this #module-tab
 MODULE_TABS = {
     'Contact': {
         'field': 'contributors',
@@ -25,12 +28,12 @@ MODULE_TABS = {
     },
 }
 
-
 class IngestWorkbook:
 
     def __init__(self, workbook: Workbook):
         self.workbook = workbook
 
+    # TODO deprecate and remove #module-tab
     def get_project_worksheet(self):
         return self.get_worksheet(PROJECT_WORKSHEET)
 
@@ -63,13 +66,13 @@ class IngestWorkbook:
         return schemas
 
     def importable_worksheets(self):
-        importable_names = [name for name in self.workbook.get_sheet_names() if
-                            (not name in SPECIAL_TABS and not name in list(MODULE_TABS.keys()))]
-        return [self.workbook[name] for name in importable_names]
+        return [IngestWorksheet(worksheet) for worksheet in self.workbook.worksheets
+                if worksheet.title not in SPECIAL_TABS]
 
     def module_worksheets(self):
         return [self.get_worksheet(name) for name in list(MODULE_TABS.keys())]
 
     def get_module_field(self, module_tab_name):
         return MODULE_TABS[module_tab_name]['field'] if MODULE_TABS.get(module_tab_name) and \
-                                                        MODULE_TABS[module_tab_name].get('field') else None
+                                                        MODULE_TABS[module_tab_name].get('field') \
+                                                        else None
