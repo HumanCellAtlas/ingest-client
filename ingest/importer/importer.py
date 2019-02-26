@@ -11,6 +11,7 @@ from ingest.importer.spreadsheet.ingest_workbook import IngestWorkbook
 from ingest.importer.spreadsheet.ingest_worksheet import IngestWorksheet
 from ingest.importer.submission import IngestSubmitter, EntityMap, EntityLinker
 
+
 format = '[%(filename)s:%(lineno)s - %(funcName)20s() ] %(asctime)s - %(name)s - %(levelname)s - %(message)s'
 logging.basicConfig(format=format)
 
@@ -98,6 +99,7 @@ class XlsImporter:
 
 
 _PROJECT_ID = 'project_0'
+_PROJECT_TYPE = 'project'
 
 
 class _ImportRegistry:
@@ -110,12 +112,13 @@ class _ImportRegistry:
         self._module_list = []
 
     def add_submittable(self, metadata: MetadataEntity):
-        domain_type = metadata.domain_type
+        # TODO no test to check case sensitivity
+        domain_type = metadata.domain_type.lower()
         type_map = self._submittable_registry.get(domain_type)
         if not type_map:
             type_map = {}
             self._submittable_registry[domain_type] = type_map
-        if domain_type.lower() == 'project':
+        if domain_type.lower() == _PROJECT_TYPE:
             if not type_map.get(_PROJECT_ID):
                 metadata.object_id = _PROJECT_ID
             else:
@@ -141,6 +144,10 @@ class _ImportRegistry:
             flat_map[domain_type] = flat_type_map
         return flat_map
 
+    def has_project(self):
+        project_registry = self._submittable_registry.get(_PROJECT_TYPE)
+        return project_registry and project_registry.get(_PROJECT_ID)
+
 
 class WorkbookImporter:
 
@@ -162,7 +169,10 @@ class WorkbookImporter:
                 else:
                     registry.add_submittable(entity)
 
-        registry.import_modules()
+        if registry.has_project():
+            registry.import_modules()
+        else:
+            raise NoProjectFound()
         return registry.flatten()
 
 
@@ -202,7 +212,6 @@ class MultipleProjectsFound(Exception):
         super(MultipleProjectsFound, self).__init__(message)
 
 
-# TODO add code to check if no project is defined #module-tabs
 class NoProjectFound(Exception):
     def __init__(self):
         message = f'The spreadsheet should be associated to a project.'

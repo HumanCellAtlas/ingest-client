@@ -5,7 +5,8 @@ from mock import MagicMock, patch
 from openpyxl import Workbook
 
 from ingest.importer.conversion.metadata_entity import MetadataEntity
-from ingest.importer.importer import WorksheetImporter, WorkbookImporter, MultipleProjectsFound
+from ingest.importer.importer import WorksheetImporter, WorkbookImporter, MultipleProjectsFound, \
+    NoProjectFound
 from ingest.importer.spreadsheet.ingest_workbook import IngestWorkbook, IngestWorksheet
 from tests.importer.utils.test_utils import create_test_workbook
 
@@ -36,14 +37,16 @@ class WorkbookImporterTest(TestCase):
         worksheet_importer_constructor.return_value = worksheet_importer
 
         # and:
+        project = MetadataEntity(concrete_type='project', domain_type='project')
         jdelacruz = MetadataEntity(concrete_type='user', domain_type='user', object_id=1,
                               content={'user_name': 'jdelacruz'})
         setsuna_f_seiei = MetadataEntity(concrete_type='user', domain_type='user', object_id=96,
                                        content={'user_name': 'sayyeah'})
-        worksheet_importer.do_import = MagicMock(side_effect=[[jdelacruz, setsuna_f_seiei]])
+        worksheet_importer.do_import = MagicMock(side_effect=[[project],
+                                                              [jdelacruz, setsuna_f_seiei]])
 
         # and:
-        workbook = create_test_workbook('Users')
+        workbook = create_test_workbook('Project', 'Users')
         ingest_workbook = IngestWorkbook(workbook)
         workbook_importer = WorkbookImporter(template_mgr)
 
@@ -71,6 +74,7 @@ class WorkbookImporterTest(TestCase):
         worksheet_importer_constructor.return_value = worksheet_importer
 
         # and: stub worksheet importer
+        project = MetadataEntity(concrete_type='Project', domain_type='Project')
         user = MetadataEntity(concrete_type='user', domain_type='user', object_id=773,
                               content={'user_name': 'janedoe'})
         fb_profile = MetadataEntity(concrete_type='sn_profile', domain_type='user', object_id=773,
@@ -79,10 +83,11 @@ class WorkbookImporterTest(TestCase):
         ig_profile = MetadataEntity(concrete_type='sn_profile', domain_type='user', object_id=773,
                                     content={'sn_profiles': {'name': 'instagram', 'id': 'a92'},
                                              'description': 'extra field'})
-        worksheet_importer.do_import = MagicMock(side_effect=[[user], [fb_profile, ig_profile]])
+        worksheet_importer.do_import = MagicMock(side_effect=[[project], [user],
+                                                              [fb_profile, ig_profile]])
 
         # and: create test workbook
-        workbook = create_test_workbook('User', 'User - SN Profiles')
+        workbook = create_test_workbook('Project', 'User', 'User - SN Profiles')
         ingest_workbook = IngestWorkbook(workbook)
         workbook_importer = WorkbookImporter(template_mgr)
 
@@ -91,7 +96,7 @@ class WorkbookImporterTest(TestCase):
 
         # then:
         self.assertIsNotNone(spreadsheet_json)
-        self.assertEqual(1, len(spreadsheet_json))
+        self.assertEqual(2, len(spreadsheet_json))
 
         # and:
         user_map = spreadsheet_json.get('user')
@@ -180,6 +185,31 @@ class WorkbookImporterTest(TestCase):
 
         # then:
         self.assertTrue(exception_thrown, f'Expected to throw {MultipleProjectsFound.__name__}.')
+
+    @patch('ingest.importer.importer.WorksheetImporter')
+    def test_do_import_no_projects(self, worksheet_importer_constructor):
+        # given:
+        template_mgr = MagicMock(name='template_manager')
+        worksheet_importer = WorksheetImporter(template_mgr)
+        worksheet_importer_constructor.return_value = worksheet_importer
+
+        # and:
+        item = MetadataEntity(concrete_type='product', domain_type='product', object_id=910)
+        worksheet_importer.do_import = MagicMock(side_effect=[[item]])
+
+        # and:
+        workbook = create_test_workbook('Item')
+        workbook_importer = WorkbookImporter(template_mgr)
+
+        # when:
+        thrown_exception = False
+        try:
+            workbook_importer.do_import(IngestWorkbook(workbook))
+        except NoProjectFound:
+            thrown_exception = True
+
+        # then:
+        self.assertTrue(thrown_exception, f'Expected to throw {NoProjectFound.__name__}.')
 
 
 class WorksheetImporterTest(TestCase):
