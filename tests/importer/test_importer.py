@@ -5,7 +5,7 @@ from mock import MagicMock, patch
 from openpyxl import Workbook
 
 from ingest.importer.conversion.metadata_entity import MetadataEntity
-from ingest.importer.importer import WorksheetImporter, WorkbookImporter
+from ingest.importer.importer import WorksheetImporter, WorkbookImporter, MultipleProjectsFound
 from ingest.importer.spreadsheet.ingest_workbook import IngestWorkbook, IngestWorksheet
 from tests.importer.utils.test_utils import create_test_workbook
 
@@ -124,7 +124,6 @@ class WorkbookImporterTest(TestCase):
         worksheet_importer_constructor.return_value = worksheet_importer
 
         # and:
-        workbook = create_test_workbook('Project', 'Project - Contributors')
         project = MetadataEntity(domain_type='project', concrete_type='project',
                                         content={'description': 'test project'})
         jsmith = MetadataEntity(domain_type='project', concrete_type='contact',
@@ -154,6 +153,33 @@ class WorkbookImporterTest(TestCase):
         self.assertEqual(2, len(contributors))
         self.assertIn({'name': 'John', 'email': 'jsmith@email.com'}, contributors)
         self.assertIn({'name': 'Peter', 'email': 'peterpan@email.com'}, contributors)
+
+    @patch('ingest.importer.importer.WorksheetImporter')
+    def test_do_import_multiple_projects(self, worksheet_importer_constructor):
+        # given:
+        template_mgr = MagicMock(name='template_manager')
+        worksheet_importer = WorksheetImporter(template_mgr)
+        worksheet_importer_constructor.return_value = worksheet_importer
+
+        # and:
+        project_1 = MetadataEntity(concrete_type='project', domain_type='project', object_id=1)
+        project_2 = MetadataEntity(concrete_type='project', domain_type='project', object_id=2)
+        worksheet_importer.do_import = MagicMock(side_effect=[[project_1, project_2]])
+
+
+        # and:
+        workbook = create_test_workbook('Project')
+        workbook_importer = WorkbookImporter(template_mgr)
+
+        # when:
+        exception_thrown = False
+        try:
+            workbook_importer.do_import(IngestWorkbook(workbook))
+        except MultipleProjectsFound:
+            exception_thrown = True
+
+        # then:
+        self.assertTrue(exception_thrown, f'Expected to throw {MultipleProjectsFound.__name__}.')
 
 
 class WorksheetImporterTest(TestCase):

@@ -99,6 +99,7 @@ class XlsImporter:
 
 _PROJECT_ID = 'project_0'
 
+
 class _ImportRegistry:
     """
     This is a helper class for managing metadata entities during Workbook import.
@@ -115,7 +116,10 @@ class _ImportRegistry:
             type_map = {}
             self._submittable_registry[domain_type] = type_map
         if domain_type.lower() == 'project':
-            metadata.object_id = _PROJECT_ID
+            if not type_map.get(_PROJECT_ID):
+                metadata.object_id = _PROJECT_ID
+            else:
+                raise MultipleProjectsFound()
         type_map[metadata.object_id] = metadata
 
     def add_module(self, metadata: MetadataEntity):
@@ -192,7 +196,6 @@ class WorksheetImporter:
         return f'{self.UNKNOWN_ID_PREFIX}{self.unknown_id_ctr}'
 
 
-# TODO add code to check if multiple projects are found in the spreadsheet #module-tabs
 class MultipleProjectsFound(Exception):
     def __init__(self):
         message = f'The spreadsheet should only be associated to a single project.'
