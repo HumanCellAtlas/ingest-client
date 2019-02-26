@@ -91,11 +91,11 @@ class TemplateManager:
 
     def get_concrete_type(self, title):
         """
-        Concrete Entity refers to the specific type of an object based on a given schema.
+        Concrete Type refers to the specific type of an object based on a given schema.
         This method determines the concrete type given the worksheet title.
 
         :param title: the title of the worksheet.
-        :return: the Concrete Entity of a given worksheet title
+        :return: the Concrete Type of a given worksheet title
         """
         result = MODULE_TITLE_PATTERN.search(title)
         if not result:
