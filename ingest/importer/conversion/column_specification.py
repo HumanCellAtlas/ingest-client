@@ -81,19 +81,6 @@ class ColumnSpecification:
             converter = ListConverter(self.data_type)
         return converter
 
-    @staticmethod
-    # TODO this has pretty much been replaced with look_up; delete this #module-tabs
-    def build_raw(field_name, object_type, main_category, raw_spec, order_of_occurence=1, parent=None):
-        data_type = DataType.find(raw_spec.get('value_type'))
-        multivalue = bool(raw_spec.get('multivalue'))
-        multivalue_parent = bool(parent.get('multivalue')) if parent != None else False
-        identity: bool = bool(raw_spec.get('identifiable'))
-        external_reference = bool(raw_spec.get('external_reference'))
-        return ColumnSpecification(field_name, object_type, main_category, data_type,
-                                   multivalue=multivalue, multivalue_parent=multivalue_parent,
-                                   identity=identity, external_reference=external_reference,
-                                   order_of_occurrence=order_of_occurence)
-
 
 # TODO this should be in the SchemaTemplate class
 def look_up(schema_template: SchemaTemplate, header, context_concrete_type, context=None,

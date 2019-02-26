@@ -11,6 +11,7 @@ from ingest.importer.spreadsheet.ingest_workbook import IngestWorkbook
 from ingest.importer.spreadsheet.ingest_worksheet import IngestWorksheet
 from ingest.importer.submission import IngestSubmitter, EntityMap, EntityLinker
 
+
 format = '[%(filename)s:%(lineno)s - %(funcName)20s() ] %(asctime)s - %(name)s - %(levelname)s - %(message)s'
 logging.basicConfig(format=format)
 
@@ -98,6 +99,8 @@ class XlsImporter:
 
 
 _PROJECT_ID = 'project_0'
+_PROJECT_TYPE = 'project'
+
 
 class _ImportRegistry:
     """
@@ -109,13 +112,17 @@ class _ImportRegistry:
         self._module_list = []
 
     def add_submittable(self, metadata: MetadataEntity):
-        domain_type = metadata.domain_type
+        # TODO no test to check case sensitivity
+        domain_type = metadata.domain_type.lower()
         type_map = self._submittable_registry.get(domain_type)
         if not type_map:
             type_map = {}
             self._submittable_registry[domain_type] = type_map
-        if domain_type.lower() == 'project':
-            metadata.object_id = _PROJECT_ID
+        if domain_type.lower() == _PROJECT_TYPE:
+            if not type_map.get(_PROJECT_ID):
+                metadata.object_id = _PROJECT_ID
+            else:
+                raise MultipleProjectsFound()
         type_map[metadata.object_id] = metadata
 
     def add_module(self, metadata: MetadataEntity):
@@ -136,6 +143,10 @@ class _ImportRegistry:
                              for object_id, metadata in type_map.items()}
             flat_map[domain_type] = flat_type_map
         return flat_map
+
+    def has_project(self):
+        project_registry = self._submittable_registry.get(_PROJECT_TYPE)
+        return project_registry and project_registry.get(_PROJECT_ID)
 
 
 class WorkbookImporter:
@@ -158,7 +169,10 @@ class WorkbookImporter:
                 else:
                     registry.add_submittable(entity)
 
-        registry.import_modules()
+        if registry.has_project():
+            registry.import_modules()
+        else:
+            raise NoProjectFound()
         return registry.flatten()
 
 
@@ -192,36 +206,6 @@ class WorksheetImporter:
         return f'{self.UNKNOWN_ID_PREFIX}{self.unknown_id_ctr}'
 
 
-# TODO remove this #module-tab
-class IdentifiableWorksheetImporter(WorksheetImporter):
-
-    def do_import(self, worksheet):
-        records = super(IdentifiableWorksheetImporter, self).do_import(worksheet)
-
-        if not self.concrete_entity:
-            raise InvalidTabName(worksheet.title)
-
-        if self.unknown_id_ctr:
-            raise RowIdNotFound(worksheet.title)
-
-        return records
-
-
-# TODO remove this #module-tab
-class ProjectWorksheetImporter(WorksheetImporter):
-
-    def do_import(self, worksheet, template: TemplateManager):
-        records = super(ProjectWorksheetImporter, self).do_import(worksheet, template)
-
-        if len(records.keys()) == 0:
-            raise NoProjectFound()
-
-        if len(records.keys()) > 1:
-            raise MultipleProjectsFound()
-
-        return records
-
-
 class MultipleProjectsFound(Exception):
     def __init__(self):
         message = f'The spreadsheet should only be associated to a single project.'
@@ -234,20 +218,5 @@ class NoProjectFound(Exception):
         super(NoProjectFound, self).__init__(message)
 
 
-class RowIdNotFound(Exception):
-    def __init__(self, tab_name):
-        message = f'No identifier was found for some rows in "{tab_name}" tab.'
-        super(RowIdNotFound, self).__init__(message)
-        self.tab_name = tab_name
-
-
 class SchemaRetrievalError(Exception):
     pass
-
-
-class InvalidTabName(Exception):
-    def __init__(self, tab_name):
-        message = f'The {tab_name} tab does not correspond to any entity in metadata schema.'
-        super(InvalidTabName, self).__init__(message)
-        self.tab_name = tab_name
-
