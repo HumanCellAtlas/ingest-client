@@ -218,21 +218,5 @@ class NoProjectFound(Exception):
         super(NoProjectFound, self).__init__(message)
 
 
-# TODO add code to check if worksheet/tab name is recognised/valid #module-tabs
-class InvalidTabName(Exception):
-    def __init__(self, tab_name):
-        message = f'The {tab_name} tab does not correspond to any entity in metadata schema.'
-        super(InvalidTabName, self).__init__(message)
-        self.tab_name = tab_name
-
-
-# TODO add code to check if any of the data rows does not have object id #module-tabs
-class RowIdNotFound(Exception):
-    def __init__(self, tab_name):
-        message = f'No identifier was found for some rows in "{tab_name}" tab.'
-        super(RowIdNotFound, self).__init__(message)
-        self.tab_name = tab_name
-
-
 class SchemaRetrievalError(Exception):
     pass

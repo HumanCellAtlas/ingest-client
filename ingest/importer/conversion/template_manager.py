@@ -184,7 +184,6 @@ class ParentFieldNotFound(Exception):
         self.header_name = header_name
 
 
-# TODO there's another exception with this name; change this (or that) #module-tab
 class InvalidTabName(Exception):
 
     def __init__(self, tab_name):
