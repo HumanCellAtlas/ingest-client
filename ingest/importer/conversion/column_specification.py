@@ -98,7 +98,7 @@ def look_up(schema_template: SchemaTemplate, header, context_concrete_type, cont
     parent_spec = schema_template.lookup(parent_field) if parent_field != context else None
 
     field_spec = schema_template.lookup(header)
-    data_type = field_spec.get('value_type')
+    data_type = DataType.find(field_spec.get('value_type'))
 
     # concrete_type is the actual concrete type that the header represents. Particularly in cases
     # where the column represents a linking detail to another type, concrete_type is different from

@@ -28,7 +28,7 @@ class ColumnSpecificationTest(TestCase):
         self.assertEqual('product', id_spec.context_concrete_type)
         self.assertEqual('merchandise', id_spec.domain_type)
         self.assertEqual('product.id', id_spec.field_name)
-        self.assertEqual('integer', id_spec.data_type)
+        self.assertEqual(DataType.INTEGER, id_spec.data_type)
 
     def test_look_up_object_field(self):
         # given:
@@ -45,7 +45,7 @@ class ColumnSpecificationTest(TestCase):
         self.assertEqual('product.name', name_spec.field_name)
         self.assertEqual('product', name_spec.context_concrete_type)
         self.assertEqual('merchandise', name_spec.domain_type)
-        self.assertEqual('string', name_spec.data_type)
+        self.assertEqual(DataType.STRING, name_spec.data_type)
         self.assertEqual(7, name_spec.order_of_occurrence)
 
     def test_look_up_linked_object_field(self):
@@ -114,7 +114,7 @@ class ColumnSpecificationTest(TestCase):
         self.assertTrue(manufacturer_id_spec.identity)
         self.assertTrue(manufacturer_id_spec.external_reference)
         self.assertEqual('product.manufacturer_id', manufacturer_id_spec.field_name)
-        self.assertEqual('integer', manufacturer_id_spec.data_type)
+        self.assertEqual(DataType.INTEGER, manufacturer_id_spec.data_type)
 
     def test_look_up_with_field_anchor(self):
         # given:
@@ -137,7 +137,7 @@ class ColumnSpecificationTest(TestCase):
 
         # then:
         self.assertFalse(account_id_spec.is_field_of_list_element())
-        self.assertEqual('string', account_id_spec.data_type)
+        self.assertEqual(DataType.STRING, account_id_spec.data_type)
         self.assertFalse(account_id_spec.multivalue)
 
         # and:
