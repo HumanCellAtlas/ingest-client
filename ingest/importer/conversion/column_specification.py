@@ -1,9 +1,14 @@
+import logging
 from enum import Enum
 
 from ingest.importer.conversion import utils, data_converter
 from ingest.importer.conversion.data_converter import DataType, CONVERTER_MAP, ListConverter
-from ingest.template.schema_template import SchemaTemplate
+from ingest.template.schema_template import SchemaTemplate, UnknownKeyException
 
+
+UNKNOWN_DOMAIN_TYPE = '_unknown_type'
+
+_LOGGER = logging.getLogger(__name__)
 
 class ConversionType(Enum):
     UNDEFINED = 0,
@@ -95,9 +100,10 @@ def look_up(schema_template: SchemaTemplate, header, context_concrete_type, cont
         context = context_concrete_type
 
     parent_field, *_ = utils.split_field_chain(header)
-    parent_spec = schema_template.lookup(parent_field) if parent_field != context else None
+    parent_spec = _map_key_to_spec(schema_template, parent_field) \
+        if parent_field != context else None
 
-    field_spec = schema_template.lookup(header)
+    field_spec = _map_key_to_spec(schema_template, header)
     data_type = DataType.find(field_spec.get('value_type'))
 
     # concrete_type is the actual concrete type that the header represents. Particularly in cases
@@ -105,9 +111,11 @@ def look_up(schema_template: SchemaTemplate, header, context_concrete_type, cont
     # context_concrete_type. concrete_type is the "inherent" type of the column whichever context
     # it is specified in.
     concrete_type = utils.extract_root_field(header)
-    type_spec = schema_template.lookup(concrete_type)
-    schema = type_spec.get('schema')
-    domain_type, *_ = schema.get('domain_entity').split('/')
+    type_spec = _map_key_to_spec(schema_template, concrete_type)
+    domain_type = UNKNOWN_DOMAIN_TYPE
+    if type_spec:
+        schema = type_spec.get('schema')
+        domain_type, *_ = schema.get('domain_entity').split('/')
 
     return ColumnSpecification(header, context_concrete_type, domain_type, data_type,
                                identity=field_spec.get('identifiable'),
@@ -115,3 +123,12 @@ def look_up(schema_template: SchemaTemplate, header, context_concrete_type, cont
                                multivalue=field_spec.get('multivalue'),
                                multivalue_parent=(parent_spec and parent_spec.get('multivalue')),
                                order_of_occurrence=order_of_occurrence)
+
+
+def _map_key_to_spec(schema_template: SchemaTemplate, key):
+    try:
+        spec = schema_template.lookup(key)
+    except UnknownKeyException as key_exception:
+        _LOGGER.warning(f'[{key}] not found in the schema.')
+        spec = {}
+    return spec

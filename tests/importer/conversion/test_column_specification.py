@@ -3,11 +3,13 @@ from unittest import TestCase
 import copy
 
 from mock import MagicMock
+from more_itertools import side_effect
 
 from ingest.importer.conversion import column_specification
 from ingest.importer.conversion.column_specification import ColumnSpecification, ConversionType
 from ingest.importer.conversion.data_converter import DataType, IntegerConverter, \
     BooleanConverter, ListConverter, StringConverter, DefaultConverter
+from ingest.template.schema_template import UnknownKeyException
 
 
 class ColumnSpecificationTest(TestCase):
@@ -142,6 +144,18 @@ class ColumnSpecificationTest(TestCase):
 
         # and:
         self.assertTrue(account_id_user_spec.is_field_of_list_element())
+
+    def test_look_up_unknown_header(self):
+        # given:
+        schema_template = MagicMock(name='schema_template')
+        schema_template.lookup = MagicMock(side_effect=UnknownKeyException())
+
+        # when:
+        spec = column_specification.look_up(schema_template, 'product.info.unknown', 'product')
+
+        # then:
+        self.assertIsNotNone(spec)
+        self.assertEqual(column_specification.UNKNOWN_DOMAIN_TYPE, spec.domain_type)
 
     @staticmethod
     def _prepare_mock_schema_template(domain_type, domain_entity=None, schema_spec_map=None):
