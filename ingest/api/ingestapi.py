@@ -136,7 +136,7 @@ class IngestApi:
         return r.json()
 
     def getFileBySubmissionUrlAndFileName(self, submissionUrl, fileName):
-        searchUrl = self._get_url_for_link(self.url + '/files/search', 'findBySubmissionEnvelopesInAndFileName')
+        searchUrl = self.get_link_from_resource_url(self.url + '/files/search', 'findBySubmissionEnvelopesInAndFileName')
         searchUrl = searchUrl.replace('{?submissionEnvelope,fileName}', '')
         r = requests.get(searchUrl, params={'submissionEnvelope': submissionUrl, 'fileName': fileName})
         if r.status_code == requests.codes.ok:
