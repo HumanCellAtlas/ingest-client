@@ -112,6 +112,19 @@ class SchemaTemplate:
             raise UnknownKeyException(
                 "Can't map the key to a known JSON schema property: " + str(key))
 
+    def lookup_migration(self, key, schema_version):
+        try:
+            migrations = self.get(self._template["migrations"], key)
+
+            for migration in migrations:
+                if "version" in migration and int(schema_version.split(".")[0]) <= int(migration["version"].split(".")[0]):
+                    return migration
+                else:
+                    raise Exception
+        except Exception:
+            raise UnknownKeyException(
+                "Can't map the key to a known JSON schema migration: " + str(key))
+
     def get_template(self):
         return self._template["meta_data_properties"]
 

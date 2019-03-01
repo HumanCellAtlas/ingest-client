@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 
 
-from ingest.template.schema_template import SchemaTemplate
+from ingest.template.schema_template import SchemaTemplate, UnknownKeyException
 
 schemas = [
     "https://schema.humancellatlas.org/type/project/5.1.0/project",
-    "https://schema.humancellatlas.org/type/biomaterial/5.1.0/cell_suspension",
+    # "https://schema.humancellatlas.org/type/biomaterial/5.1.0/cell_suspension",
     "https://schema.humancellatlas.org/type/biomaterial/5.1.0/specimen_from_organism",
     "https://schema.humancellatlas.org/type/biomaterial/5.1.1/donor_organism",
     "https://schema.humancellatlas.org/type/file/5.1.0/sequence_file",
@@ -18,6 +18,7 @@ schemas = [
     "https://schema.humancellatlas.org/type/protocol/biomaterial/5.1.0/biomaterial_collection_protocol",
     "https://schema.humancellatlas.org/type/protocol/sequencing/5.1.0/sequencing_protocol",
     "https://schema.humancellatlas.org/type/process/1.0.0/process",
+    "https://schema.dev.data.humancellatlas.org/type/biomaterial/9.0.0/cell_suspension"
 ]
 
 template = SchemaTemplate(list_of_schema_urls=schemas)
@@ -50,3 +51,15 @@ print (template.lookup("project.project_core.project_title.user_friendly"))
 
 print(template.yaml_dump(tabs_only=True))
 # print(data.json_dump())
+
+
+migration = template.lookup_migration("cell_suspension.total_estimated_cells", "8.1.3")
+print ("Migration: " + str(migration))
+
+print ("New property: " + str(template.lookup(migration["replaced_by"])))
+
+
+try:
+    print (template.lookup_migration("cell_suspension.total_estimated_cells", "10.1.3"))
+except UnknownKeyException as e:
+    print(e)
