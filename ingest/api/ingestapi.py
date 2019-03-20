@@ -522,7 +522,8 @@ class IngestApi:
 
 class BundleManifest:
     def __init__(self):
-        self.bundleUuid = str(uuid.uuid4())
+        self.bundleUuid = None
+        self.bundleVersion = None
         self.envelopeUuid = {}
         self.dataFiles = []
         self.fileBiomaterialMap = {}
