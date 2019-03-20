@@ -171,7 +171,7 @@ class TestExporter(TestCase):
 
         # when, then:
         with self.assertRaises(ingestexportservice.BundleDSSError) as e:
-            metadata_files = exporter.put_bundle_in_dss('bundle_uuid', [])
+            metadata_files = exporter.put_bundle_in_dss('bundle_uuid', 'bundle_version', [])
 
     # mocks linked entities in the ingest API, attempts to build a bundle by crawling from an assay
     # process, asserts that the bundle created is equivalent to a known bundle
