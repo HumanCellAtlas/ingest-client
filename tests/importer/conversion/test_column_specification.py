@@ -3,7 +3,6 @@ from unittest import TestCase
 import copy
 
 from mock import MagicMock
-from more_itertools import side_effect
 
 from ingest.importer.conversion import column_specification
 from ingest.importer.conversion.column_specification import ColumnSpecification, ConversionType
