@@ -11,7 +11,8 @@ from ingest.importer.conversion.conversion_strategy import CellConversion, \
     FieldOfSingleElementListCellConversion
 from ingest.importer.conversion.metadata_entity import MetadataEntity
 from ingest.importer.data_node import DataNode
-from ingest.importer.spreadsheet.ingest_worksheet import IngestWorksheet, MODULE_TITLE_PATTERN
+from ingest.importer.spreadsheet.ingest_worksheet import IngestWorksheet, \
+    MODULE_TITLE_PATTERN, IngestRow
 from ingest.template.schema_template import SchemaTemplate
 
 
@@ -165,10 +166,10 @@ class RowTemplate:
         self.cell_conversions = cell_conversions
         self.default_values = copy.deepcopy(default_values)
 
-    def do_import(self, row):
+    def do_import(self, row: IngestRow):
         metadata = MetadataEntity(domain_type=self.domain_type, concrete_type=self.concrete_type,
-                                  content=self.default_values)
-        for index, cell in enumerate(row):
+                                  content=self.default_values, worksheet_title=row.worksheet_title, row_index=row.index)
+        for index, cell in enumerate(row.values):
             if cell.value is None:
                 continue
             conversion: CellConversion = self.cell_conversions[index]

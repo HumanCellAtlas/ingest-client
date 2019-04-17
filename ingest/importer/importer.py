@@ -11,6 +11,7 @@ from ingest.importer.spreadsheet.ingest_workbook import IngestWorkbook
 from ingest.importer.spreadsheet.ingest_worksheet import IngestWorksheet
 from ingest.importer.submission import IngestSubmitter, EntityMap, EntityLinker
 
+from openpyxl import load_workbook
 
 format = '[%(filename)s:%(lineno)s - %(funcName)20s() ] %(asctime)s - %(name)s - %(levelname)s - %(message)s'
 logging.basicConfig(format=format)
@@ -20,6 +21,7 @@ class XlsImporter:
 
     # TODO why does the importer need to refer to an IngestApi instance?
     # Seems like it should be the IngestSubmitter that takes care of this detail
+    # alegria: Submitter is part of the Ingest Importer
     def __init__(self, ingest_api):
         self.ingest_api = ingest_api
         self.logger = logging.getLogger(__name__)
@@ -84,6 +86,23 @@ class XlsImporter:
             self.logger.info(f'Submission in {submission_url} is done!')
 
         return submission
+
+    def insert_uuids(self, submission, file_path):
+        wb = load_workbook(filename=file_path)
+
+        worksheets = {}
+        for entity in submission.get_entities():
+            worksheet_title = entity.worksheet_title
+
+            if not worksheets.get(worksheet_title):
+                worksheet = wb.get_sheet_by_name(worksheet_title)
+                worksheet.insert_cols(1)
+                worksheets[worksheet_title] = worksheet
+
+            worksheet = worksheets.get(worksheet_title)
+            worksheet.cell(row=entity.row_index, column=1).value = entity.url
+
+        return wb.save(file_path)
 
     @staticmethod
     def _create_ingest_workbook(file_path):

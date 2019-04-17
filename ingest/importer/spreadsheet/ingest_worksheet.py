@@ -40,7 +40,10 @@ class IngestWorksheet(object):
         headers = self.get_column_headers()
         max_row = end_row or self.compute_max_row()
         rows = self._worksheet.iter_rows(min_row=start_row, max_row=max_row)
-        return [row[:len(headers)] for row in rows if not self.is_empty(row)]
+        rows = [row[:len(headers)] for row in rows if not self.is_empty(row)]
+        row_offset = START_DATA_ROW + 1
+        rows = [IngestRow(self._worksheet.title, row_offset + index, row) for index, row in enumerate(rows)]
+        return rows
 
     # NOTE: there are no tests around this because it's too complicated to
     # setup the scenario where the worksheet returns an erroneous max_row value
@@ -61,3 +64,10 @@ class IngestWorksheet(object):
         if field_name:
             field_name = re.sub('[\s-]', '_', field_name.lower())
         return field_name
+
+
+class IngestRow(object):
+    def __init__(self, worksheet_title, index, values):
+        self.values = values or []
+        self.index = index or None  # starts at 1
+        self.worksheet_title = worksheet_title or None

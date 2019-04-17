@@ -8,7 +8,8 @@ from ingest.importer.conversion.column_specification import ColumnSpecification
 from ingest.importer.conversion.conversion_strategy import CellConversion
 from ingest.importer.conversion.template_manager import TemplateManager, RowTemplate, InvalidTabName
 from ingest.importer.data_node import DataNode
-from ingest.importer.spreadsheet.ingest_worksheet import IngestWorksheet
+from ingest.importer.spreadsheet.ingest_worksheet import IngestWorksheet, \
+    IngestRow
 from tests.importer.utils.test_utils import create_test_workbook
 
 
@@ -371,7 +372,7 @@ class RowTemplateTest(TestCase):
         worksheet['C1'] = 'Manila'
         worksheet['D1'] = 'Philippines'
         row = list(worksheet.rows)[0]
-
+        row = IngestRow(0, row)
         # when:
         result = row_template.do_import(row)
 
@@ -406,6 +407,7 @@ class RowTemplateTest(TestCase):
         worksheet['A1'] = 'pen'
         worksheet['B1'] = 'a thing used for writing'
         row = list(worksheet.rows)[0]
+        row = IngestRow(0, row)
 
         # when:
         result = row_template.do_import(row)

@@ -101,7 +101,7 @@ class IngestWorksheetTest(TestCase):
 
         data_row_values = []
         for row in data_rows:
-            cell_values = [cell.value for cell in row]
+            cell_values = [cell.value for cell in row.values]
             data_row_values.append(cell_values)
 
         # then:
@@ -130,7 +130,7 @@ class IngestWorksheetTest(TestCase):
 
         data_row_values = []
         for row in data_rows:
-            cell_values = [cell.value for cell in row]
+            cell_values = [cell.value for cell in row.values]
             data_row_values.append(cell_values)
 
         # then:
