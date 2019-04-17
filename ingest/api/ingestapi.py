@@ -35,7 +35,10 @@ class IngestApi:
         self.ingest_api_root = ingest_api_root if ingest_api_root is not None else self.get_root_url()
 
     def set_token(self, token):
-        self.token = token
+        if token:
+            self.token = token
+            self.logger.debug(f'Token set!')
+            self.headers['Authorization'] = self.token
 
     def get_root_url(self):
         reply = requests.get(self.url, headers=self.headers)
@@ -291,7 +294,7 @@ class IngestApi:
         r = requests.patch(submissionUrl, data="{\"submissionStatus\" : \"Pending\"}", headers=self.headers)
 
     def createProject(self, submissionUrl, jsonObject):
-        return self.createEntity(submissionUrl, jsonObject, "projects", self.token)
+        return self.createEntity(submissionUrl, jsonObject, "projects")
 
     def createBiomaterial(self, submissionUrl, jsonObject):
         return self.createEntity(submissionUrl, jsonObject, "biomaterials")
@@ -355,15 +358,12 @@ class IngestApi:
 
         return r.json()
 
-    def createEntity(self, submissionUrl, jsonObject, entityType, token=None):
-        auth_headers = {'Content-type': 'application/json',
-                        'Authorization': token
-                        }
-        submissionUrl = self.get_link_in_submisssion(submissionUrl, entityType)
+    def createEntity(self, submissionUrl, jsonObject, entityType):
 
+        submissionUrl = self.get_link_in_submisssion(submissionUrl, entityType)
         self.logger.debug("posting " + submissionUrl)
         with optimistic_session(submissionUrl) as session:
-            r = session.post(submissionUrl, data=jsonObject, headers=auth_headers)
+            r = session.post(submissionUrl, data=jsonObject, headers=self.headers)
             r.raise_for_status()
             return r.json()
 
