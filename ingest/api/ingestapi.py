@@ -181,15 +181,10 @@ class IngestApi:
             bundleManifests = json.loads(r.text)
         return bundleManifests
 
-    def createSubmission(self, token):
-        auth_headers = {
-            'Content-type': 'application/json',
-            'Authorization': token
-        }
-
+    def createSubmission(self):
         try:
             r = requests.post(self.ingest_api_root["submissionEnvelopes"]["href"].rsplit("{")[0], data="{}",
-                              headers=auth_headers)
+                              headers=self.headers)
             r.raise_for_status()
             submission = r.json()
             submission_url = submission["_links"]["self"]["href"].rsplit("{")[0]
