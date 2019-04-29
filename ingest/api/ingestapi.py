@@ -38,7 +38,7 @@ class IngestApi:
         if token:
             self.token = token
             self.logger.debug(f'Token set!')
-            self.headers['Authorization'] = f'Bearer {self.token}'
+            self.headers['Authorization'] = self.token
 
     def get_root_url(self):
         reply = requests.get(self.url, headers=self.headers)
