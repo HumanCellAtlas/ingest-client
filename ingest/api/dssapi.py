@@ -93,11 +93,8 @@ class DssApi:
                 else:
                     time.sleep(60)
 
-    def put_bundle(self, bundle_uuid, bundle_files):
+    def put_bundle(self, bundle_uuid, version, bundle_files):
         bundle = None
-
-        # Generate version client-side for idempotent PUT /bundle
-        version = datetime.datetime.utcnow().strftime("%Y-%m-%dT%H%M%S.%fZ")
 
         # retrying file creation 20 times
         max_retries = 20

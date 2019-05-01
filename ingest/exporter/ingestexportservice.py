@@ -30,7 +30,6 @@ ERROR_TEMPLATE = {
     'message': 'Error occurred while attempting to export bundle.'
 }
 
-# TODO shouldn't source from environment variables, must pass config or params instead, throw an error if not in config
 
 class IngestExporter:
     def __init__(self, options=None):
@@ -51,7 +50,7 @@ class IngestExporter:
         self.ingest_api = ingestapi.IngestApi(self.ingestUrl)
         self.related_entities_cache = {}
 
-    def export_bundle(self, submission_uuid, process_uuid):
+    def export_bundle(self, bundle_uuid, bundle_version, submission_uuid, process_uuid):
         start_time = time.time()
         self.related_entities_cache = {}
         saved_bundle_uuid = None
@@ -87,7 +86,11 @@ class IngestExporter:
         })
 
         # restructure bundle manifest
-        bundle_manifest = self.create_bundle_manifest(submission_uuid, files_by_type)
+        bundle_manifest = ingestapi.BundleManifest()
+        bundle_manifest.envelopeUuid = submission_uuid
+        bundle_manifest.bundleUuid = bundle_uuid
+        bundle_manifest.bundleVersion = bundle_version
+        bundle_manifest = self.create_bundle_manifest(bundle_manifest, files_by_type)
 
         self.logger.info('Generating bundle files...')
 
@@ -124,7 +127,7 @@ class IngestExporter:
             bundle_manifest.dataFiles = list()
             bundle_manifest.dataFiles = [data_file['dss_uuid'] for data_file in data_files]
             self.logger.info('Saving files in DSS...')
-            bundle_uuid = bundle_manifest.bundleUuid
+
             try:
                 created_files = self.put_files_in_dss(bundle_uuid, bundle_files, process_info)
 
@@ -133,7 +136,7 @@ class IngestExporter:
                 self.verify_files(created_files)
 
                 self.logger.info('Saving bundle in DSS...')
-                self.put_bundle_in_dss(bundle_uuid, created_files)
+                self.put_bundle_in_dss(bundle_uuid, bundle_version, created_files)
 
                 self.logger.info('Saving bundle manifest...')
                 self.ingest_api.createBundleManifest(bundle_manifest)
@@ -412,9 +415,9 @@ class IngestExporter:
             raise BundleFileUploadError(message)
 
     # TODO handle error #export-errors
-    def put_bundle_in_dss(self, bundle_uuid, created_files):
+    def put_bundle_in_dss(self, bundle_uuid, bundle_version, created_files):
         try:
-            created_bundle = self.dss_api.put_bundle(bundle_uuid, created_files)
+            created_bundle = self.dss_api.put_bundle(bundle_uuid, bundle_version, created_files)
         except Exception as e:
             message = 'An error occurred while putting bundle in DSS: ' + str(e)
             raise BundleDSSError(message)
@@ -517,10 +520,7 @@ class IngestExporter:
 
         return data_files
 
-    def create_bundle_manifest(self, submission_uuid, files_by_type):
-        bundle_manifest = ingestapi.BundleManifest()
-        bundle_manifest.envelopeUuid = submission_uuid
-
+    def create_bundle_manifest(self, bundle_manifest, files_by_type):
         bundle_manifest.fileProjectMap = dict()
         for metadata_file in files_by_type['project']:
             bundle_manifest.fileProjectMap[metadata_file['dss_uuid']] = [metadata_file['dss_uuid']]
