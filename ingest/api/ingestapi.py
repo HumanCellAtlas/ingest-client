@@ -7,6 +7,8 @@ import logging
 import os
 import time
 import uuid
+import warnings
+
 from urllib.parse import urljoin, quote
 
 import requests
@@ -181,7 +183,12 @@ class IngestApi:
             bundleManifests = json.loads(r.text)
         return bundleManifests
 
+
     def createSubmission(self):
+        warnings.warn(
+                "createSubmission is deprecated, use create_submission instead",
+                DeprecationWarning
+        )
         try:
             r = requests.post(self.ingest_api_root["submissionEnvelopes"]["href"].rsplit("{")[0], data="{}",
                               headers=self.headers)
@@ -193,6 +200,20 @@ class IngestApi:
         except requests.exceptions.RequestException as err:
             self.logger.error("Request failed: " + str(err))
             raise
+
+    def create_submission(self):
+        try:
+            r = requests.post(self.ingest_api_root["submissionEnvelopes"]["href"].rsplit("{")[0], data="{}",
+                              headers=self.headers)
+            r.raise_for_status()
+            submission = r.json()
+            submission_url = submission["_links"]["self"]["href"].rsplit("{")[0]
+            self.submission_links[submission_url] = submission["_links"]
+            return submission
+        except requests.exceptions.RequestException as err:
+            self.logger.error("Request failed: " + str(err))
+            raise
+
 
     def get_submission_links(self, submission_url):
         if not self.submission_links.get(submission_url):
