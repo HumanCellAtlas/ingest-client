@@ -41,8 +41,7 @@ class IngestWorksheet(object):
         max_row = end_row or self.compute_max_row()
         rows = self._worksheet.iter_rows(min_row=start_row, max_row=max_row)
         rows = [row[:len(headers)] for row in rows if not self.is_empty(row)]
-        row_offset = START_DATA_ROW + 1
-        rows = [IngestRow(self._worksheet.title, row_offset + index, row) for index, row in enumerate(rows)]
+        rows = [IngestRow(self._worksheet.title, START_DATA_ROW + index, row) for index, row in enumerate(rows)]
         return rows
 
     # NOTE: there are no tests around this because it's too complicated to
@@ -65,6 +64,12 @@ class IngestWorksheet(object):
             field_name = re.sub('[\s-]', '_', field_name.lower())
         return field_name
 
+    def insert_column_with_header(self, header, col_idx):
+        self._worksheet.insert_cols(col_idx)
+        self._worksheet.cell(row=self._header_row_idx, column=col_idx).value = header
+
+    def cell(self, row, column):
+        return self._worksheet.cell(row=row, column=column)
 
 class IngestRow(object):
     def __init__(self, worksheet_title, index, values):

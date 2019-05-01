@@ -91,16 +91,22 @@ class XlsImporter:
         wb = load_workbook(filename=file_path)
 
         worksheets = {}
+        col_idx = 1
         for entity in submission.get_entities():
-            worksheet_title = entity.worksheet_title
+            if entity.spreadsheet_location:
+                worksheet_title = entity.spreadsheet_location.get('worksheet_title')
+                row_index = entity.spreadsheet_location.get('row_index')
 
-            if not worksheets.get(worksheet_title):
-                worksheet = wb.get_sheet_by_name(worksheet_title)
-                worksheet.insert_cols(1)
-                worksheets[worksheet_title] = worksheet
+                if not worksheets.get(worksheet_title):
+                    worksheet = wb.get_sheet_by_name(worksheet_title)
+                    ingest_worksheet = IngestWorksheet(worksheet=worksheet)
+                    column_header = f'{entity.concrete_type}.uuid'
+                    ingest_worksheet.insert_column_with_header(column_header, col_idx)
+                    worksheets[worksheet_title] = ingest_worksheet
 
-            worksheet = worksheets.get(worksheet_title)
-            worksheet.cell(row=entity.row_index, column=1).value = entity.url
+                ingest_worksheet = worksheets.get(worksheet_title)
+                uuid = entity.ingest_json['uuid']['uuid']
+                ingest_worksheet.cell(row=row_index, column=col_idx).value = uuid
 
         return wb.save(file_path)
 

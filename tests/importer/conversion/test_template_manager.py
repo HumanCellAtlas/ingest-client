@@ -372,7 +372,7 @@ class RowTemplateTest(TestCase):
         worksheet['C1'] = 'Manila'
         worksheet['D1'] = 'Philippines'
         row = list(worksheet.rows)[0]
-        row = IngestRow(0, row)
+        row = IngestRow('worksheet_title', 0, row)
         # when:
         result = row_template.do_import(row)
 
@@ -407,7 +407,7 @@ class RowTemplateTest(TestCase):
         worksheet['A1'] = 'pen'
         worksheet['B1'] = 'a thing used for writing'
         row = list(worksheet.rows)[0]
-        row = IngestRow(0, row)
+        row = IngestRow('worksheet_title', 0, row)
 
         # when:
         result = row_template.do_import(row)

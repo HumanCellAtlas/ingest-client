@@ -168,7 +168,7 @@ class RowTemplate:
 
     def do_import(self, row: IngestRow):
         metadata = MetadataEntity(domain_type=self.domain_type, concrete_type=self.concrete_type,
-                                  content=self.default_values, worksheet_title=row.worksheet_title, row_index=row.index)
+                                  content=self.default_values, row=row)
         for index, cell in enumerate(row.values):
             if cell.value is None:
                 continue

@@ -241,7 +241,7 @@ class EntityLinker(object):
 class Entity(object):
 
     def __init__(self, entity_type, entity_id, content, ingest_json=None, links_by_entity=None,
-                 direct_links=None, is_reference=False, linking_details=None, concrete_type=None, row_index=None, worksheet_title=None):
+                 direct_links=None, is_reference=False, linking_details=None, concrete_type=None, spreadsheet_location=None):
         self.type = entity_type
         self.id = entity_id
         self.content = content
@@ -251,8 +251,7 @@ class Entity(object):
         self.ingest_json = ingest_json
         self.is_reference = is_reference
         self.concrete_type = concrete_type
-        self.row_index = row_index
-        self.worksheet_title = worksheet_title
+        self.spreadsheet_location = spreadsheet_location
 
     def _prepare_links_by_entity(self, links_by_entity):
         self.links_by_entity = {}
@@ -375,6 +374,7 @@ class EntityMap(object):
                         external_link_entity = Entity(entity_type=external_link_type,
                                                       entity_id=entity_uuid,
                                                       content=None,
+                                                      spreadsheet_location=entity_body.get('spreadsheet_location'),
                                                       is_reference=True)
 
                         dictionary.add_entity(external_link_entity)
@@ -394,8 +394,8 @@ class EntityMap(object):
                                 is_reference=entity_body.get('is_reference', False),
                                 linking_details=entity_body.get('linking_details', {}),
                                 concrete_type=entity_body.get('concrete_type'),
-                                worksheet_title=entity_body.get('worksheet_title'),
-                                row_index=entity_body.get('row_index'))
+                                spreadsheet_location=entity_body.get(
+                                    'spreadsheet_location'))
 
                 dictionary.add_entity(entity)
 
