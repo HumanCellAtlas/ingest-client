@@ -111,7 +111,7 @@ class SchemaTemplate:
         except:
             if schema_version != None:
                 try:
-                    return(self.get(self._template["meta_data_properties"], self.lookup_migration(key, schema_version)["replaced_by"]))
+                    return(self.lookup_migration(key, schema_version))
                 except Exception:
                     raise UnknownKeyException(
                         "Can't map the key to a known JSON schema migration: " + str(key))
