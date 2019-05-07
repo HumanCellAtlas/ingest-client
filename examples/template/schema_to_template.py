@@ -21,7 +21,7 @@ schemas = [
     "https://schema.dev.data.humancellatlas.org/type/biomaterial/9.0.0/cell_suspension"
 ]
 
-template = SchemaTemplate(list_of_schema_urls=schemas)
+template = SchemaTemplate(list_of_schema_urls=schemas,migrations_url='https://schema.dev.data.humancellatlas.org/property_migrations')
 
 # get key from user friendly name
 

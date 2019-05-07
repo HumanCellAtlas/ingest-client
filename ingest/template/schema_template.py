@@ -28,7 +28,7 @@ class SchemaTemplate:
     A schema template is a simplified view over
     JSON schema for the HCA metadata
     """
-    def __init__(self, ingest_api_url=None, list_of_schema_urls=None, tab_config=None, migrations=None):
+    def __init__(self, ingest_api_url=None, list_of_schema_urls=None, tab_config=None, migrations=None, migrations_url=None):
 
         # todo remove this hard coding to a default ingest API url
         self.ingest_api_url = ingest_api_url if ingest_api_url else "http://api.ingest.dev.data.humancellatlas.org"
@@ -47,8 +47,8 @@ class SchemaTemplate:
             # print ("Got schemas from ingest api\n " + "\n".join(list_of_schema_urls))
         self.schema_urls = list_of_schema_urls
 
-        if not migrations:
-            migrations = self.get_migrations(self.ingest_api_url)
+        if migrations_url and not migrations:
+            migrations = self.get_migrations(migrations_url)
 
         self.property_migrations = migrations
 
@@ -70,18 +70,13 @@ class SchemaTemplate:
             urls.append(url)
         return urls
 
-    def get_migrations(self, ingest_api_url):
-        """
-            TO DO: replace this method with a loader for property migrations from schema server URL once this is available
-        """
-        uri = "https://raw.githubusercontent.com/HumanCellAtlas/metadata-schema/develop/json_schema/property_migrations.json"
-
-        with urllib.request.urlopen(uri) as url:
+    def get_migrations(self, migrations_url):
+        with urllib.request.urlopen(migrations_url) as url:
             data = {}
             try:
                 data = json.loads(url.read().decode())["migrations"]
             except:
-                print("Failed to read schema from " + uri)
+                print("Failed to read schema from " + migrations_url)
         return data
 
 
