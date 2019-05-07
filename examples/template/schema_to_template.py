@@ -49,15 +49,24 @@ print (template.lookup("project.project_core.project_title.user_friendly"))
 
 # dump the config in yaml or json
 
-print(template.yaml_dump(tabs_only=True))
+# print(template.yaml_dump(tabs_only=True))
 # print(data.json_dump())
 
+try:
+    print(template.lookup("cell_suspension.total_estimated_cells"))
+except UnknownKeyException as e:
+    print(e)
 
-migration = template.lookup_migration("cell_suspension.total_estimated_cells", "8.1.3")
-print ("Migration: " + str(migration))
+    # migration = template.lookup_migration("cell_suspension.total_estimated_cells", "8.1.3")
+    migration = template.lookup("cell_suspension.total_estimated_cells", "8.1.3")
+    print ("Migration: " + str(migration))
 
-print ("New property: " + str(template.lookup(migration["replaced_by"])))
+    print(str(migration.keys()))
 
+    print ("New property: " + str(template.lookup(migration["replaced_by"])))
+
+
+    print (template.lookup(migration["replaced_by"])["user_friendly"])
 
 try:
     print (template.lookup_migration("cell_suspension.total_estimated_cells", "10.1.3"))

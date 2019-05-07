@@ -102,15 +102,22 @@ class SchemaTemplate:
             self._parser._load_migration(migration)
         return self
 
-    def get_tabs_config(self, ):
+    def get_tabs_config(self):
         return self._tab_config
 
-    def lookup(self, key):
+    def lookup(self, key, schema_version=None):
         try:
             return self.get(self._template["meta_data_properties"], key)
         except:
-            raise UnknownKeyException(
-                "Can't map the key to a known JSON schema property: " + str(key))
+            if schema_version != None:
+                try:
+                    return(self.lookup_migration(key, schema_version))
+                except Exception:
+                    raise UnknownKeyException(
+                        "Can't map the key to a known JSON schema migration: " + str(key))
+            else:
+                raise UnknownKeyException(
+                    "Can't map the key to a known JSON schema property: " + str(key))
 
     def lookup_migration(self, key, schema_version):
         try:
