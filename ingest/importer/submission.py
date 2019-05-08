@@ -241,7 +241,7 @@ class EntityLinker(object):
 class Entity(object):
 
     def __init__(self, entity_type, entity_id, content, ingest_json=None, links_by_entity=None,
-                 direct_links=None, is_reference=False, linking_details=None, concrete_type=None):
+                 direct_links=None, is_reference=False, linking_details=None, concrete_type=None, spreadsheet_location=None):
         self.type = entity_type
         self.id = entity_id
         self.content = content
@@ -251,6 +251,7 @@ class Entity(object):
         self.ingest_json = ingest_json
         self.is_reference = is_reference
         self.concrete_type = concrete_type
+        self.spreadsheet_location = spreadsheet_location
 
     def _prepare_links_by_entity(self, links_by_entity):
         self.links_by_entity = {}
@@ -266,6 +267,14 @@ class Entity(object):
         self.linking_details = {}
         if linking_details is not None:
             self.linking_details.update(linking_details)
+
+    @property
+    def uuid(self):
+        return self.ingest_json.get('uuid', {}).get('uuid')
+
+    @property
+    def url(self):
+        return self.ingest_json['_links']['self']['href']
 
 
 class Submission(object):
@@ -336,6 +345,9 @@ class Submission(object):
         self.manifest = self.ingest_api.createSubmissionManifest(self.submission_url, manifest_json)
         return self.manifest
 
+    def get_entities(self):
+        return self.metadata_dict.values()
+
 
 class EntityMap(object):
 
@@ -362,6 +374,7 @@ class EntityMap(object):
                         external_link_entity = Entity(entity_type=external_link_type,
                                                       entity_id=entity_uuid,
                                                       content=None,
+                                                      spreadsheet_location=entity_body.get('spreadsheet_location'),
                                                       is_reference=True)
 
                         dictionary.add_entity(external_link_entity)
@@ -380,7 +393,9 @@ class EntityMap(object):
                                 links_by_entity=entity_body.get('links_by_entity', {}),
                                 is_reference=entity_body.get('is_reference', False),
                                 linking_details=entity_body.get('linking_details', {}),
-                                concrete_type=entity_body.get('concrete_type'))
+                                concrete_type=entity_body.get('concrete_type'),
+                                spreadsheet_location=entity_body.get(
+                                    'spreadsheet_location'))
 
                 dictionary.add_entity(entity)
 

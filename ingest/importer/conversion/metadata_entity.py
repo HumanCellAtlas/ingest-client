@@ -1,6 +1,7 @@
 import copy
 
 from ingest.importer.data_node import DataNode
+from ingest.importer.spreadsheet.ingest_worksheet import IngestRow
 
 TYPE_UNDEFINED = 'undefined'
 
@@ -10,7 +11,7 @@ class MetadataEntity:
     # TODO enforce definition of concrete and domain types for all MetadataEntity
     # It's only currently done this way to minimise friction with other parts of the system
     def __init__(self, concrete_type=TYPE_UNDEFINED, domain_type=TYPE_UNDEFINED, object_id=None,
-                 content={}, links={}, external_links={}, linking_details={}):
+                 content={}, links={}, external_links={}, linking_details={}, row:IngestRow = None):
         self._concrete_type = concrete_type
         self._domain_type = domain_type
         self.object_id = object_id
@@ -18,6 +19,10 @@ class MetadataEntity:
         self._links = copy.deepcopy(links)
         self._external_links = copy.deepcopy(external_links)
         self._linking_details = DataNode(defaults=copy.deepcopy(linking_details))
+        self._spreadsheet_location = {
+            'row_index' : row.index,
+            'worksheet_title': row.worksheet_title,
+        } if row else None
 
     @property
     def concrete_type(self):
@@ -94,5 +99,6 @@ class MetadataEntity:
             'content': self._content.as_dict(),
             'links_by_entity': self.links,
             'external_links_by_entity': self.external_links,
-            'linking_details': self.linking_details
+            'linking_details': self.linking_details,
+            'spreadsheet_location': self._spreadsheet_location
         }
