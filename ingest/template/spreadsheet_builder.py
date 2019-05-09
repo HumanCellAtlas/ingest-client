@@ -16,7 +16,7 @@ import xlsxwriter
 
 DEFAULT_INGEST_URL = "http://api.ingest.data.humancellatlas.org"
 DEFAULT_SCHEMAS_ENDPOINT = "/schemas/search/latestSchemas"
-
+DEFAULT_MIGRATIONS_URL = "https://schema.dev.data.humancellatlas.org/property_migrations"
 
 
 class SpreadsheetBuilder:
@@ -198,6 +198,8 @@ if __name__ == '__main__':
                       help="Name of the output spreadsheet")
     parser.add_argument("-u", "--url", dest="url",
                       help="Optional ingest API URL - if not default (prod)")
+    parser.add_argument("-m", "--migrations", dest="migrations",
+                        help="Optional migrations URL - if not default (prod)")
     parser.add_argument("-r", "--hidden_row", action="store_true",
                       help="Binary flag - if set, the 4th row will be hidden")
     args = parser.parse_args()
@@ -213,12 +215,17 @@ if __name__ == '__main__':
         ingest_url = args.url
     schemas_url = ingest_url + DEFAULT_SCHEMAS_ENDPOINT
 
+    if not args.migrations:
+        migrations_url = DEFAULT_MIGRATIONS_URL
+    else:
+        migrations_url = args.migrations
+
     hide_row = False
 
     if args.hidden_row:
         hide_row = True
 
-    all_schemas = schema_template.SchemaTemplate(ingest_url).get_schema_urls()
+    all_schemas = schema_template.SchemaTemplate(ingest_url, migrations_url).get_schema_urls()
 
     # all_schemas = [
     #     "http://schema.dev.data.humancellatlas.org/type/project/9.0.5/project",

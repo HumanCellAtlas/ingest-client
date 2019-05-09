@@ -32,6 +32,7 @@ class SchemaTemplate:
 
         # todo remove this hard coding to a default ingest API url
         self.ingest_api_url = ingest_api_url if ingest_api_url else "http://api.ingest.dev.data.humancellatlas.org"
+        self.migrations_url = migrations_url if migrations_url else "https://schema.dev.data.humancellatlas.org/property_migrations"
         self._template = {
             "template_version" : "1.0.0",
             "created_date" : str(datetime.now()),
@@ -47,8 +48,8 @@ class SchemaTemplate:
             # print ("Got schemas from ingest api\n " + "\n".join(list_of_schema_urls))
         self.schema_urls = list_of_schema_urls
 
-        if migrations_url and not migrations:
-            migrations = self.get_migrations(migrations_url)
+        if not migrations:
+            migrations = self.get_migrations(self.migrations_url)
 
         self.property_migrations = migrations
 
