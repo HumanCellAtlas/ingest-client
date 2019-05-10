@@ -204,9 +204,11 @@ class IngestApi:
     def create_submission(self, update_submission=False):
         try:
             create_submission_url = self.ingest_api_root["submissionEnvelopes"]["href"].rsplit("{")[0]
+
             if update_submission:
                 create_submission_url = f'{create_submission_url}/updateSubmissions'
-            r = requests.post(self.ingest_api_root["submissionEnvelopes"]["href"].rsplit("{")[0], data="{}",
+
+            r = requests.post(create_submission_url, data="{}",
                               headers=self.headers)
             r.raise_for_status()
             submission = r.json()
