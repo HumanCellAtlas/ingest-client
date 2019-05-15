@@ -85,8 +85,8 @@ class StagingApi:
         self.logger.info('Staging area deleted!')
         return base
 
-    def stageFile(self, submissionId, filename, body, type):
-        fileUrl = urljoin(self.url, self.apiversion + '/area/' + submissionId + "/" + filename)
+    def stageFile(self, stagingAreaId, filename, body, type):
+        fileUrl = urljoin(self.url, self.apiversion + '/area/' + stagingAreaId + "/" + filename)
 
         self.logger.info(f'Staging file: {fileUrl}')
 
