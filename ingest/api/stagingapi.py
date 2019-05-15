@@ -125,3 +125,10 @@ class FileDescription:
         self.name = name
         self.size = size
         self.url = url
+
+class MetadataFileStagingRequest:
+    def __init__(self, staging_area_uuid, filename, metadata_json, metadata_type):
+        self.staging_area_uuid = staging_area_uuid
+        self.filename = filename
+        self.metadata_json = metadata_json
+        self.metadata_type = metadata_type
