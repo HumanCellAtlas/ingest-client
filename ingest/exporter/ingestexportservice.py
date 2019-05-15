@@ -145,6 +145,8 @@ class IngestExporter:
 
                 self.logger.info('Bundle ' + bundle_uuid + ' was successfully created!')
                 self.logger.info("Execution Time: %s seconds" % (time.time() - start_time))
+            except dssapi.BundleAlreadyExist as bundle_already_exist:
+                raise
             except Error as unresolvable_exception:
                 submission_url = self._extract_submission_url(submission)
                 if submission_url:
@@ -418,6 +420,8 @@ class IngestExporter:
     def put_bundle_in_dss(self, bundle_uuid, bundle_version, created_files):
         try:
             created_bundle = self.dss_api.put_bundle(bundle_uuid, bundle_version, created_files)
+        except dssapi.BundleAlreadyExist as bundle_exist:
+            raise
         except Exception as e:
             message = 'An error occurred while putting bundle in DSS: ' + str(e)
             raise BundleDSSError(message)

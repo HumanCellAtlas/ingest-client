@@ -8,6 +8,9 @@ import json
 import logging
 import os
 import time
+
+from hca.util import SwaggerAPIException
+
 from ingest.utils.s2s_token_client import S2STokenClient
 from ingest.utils.token_manager import TokenManager
 
@@ -116,7 +119,14 @@ class DssApi:
                 self.logger.info('Created!')
                 bundle_create_complete = True
                 return bundle
+
             except Exception as e:
+                if isinstance(e, SwaggerAPIException):
+                    error_code = e.details.get('code')
+
+                    if error_code.lower() == 'bundle_already_exists':
+                        raise BundleAlreadyExist(f"Bundle {bundle_uuid}.{version} already exist in DSS.")
+
                 params = {
                     'uuid': bundle_uuid,
                     'version': version,
@@ -152,3 +162,7 @@ class DssApi:
 
 class Error(Exception):
     """Base-class for all exceptions raised by this module."""
+
+
+class BundleAlreadyExist(Error):
+    """Bundle in DSS already Exist."""
