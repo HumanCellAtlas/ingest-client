@@ -85,6 +85,12 @@ class StagingApi:
         self.logger.info('Staging area deleted!')
         return base
 
+    def stageFileRequest(self, file_stage_request: 'MetadataFileStagingRequest'):
+        return self.stageFile(file_stage_request.staging_area_uuid,
+                              file_stage_request.filename,
+                              file_stage_request.metadata_json,
+                              file_stage_request.metadata_type)
+
     def stageFile(self, stagingAreaId, filename, body, type):
         fileUrl = urljoin(self.url, self.apiversion + '/area/' + stagingAreaId + "/" + filename)
 
@@ -125,6 +131,7 @@ class FileDescription:
         self.name = name
         self.size = size
         self.url = url
+
 
 class MetadataFileStagingRequest:
     def __init__(self, staging_area_uuid, filename, metadata_json, metadata_type):
