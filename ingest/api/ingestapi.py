@@ -175,14 +175,8 @@ class IngestApi:
         return files
 
     def getBundleManifests(self, id):
-        submissionUrl = self.url + '/submissionEnvelopes/' + id + '/bundleManifests'
-        r = requests.get(submissionUrl, headers=self.headers)
-        bundleManifests = []
-
-        if r.status_code == requests.codes.ok:
-            bundleManifests = json.loads(r.text)
-        return bundleManifests
-
+        submission_url = self.url + '/submissionEnvelopes/' + id
+        return self.getEntities(submission_url, "bundleManifests", 500)
 
     def createSubmission(self):
         warnings.warn(
