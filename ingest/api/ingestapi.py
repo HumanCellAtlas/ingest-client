@@ -140,6 +140,13 @@ class IngestApi:
         r.raise_for_status()
         return r.json()
 
+
+    def get_entity_by_callback_link(self, callback_link):
+        url = f'{self.url}/{callback_link}'
+        r = requests.get(url, headers=self.headers)
+        r.raise_for_status()
+        return r.json()
+
     def getFileBySubmissionUrlAndFileName(self, submissionUrl, fileName):
         searchUrl = self.get_link_from_resource_url(self.url + '/files/search', 'findBySubmissionEnvelopesInAndFileName')
         searchUrl = searchUrl.replace('{?submissionEnvelope,fileName}', '')
