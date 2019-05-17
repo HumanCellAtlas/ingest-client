@@ -136,6 +136,19 @@ class DssApi:
                 else:
                     time.sleep(60)
 
+    def get_bundle(self, bundle_uuid, version=None):
+        if version:
+            return self.hca_client.get_bundle(
+                uuid=bundle_uuid,
+                replica="aws",
+                version=version
+            )
+        else:
+            return self.hca_client.get_bundle(
+                uuid=bundle_uuid,
+                replica="aws"
+            )
+
     def head_file(self, file_uuid, version=None):
         # finally create the bundle
         try:
