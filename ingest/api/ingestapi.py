@@ -140,7 +140,6 @@ class IngestApi:
         r.raise_for_status()
         return r.json()
 
-
     def get_entity_by_callback_link(self, callback_link):
         url = f'{self.url}/{callback_link}'
         r = requests.get(url, headers=self.headers)
