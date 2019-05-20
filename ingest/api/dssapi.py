@@ -60,22 +60,36 @@ class DssApi:
         params = {
             'uuid': uuid,
             'version': version,
-            'bundle_uuid': bundle_uuid,
             'creator_uid': self.creator_uid,
             'source_url': url
         }
+
+        if bundle_uuid:
+            params["bundle_uuid"] = bundle_uuid
+
 
         while not file_create_complete and tries < max_retries:
             try:
                 tries += 1
                 self.logger.info(f'Creating file {file["name"]} in DSS {uuid}:{version} with params: {json.dumps(params)}')
-                bundle_file = self.hca_client.put_file(
-                    uuid=uuid,
-                    version=version,
-                    bundle_uuid=bundle_uuid,
-                    creator_uid=self.creator_uid,
-                    source_url=url
-                )
+                bundle_file = None
+
+                if bundle_uuid:
+                    bundle_file = self.hca_client.put_file(
+                        uuid=uuid,
+                        version=version,
+                        bundle_uuid=bundle_uuid,
+                        creator_uid=self.creator_uid,
+                        source_url=url
+                    )
+                else:
+                    bundle_file = self.hca_client.put_file(
+                        uuid=uuid,
+                        version=version,
+                        creator_uid=self.creator_uid,
+                        source_url=url
+                    )
+
                 self.logger.info('Created!')
                 file_create_complete = True
                 return bundle_file
