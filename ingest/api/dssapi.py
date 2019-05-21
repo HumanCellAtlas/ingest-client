@@ -18,6 +18,14 @@ __date__ = "12/09/2017"
 AUTH_INFO_ENV_VAR = "EXPORTER_AUTH_INFO"
 
 
+
+
+class DSSFileCreateRequest:
+    def __init__(self, uuid, version, source_cloud_url):
+        self.uuid = uuid
+        self.version = version
+        self.source_cloud_url = source_cloud_url
+
 class DssApi:
     def __init__(self, url=None):
         format = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
@@ -42,8 +50,6 @@ class DssApi:
     def put_file(self, bundle_uuid, file):
         url = file["url"]
         uuid = file["dss_uuid"]
-
-        version = datetime.datetime.utcnow().strftime("%Y-%m-%dT%H%M%S.%fZ")
 
         update_date = file.get("update_date")
 
@@ -173,7 +179,6 @@ class DssApi:
             )
         except Exception as e:
             raise Error(e)
-
 
 # Module Exceptions
 
