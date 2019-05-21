@@ -201,9 +201,14 @@ class IngestApi:
             self.logger.error("Request failed: " + str(err))
             raise
 
-    def create_submission(self):
+    def create_submission(self, update_submission=False):
         try:
-            r = requests.post(self.ingest_api_root["submissionEnvelopes"]["href"].rsplit("{")[0], data="{}",
+            create_submission_url = self.ingest_api_root["submissionEnvelopes"]["href"].rsplit("{")[0]
+
+            if update_submission:
+                create_submission_url = f'{create_submission_url}/updateSubmissions'
+
+            r = requests.post(create_submission_url, data="{}",
                               headers=self.headers)
             r.raise_for_status()
             submission = r.json()
@@ -309,30 +314,19 @@ class IngestApi:
     def _updateStatusToPending(self, submissionUrl):
         r = requests.patch(submissionUrl, data="{\"submissionStatus\" : \"Pending\"}", headers=self.headers)
 
-    def createProject(self, submissionUrl, jsonObject):
-        return self.createEntity(submissionUrl, jsonObject, "projects")
+    def createProject(self, submissionUrl, jsonObject, uuid=None):
+        return self.createEntity(submissionUrl, jsonObject, "projects", uuid)
 
-    def createBiomaterial(self, submissionUrl, jsonObject):
-        return self.createEntity(submissionUrl, jsonObject, "biomaterials")
+    def createBiomaterial(self, submissionUrl, jsonObject, uuid=None):
+        return self.createEntity(submissionUrl, jsonObject, "biomaterials", uuid)
 
-    def createProcess(self, submissionUrl, jsonObject):
-        return self.createEntity(submissionUrl, jsonObject, "processes")
+    def createProcess(self, submissionUrl, jsonObject, uuid=None):
+        return self.createEntity(submissionUrl, jsonObject, "processes", uuid)
 
-    def createSubmissionManifest(self, submissionUrl, jsonObject):
-        return self.createEntity(submissionUrl, jsonObject, 'submissionManifest')
+    def createProtocol(self, submissionUrl, jsonObject, uuid=None):
+        return self.createEntity(submissionUrl, jsonObject, "protocols", uuid)
 
-    def patch(self, url, patch):
-        r = requests.patch(url, json=patch)
-        r.raise_for_status()
-        return r
-
-    def createSubmissionError(self, submissionUrl, jsonObject):
-        return self.createEntity(submissionUrl, jsonObject, 'submissionErrors')
-
-    def createProtocol(self, submissionUrl, jsonObject):
-        return self.createEntity(submissionUrl, jsonObject, "protocols")
-
-    def createFile(self, submissionUrl, file_name, jsonObject):
+    def createFile(self, submissionUrl, file_name, jsonObject, uuid=None):
         # TODO: why do we need the submission's links before we can create a file on it?
         # TODO: submission_links should be a cache;
         # TODO: getting a submission's links should look in the cache before retrieving it from the API
@@ -374,12 +368,26 @@ class IngestApi:
 
         return r.json()
 
-    def createEntity(self, submissionUrl, jsonObject, entityType):
+    def createSubmissionManifest(self, submissionUrl, jsonObject):
+        return self.createEntity(submissionUrl, jsonObject, 'submissionManifest')
+
+    def patch(self, url, patch):
+        r = requests.patch(url, json=patch)
+        r.raise_for_status()
+        return r
+
+    def createSubmissionError(self, submissionUrl, jsonObject):
+        return self.createEntity(submissionUrl, jsonObject, 'submissionErrors')
+
+    def createEntity(self, submissionUrl, jsonObject, entityType, uuid=None):
+        params = {}
+        if uuid:
+            params["updatingUuid"] = uuid
 
         submissionUrl = self.get_link_in_submisssion(submissionUrl, entityType)
         self.logger.debug("posting " + submissionUrl)
         with optimistic_session(submissionUrl) as session:
-            r = session.post(submissionUrl, data=jsonObject, headers=self.headers)
+            r = session.post(submissionUrl, data=jsonObject, headers=self.headers, params=params)
             r.raise_for_status()
             return r.json()
 
