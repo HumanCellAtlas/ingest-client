@@ -16,7 +16,7 @@ import xlsxwriter
 
 DEFAULT_INGEST_URL = "http://api.ingest.data.humancellatlas.org"
 DEFAULT_SCHEMAS_ENDPOINT = "/schemas/search/latestSchemas"
-DEFAULT_MIGRATIONS_URL = "https://schema.dev.data.humancellatlas.org/property_migrations"
+DEFAULT_MIGRATIONS_URL = "https://schema.humancellatlas.org/property_migrations"
 
 
 class SpreadsheetBuilder:
