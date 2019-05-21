@@ -116,8 +116,7 @@ class BundleUpdateService:
                                        staged_metadata_file.metadata_resource)
 
     @staticmethod
-    def generate_metadata_stage_request(staging_area_id: str,
-                                        metadata_resource: MetadataResource) -> MetadataFileStagingRequest:
+    def generate_metadata_stage_request(staging_area_id: str, metadata_resource: MetadataResource) -> MetadataFileStagingRequest:
         filename = f'{metadata_resource.uuid}.{metadata_resource.dcp_version}.json'
         metadata_json = metadata_resource.metadata_json
         metadata_type = metadata_resource.metdata_type
