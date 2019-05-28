@@ -340,10 +340,14 @@ class IngestApi:
             "content": json.loads(jsonObject)  # TODO jsonObject should be a dict()
         }
 
+        params = {}
+        if uuid:
+            params["updatingUuid"] = uuid
+
         time.sleep(0.001)
         with optimistic_session(fileSubmissionsUrl) as session:
             r = session.post(fileSubmissionsUrl, data=json.dumps(fileToCreateObject),
-                              headers=self.headers)
+                              headers=self.headers, params=params)
 
         # TODO Investigate why core is returning internal server error
         if r.status_code == requests.codes.conflict or r.status_code == requests.codes.internal_server_error:

@@ -10,14 +10,16 @@ UNKNOWN_DOMAIN_TYPE = '_unknown_type'
 
 _LOGGER = logging.getLogger(__name__)
 
+
 class ConversionType(Enum):
     UNDEFINED = 0,
     MEMBER_FIELD = 1,
     FIELD_OF_LIST_ELEMENT = 2,
     IDENTITY = 3,
     LINKED_IDENTITY = 4,
-    EXTERNAL_REFERENCE = 5,
-    LINKING_DETAIL = 6
+    LINKED_EXTERNAL_REFERENCE = 5,
+    LINKING_DETAIL = 6,
+    EXTERNAL_REFERENCE = 7
 
 
 class ColumnSpecification:
@@ -36,6 +38,7 @@ class ColumnSpecification:
         self.identity = identity
         self.external_reference = external_reference
         self.order_of_occurrence = order_of_occurrence
+        self.entity_type = utils.extract_root_field(field_name)
 
     def is_multivalue(self):
         return self.multivalue
@@ -57,8 +60,9 @@ class ColumnSpecification:
         return conversion_type
 
     def _represents_an_object_field(self):
-        entity_type = utils.extract_root_field(self.field_name)
-        return entity_type == self.context_concrete_type and self.order_of_occurrence == 1
+        return self.entity_type == self.context_concrete_type and \
+               self.order_of_occurrence == 1 and \
+               not self.external_reference
 
     def _determine_conversion_type_for_object_field(self):
         if self.identity:
@@ -70,11 +74,12 @@ class ColumnSpecification:
         return conversion_type
 
     def _determine_conversion_type_for_reference_field(self):
-        if self.identity:
-            if self.external_reference:
-                conversion_type = ConversionType.EXTERNAL_REFERENCE
-            else:
-                conversion_type = ConversionType.LINKED_IDENTITY
+        if self.external_reference and self.entity_type == self.context_concrete_type:
+            conversion_type = ConversionType.EXTERNAL_REFERENCE
+        elif self.external_reference and self.entity_type != self.context_concrete_type:
+            conversion_type = ConversionType.LINKED_EXTERNAL_REFERENCE
+        elif self.identity:
+            conversion_type = ConversionType.LINKED_IDENTITY
         else:
             conversion_type = ConversionType.LINKING_DETAIL
         return conversion_type
