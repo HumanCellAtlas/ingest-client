@@ -68,7 +68,7 @@ class BundleUpdateService:
         return updated_bundle
 
     def fetch_and_parse_metadata(self, metadata_urls: Iterable[str]) -> Iterable[MetadataResource]:
-        return map(lambda metadata_resource: BundleUpdateService.parse_metadata(metadata_resource),
+        return map(BundleUpdateService.parse_metadata,
                    BundleUpdateService._fetch_metadata(metadata_urls, self.ingest_client))
 
     def stage_metadata_resources(self, metadata_resources: Iterable[MetadataResource], staging_area_id: str) -> Iterable[StagedMetadataResource]:
@@ -87,8 +87,7 @@ class BundleUpdateService:
 
     @staticmethod
     def _fetch_metadata(metadata_callbacks: Iterable[str], ingest_client: IngestApi) -> Iterable[dict]:
-        return map(lambda metadata_callback: ingest_client.get_entity_by_callback_link(metadata_callback),
-                   metadata_callbacks)
+        return map(ingest_client.get_entity_by_callback_link, metadata_callbacks)
 
     @staticmethod
     def _get_bundle(bundle_uuid: str, dss_client: DssApi):
