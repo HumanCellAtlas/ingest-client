@@ -15,12 +15,17 @@ class MetadataToBeBundled:
 
 
 class MetadataResource:
+
     def __init__(self, metadata_resource, metadata_type, metadata_json, uuid, dcp_version):
         self.metadata_resource = metadata_resource
         self.metdata_type = metadata_type
         self.metadata_json = metadata_json
         self.uuid = uuid
         self.dcp_version = dcp_version
+
+    @staticmethod
+    def from_dict(data: dict):
+        return MetadataResource(None, None, None, None, None)
 
 
 class StagedMetadataResource:
@@ -42,22 +47,17 @@ class BundleUpdateService:
         self.dss_client = dss_client
         self.ingest_client = ingest_client
 
-    def update_bundle(self, update_submission: dict, bundle_uuid: str, updated_bundle_version: str, metadata_callbacks_to_update: Iterable[str]):
-        """
-        Note: tricky part here is updating bundles with the correct file-name within the bundle. To do that, we must know
-        what we named the file-to-be-updated and ensure to name its update with the same name.
-
-        :param update_submission:
-        :param bundles_to_update:
-        :param bundle_files_to_update:
-        :return:
-        """
-        staging_area_id = BundleUpdateService.upload_area_id_for_submission(update_submission)
+    # Note: tricky part here is updating bundles with the correct file-name within the bundle.
+    # To do that, we must know
+    # what we named the file-to-be-updated and ensure to name its update with the same name.
+    def update_bundle(self, update_submission: dict, bundle_uuid: str, updated_bundle_version: str,
+                      metadata_callbacks_to_update: Iterable[str]):
 
         # fetch the metadata_documents
         metadata_resources = self.fetch_and_parse_metadata(metadata_callbacks_to_update)
 
         # stage updates in the upload-service and store in dss
+        staging_area_id = BundleUpdateService.upload_area_id_for_submission(update_submission)
         staged_metadata_resources = self.stage_metadata_resources(metadata_resources, staging_area_id)
         dss_metadata_files = self.dss_store_metadata_updates(staged_metadata_resources)
 
@@ -68,9 +68,8 @@ class BundleUpdateService:
         return updated_bundle
 
     def fetch_and_parse_metadata(self, metadata_urls: Iterable[str]) -> Iterable[MetadataResource]:
-        results = list(map(BundleUpdateService.parse_metadata,
-                     BundleUpdateService._fetch_metadata(metadata_urls, self.ingest_client)))
-        return results
+        metadata = list(map(self.ingest_client.get_entity_by_callback_link, metadata_urls))
+        return list(map(BundleUpdateService.parse_metadata, metadata))
 
     def stage_metadata_resources(self, metadata_resources: Iterable[MetadataResource], staging_area_id: str) -> Iterable[StagedMetadataResource]:
         result = list(map(lambda metadata_resource: BundleUpdateService._stage_metadata_resource(
@@ -88,11 +87,6 @@ class BundleUpdateService:
 
     def create_bundle(self, bundle_uuid: str, bundle_version: str, bundle_files: Iterable[dict]):
         return BundleUpdateService._create_bundle(bundle_uuid, bundle_version, bundle_files, self.dss_client)
-
-    @staticmethod
-    def _fetch_metadata(metadata_callbacks: Iterable[str], ingest_client: IngestApi) -> Iterable[dict]:
-        results = list(map(ingest_client.get_entity_by_callback_link, metadata_callbacks))
-        return results
 
     @staticmethod
     def _get_bundle(bundle_uuid: str, dss_client: DssApi):

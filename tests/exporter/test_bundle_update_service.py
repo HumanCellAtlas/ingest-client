@@ -3,10 +3,26 @@ from unittest import TestCase
 from mock import Mock
 
 from ingest.api.stagingapi import FileDescription
-from ingest.exporter.bundle_update_service import BundleUpdateService
+from ingest.exporter.bundle_update_service import BundleUpdateService, MetadataResource
 
 
-class TestBundleUpdateService(TestCase):
+class MetadataResourceTest(TestCase):
+
+    def test_from_dict(self):
+        # given:
+        data = {'entityType': 'donor_organism',
+                'uuid': {'uuid': '3f3212da-d5d0-4e55-b31d-83243fa02e0d'},
+                'content': {'description': 'test'},
+                'dcpVersion': '6.9.1'}
+
+        # when:
+        metadata_resource = MetadataResource.from_dict(data)
+
+        # then:
+        self.assertIsNotNone(metadata_resource)
+
+
+class BundleUpdateServiceTest(TestCase):
 
     def test_update_bundle(self):
         # given:
@@ -16,14 +32,14 @@ class TestBundleUpdateService(TestCase):
         service = BundleUpdateService(staging_client, dss_client, ingest_client)
 
         # and:
-        staging_client.stageFileRequest = Mock(return_value=FileDescription([], 'file',
-                                                                            'sample.ss2', 1024,
-                                                                            'sample.url'))
+        test_file_description = FileDescription([], 'file', 'sample.ss2', 1024, 'sample.url')
+        staging_client.stageFileRequest = Mock(return_value=test_file_description)
 
         # and:
         updated_bundle = {'files': [{}]}
         dss_client.get_bundle = Mock(return_value=updated_bundle)
         dss_client.create_file = Mock(return_value={})
+        dss_client.put_bundle = Mock(return_value={})
 
         # and:
         ingest_client.get_entity_by_callback_link = Mock(return_value={})
@@ -31,7 +47,7 @@ class TestBundleUpdateService(TestCase):
         # when:
         update_submission = {'stagingDetails': {'stagingAreaUuid': {'uuid': '3cce991'}}}
         callback_list = ['ingest-api/23cb771']
-        service.update_bundle(update_submission, '67c9d90', 'v3', callback_list)
+        updated_bundle = service.update_bundle(update_submission, '67c9d90', 'v3', callback_list)
 
         # expect:
-        self.assertIsNotNone(service)
+        self.assertIsNotNone(updated_bundle)
