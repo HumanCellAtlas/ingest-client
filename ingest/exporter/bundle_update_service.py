@@ -68,8 +68,9 @@ class BundleUpdateService:
         return updated_bundle
 
     def fetch_and_parse_metadata(self, metadata_urls: Iterable[str]) -> Iterable[MetadataResource]:
-        return map(BundleUpdateService.parse_metadata,
-                   BundleUpdateService._fetch_metadata(metadata_urls, self.ingest_client))
+        results = list(map(BundleUpdateService.parse_metadata,
+                     BundleUpdateService._fetch_metadata(metadata_urls, self.ingest_client)))
+        return results
 
     def stage_metadata_resources(self, metadata_resources: Iterable[MetadataResource], staging_area_id: str) -> Iterable[StagedMetadataResource]:
         return map(lambda metadata_resource: BundleUpdateService._stage_metadata_resource(metadata_resource, staging_area_id, self.staging_client),
@@ -135,7 +136,8 @@ class BundleUpdateService:
         :param dss_files:
         :return: a hashmap of dss-file-uuid -> dss-file-resource
         """
-        return dict(map(lambda dss_file: (dss_file.uuid, dss_file), dss_files))
+        file_list = map(lambda dss_file: (dss_file.uuid, dss_file), dss_files)
+        return dict(file_list)
 
     @staticmethod
     def upload_area_id_for_submission(submission_resource: dict) -> str:
@@ -143,10 +145,11 @@ class BundleUpdateService:
 
     @staticmethod
     def parse_metadata(metadata_resource_json: dict) -> MetadataResource:
-        metadata_type = metadata_resource_json["entityType"]
-        metadata_json = metadata_resource_json["content"]
-        uuid = metadata_resource_json["uuid"]["uuid"]
-        dcp_version = metadata_resource_json["dcpVersion"]
+        metadata_type = metadata_resource_json.get("entityType")
+        metadata_json = metadata_resource_json.get("content")
+        uuid_object = metadata_resource_json.get("uuid")
+        uuid = uuid_object.get("uuid") if uuid_object else None
+        dcp_version = metadata_resource_json.get("dcpVersion")
         return MetadataResource(metadata_resource_json, metadata_type, metadata_json, uuid, dcp_version)
 
     @staticmethod
