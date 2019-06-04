@@ -71,7 +71,7 @@ class BundleUpdateService:
 
     def fetch_and_parse_metadata(self, metadata_urls: Iterable[str]) -> Iterable[MetadataResource]:
         metadata = list(map(self.ingest_client.get_entity_by_callback_link, metadata_urls))
-        return list(map(BundleUpdateService.parse_metadata, metadata))
+        return list(map(MetadataResource.from_dict, metadata))
 
     def stage_metadata_resources(self, metadata_resources: Iterable[MetadataResource], staging_area_id: str) -> Iterable[StagedMetadataResource]:
         result = list(map(lambda metadata_resource: BundleUpdateService._stage_metadata_resource(
@@ -142,15 +142,6 @@ class BundleUpdateService:
     @staticmethod
     def upload_area_id_for_submission(submission_resource: dict) -> str:
         return submission_resource["stagingDetails"]["stagingAreaUuid"]["uuid"]
-
-    @staticmethod
-    def parse_metadata(metadata_resource_json: dict) -> MetadataResource:
-        metadata_type = metadata_resource_json.get("entityType")
-        metadata_json = metadata_resource_json.get("content")
-        uuid_object = metadata_resource_json.get("uuid")
-        uuid = uuid_object.get("uuid") if uuid_object else None
-        dcp_version = metadata_resource_json.get("dcpVersion")
-        return MetadataResource(metadata_resource_json, metadata_type, metadata_json, uuid, dcp_version)
 
     @staticmethod
     def generate_patched_bundle_files(bundle_resource, dss_metadata_update_files: Iterable[DSSMetadataFileResource]) -> Iterable[dict]:
