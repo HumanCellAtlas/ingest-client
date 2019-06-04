@@ -25,7 +25,8 @@ class MetadataResource:
 
     @staticmethod
     def from_dict(data: dict):
-        uuid = data.get('uuid').get('uuid')
+        uuid_object = data.get('uuid')
+        uuid = uuid_object.get('uuid') if uuid_object else None
         return MetadataResource(None, data.get('entityType'), data.get('content'), uuid,
                                 data.get('dcpVersion'))
 

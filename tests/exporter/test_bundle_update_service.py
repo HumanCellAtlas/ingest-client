@@ -28,6 +28,17 @@ class MetadataResourceTest(TestCase):
         # and:
         self.assertEqual(uuid_value, metadata.uuid)
 
+    def test_from_dict_with_missing_info(self):
+        # given:
+        data = {'entityType': 'cell_suspension'}
+
+        # when:
+        metadata = MetadataResource.from_dict(data)
+
+        # then:
+        self.assertIsNone(metadata.metadata_resource)
+        self.assertIsNone(metadata.uuid)
+
 
 class BundleUpdateServiceTest(TestCase):
 
