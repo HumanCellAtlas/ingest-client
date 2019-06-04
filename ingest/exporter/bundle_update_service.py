@@ -25,7 +25,8 @@ class MetadataResource:
 
     @staticmethod
     def from_dict(data: dict):
-        return MetadataResource(None, None, None, None, None)
+        return MetadataResource(None, data.get('entityType'), data.get('content'), None,
+                                data.get('dcpVersion'))
 
 
 class StagedMetadataResource:

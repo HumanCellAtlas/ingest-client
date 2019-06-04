@@ -16,10 +16,13 @@ class MetadataResourceTest(TestCase):
                 'dcpVersion': '6.9.1'}
 
         # when:
-        metadata_resource = MetadataResource.from_dict(data)
+        metadata = MetadataResource.from_dict(data)
 
         # then:
-        self.assertIsNotNone(metadata_resource)
+        self.assertIsNotNone(metadata)
+        self.assertEqual(data['entityType'], metadata.metdata_type)
+        self.assertEqual(data['content'], metadata.metadata_json)
+        self.assertEqual(data['dcpVersion'], metadata.dcp_version)
 
 
 class BundleUpdateServiceTest(TestCase):
