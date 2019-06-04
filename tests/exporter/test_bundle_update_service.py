@@ -10,8 +10,9 @@ class MetadataResourceTest(TestCase):
 
     def test_from_dict(self):
         # given:
+        uuid_value = '3f3212da-d5d0-4e55-b31d-83243fa02e0d'
         data = {'entityType': 'donor_organism',
-                'uuid': {'uuid': '3f3212da-d5d0-4e55-b31d-83243fa02e0d'},
+                'uuid': {'uuid': uuid_value},
                 'content': {'description': 'test'},
                 'dcpVersion': '6.9.1'}
 
@@ -23,6 +24,9 @@ class MetadataResourceTest(TestCase):
         self.assertEqual(data['entityType'], metadata.metdata_type)
         self.assertEqual(data['content'], metadata.metadata_json)
         self.assertEqual(data['dcpVersion'], metadata.dcp_version)
+
+        # and:
+        self.assertEqual(uuid_value, metadata.uuid)
 
 
 class BundleUpdateServiceTest(TestCase):
