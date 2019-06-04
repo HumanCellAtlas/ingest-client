@@ -73,12 +73,15 @@ class BundleUpdateService:
         return results
 
     def stage_metadata_resources(self, metadata_resources: Iterable[MetadataResource], staging_area_id: str) -> Iterable[StagedMetadataResource]:
-        return map(lambda metadata_resource: BundleUpdateService._stage_metadata_resource(metadata_resource, staging_area_id, self.staging_client),
-                   metadata_resources)
+        result = list(map(lambda metadata_resource: BundleUpdateService._stage_metadata_resource(
+            metadata_resource, staging_area_id, self.staging_client), metadata_resources))
+        return result
 
-    def dss_store_metadata_updates(self, staged_metadata_files: Iterable[StagedMetadataResource]) -> Iterable[DSSMetadataFileResource]:
-        return map(lambda staged_metadata_file: BundleUpdateService._dss_store_update_file(staged_metadata_file, self.dss_client),
-                   staged_metadata_files)
+    def dss_store_metadata_updates(self, staged_metadata_files: Iterable[StagedMetadataResource]) \
+            -> Iterable[DSSMetadataFileResource]:
+        result = list(map(lambda staged_metadata_file: BundleUpdateService._dss_store_update_file(
+            staged_metadata_file, self.dss_client), staged_metadata_files))
+        return result
 
     def get_bundle(self, bundle_uuid: str) -> Iterable[dict]:
         return BundleUpdateService._get_bundle(bundle_uuid, self.dss_client)
@@ -88,7 +91,8 @@ class BundleUpdateService:
 
     @staticmethod
     def _fetch_metadata(metadata_callbacks: Iterable[str], ingest_client: IngestApi) -> Iterable[dict]:
-        return map(ingest_client.get_entity_by_callback_link, metadata_callbacks)
+        results = list(map(ingest_client.get_entity_by_callback_link, metadata_callbacks))
+        return results
 
     @staticmethod
     def _get_bundle(bundle_uuid: str, dss_client: DssApi):
@@ -160,16 +164,16 @@ class BundleUpdateService:
 
         patched_bundle_files = []
         for bundle_file in bundle_files:
-            bundle_file_uuid = bundle_file["uuid"]
+            bundle_file_uuid = bundle_file.get("uuid")
             if bundle_file_uuid in uuid_dss_file_map:
-                bundle_file_name = bundle_file["name"]
+                bundle_file_name = bundle_file.get("name")
                 updated_dss_file = uuid_dss_file_map[bundle_file_uuid]
                 patched_bundle_files.append({
                     "indexed": True,
                     "name": bundle_file_name,
                     "uuid": bundle_file_uuid,
                     "content-type": updated_dss_file.metadata_resource,
-                    "version": updated_dss_file.dss_file_resource["version"]
+                    "version": updated_dss_file.dss_file_resource.get("version")
                 })
             else:
                 patched_bundle_files.append(bundle_file)
