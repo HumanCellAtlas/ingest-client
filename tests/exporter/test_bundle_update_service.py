@@ -21,7 +21,7 @@ class MetadataResourceTest(TestCase):
 
         # then:
         self.assertIsNotNone(metadata)
-        self.assertEqual(data['entityType'], metadata.metdata_type)
+        self.assertEqual(data['entityType'], metadata.metadata_type)
         self.assertEqual(data['content'], metadata.metadata_json)
         self.assertEqual(data['dcpVersion'], metadata.dcp_version)
 
@@ -36,7 +36,7 @@ class MetadataResourceTest(TestCase):
         metadata = MetadataResource.from_dict(data)
 
         # then:
-        self.assertIsNone(metadata.metadata_resource)
+        self.assertIsNone(metadata.dcp_version)
         self.assertIsNone(metadata.uuid)
 
 

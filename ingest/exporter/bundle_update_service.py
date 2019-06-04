@@ -16,9 +16,8 @@ class MetadataToBeBundled:
 
 class MetadataResource:
 
-    def __init__(self, metadata_resource, metadata_type, metadata_json, uuid, dcp_version):
-        self.metadata_resource = metadata_resource
-        self.metdata_type = metadata_type
+    def __init__(self, metadata_type, metadata_json, uuid, dcp_version):
+        self.metadata_type = metadata_type
         self.metadata_json = metadata_json
         self.uuid = uuid
         self.dcp_version = dcp_version
@@ -27,7 +26,7 @@ class MetadataResource:
     def from_dict(data: dict):
         uuid_object = data.get('uuid')
         uuid = uuid_object.get('uuid') if uuid_object else None
-        return MetadataResource(None, data.get('entityType'), data.get('content'), uuid,
+        return MetadataResource(data.get('entityType'), data.get('content'), uuid,
                                 data.get('dcpVersion'))
 
 
@@ -120,7 +119,7 @@ class BundleUpdateService:
     def generate_metadata_stage_request(staging_area_id: str, metadata_resource: MetadataResource) -> MetadataFileStagingRequest:
         filename = f'{metadata_resource.uuid}.{metadata_resource.dcp_version}.json'
         metadata_json = metadata_resource.metadata_json
-        metadata_type = metadata_resource.metdata_type
+        metadata_type = metadata_resource.metadata_type
         return MetadataFileStagingRequest(staging_area_id, filename, metadata_json, metadata_type)
 
     @staticmethod
