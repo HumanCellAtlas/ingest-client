@@ -3,7 +3,8 @@ from unittest import TestCase
 from mock import Mock
 
 from ingest.api.stagingapi import FileDescription
-from ingest.exporter.bundle_update_service import BundleUpdateService, MetadataResource
+from ingest.exporter.bundle_update_service import BundleUpdateService, MetadataResource, \
+    StagingService
 
 
 class MetadataResourceTest(TestCase):
@@ -38,6 +39,25 @@ class MetadataResourceTest(TestCase):
         # then:
         self.assertIsNone(metadata.dcp_version)
         self.assertIsNone(metadata.uuid)
+
+
+class StagingServiceTest(TestCase):
+
+    def test_stage_update(self):
+        # given:
+        metadata_resource = MetadataResource(metadata_type='donor_organism',
+                                             uuid='831d4b6e-e8a2-42ce-b7c0-8d6ffcc15370',
+                                             metadata_json={'description': 'test'},
+                                             dcp_version='4.2.1')
+
+        # and:
+        staging_service = StagingService()
+
+        # when:
+        file_description = staging_service.stage_update(metadata_resource)
+
+        # then:
+        self.assertIsNotNone(file_description)
 
 
 class BundleUpdateServiceTest(TestCase):
