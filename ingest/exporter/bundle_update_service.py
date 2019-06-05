@@ -38,8 +38,9 @@ class MetadataService:
     def __init__(self, ingest_client):
         self.ingest_client = ingest_client
 
-    def fetch_resource(self, resource_link):
-        return {}
+    def fetch_resource(self, resource_link: str) -> MetadataResource:
+        raw_metadata = self.ingest_client.get_entity_by_callback_link(resource_link)
+        return MetadataResource.from_dict(raw_metadata)
 
 
 class StagedMetadataResource:
@@ -60,11 +61,12 @@ class StagingService:
     def __init__(self, staging_client):
         self.staging_client = staging_client
 
-    def stage_update(self, staging_area_uuid, metadata_resource: MetadataResource):
+    def stage_update(self, staging_area_uuid,
+                     metadata_resource: MetadataResource) -> FileDescription:
         return self.staging_client.stageFile(staging_area_uuid,
-                                      metadata_resource.get_staging_file_name(),
-                                      metadata_resource.metadata_json,
-                                      metadata_resource.metadata_type)
+                                             metadata_resource.get_staging_file_name(),
+                                             metadata_resource.metadata_json,
+                                             metadata_resource.metadata_type)
 
 
 class BundleUpdateService:

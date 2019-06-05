@@ -63,8 +63,9 @@ class MetadataServiceTest(TestCase):
     def test_fetch_resource(self):
         # given:
         ingest_client = Mock(name='ingest_client')
+        uuid = '301636f7-f97b-4379-bf77-c5dcd9f17bcb'
         raw_metadata = {'entityType': 'cell_suspension',
-                        'uuid': {'uuid': '301636f7-f97b-4379-bf77-c5dcd9f17bcb'},
+                        'uuid': {'uuid': uuid},
                         'content': {'text': 'test'},
                         'dcpVersion': '8.2.7'}
         ingest_client.get_entity_by_callback_link = Mock(return_value=raw_metadata)
@@ -77,7 +78,11 @@ class MetadataServiceTest(TestCase):
             'hca.domain.com/api/cellsuspensions/301636f7-f97b-4379-bf77-c5dcd9f17bcb')
 
         # then:
-        self.assertIsNotNone(metadata_resource)
+        self.assertEqual(raw_metadata['entityType'], metadata_resource.metadata_type)
+        self.assertEqual(uuid, metadata_resource.uuid)
+        self.assertEqual(raw_metadata['content'], metadata_resource.metadata_json)
+        self.assertEqual(raw_metadata['dcpVersion'], metadata_resource.dcp_version)
+
 
 class StagingServiceTest(TestCase):
 
