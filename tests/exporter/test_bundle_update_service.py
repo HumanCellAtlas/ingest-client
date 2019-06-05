@@ -43,9 +43,9 @@ class MetadataResourceTest(TestCase):
     def test_get_staging_file_name(self):
         # given:
         metadata_resource_1 = MetadataResource(metadata_type='specimen',
-                                             uuid='9b159cae-a1fe-4cce-94bc-146e4aa20553',
-                                             metadata_json={'description': 'test'},
-                                             dcp_version='5.1.0')
+                                               uuid='9b159cae-a1fe-4cce-94bc-146e4aa20553',
+                                               metadata_json={'description': 'test'},
+                                               dcp_version='5.1.0')
         metadata_resource_2 = MetadataResource(metadata_type='donor_organism',
                                                uuid='38e0ee7c-90dc-438a-a0ed-071f9231f590',
                                                metadata_json={'text': 'sample'},
@@ -68,13 +68,24 @@ class StagingServiceTest(TestCase):
                                              dcp_version='4.2.1')
 
         # and:
-        staging_service = StagingService()
+        staging_client = Mock(name='staging_client')
+        test_file_description = FileDescription(['chks0mz'], 'application/json', 'file.name', 1024,
+                                                'domain.com/file.url')
+        staging_client.stageFile = Mock(return_value=test_file_description)
+
+        # and:
+        staging_service = StagingService(staging_client)
 
         # when:
-        file_description = staging_service.stage_update(metadata_resource)
+        staging_area_uuid = '7455716e-9639-41d9-bff9-d763f9ee028d'
+        file_description = staging_service.stage_update(staging_area_uuid, metadata_resource)
 
         # then:
-        self.assertIsNotNone(file_description)
+        self.assertEqual(test_file_description, file_description)
+        staging_client.stageFile.assert_called_once_with(staging_area_uuid,
+                                                         metadata_resource.get_staging_file_name(),
+                                                         metadata_resource.metadata_json,
+                                                         metadata_resource.metadata_type)
 
 
 class BundleUpdateServiceTest(TestCase):

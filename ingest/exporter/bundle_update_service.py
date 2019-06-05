@@ -48,8 +48,14 @@ class DSSMetadataFileResource:
 
 class StagingService:
 
-    def stage_update(self, metadata_resource):
-        return {}
+    def __init__(self, staging_client):
+        self.staging_client = staging_client
+
+    def stage_update(self, staging_area_uuid, metadata_resource: MetadataResource):
+        return self.staging_client.stageFile(staging_area_uuid,
+                                      metadata_resource.get_staging_file_name(),
+                                      metadata_resource.metadata_json,
+                                      metadata_resource.metadata_type)
 
 
 class BundleUpdateService:
