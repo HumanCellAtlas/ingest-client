@@ -33,6 +33,15 @@ class MetadataResource:
         return f'{self.uuid}.{self.dcp_version}.json'
 
 
+class MetadataService:
+
+    def __init__(self, ingest_client):
+        self.ingest_client = ingest_client
+
+    def fetch_resource(self, resource_link):
+        return {}
+
+
 class StagedMetadataResource:
     def __init__(self, metadata_resource: MetadataResource, staged_file_description: FileDescription):
         self.metadata_resource = metadata_resource
@@ -59,6 +68,7 @@ class StagingService:
 
 
 class BundleUpdateService:
+
     def __init__(self, staging_client: StagingApi, dss_client: DssApi, ingest_client: IngestApi):
         self.staging_client = staging_client
         self.dss_client = dss_client

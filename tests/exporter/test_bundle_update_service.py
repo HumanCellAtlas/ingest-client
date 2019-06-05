@@ -4,7 +4,7 @@ from mock import Mock
 
 from ingest.api.stagingapi import FileDescription
 from ingest.exporter.bundle_update_service import BundleUpdateService, MetadataResource, \
-    StagingService
+    StagingService, MetadataService
 
 
 class MetadataResourceTest(TestCase):
@@ -57,6 +57,27 @@ class MetadataResourceTest(TestCase):
         self.assertEqual('38e0ee7c-90dc-438a-a0ed-071f9231f590.1.0.7.json',
                          metadata_resource_2.get_staging_file_name())
 
+
+class MetadataServiceTest(TestCase):
+
+    def test_fetch_resource(self):
+        # given:
+        ingest_client = Mock(name='ingest_client')
+        raw_metadata = {'entityType': 'cell_suspension',
+                        'uuid': {'uuid': '301636f7-f97b-4379-bf77-c5dcd9f17bcb'},
+                        'content': {'text': 'test'},
+                        'dcpVersion': '8.2.7'}
+        ingest_client.get_entity_by_callback_link = Mock(return_value=raw_metadata)
+
+        # and:
+        metadata_service = MetadataService(ingest_client)
+
+        # when:
+        metadata_resource = metadata_service.fetch_resource(
+            'hca.domain.com/api/cellsuspensions/301636f7-f97b-4379-bf77-c5dcd9f17bcb')
+
+        # then:
+        self.assertIsNotNone(metadata_resource)
 
 class StagingServiceTest(TestCase):
 
