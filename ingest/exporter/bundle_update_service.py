@@ -29,6 +29,9 @@ class MetadataResource:
         return MetadataResource(data.get('entityType'), data.get('content'), uuid,
                                 data.get('dcpVersion'))
 
+    def get_staging_file_name(self):
+        return f'{self.uuid}.{self.dcp_version}.json'
+
 
 class StagedMetadataResource:
     def __init__(self, metadata_resource: MetadataResource, staged_file_description: FileDescription):
