@@ -178,8 +178,9 @@ class BundleServiceTest(TestCase):
         # given:
         dss_client = Mock(name='dss_client')
         uuid = '69f92d53-0d25-4577-948d-dad76dd190cc'
-        bundle_source = {'bundle': {'uuid': uuid, 'files': []}}
-        dss_client.fetch_bundle = Mock(return_value=bundle_source)
+        test_file = _create_test_bundle_file(uuid='0c43ccf0-04ed-41af-9213-be3bcae14c06')
+        bundle_source = {'bundle': {'uuid': uuid, 'files': [test_file]}}
+        dss_client.get_bundle = Mock(return_value=bundle_source)
 
         # and:
         service = BundleService(dss_client)
@@ -189,6 +190,11 @@ class BundleServiceTest(TestCase):
 
         # then:
         self.assertTrue(type(bundle) is Bundle, 'get_bundle should return a Bundle.')
+        self.assertEqual(uuid, bundle.uuid)
+
+        # and:
+        self.assertEqual(1, bundle.count_files())
+        self.assertEqual(test_file, bundle.get_file(test_file['uuid']))
 
 
 class BundleUpdateServiceTest(TestCase):

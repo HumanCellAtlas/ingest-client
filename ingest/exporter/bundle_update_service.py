@@ -50,6 +50,7 @@ class Bundle:
         self._source = deepcopy(source)
         self._bundle = self._source.get('bundle') # because bundle is nested in the root ¯\_(ツ)_/¯
         self._prepare_file_map()
+        self.uuid = self._bundle.get('uuid')
 
     def _prepare_file_map(self):
         bundle_files = self._bundle.get('files') if self._bundle else None
@@ -59,6 +60,9 @@ class Bundle:
 
     def get_file(self, uuid):
         return self._file_map.get(uuid)
+
+    def count_files(self):
+        return len(self._file_map)
 
     def update_file(self, metadata_resource: MetadataResource):
         target_file = self.get_file(metadata_resource.uuid)
@@ -105,11 +109,12 @@ class StagingService:
 
 class BundleService:
 
-    def __init__(self, dss_client):
+    def __init__(self, dss_client: DssApi):
         self.dss_client = dss_client
 
     def fetch_bundle(self, uuid: str) -> Bundle:
-        return Bundle()
+        bundle_source = self.dss_client.get_bundle(uuid)
+        return Bundle(source=bundle_source)
 
 
 class BundleUpdateService:
