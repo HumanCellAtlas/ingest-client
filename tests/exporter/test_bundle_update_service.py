@@ -174,21 +174,21 @@ class StagingServiceTest(TestCase):
 
 class BundleServiceTest(TestCase):
 
-    def test_get_bundle(self):
+    def test_fetch_bundle(self):
         # given:
         dss_client = Mock(name='dss_client')
         uuid = '69f92d53-0d25-4577-948d-dad76dd190cc'
         bundle_source = {'bundle': {'uuid': uuid, 'files': []}}
-        dss_client.get_bundle = Mock(return_value=bundle_source)
+        dss_client.fetch_bundle = Mock(return_value=bundle_source)
 
         # and:
         service = BundleService(dss_client)
 
         # when:
-        bundle = service.get_bundle(uuid)
+        bundle = service.fetch_bundle(uuid)
 
         # then:
-        self.assertIsNotNone(bundle)
+        self.assertTrue(type(bundle) is Bundle, 'get_bundle should return a Bundle.')
 
 
 class BundleUpdateServiceTest(TestCase):
@@ -215,7 +215,7 @@ class BundleUpdateServiceTest(TestCase):
 
         # and:
         bundle_file = Mock(wraps=_create_test_bundle_file(uuid=bundle_file_uuid))
-        dss_client.get_bundle = Mock(return_value={'bundle': {'files': [bundle_file]}})
+        dss_client.fetch_bundle = Mock(return_value={'bundle': {'files': [bundle_file]}})
 
         # when:
         update_submission = {'stagingDetails': {'stagingAreaUuid': {'uuid': '3cce991'}}}

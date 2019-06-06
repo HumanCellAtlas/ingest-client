@@ -52,7 +52,7 @@ class Bundle:
         self._prepare_file_map()
 
     def _prepare_file_map(self):
-        bundle_files = self._bundle.get('files')
+        bundle_files = self._bundle.get('files') if self._bundle else None
         if not bundle_files:
             bundle_files = []
         self._file_map = {file.get('uuid'): file for file in bundle_files}
@@ -108,8 +108,8 @@ class BundleService:
     def __init__(self, dss_client):
         self.dss_client = dss_client
 
-    def get_bundle(self, uuid):
-        return {}
+    def fetch_bundle(self, uuid: str) -> Bundle:
+        return Bundle()
 
 
 class BundleUpdateService:
