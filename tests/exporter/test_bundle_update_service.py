@@ -4,7 +4,7 @@ from mock import Mock
 
 from ingest.api.stagingapi import FileDescription
 from ingest.exporter.bundle_update_service import BundleUpdateService, MetadataResource, \
-    StagingService, MetadataService
+    StagingService, MetadataService, Bundle
 
 
 class MetadataResourceTest(TestCase):
@@ -56,6 +56,40 @@ class MetadataResourceTest(TestCase):
                          metadata_resource_1.get_staging_file_name())
         self.assertEqual('38e0ee7c-90dc-438a-a0ed-071f9231f590.1.0.7.json',
                          metadata_resource_2.get_staging_file_name())
+
+
+def _create_test_bundle_file(uuid='', name='', content_type='application/json', version='',
+                             indexed=True):
+    return {'uuid': uuid, 'name': name, 'content-type': content_type, 'version': version,
+            'indexed': indexed}
+
+
+class BundleTest(TestCase):
+
+    def test_get_file(self):
+        # given:
+        file_1 = _create_test_bundle_file(uuid='15b22393-cc48-4dff-bc19-22c189d7c35e',
+                                          name='donor_organism_0.json',
+                                          version='2019-06-06T1033833.011000Z')
+        file_2 = _create_test_bundle_file(uuid='b56f4e1f-3651-463e-8e6f-b931ea5f21a2',
+                                          name='donor_organism_1.json',
+                                          version='2019-06-06T1034255.023000Z')
+        bundle = Bundle(source={'files': [file_1, file_2]})
+
+        # when:
+        target_file = bundle.get_file(file_2['uuid'])
+
+        # then:
+        # In case you're wondering why on the left we use indexing while on the right we use get:
+        # On the left, we can assert existence of the field from object we create;
+        # on the right, we can't as that's what the system-under-test gives us.
+        # This also prevents the scenario where the check for equality passes because get's
+        # return None, i.e. file_2.get('non-existent') == target_file.get('non-existent)'.
+        self.assertEqual(file_2['uuid'], target_file.get('uuid'))
+        self.assertEqual(file_2['name'], target_file.get('name'))
+        self.assertEqual(file_2['content-type'], target_file.get('content-type'))
+        self.assertEqual(file_2['version'], target_file.get('version'))
+        self.assertEqual(file_2['indexed'], target_file.get('indexed'))
 
 
 class MetadataServiceTest(TestCase):
@@ -118,23 +152,29 @@ class BundleUpdateServiceTest(TestCase):
 
     def test_update_bundle(self):
         # given:
-        staging_client = Mock(name='staging_client')
         dss_client = Mock(name='dss_client')
-        ingest_client = Mock(name='ingest_client')
-        service = BundleUpdateService(staging_client, dss_client, ingest_client)
+
+        metadata_service = Mock(name='metadata_service')
+        staging_service = Mock(name='staging_service')
+        service = BundleUpdateService(metadata_service, staging_service)
 
         # and:
-        test_file_description = FileDescription([], 'file', 'sample.ss2', 1024, 'sample.url')
-        staging_client.stageFileRequest = Mock(return_value=test_file_description)
+        test_metadata = MetadataResource(metadata_type='donor_organism',
+                                         uuid='16e3bd3f-34e8-40e6-90b9-9cbfa9b03cf5',
+                                         metadata_json={'name': 'sample', 'description': 'test'},
+                                         dcp_version='5.2.1')
+        metadata_service.fetch_resource = Mock(return_value=test_metadata)
+
+        # and:
+        test_file_description = FileDescription(['chkz0m'], 'file', 'sample.ss2', 1024,
+                                                'sample.url')
+        staging_service.stage_update = Mock(return_value=test_file_description)
 
         # and:
         updated_bundle = {'files': [{}]}
         dss_client.get_bundle = Mock(return_value=updated_bundle)
         dss_client.create_file = Mock(return_value={})
         dss_client.put_bundle = Mock(return_value={})
-
-        # and:
-        ingest_client.get_entity_by_callback_link = Mock(return_value={})
 
         # when:
         update_submission = {'stagingDetails': {'stagingAreaUuid': {'uuid': '3cce991'}}}

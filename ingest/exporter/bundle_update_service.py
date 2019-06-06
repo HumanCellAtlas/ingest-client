@@ -1,8 +1,8 @@
-from ingest.api.stagingapi import StagingApi, MetadataFileStagingRequest, FileDescription
-from ingest.api.dssapi import DssApi, DSSFileCreateRequest
-from ingest.api.ingestapi import IngestApi
-
+from copy import deepcopy
 from typing import Iterable, Dict
+
+from ingest.api.dssapi import DssApi, DSSFileCreateRequest
+from ingest.api.stagingapi import StagingApi, MetadataFileStagingRequest, FileDescription
 
 
 class MetadataToBeBundled:
@@ -31,6 +31,22 @@ class MetadataResource:
 
     def get_staging_file_name(self):
         return f'{self.uuid}.{self.dcp_version}.json'
+
+
+class Bundle:
+
+    def __init__(self, source={}):
+        self._source = deepcopy(source)
+        self._prepare_file_map()
+
+    def _prepare_file_map(self):
+        bundle_files = self._source.get('files')
+        if not bundle_files:
+            bundle_files = []
+        self._file_map = {file.get('uuid'): file for file in bundle_files}
+
+    def get_file(self, uuid):
+        return self._file_map.get(uuid)
 
 
 class MetadataService:
@@ -71,36 +87,35 @@ class StagingService:
 
 class BundleUpdateService:
 
-    def __init__(self, staging_client: StagingApi, dss_client: DssApi, ingest_client: IngestApi):
-        self.staging_client = staging_client
-        self.dss_client = dss_client
-        self.ingest_client = ingest_client
+    def __init__(self, metadata_service: MetadataService, staging_service: StagingService):
+        self.metadata_service = metadata_service
+        self.staging_service = staging_service
+
+        # FIXME keeping this for now just so I don't have to deal with missing var errors
+        self.staging_client = None
+        self.dss_client = None
+        self.ingest_client = None
 
     # Note: tricky part here is updating bundles with the correct file-name within the bundle.
     # To do that, we must know
     # what we named the file-to-be-updated and ensure to name its update with the same name.
     def update_bundle(self, update_submission: dict, bundle_uuid: str, updated_bundle_version: str,
-                      metadata_callbacks_to_update: Iterable[str]):
-
-        metadata_resources = self.fetch_metadata_resources(metadata_callbacks_to_update)
+                      metadata_urls: Iterable[str]):
+        metadata_resources = [self.metadata_service.fetch_resource(url) for url in metadata_urls]
 
         staging_area_id = update_submission["stagingDetails"]["stagingAreaUuid"]["uuid"]
-        staged_metadata_resources = self.stage_metadata_resources(metadata_resources,
-                                                                  staging_area_id)
-        dss_metadata_files = self.dss_store_metadata_updates(staged_metadata_resources)
+        staged_file_descriptions = [self.staging_service.stage_update(metadata) for metadata in
+                        metadata_resources]
 
+    # TODO remove this
+    def _temporarily_keep_this(self, bundle_uuid, staged_metadata_resources,
+                               updated_bundle_version):
         # get all DSS bundles and patch in the updated DSS files
         dss_bundle_resource = self.get_bundle(bundle_uuid)
+        dss_metadata_files = self.dss_store_metadata_updates(staged_metadata_resources)
         updated_bundle_files = BundleUpdateService.generate_patched_bundle_files(dss_bundle_resource, dss_metadata_files)
         updated_bundle = self.create_bundle(bundle_uuid, updated_bundle_version, updated_bundle_files)
         return updated_bundle
-
-    def fetch_metadata_resources(self, metadata_urls: Iterable[str]) -> Iterable[MetadataResource]:
-        metadata_resources = []
-        for metadata_url in metadata_urls:
-            metadata = self.ingest_client.get_entity_by_callback_link(metadata_url)
-            metadata_resources.append(MetadataResource.from_dict(metadata))
-        return metadata_resources
 
     def stage_metadata_resources(self, metadata_resources: Iterable[MetadataResource], staging_area_id: str) -> Iterable[StagedMetadataResource]:
         result = list(map(lambda metadata_resource: BundleUpdateService._stage_metadata_resource(
