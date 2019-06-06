@@ -112,7 +112,7 @@ class BundleService:
     def __init__(self, dss_client: DssApi):
         self.dss_client = dss_client
 
-    def fetch_bundle(self, uuid: str) -> Bundle:
+    def fetch(self, uuid: str) -> Bundle:
         bundle_source = self.dss_client.get_bundle(uuid)
         return Bundle(source=bundle_source)
 
