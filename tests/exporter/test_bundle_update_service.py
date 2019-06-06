@@ -12,9 +12,10 @@ class MetadataResourceTest(TestCase):
     def test_from_dict(self):
         # given:
         uuid_value = '3f3212da-d5d0-4e55-b31d-83243fa02e0d'
-        data = {'entityType': 'donor_organism',
+        data = {'entityType': 'biomaterial',
                 'uuid': {'uuid': uuid_value},
-                'content': {'description': 'test'},
+                'content': {'describedBy': 'https://hca.tld/types/donor_organism',
+                            'description': 'test'},
                 'dcpVersion': '6.9.1'}
 
         # when:
@@ -22,7 +23,7 @@ class MetadataResourceTest(TestCase):
 
         # then:
         self.assertIsNotNone(metadata)
-        self.assertEqual(data['entityType'], metadata.metadata_type)
+        self.assertEqual('donor_organism', metadata.metadata_type)
         self.assertEqual(data['content'], metadata.metadata_json)
         self.assertEqual(data['dcpVersion'], metadata.dcp_version)
 
@@ -120,9 +121,10 @@ class MetadataServiceTest(TestCase):
         # given:
         ingest_client = Mock(name='ingest_client')
         uuid = '301636f7-f97b-4379-bf77-c5dcd9f17bcb'
-        raw_metadata = {'entityType': 'cell_suspension',
+        raw_metadata = {'entityType': 'biomaterial',
                         'uuid': {'uuid': uuid},
-                        'content': {'text': 'test'},
+                        'content': {'describedBy': 'https://hca.tld/types/cell_suspension',
+                            'text': 'test'},
                         'dcpVersion': '8.2.7'}
         ingest_client.get_entity_by_callback_link = Mock(return_value=raw_metadata)
 
@@ -134,7 +136,7 @@ class MetadataServiceTest(TestCase):
             'hca.domain.com/api/cellsuspensions/301636f7-f97b-4379-bf77-c5dcd9f17bcb')
 
         # then:
-        self.assertEqual(raw_metadata['entityType'], metadata_resource.metadata_type)
+        self.assertEqual('cell_suspension', metadata_resource.metadata_type)
         self.assertEqual(uuid, metadata_resource.uuid)
         self.assertEqual(raw_metadata['content'], metadata_resource.metadata_json)
         self.assertEqual(raw_metadata['dcpVersion'], metadata_resource.dcp_version)

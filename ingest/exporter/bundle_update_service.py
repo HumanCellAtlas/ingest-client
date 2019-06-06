@@ -17,17 +17,28 @@ class MetadataToBeBundled:
 class MetadataResource:
 
     def __init__(self, metadata_type=None, metadata_json=None, uuid=None, dcp_version=None):
-        self.metadata_type = metadata_type
         self.metadata_json = metadata_json
         self.uuid = uuid
         self.dcp_version = dcp_version
+        self.metadata_type = metadata_type
+        if not metadata_type:
+            self._determine_metadata_type()
+
+    def _determine_metadata_type(self):
+        metadata_type = None
+        if self.metadata_json:
+            described_by = self.metadata_json.get('describedBy')
+            metadata_type = described_by.split('/')[-1] if described_by else None
+        self.metadata_type = metadata_type
 
     @staticmethod
     def from_dict(data: dict):
         uuid_object = data.get('uuid')
         uuid = uuid_object.get('uuid') if uuid_object else None
-        return MetadataResource(data.get('entityType'), data.get('content'), uuid,
-                                data.get('dcpVersion'))
+        content = data.get('content')
+        metadata_resource = MetadataResource(uuid=uuid, metadata_json=content,
+                                             dcp_version=data.get('dcpVersion'))
+        return metadata_resource
 
     def get_staging_file_name(self):
         return f'{self.uuid}.{self.dcp_version}.json'
