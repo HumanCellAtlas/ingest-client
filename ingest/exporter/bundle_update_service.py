@@ -105,13 +105,14 @@ class StagingService:
 
 class BundleUpdateService:
 
-    def __init__(self, metadata_service: MetadataService, staging_service: StagingService):
+    def __init__(self, metadata_service: MetadataService, staging_service: StagingService,
+                 dss_client: DssApi):
         self.metadata_service = metadata_service
         self.staging_service = staging_service
+        self.dss_client = dss_client
 
         # FIXME keeping this for now just so I don't have to deal with missing var errors
         self.staging_client = None
-        self.dss_client = None
         self.ingest_client = None
 
     # Note: tricky part here is updating bundles with the correct file-name within the bundle.
