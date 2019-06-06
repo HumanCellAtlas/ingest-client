@@ -4,7 +4,7 @@ from mock import Mock
 
 from ingest.api.stagingapi import FileDescription
 from ingest.exporter.bundle_update_service import BundleUpdateService, MetadataResource, \
-    StagingService, MetadataService, Bundle
+    StagingService, MetadataService, Bundle, BundleService
 
 
 class MetadataResourceTest(TestCase):
@@ -170,6 +170,25 @@ class StagingServiceTest(TestCase):
                                                          metadata_resource.get_staging_file_name(),
                                                          metadata_resource.metadata_json,
                                                          metadata_resource.metadata_type)
+
+
+class BundleServiceTest(TestCase):
+
+    def test_get_bundle(self):
+        # given:
+        dss_client = Mock(name='dss_client')
+        uuid = '69f92d53-0d25-4577-948d-dad76dd190cc'
+        bundle_source = {'bundle': {'uuid': uuid, 'files': []}}
+        dss_client.get_bundle = Mock(return_value=bundle_source)
+
+        # and:
+        service = BundleService(dss_client)
+
+        # when:
+        bundle = service.get_bundle(uuid)
+
+        # then:
+        self.assertIsNotNone(bundle)
 
 
 class BundleUpdateServiceTest(TestCase):

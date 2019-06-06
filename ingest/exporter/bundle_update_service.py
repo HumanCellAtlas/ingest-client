@@ -103,6 +103,15 @@ class StagingService:
                                              metadata_resource.metadata_type)
 
 
+class BundleService:
+
+    def __init__(self, dss_client):
+        self.dss_client = dss_client
+
+    def get_bundle(self, uuid):
+        return {}
+
+
 class BundleUpdateService:
 
     def __init__(self, metadata_service: MetadataService, staging_service: StagingService,
