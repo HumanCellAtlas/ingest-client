@@ -1,15 +1,11 @@
 import json
 from unittest import TestCase
 
-import copy
 from mock import MagicMock, patch, call
 
-from ingest.api.ingestapi import IngestApi
-from ingest.importer.data_node import DataNode
+import ingest.api.ingestapi
 from ingest.importer.submission import Submission, Entity, IngestSubmitter, EntityLinker, LinkedEntityNotFound, \
     InvalidLinkInSpreadsheet, MultipleProcessesFound, EntityMap
-
-import ingest.api.ingestapi
 
 
 class SubmissionTest(TestCase):
@@ -44,7 +40,8 @@ class SubmissionTest(TestCase):
                     'title': 'A single protocol'
                 },
                 'submissionEnvelopes': {
-                    'href': 'http://api.ingest.dev.data.humancellatlas.org/protocols/5af1794d6a65a50007755b6a/submissionEnvelopes',
+                    'href': 'http://api.ingest.dev.data.humancellatlas.org/protocols/5af1794d6a65a50007755b6a'
+                            '/submissionEnvelopes',
                     'title': 'Access or create new submission envelopes'
                 }
             }
@@ -189,7 +186,7 @@ class IngestSubmitterTest(TestCase):
         # then:
         submission_constructor.assert_called_with(ingest_api, 'url')
         submission.define_manifest.assert_called_with(entity_map)
-        submission.add_entity.assert_has_calls([call(product), call(user)], any_order=True)\
+        submission.add_entity.assert_has_calls([call(product), call(user)], any_order=True)
 
     @patch('ingest.importer.submission.Submission')
     def test_submit_update_entities(self, submission_constructor):
@@ -337,7 +334,6 @@ class EntityMapTest(TestCase):
         # has many element with links
         entity_map.add_entity(Entity('product', 'product_2', {}, direct_links=[{}, {}, {}, {}]))
         self.assertEqual(entity_map.count_links(), 7)
-
 
 
 class EntityLinkerTest(TestCase):
@@ -1067,7 +1063,7 @@ class EntityLinkerTest(TestCase):
                     }
                 }
             },
-            'file':{
+            'file': {
                 'file_id_1': {
                     'content': {
                         'key': 'file_1'

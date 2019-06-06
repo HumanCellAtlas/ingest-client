@@ -6,9 +6,7 @@ import json
 import logging
 import os
 import time
-import uuid
 import warnings
-
 from urllib.parse import urljoin, quote
 
 import requests
@@ -59,7 +57,6 @@ class IngestApi:
     def get_schemas(self, latest_only=True, high_level_entity=None, domain_entity=None, concrete_entity=None):
         schema_url = self.get_schemas_url()
         all_schemas = []
-        filtered_schemas = {}
 
         if latest_only:
             search_url = self.get_link_from_resource_url(schema_url, "search")
@@ -141,7 +138,8 @@ class IngestApi:
         return r.json()
 
     def getFileBySubmissionUrlAndFileName(self, submissionUrl, fileName):
-        searchUrl = self.get_link_from_resource_url(self.url + '/files/search', 'findBySubmissionEnvelopesInAndFileName')
+        searchUrl = self.get_link_from_resource_url(self.url + '/files/search',
+                                                    'findBySubmissionEnvelopesInAndFileName')
         searchUrl = searchUrl.replace('{?submissionEnvelope,fileName}', '')
         r = requests.get(searchUrl, params={'submissionEnvelope': submissionUrl, 'fileName': fileName})
         if r.status_code == requests.codes.ok:
@@ -183,11 +181,10 @@ class IngestApi:
             bundleManifests = json.loads(r.text)
         return bundleManifests
 
-
     def createSubmission(self):
         warnings.warn(
-                "createSubmission is deprecated, use create_submission instead",
-                DeprecationWarning
+            "createSubmission is deprecated, use create_submission instead",
+            DeprecationWarning
         )
         try:
             r = requests.post(self.ingest_api_root["submissionEnvelopes"]["href"].rsplit("{")[0], data="{}",
@@ -219,7 +216,6 @@ class IngestApi:
             self.logger.error("Request failed: " + str(err))
             raise
 
-
     def get_submission_links(self, submission_url):
         if not self.submission_links.get(submission_url):
             r = requests.get(submission_url, headers=self.headers)
@@ -230,7 +226,7 @@ class IngestApi:
 
     def get_link_in_submisssion(self, submission_url, link_name):
         links = self.get_submission_links(submission_url)
-        link_obj = links.get(link_name) # TODO what if link doesn't exist
+        link_obj = links.get(link_name)  # TODO what if link doesn't exist
         link = link_obj['href'].rsplit("{")[0]
 
         return link
@@ -287,7 +283,8 @@ class IngestApi:
                 if not pageSize:
                     yield from self._getAllObjectsFromSet(json.loads(r.text)["_links"][entityType]["href"], entityType)
                 else:
-                    yield from self._getAllObjectsFromSet(json.loads(r.text)["_links"][entityType]["href"], entityType, pageSize)
+                    yield from self._getAllObjectsFromSet(json.loads(r.text)["_links"][entityType]["href"], entityType,
+                                                          pageSize)
 
     def _getAllObjectsFromSet(self, url, entityType, pageSize=None):
         params = dict()
@@ -312,7 +309,7 @@ class IngestApi:
                 yield entity
 
     def _updateStatusToPending(self, submissionUrl):
-        r = requests.patch(submissionUrl, data="{\"submissionStatus\" : \"Pending\"}", headers=self.headers)
+        requests.patch(submissionUrl, data="{\"submissionStatus\" : \"Pending\"}", headers=self.headers)
 
     def createProject(self, submissionUrl, jsonObject, uuid=None):
         return self.createEntity(submissionUrl, jsonObject, "projects", uuid)
@@ -347,7 +344,7 @@ class IngestApi:
         time.sleep(0.001)
         with optimistic_session(fileSubmissionsUrl) as session:
             r = session.post(fileSubmissionsUrl, data=json.dumps(fileToCreateObject),
-                              headers=self.headers, params=params)
+                             headers=self.headers, params=params)
 
         # TODO Investigate why core is returning internal server error
         if r.status_code == requests.codes.conflict or r.status_code == requests.codes.internal_server_error:
@@ -428,7 +425,8 @@ class IngestApi:
         if not fromEntityLinksRelationship:
             raise ValueError("Error: fromEntityLinks has no {0} relationship".format(relationship))
 
-        fromEntityLinksRelationshipHref = fromEntityLinksRelationship["href"] if "href" in fromEntityLinksRelationship else None
+        fromEntityLinksRelationshipHref = fromEntityLinksRelationship[
+            "href"] if "href" in fromEntityLinksRelationship else None
         if not fromEntityLinksRelationshipHref:
             raise ValueError("Error: fromEntityLinksRelationship for relationship {0} has no href".format(relationship))
 
@@ -438,7 +436,7 @@ class IngestApi:
         self._retry_when_http_error(0, self._post_link_entity, fromUri, toUri)
 
     def _post_link_entity(self, fromUri, toUri):
-        self.logger.debug('fromUri ' + fromUri + ' toUri:' + toUri);
+        self.logger.debug('fromUri ' + fromUri + ' toUri:' + toUri)
 
         headers = {'Content-type': 'text/uri-list'}
 
@@ -455,7 +453,7 @@ class IngestApi:
                 self.logger.info("no of tries: " + str(tries + 1))
 
             r = None
-            
+
             try:
                 time.sleep(0.001)
                 r = func(*args)
@@ -497,11 +495,13 @@ class IngestApi:
         return requests.put(url, data=data, headers=headers)
 
     def createBundleManifest(self, bundleManifest):
-        r = self._retry_when_http_error(0, self._post_bundle_manifest, bundleManifest, self.ingest_api_root["bundleManifests"]["href"].rsplit("{")[0])
+        r = self._retry_when_http_error(0, self._post_bundle_manifest, bundleManifest,
+                                        self.ingest_api_root["bundleManifests"]["href"].rsplit("{")[0])
 
         if not (200 <= r.status_code < 300):
-            error_message = "Failed to create bundle manifest at URL {0} with request payload: {1}".format(self.ingest_api_root["bundleManifests"]["href"].rsplit("{")[0],
-                                                                                                           json.dumps(bundleManifest.__dict__))
+            error_message = "Failed to create bundle manifest at URL {0} with request payload: {1}".format(
+                self.ingest_api_root["bundleManifests"]["href"].rsplit("{")[0],
+                json.dumps(bundleManifest.__dict__))
             self.logger.error(error_message)
             raise ValueError(error_message)
         else:

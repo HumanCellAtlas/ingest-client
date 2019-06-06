@@ -1,8 +1,7 @@
 from unittest import TestCase
 
-from ingest.importer.spreadsheet.ingest_worksheet import IngestWorksheet
-
 import ingest.utils.spreadsheet as spreadsheet_utils
+from ingest.importer.spreadsheet.ingest_worksheet import IngestWorksheet
 from tests.importer.utils.test_utils import create_test_workbook
 
 
@@ -90,8 +89,8 @@ class IngestWorksheetTest(TestCase):
         expected_data_row = ['Jane Doe', 'Cambridge', '12-345-67', 'jane.doe@domain.com']
 
         rows = [[], [], [], [], [], []]  # initialise 6 rows
-        rows[header_row_idx-1] = header_row
-        rows[start_row_idx-1] = expected_data_row
+        rows[header_row_idx - 1] = header_row
+        rows[start_row_idx - 1] = expected_data_row
 
         worksheet = spreadsheet_utils.create_worksheet('person', rows)
 
@@ -177,4 +176,3 @@ class IngestWorksheetTest(TestCase):
         self.assertEqual('sn_profiles', sn_profiles.get_module_field_name())
         self.assertEqual('file_names', file_names.get_module_field_name())
         self.assertIsNone(account.get_module_field_name())
-

@@ -1,5 +1,6 @@
 import json
 import logging
+
 import requests
 
 format = '[%(filename)s:%(lineno)s - %(funcName)20s() ] %(asctime)s - %(name)s - %(levelname)s - %(message)s'
@@ -48,14 +49,15 @@ class IngestSubmitter(object):
                 try:
                     submission.link_entity(entity, to_entity, relationship=link['relationship'])
                     progress = progress + 1
-                    if progress % self.PROGRESS_CTR == 0 or (progress == int(submission.manifest.get('expectedLinks', 0))):
+                    if progress % self.PROGRESS_CTR == 0 or (
+                            progress == int(submission.manifest.get('expectedLinks', 0))):
                         manifest_url = self.ingest_api.get_link_from_resource(submission.manifest, 'self')
                         self.ingest_api.patch(manifest_url, {'actualLinks': progress})
                         self.logger.info(f"links progress: {progress}/ {submission.manifest.get('expectedLinks')}")
 
                 except Exception as link_error:
-                    error_message = f'''The {entity.type} with id {entity.id} could not be 
-                    linked to {to_entity.type} with id {to_entity.id}.'''
+                    error_message = f'''The {entity.type} with id {entity.id} could not be linked to {to_entity.type} \
+                    with id {to_entity.id}.'''
                     self.logger.error(error_message)
                     self.logger.error(f'{str(link_error)}')
                     raise
@@ -172,7 +174,8 @@ class EntityLinker(object):
 
         for link_entity_type, link_entity_ids in links_by_entity.items():
             for link_entity_id in link_entity_ids:
-                if not link_entity_type == 'process':  # it is expected that no processes are defined in any tab, these will be created later
+                if not link_entity_type == 'process':  # it is expected that no processes are defined in any tab,
+                    # these will be created later
                     if not self._is_valid_spreadsheet_link(entity.type, link_entity_type):
                         raise InvalidLinkInSpreadsheet(entity, link_entity_type, link_entity_id)
                     if not entity_map.get_entity(link_entity_type, link_entity_id):
@@ -241,7 +244,8 @@ class EntityLinker(object):
 
 class Entity(object):
     def __init__(self, entity_type, entity_id, content, ingest_json=None, links_by_entity=None,
-                 direct_links=None, is_reference=False, linking_details=None, concrete_type=None, spreadsheet_location=None):
+                 direct_links=None, is_reference=False, linking_details=None, concrete_type=None,
+                 spreadsheet_location=None):
         self.type = entity_type
         self.id = entity_id
         self.content = content
@@ -278,7 +282,6 @@ class Entity(object):
 
 
 class Submission(object):
-
     ENTITY_LINK = {
         'biomaterial': 'biomaterials',
         'process': 'processes',
@@ -330,7 +333,7 @@ class Submission(object):
         elif entity.type == 'project':
             response = self.ingest_api.createProject(self.submission_url,
                                                      json.dumps(
-                                                             entity.content),
+                                                         entity.content),
                                                      uuid=uuid)
         else:
             response = self.ingest_api.createEntity(self.submission_url,
@@ -347,7 +350,8 @@ class Submission(object):
 
     def link_entity(self, from_entity, to_entity, relationship):
         if from_entity.is_reference and not from_entity.ingest_json:
-            from_entity.ingest_json = self.ingest_api.getEntityByUuid(self.ENTITY_LINK[from_entity.type], from_entity.id)
+            from_entity.ingest_json = self.ingest_api.getEntityByUuid(self.ENTITY_LINK[from_entity.type],
+                                                                      from_entity.id)
 
         if to_entity.is_reference and not to_entity.ingest_json:
             to_entity.ingest_json = self.ingest_api.getEntityByUuid(self.ENTITY_LINK[to_entity.type], to_entity.id)
@@ -357,8 +361,6 @@ class Submission(object):
         self.ingest_api.linkEntity(from_entity_ingest, to_entity_ingest, relationship)
 
     def define_manifest(self, entity_map):
-        total_count = entity_map.count_total()
-
         # TODO provide a better way to serialize
         manifest_json = json.dumps({
             'totalCount': entity_map.count_total(),
@@ -520,7 +522,7 @@ class InvalidLinkInSpreadsheet(Error):
 class LinkedEntityNotFound(Error):
     def __init__(self, from_entity, entity_type, id):
         message = f'A link from a {from_entity.type} with id {from_entity.id} to a {entity_type} with id, ' \
-                  f'"{id}", is not found in the spreadsheet.'
+            f'"{id}", is not found in the spreadsheet.'
         super(LinkedEntityNotFound, self).__init__('LinkedEntityNotFound', message)
         self.entity = entity_type
         self.id = id

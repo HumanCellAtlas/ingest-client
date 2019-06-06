@@ -10,6 +10,7 @@ __date__ = "31/01/2019"
 
 from ingest.template import schema_template
 from ingest.template.tabs import TabConfig
+from .spreadsheet_builder import SpreadsheetBuilder
 import xlsxwriter
 import sys
 
@@ -36,14 +37,14 @@ class LinkedSheetBuilder:
     def _build(self, template):
 
         tabs = template.get_tabs_config()
-        if (self.link_config != False) and (self.autofill_scale != 0):  # some precalculation for whole sheet
+        if (self.link_config is not False) and (self.autofill_scale != 0):  # some precalculation for whole sheet
             self._value_linking()
 
         for tab in tabs.lookup("tabs"):
 
             for tab_name, detail in tab.items():
 
-                if (self.link_config != False):  # skip protocols and entities not in link_config
+                if self.link_config is not False:  # skip protocols and entities not in link_config
                     backbone = self.link_config[0]
                     len_check = [len(y) for y in backbone]
                     if all(x == len_check[0] for x in len_check):
@@ -148,7 +149,7 @@ class LinkedSheetBuilder:
                     # worksheet.merge_range(first_col=0, first_row=4, last_col= len(detail["columns"]), last_row=4,
                     # cell_format= self.header_format, data="FILL OUT INFORMATION BELOW THIS ROW")
 
-                if self.link_config != False:  # after normal cols added to tab add linking cols
+                if self.link_config is not False:  # after normal cols added to tab add linking cols
 
                     self._make_col_name_mapping(template)  # makes lookup dict for uf tab names
                     self._add_link_cols(tab_name, col_number, worksheet, hf, self.backbone_entities)
@@ -216,10 +217,11 @@ class LinkedSheetBuilder:
         pre_multiplier = []
         for entity in backbone:
             entity_entry = {}
+            prev_entity = None
             for tab_name, y in entity.items():
                 entity_entry['tab_name'] = tab_name
                 entity_entry['y'] = y
-                if len(pre_multiplier) > 0:
+                if len(pre_multiplier):
                     entity_entry['text'] = prev_entity
                 else:
                     entity_entry['text'] = None
@@ -328,7 +330,7 @@ class LinkedSheetBuilder:
         # todo loop to fill in values for links (this func only fill link back
         # AKA ADD EXAMPLES
 
-        if (self.link_config != False) and (self.autofill_scale != 0):
+        if (self.link_config is not False) and (self.autofill_scale != 0):
             prog_name_list = prog_name.split('.')
             link_fill = self.tab_multiplier.get(tab_name).get('pre_comb_linking')
             row_no = 5
@@ -379,7 +381,7 @@ class LinkedSheetBuilder:
                     dot_parse = col.split('.')
                     if (len(dot_parse) == 3) and (
                             (dot_parse[2] == 'protocol_id') or (dot_parse[2] == 'biomaterial_id')) and (
-                    dot_parse[1].endswith('_core')):  # todo WARNING verging on hard coded
+                            dot_parse[1].endswith('_core')):  # todo WARNING verging on hard coded
                         prog_name = col
 
                 col_name_mapping[key] = [display_name, prog_name]
@@ -389,7 +391,7 @@ class LinkedSheetBuilder:
         try:
             uf = str(template.lookup(col_name + "." + property)) if template.lookup(col_name + "." + property) else ""
             return uf
-        except:
+        except Exception:
             print("No property " + property + " for " + col_name)
             return ""
 
@@ -415,7 +417,7 @@ class LinkedSheetBuilder:
                 uf = uf + " ontology ID"
 
             return uf
-        except:
+        except Exception:
             return key
 
     def _write_schemas(self, schema_urls):

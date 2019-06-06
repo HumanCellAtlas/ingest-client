@@ -11,7 +11,7 @@ class MetadataEntity:
     # TODO enforce definition of concrete and domain types for all MetadataEntity
     # It's only currently done this way to minimise friction with other parts of the system
     def __init__(self, concrete_type=TYPE_UNDEFINED, domain_type=TYPE_UNDEFINED, object_id=None,
-                 content={}, links={}, external_links={}, linking_details={}, row:IngestRow = None,
+                 content={}, links={}, external_links={}, linking_details={}, row: IngestRow = None,
                  is_reference=False):
         self._concrete_type = concrete_type
         self._domain_type = domain_type

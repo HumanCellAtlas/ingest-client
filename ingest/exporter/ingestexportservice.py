@@ -3,11 +3,9 @@
 desc goes here
 """
 import requests
-from hca.util.exceptions import SwaggerAPIException
 
 __author__ = "jupp"
 __license__ = "Apache 2.0"
-
 
 import json
 import logging
@@ -196,7 +194,8 @@ class IngestExporter:
         self.recurse_process(process, process_info)
 
         if process_info.project:
-            supplementary_files = self.ingest_api.getRelatedEntities('supplementaryFiles', process_info.project, 'files')
+            supplementary_files = self.ingest_api.getRelatedEntities('supplementaryFiles', process_info.project,
+                                                                     'files')
             for supplementary_file in supplementary_files:
                 uuid = supplementary_file['uuid']['uuid']
                 process_info.supplementary_files[uuid] = supplementary_file
@@ -306,7 +305,8 @@ class IngestExporter:
     def get_related_entities(self, relationship, entity, entity_type):
         entity_uuid = entity['uuid']['uuid']
 
-        if self.related_entities_cache.get(entity_uuid) and self.related_entities_cache.get(entity_uuid).get(relationship):
+        if self.related_entities_cache.get(entity_uuid) and self.related_entities_cache.get(entity_uuid).get(
+                relationship):
             return self.related_entities_cache.get(entity_uuid).get(relationship)
 
         related_entities = list(self.ingest_api.getRelatedEntities(relationship, entity, entity_type))
@@ -338,7 +338,10 @@ class IngestExporter:
             for (metadata_uuid, doc) in metadata_info[entity_type].items():
                 concrete_type = self.get_concrete_entity_type(doc)
 
-                concrete_type_ctr[concrete_type] = 0 if concrete_type not in concrete_type_ctr else concrete_type_ctr[concrete_type] + 1
+                if concrete_type not in concrete_type_ctr:
+                    concrete_type_ctr[concrete_type] = 0
+                else:
+                    concrete_type_ctr[concrete_type] = concrete_type_ctr[concrete_type] + 1
 
                 file_name = '{0}_{1}.json'.format(concrete_type, concrete_type_ctr[concrete_type])
                 upload_filename = '{0}_{1}.json'.format(concrete_type, metadata_uuid)
@@ -351,7 +354,8 @@ class IngestExporter:
                     'dss_uuid': metadata_uuid,
                     'upload_filename': upload_filename,
                     'update_date': doc['updateDate'],
-                    'is_from_input_bundle': self._is_from_input_bundle(entity_type, metadata_uuid, process_info.input_bundle)
+                    'is_from_input_bundle': self._is_from_input_bundle(entity_type, metadata_uuid,
+                                                                       process_info.input_bundle)
                 }
 
                 metadata_files_by_type[entity_type].append(prepared_doc)
@@ -439,8 +443,10 @@ class IngestExporter:
             input_data_files = [input_file['dataFileUuid'] for input_file in list(process_info.input_files.values())]
 
             try:
-                # TODO if file is an input file, this file may already be in the data store, need to get the stored version
-                # This assumes that the latest version is the file version in the input bundle, should be a safe assumption for now
+                # TODO if file is an input file, this file may already be in the data store, need to get the stored
+                #  version
+                # This assumes that the latest version is the file version in the input bundle, should be a safe
+                # assumption for now
                 # Ideally, bundle manifest must store the file uuid and version and version must be retrieved from there
 
                 # if metadata file , check is_from_input_bundle flag, if true, do not put file to DSS again
@@ -477,9 +483,11 @@ class IngestExporter:
                     timeout=1200  # 20 minutes
                 )
             except polling.TimeoutException as te:
-                self.logger.error(f'File {created_file["uuid"]}/{created_file["version"]} with name {created_file["name"]} takes too long to be copied.')
+                self.logger.error(f'''File {created_file["uuid"]}/{created_file["version"]} with name {created_file[
+                    "name"]} takes too long to be copied.''')
                 raise
-            self.logger.info(f'File {created_file["uuid"]}/{created_file["version"]} with name {created_file["name"]} is successfully copied!')
+            self.logger.info(f'''File {created_file["uuid"]}/{created_file["version"]} with name {created_file[
+                "name"]} is successfully copied!''')
 
     def _is_file_copied(self, created_file):
         try:
@@ -581,6 +589,7 @@ class IngestExporter:
         tmp_file.write(content)
         tmp_file.close()
 
+
 class File:
     def __init__(self):
         self.name = ""
@@ -620,6 +629,7 @@ class MultipleProjectsError(Error):
 
 class InvalidBundleError(Error):
     """There was a failure in bundle validation."""
+
 
 class BundleFileUploadError(Error):
     """There was a failure in bundle file upload."""

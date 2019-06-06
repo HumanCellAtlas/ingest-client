@@ -1,7 +1,6 @@
 import string
 
 from openpyxl import Workbook
-from xlsxwriter.worksheet import Worksheet
 
 HEADER = list(string.ascii_uppercase)
 

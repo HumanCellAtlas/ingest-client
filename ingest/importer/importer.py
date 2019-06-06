@@ -2,6 +2,7 @@ import json
 import logging
 
 import openpyxl
+from openpyxl import load_workbook
 
 import ingest.importer.submission
 from ingest.importer.conversion import template_manager
@@ -10,8 +11,6 @@ from ingest.importer.conversion.template_manager import TemplateManager
 from ingest.importer.spreadsheet.ingest_workbook import IngestWorkbook
 from ingest.importer.spreadsheet.ingest_worksheet import IngestWorksheet
 from ingest.importer.submission import IngestSubmitter, EntityMap, EntityLinker
-
-from openpyxl import load_workbook
 
 format = '[%(filename)s:%(lineno)s - %(funcName)20s() ] %(asctime)s - %(name)s - %(levelname)s - %(message)s'
 logging.basicConfig(format=format)
@@ -39,7 +38,8 @@ class XlsImporter:
         try:
             template_mgr = template_manager.build(ingest_workbook.get_schemas(), self.ingest_api)
         except Exception as e:
-            raise SchemaRetrievalError(f'There was an error retrieving the schema information to process the spreadsheet. {str(e)}')
+            raise SchemaRetrievalError(
+                f'There was an error retrieving the schema information to process the spreadsheet. {str(e)}')
 
         workbook_importer = WorkbookImporter(template_mgr)
         spreadsheet_json = workbook_importer.do_import(ingest_workbook, project_uuid)
@@ -63,7 +63,7 @@ class XlsImporter:
             error_json = json.dumps({
                 'errorCode': 'ingest.importer.submission',
                 'errorType': 'Error',
-                'message':  'An error during submission occurred.',
+                'message': 'An error during submission occurred.',
                 'details': str(e),
 
             })
@@ -130,6 +130,7 @@ class _ImportRegistry:
     """
     This is a helper class for managing metadata entities during Workbook import.
     """
+
     def __init__(self):
         self._submittable_registry = {}
         self._module_registry = {}
@@ -215,7 +216,6 @@ class WorkbookImporter:
 
 
 class WorksheetImporter:
-
     KEY_HEADER_ROW_IDX = 4
     USER_FRIENDLY_HEADER_ROW_IDX = 2
     START_ROW_OFFSET = 5

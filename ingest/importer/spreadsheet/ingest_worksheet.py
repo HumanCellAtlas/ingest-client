@@ -71,6 +71,7 @@ class IngestWorksheet(object):
     def cell(self, row, column):
         return self._worksheet.cell(row=row, column=column)
 
+
 class IngestRow(object):
     def __init__(self, worksheet_title, index, values):
         self.values = values or []

@@ -12,7 +12,7 @@ from ingest.importer.conversion.conversion_strategy import \
     LinkingDetailCellConversion, \
     FieldOfSingleElementListCellConversion, ExternalReferenceCellConversion
 from ingest.importer.conversion.data_converter import StringConverter, \
-    ListConverter, DefaultConverter
+    ListConverter
 from ingest.importer.conversion.exceptions import UnknownMainCategory
 from ingest.importer.conversion.metadata_entity import MetadataEntity
 

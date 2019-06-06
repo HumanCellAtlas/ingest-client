@@ -7,8 +7,10 @@ __license__ = "Apache 2.0"
 __date__ = "04/05/2018"
 
 from yaml import load as yaml_load
+
 from ingest.utils import doctict
 from ingest.utils.doctict import DotDict
+
 
 class TabConfig:
     def __init__(self, init=None):
@@ -33,7 +35,7 @@ class TabConfig:
                     self._key_label[dn.lower()] = key
                     self._key_label[key] = key
         else:
-            print ("warning")
+            print("warning")
         return self
 
     def lookup(self, key):
@@ -41,4 +43,3 @@ class TabConfig:
 
     def get_key_for_label(self, label):
         return self._key_label[label.lower()]
-

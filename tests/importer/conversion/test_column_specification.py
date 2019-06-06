@@ -1,6 +1,5 @@
-from unittest import TestCase
-
 import copy
+from unittest import TestCase
 
 from mock import MagicMock
 
@@ -80,7 +79,7 @@ class ColumnSpecificationTest(TestCase):
     def test_look_up_nested_object_field(self):
         # given:
         schema_spec = {
-            'product.reviews.rating': {'value_type': 'integer','multivalue': False},
+            'product.reviews.rating': {'value_type': 'integer', 'multivalue': False},
             'product.reviews': {'value_type': 'object', 'multivalue': True}
         }
         schema_template = self._prepare_mock_schema_template('product', 'merchandise/product',

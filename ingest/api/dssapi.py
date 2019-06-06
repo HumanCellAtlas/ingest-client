@@ -3,16 +3,13 @@
 Description goes here
 """
 import datetime
-import hca
 import json
 import logging
 import os
 import time
 
+import hca
 from hca.util import SwaggerAPIException
-
-from ingest.utils.s2s_token_client import S2STokenClient
-from ingest.utils.token_manager import TokenManager
 
 __author__ = "jupp"
 __license__ = "Apache 2.0"
@@ -71,7 +68,8 @@ class DssApi:
         while not file_create_complete and tries < max_retries:
             try:
                 tries += 1
-                self.logger.info(f'Creating file {file["name"]} in DSS {uuid}:{version} with params: {json.dumps(params)}')
+                self.logger.info(
+                    f'Creating file {file["name"]} in DSS {uuid}:{version} with params: {json.dumps(params)}')
                 bundle_file = self.hca_client.put_file(
                     uuid=uuid,
                     version=version,
@@ -84,7 +82,8 @@ class DssApi:
                 return bundle_file
             except Exception as e:
                 self.logger.error(
-                    'Attempt {0} out of {1}: Error in hca_client.put_file method call with params:{2} due to {3}'.format(
+                    'Attempt {0} out of {1}: Error in hca_client.put_file method call with params:{2} due to {'
+                    '3}'.format(
                         str(tries),
                         str(max_retries),
                         json.dumps(params),
@@ -135,7 +134,8 @@ class DssApi:
                     'creator_uid': self.creator_uid
                 }
                 self.logger.error(
-                    'Attempt {0} out of {1}: Error in hca_client.put_bundle method call with params:{2} due to {3}'.format(
+                    'Attempt {0} out of {1}: Error in hca_client.put_bundle method call with params:{2} due to {'
+                    '3}'.format(
                         str(tries),
                         str(max_retries),
                         json.dumps(params),

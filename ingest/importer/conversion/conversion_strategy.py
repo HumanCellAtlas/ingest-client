@@ -26,7 +26,9 @@ class CellConversion(object):
         return match.group('insert_field')
 
     @abstractmethod
-    def apply(self, metadata: MetadataEntity, cell_data): ...
+    def apply(self, metadata: MetadataEntity, cell_data):
+        # TODO Implement this method
+        pass
 
 
 class DirectCellConversion(CellConversion):

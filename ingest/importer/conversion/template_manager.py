@@ -5,10 +5,8 @@ from openpyxl.worksheet.worksheet import Worksheet
 
 import ingest.template.schema_template as schema_template
 from ingest.api.ingestapi import IngestApi
-from ingest.importer.conversion import utils, conversion_strategy, column_specification
-from ingest.importer.conversion.column_specification import ColumnSpecification
-from ingest.importer.conversion.conversion_strategy import CellConversion, \
-    FieldOfSingleElementListCellConversion
+from ingest.importer.conversion import conversion_strategy, column_specification
+from ingest.importer.conversion.conversion_strategy import CellConversion
 from ingest.importer.conversion.metadata_entity import MetadataEntity
 from ingest.importer.data_node import DataNode
 from ingest.importer.spreadsheet.ingest_worksheet import IngestWorksheet, \
@@ -18,7 +16,7 @@ from ingest.template.schema_template import SchemaTemplate
 
 class TemplateManager:
 
-    def __init__(self, template:SchemaTemplate, ingest_api:IngestApi):
+    def __init__(self, template: SchemaTemplate, ingest_api: IngestApi):
         self.template = template
         self.ingest_api = ingest_api
         self.logger = logging.getLogger(__name__)
@@ -132,7 +130,7 @@ class TemplateManager:
     def get_key_for_label(self, header_name, tab_name):
         try:
             key = self.template.get_key_for_label(header_name, tab_name)
-        except:
+        except Exception:
             self.logger.warning(f'{header_name} in "{tab_name}" tab is not found in schema template')
         return key
 

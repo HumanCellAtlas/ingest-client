@@ -6,8 +6,9 @@ __author__ = "jupp"
 __license__ = "Apache 2.0"
 __date__ = "25/05/2018"
 
-from ingest.template.schema_template import SchemaTemplate
 from unittest.mock import patch, MagicMock
+
+from ingest.template.schema_template import SchemaTemplate
 
 
 @patch('urllib.request.urlopen')

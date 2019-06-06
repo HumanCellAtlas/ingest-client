@@ -5,7 +5,6 @@ from ingest.importer.conversion import utils, data_converter
 from ingest.importer.conversion.data_converter import DataType, CONVERTER_MAP, ListConverter
 from ingest.template.schema_template import SchemaTemplate, UnknownKeyException
 
-
 UNKNOWN_DOMAIN_TYPE = '_unknown_type'
 
 _LOGGER = logging.getLogger(__name__)
@@ -27,8 +26,8 @@ class ColumnSpecification:
     # context_concrete_type is the concrete type of the Metadata Entity for which the column
     # represented by this object is specified for.
     def __init__(self, field_name, context_concrete_type, domain_type, data_type,
-                 multivalue=False, multivalue_parent=False, identity: bool=False,
-                 external_reference: bool=False, order_of_occurrence: int = 1):
+                 multivalue=False, multivalue_parent=False, identity: bool = False,
+                 external_reference: bool = False, order_of_occurrence: int = 1):
         self.field_name = field_name
         self.context_concrete_type = context_concrete_type
         self.domain_type = domain_type
@@ -60,9 +59,8 @@ class ColumnSpecification:
         return conversion_type
 
     def _represents_an_object_field(self):
-        return self.entity_type == self.context_concrete_type and \
-               self.order_of_occurrence == 1 and \
-               not self.external_reference
+        return self.entity_type == self.context_concrete_type and self.order_of_occurrence == 1 and not \
+            self.external_reference
 
     def _determine_conversion_type_for_object_field(self):
         if self.identity:

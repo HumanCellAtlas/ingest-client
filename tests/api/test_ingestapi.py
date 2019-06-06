@@ -1,12 +1,10 @@
+import json
 from unittest import TestCase
 from unittest.mock import patch
 
 from mock import MagicMock
 
-import ingest
 from ingest.api.ingestapi import IngestApi
-
-import json
 
 mock_ingest_api_url = "http://mockingestapi.com"
 mock_submission_envelope_id = "mock-envelope-id"
