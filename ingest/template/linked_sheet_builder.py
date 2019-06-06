@@ -2,14 +2,13 @@
 """
 Given a tabs template and list of schema URLs, will output a spreadsheet in Xls format
 """
-import urllib
 from argparse import ArgumentParser
 
 __author__ = "jupp & hewgreen"
 __license__ = "Apache 2.0"
 __date__ = "31/01/2019"
 
-from ingest.template import schema_template, tabs
+from ingest.template import schema_template
 from ingest.template.tabs import TabConfig
 import xlsxwriter
 import sys
@@ -18,33 +17,33 @@ DEFAULT_INGEST_URL = "http://api.ingest.data.humancellatlas.org"
 DEFAULT_SCHEMAS_ENDPOINT = "/schemas/search/latestSchemas"
 
 
-
 class LinkedSheetBuilder:
     def __init__(self, output_file, hide_row=False, link_config=False, autofill_scale=0):
 
         self.workbook = xlsxwriter.Workbook(output_file)
 
-        self.header_format = self.workbook.add_format({'bold': True, 'bg_color': '#D0D0D0', 'font_size': 12, 'valign': 'vcenter'})
+        self.header_format = self.workbook.add_format(
+            {'bold': True, 'bg_color': '#D0D0D0', 'font_size': 12, 'valign': 'vcenter'})
         self.locked_format = self.workbook.add_format({'locked': True})
         # self.required_header_format = self.workbook.add_format({'bold': True, 'bg_color': '#D0D0D0'})
-        self.desc_format = self.workbook.add_format({'font_color': '#808080', 'italic': True, 'text_wrap': True, 'font_size': 12, 'valign': 'top'})
+        self.desc_format = self.workbook.add_format(
+            {'font_color': '#808080', 'italic': True, 'text_wrap': True, 'font_size': 12, 'valign': 'top'})
         self.include_schemas_tab = False
         self.hidden_row = hide_row
         self.link_config = link_config
         self.autofill_scale = autofill_scale
 
-
     def _build(self, template):
 
         tabs = template.get_tabs_config()
-        if (self.link_config != False) and (self.autofill_scale != 0): # some precalculation for whole sheet
+        if (self.link_config != False) and (self.autofill_scale != 0):  # some precalculation for whole sheet
             self._value_linking()
 
         for tab in tabs.lookup("tabs"):
 
             for tab_name, detail in tab.items():
 
-                if (self.link_config != False): # skip protocols and entities not in link_config
+                if (self.link_config != False):  # skip protocols and entities not in link_config
                     backbone = self.link_config[0]
                     len_check = [len(y) for y in backbone]
                     if all(x == len_check[0] for x in len_check):
@@ -55,10 +54,10 @@ class LinkedSheetBuilder:
                         sys.exit()
 
                     # todo project sub tabs contact etc need splitting out
-                    always_add = ['project'] # todo NB hardcoded
-                    if (tab_name not in self.backbone_entities) and (tab_name not in self.protocols_to_add) and (tab_name not in always_add):
-                        continue # dont put the tab in if it isn't needed
-
+                    always_add = ['project']  # todo NB hardcoded
+                    if (tab_name not in self.backbone_entities) and (tab_name not in self.protocols_to_add) and (
+                            tab_name not in always_add):
+                        continue  # dont put the tab in if it isn't needed
 
                 worksheet = self.workbook.add_worksheet(detail["display_name"])
 
@@ -67,41 +66,40 @@ class LinkedSheetBuilder:
                 for cols in detail["columns"]:
 
                     if cols.split(".")[-1] == "text":
-                            uf = self.get_user_friendly(template, cols.replace('.text', '')).upper()
+                        uf = self.get_user_friendly(template, cols.replace('.text', '')).upper()
                     else:
-                        if cols+".text" not in detail["columns"]:
+                        if cols + ".text" not in detail["columns"]:
                             uf = self.get_user_friendly(template, cols).upper()
                     if cols.split(".")[-1] == "text":
                         desc = self._get_value_for_column(template, cols.replace('.text', ''), "description")
                         if desc == "":
                             desc = self._get_value_for_column(template, cols, "description")
                     else:
-                        if cols+".text" not in detail["columns"]:
+                        if cols + ".text" not in detail["columns"]:
                             desc = self._get_value_for_column(template, cols, "description")
                     if cols.split(".")[-1] == "text":
                         required = bool(self._get_value_for_column(template, cols.replace('.text', ''), "required"))
                     else:
-                        if cols+".text" not in detail["columns"]:
+                        if cols + ".text" not in detail["columns"]:
                             required = bool(self._get_value_for_column(template, cols, "required"))
                     if cols.split(".")[-1] == "text":
                         example_text = self._get_value_for_column(template, cols.replace('.text', ''), "example")
                         if example_text == "":
                             example_text = self._get_value_for_column(template, cols, "example")
                     else:
-                        if cols+".text" not in detail["columns"]:
+                        if cols + ".text" not in detail["columns"]:
                             example_text = self._get_value_for_column(template, cols, "example")
                     if cols.split(".")[-1] == "text":
                         guidelines = self._get_value_for_column(template, cols.replace('.text', ''), "guidelines")
                         if guidelines == "":
                             guidelines = self._get_value_for_column(template, cols, "guidelines")
                     else:
-                        if cols+".text" not in detail["columns"]:
+                        if cols + ".text" not in detail["columns"]:
                             guidelines = self._get_value_for_column(template, cols, "guidelines")
 
                     hf = self.header_format
                     if required:
                         uf = uf + " (Required)"
-
 
                     # set the user friendly name
                     worksheet.write(0, col_number, uf, hf)
@@ -116,14 +114,13 @@ class LinkedSheetBuilder:
                     # set the description
                     worksheet.write(1, col_number, desc, self.desc_format)
 
-
                     # write example
                     if example_text:
                         # print("Example " + example_text)
                         worksheet.write(2, col_number, guidelines + ' For example: ' + example_text, self.desc_format)
                     else:
                         # print("Guideline " + guidelines)
-                        worksheet.write(2, col_number, guidelines , self.desc_format)
+                        worksheet.write(2, col_number, guidelines, self.desc_format)
 
                     # set the key
                     worksheet.write(3, col_number, cols, self.locked_format)
@@ -144,30 +141,24 @@ class LinkedSheetBuilder:
                         worksheet.write(4, col_number, '', hf)
 
                     # ADD EXAMPLES HERE
-                    if self.autofill_scale > 0: # flag for adding example info
+                    if self.autofill_scale > 0:  # flag for adding example info
                         self._fill_examples_from_schema(example_text, worksheet, cols, col_number, tab_name)
 
+                    col_number += 1
+                    # worksheet.merge_range(first_col=0, first_row=4, last_col= len(detail["columns"]), last_row=4,
+                    # cell_format= self.header_format, data="FILL OUT INFORMATION BELOW THIS ROW")
 
-
-                    col_number+=1
-                    # worksheet.merge_range(first_col=0, first_row=4, last_col= len(detail["columns"]), last_row=4, cell_format= self.header_format, data="FILL OUT INFORMATION BELOW THIS ROW")
-
-                if self.link_config != False: # after normal cols added to tab add linking cols
+                if self.link_config != False:  # after normal cols added to tab add linking cols
 
                     self._make_col_name_mapping(template)  # makes lookup dict for uf tab names
                     self._add_link_cols(tab_name, col_number, worksheet, hf, self.backbone_entities)
 
-
-
                     # todo add process column if on seq tab
-
-
 
         if self.include_schemas_tab:
             self._write_schemas(template.get_schema_urls())
 
         return self
-
 
     def _fill_examples_from_schema(self, example_text, worksheet, cols, col_number, tab_name):
         double_prefix = 'Should be one of: '
@@ -181,13 +172,11 @@ class LinkedSheetBuilder:
 
         prog_name = cols.split('.')
 
-
         one_liner_tabs = ['project']
         if (tab_name.endswith('protocol')) or (tab_name in one_liner_tabs):
             row_range_fill = 1
         else:
             row_range_fill = self.tab_multiplier.get(tab_name).get('y') * self.autofill_scale
-
 
         for x in range(row_range_fill):
             row_no = 5 + x
@@ -202,18 +191,12 @@ class LinkedSheetBuilder:
                 example_text_ = prog_name[0] + '_' + str(x)
             # the description field
             if (len(prog_name) == 3) and (prog_name[2].endswith('_description') and (
-            prog_name[1].endswith('_core'))):  # TODO hard coded assumption?
+                    prog_name[1].endswith('_core'))):  # TODO hard coded assumption?
                 example_text_ = 'This is a description of ' + prog_name[0]
 
             worksheet.write(row_no, col_number, example_text_, self.locked_format)
 
-
-
             # project and protocol doesn't need these multiple rows
-
-
-
-
 
     def _value_linking(self):
 
@@ -280,7 +263,6 @@ class LinkedSheetBuilder:
 
             backbone_index += 1
 
-
         uniques = []
         tab_multiplier = {}
         for entity in post_multiplier:
@@ -296,13 +278,13 @@ class LinkedSheetBuilder:
 
     def _add_link_cols(self, tab_name, col_number, worksheet, hf, backbone_entities):
 
-        #given the tab name work out what entity links need to be added
+        # given the tab name work out what entity links need to be added
 
         _link_to_tab = []
         index_list = [i for i, e in enumerate(backbone_entities) if e == tab_name]
         for x in index_list:
             if x > 0:
-                _link_to_tab.append(backbone_entities[x-1])
+                _link_to_tab.append(backbone_entities[x - 1])
 
         # add link columns
         for link_to_tab in _link_to_tab:
@@ -313,11 +295,10 @@ class LinkedSheetBuilder:
 
             col_number = self._write_column_head(worksheet, col_number, uf, hf, desc, prog_name, tab_name)
 
-
         # add protocol columns
         # all_to_add = []
         reverse_dict = {}
-        for k,v in self.protocols_to_add.items():
+        for k, v in self.protocols_to_add.items():
             # all_to_add += v
             try:
                 for entity in v:
@@ -336,9 +317,6 @@ class LinkedSheetBuilder:
                 uf = str('ID OF {} USED'.format(display_name.upper()))
                 desc = str('Enter protocol ID from "{}" tab that this entity was derrived from.'.format(display_name))
                 col_number = self._write_column_head(worksheet, col_number, uf, hf, desc, prog_name, tab_name)
-
-
-
 
     def _write_column_head(self, worksheet, col_number, uf, hf, desc, prog_name, tab_name):
         worksheet.write(0, col_number, uf, hf)  # user friendly name
@@ -387,10 +365,10 @@ class LinkedSheetBuilder:
                     if (pairing.get('source') == the_source) and (pairing.get('output') == the_output):
                         # protocols_to_add.append(protocol_prog_name)
                         if protocol_prog_name in protocols_to_add:
-                            protocols_to_add[protocol_prog_name] = protocols_to_add.get(protocol_prog_name).append(the_output)
+                            protocols_to_add[protocol_prog_name] = protocols_to_add.get(protocol_prog_name).append(
+                                the_output)
                         else:
                             protocols_to_add[protocol_prog_name] = [the_output]
-
 
     def _make_col_name_mapping(self, template):
         col_name_mapping = {}
@@ -399,16 +377,17 @@ class LinkedSheetBuilder:
                 display_name = value.get('display_name')
                 for col in value.get('columns'):
                     dot_parse = col.split('.')
-                    if (len(dot_parse) == 3) and ((dot_parse[2] == 'protocol_id') or (dot_parse[2] == 'biomaterial_id')) and (dot_parse[1].endswith('_core')): #todo WARNING verging on hard coded
+                    if (len(dot_parse) == 3) and (
+                            (dot_parse[2] == 'protocol_id') or (dot_parse[2] == 'biomaterial_id')) and (
+                    dot_parse[1].endswith('_core')):  # todo WARNING verging on hard coded
                         prog_name = col
 
                 col_name_mapping[key] = [display_name, prog_name]
         self.col_name_mapping = col_name_mapping
 
-
     def _get_value_for_column(self, template, col_name, property):
         try:
-            uf = str(template.lookup(col_name + "."+property)) if template.lookup(col_name + "."+property) else ""
+            uf = str(template.lookup(col_name + "." + property)) if template.lookup(col_name + "." + property) else ""
             return uf
         except:
             print("No property " + property + " for " + col_name)
@@ -439,7 +418,6 @@ class LinkedSheetBuilder:
         except:
             return key
 
-
     def _write_schemas(self, schema_urls):
         worksheet = self.workbook.add_worksheet("Schemas")
         worksheet.write(0, 0, "Schemas")
@@ -447,7 +425,6 @@ class LinkedSheetBuilder:
             worksheet.write(index + 1, 0, url)
 
     # unmodified by hewgreen
-
 
     def generate_workbook(self, tabs_template=None, schema_urls=list(), include_schemas_tab=False):
 
@@ -463,24 +440,20 @@ class LinkedSheetBuilder:
         self._build(template)
         return self
 
-
     def save_workbook(self):
         self.workbook.close()
-
-
-
 
 
 if __name__ == '__main__':
     parser = ArgumentParser()
     parser.add_argument("-y", "--yaml", dest="yaml",
-                      help="The YAML file from which to generate the spreadsheet")
+                        help="The YAML file from which to generate the spreadsheet")
     parser.add_argument("-o", "--output", dest="output",
-                      help="Name of the output spreadsheet")
+                        help="Name of the output spreadsheet")
     parser.add_argument("-u", "--url", dest="url",
-                      help="Optional ingest API URL - if not default (prod)")
+                        help="Optional ingest API URL - if not default (prod)")
     parser.add_argument("-r", "--hidden_row", action="store_true",
-                      help="Binary flag - if set, the 4th row will be hidden")
+                        help="Binary flag - if set, the 4th row will be hidden")
     args = parser.parse_args()
 
     if not args.output:
@@ -504,4 +477,3 @@ if __name__ == '__main__':
     spreadsheet_builder = SpreadsheetBuilder(output_file, hide_row)
     spreadsheet_builder.generate_workbook(tabs_template=args.yaml, schema_urls=all_schemas)
     spreadsheet_builder.save_workbook()
-

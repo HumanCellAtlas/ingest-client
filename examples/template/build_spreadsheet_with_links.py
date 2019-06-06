@@ -8,8 +8,6 @@ __date__ = "31/01/2019"
 
 from ingest.template.linked_sheet_builder import LinkedSheetBuilder
 
-
-
 '''
 Input notes
 
@@ -31,7 +29,6 @@ Only symmetrical linking between entities can be automatically filled
 # to make three sheets
 
 
-
 # to make one sheet
 
 # backbone = [
@@ -45,127 +42,124 @@ Only symmetrical linking between entities can be automatically filled
 # ]
 
 backbone = [
-        {'donor_organism': 1},
-        {'specimen_from_organism': 1},
-        {'cell_suspension': 1},
-        {'sequence_file': 3}
+    {'donor_organism': 1},
+    {'specimen_from_organism': 1},
+    {'cell_suspension': 1},
+    {'sequence_file': 3}
 ]
-
-
 
 protocol_pairings = {
     "collection_protocol": [
-      {
-        "source": "donor_organism",
-        "output": "specimen_from_organism"
-      }
+        {
+            "source": "donor_organism",
+            "output": "specimen_from_organism"
+        }
     ],
     "aggregate_generation_protocol": [
-      {
-        "source": "cell_line",
-        "output": "organoid"
-      },
-      {
-        "source": "specimen_from_organism",
-        "output": "organoid"
-      }
+        {
+            "source": "cell_line",
+            "output": "organoid"
+        },
+        {
+            "source": "specimen_from_organism",
+            "output": "organoid"
+        }
     ],
     "differentiation_protocol": [
-      {
-        "source": "cell_line",
-        "output": "cell_suspension"
-      },
-      {
-        "source": "cell_line",
-        "output": "cell_line"
-      },
-      {
-        "source": "cell_line",
-        "output": "organoid"
-      }
+        {
+            "source": "cell_line",
+            "output": "cell_suspension"
+        },
+        {
+            "source": "cell_line",
+            "output": "cell_line"
+        },
+        {
+            "source": "cell_line",
+            "output": "organoid"
+        }
     ],
     "dissociation_protocol": [
-       {
-        "source": "specimen_from_organism",
-        "output": "cell_line"
-      },
-      {
-        "source": "specimen_from_organism",
-        "output": "cell_suspension"
-      },
-      {
-        "source": "cell_line",
-        "output": "cell_suspension"
-      },
-       {
-        "source": "organoid",
-        "output": "cell_suspension"
-      }
+        {
+            "source": "specimen_from_organism",
+            "output": "cell_line"
+        },
+        {
+            "source": "specimen_from_organism",
+            "output": "cell_suspension"
+        },
+        {
+            "source": "cell_line",
+            "output": "cell_suspension"
+        },
+        {
+            "source": "organoid",
+            "output": "cell_suspension"
+        }
     ],
     "enrichment_protocol": [
-      {
-        "source": "specimen_from_organism",
-        "output": "cell_line"
-      },
-      {
-        "source": "specimen_from_organism",
-        "output": "cell_suspension"
-      },
-      {
-        "source": "cell_line",
-        "output": "cell_suspension"
-      },
-      {
-        "source": "organoid",
-        "output": "cell_suspension"
-      }
+        {
+            "source": "specimen_from_organism",
+            "output": "cell_line"
+        },
+        {
+            "source": "specimen_from_organism",
+            "output": "cell_suspension"
+        },
+        {
+            "source": "cell_line",
+            "output": "cell_suspension"
+        },
+        {
+            "source": "organoid",
+            "output": "cell_suspension"
+        }
     ],
     "ipsc_induction_protocol": [
-       {
-        "source": "cell_line",
-        "output": "cell_line"
-      },
-      {
-        "source": "specimen_from_organism",
-        "output": "cell_line"
-      }
+        {
+            "source": "cell_line",
+            "output": "cell_line"
+        },
+        {
+            "source": "specimen_from_organism",
+            "output": "cell_line"
+        }
     ],
     "imaging_preparation_protocol": [
-      {
-        "source": "specimen_from_organism",
-        "output": "imaged_specimen"
-      }
+        {
+            "source": "specimen_from_organism",
+            "output": "imaged_specimen"
+        }
     ],
     "imaging_protocol": [
-      {
-        "source": "imaged_specimen",
-        "output": "image_file"
-      }
+        {
+            "source": "imaged_specimen",
+            "output": "image_file"
+        }
     ],
     "library_preparation_protocol": [
-      {
-        "source": "cell_suspension",
-        "output": "sequence_file"
-      }
+        {
+            "source": "cell_suspension",
+            "output": "sequence_file"
+        }
     ],
     "sequencing_protocol": [
-      {
-        "source": "cell_suspension",
-        "output": "sequence_file"
-      }
+        {
+            "source": "cell_suspension",
+            "output": "sequence_file"
+        }
     ]
-  }
-
+}
 
 link_config = [backbone, protocol_pairings]
 autofill_scale = 1
-
 
 # build a generic spreadsheet from the latest schemas
 
 # spreadsheet_builder = LinkedSheetBuilder("generic_with_links.xlsx")
 
-spreadsheet_builder = LinkedSheetBuilder("generic_with_links.xlsx", link_config=link_config, autofill_scale=autofill_scale)
+spreadsheet_builder = LinkedSheetBuilder("generic_with_links.xlsx", link_config=link_config,
+                                         autofill_scale=autofill_scale)
 
 # spreadsheet_builder = LinkedSheetBuilder("generic_with_links.xlsx")
 spreadsheet_builder.generate_workbook()
