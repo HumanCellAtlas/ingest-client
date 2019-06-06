@@ -48,6 +48,9 @@ class Bundle:
     def get_file(self, uuid):
         return self._file_map.get(uuid)
 
+    def update_file(self, metadata_resource):
+        pass
+
 
 class MetadataService:
 
