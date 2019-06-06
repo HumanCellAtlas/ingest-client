@@ -58,10 +58,10 @@ class MetadataResourceTest(TestCase):
                          metadata_resource_2.get_staging_file_name())
 
 
-def _create_test_bundle_file(uuid='', name='', content_type='application/json', version='',
+def _create_test_bundle_file(uuid='', name='', content_type='biomaterial', version='',
                              indexed=True):
-    return {'uuid': uuid, 'name': name, 'content-type': content_type, 'version': version,
-            'indexed': indexed}
+    return {'content-type': f'application/json; dcp-type="{content_type}"', 'uuid': uuid,
+            'name': name, 'version': version, 'indexed': indexed}
 
 
 class BundleTest(TestCase):
@@ -91,6 +91,28 @@ class BundleTest(TestCase):
         self.assertEqual(file_2['version'], target_file.get('version'))
         self.assertEqual(file_2['indexed'], target_file.get('indexed'))
 
+    def test_update_file(self):
+        # given:
+        uuid = '5a583ae9-2a28-4d6d-8109-7e47c56bd5ad'
+        bundle_file = _create_test_bundle_file(uuid=uuid, name='cell_suspension_0.json',
+                                               version='2019-06-05T160722.098000Z', indexed=False)
+        bundle = Bundle(source={'files': [bundle_file]})
+
+        # and:
+        metadata_resource = MetadataResource(metadata_type='cell_suspension_x',
+                                             uuid=uuid,
+                                             metadata_json={'text': 'description'},
+                                             dcp_version='2019-06-12T141414.077000Z')
+
+        # when:
+        bundle.update_file(metadata_resource)
+
+        # then:
+        updated_file = bundle.get_file(uuid)
+        self.assertEqual(metadata_resource.dcp_version, updated_file.get('version'))
+        self.assertEqual('application/json; dcp-type="cell_suspension_x"',
+                         updated_file.get('content-type'))
+
 
 class MetadataServiceTest(TestCase):
 
@@ -116,29 +138,6 @@ class MetadataServiceTest(TestCase):
         self.assertEqual(uuid, metadata_resource.uuid)
         self.assertEqual(raw_metadata['content'], metadata_resource.metadata_json)
         self.assertEqual(raw_metadata['dcpVersion'], metadata_resource.dcp_version)
-
-    def test_update_file(self):
-        # given:
-        uuid = '5a583ae9-2a28-4d6d-8109-7e47c56bd5ad'
-        bundle_file = {'uuid': uuid,
-                       'name': 'cell_suspension_0.json',
-                       'content-type': 'application/json',
-                       'version': '2019-06-05T160722.098000Z',
-                       'indexed': True}
-        bundle = Bundle(source={'files': [bundle_file]})
-
-        # and:
-        metadata_resource = MetadataResource(metadata_type='cell_suspension',
-                                             uuid=uuid,
-                                             metadata_json={'text': 'description'},
-                                             dcp_version='2019-06-12T141414.077000Z')
-
-        # when:
-        bundle.update_file(metadata_resource)
-
-        # then:
-        updated_file = bundle.get_file(uuid)
-        self.assertIsNotNone(updated_file)
 
 
 class StagingServiceTest(TestCase):
