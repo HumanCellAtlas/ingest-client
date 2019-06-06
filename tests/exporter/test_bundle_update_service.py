@@ -75,7 +75,7 @@ class BundleTest(TestCase):
         file_2 = _create_test_bundle_file(uuid='b56f4e1f-3651-463e-8e6f-b931ea5f21a2',
                                           name='donor_organism_1.json',
                                           version='2019-06-06T1034255.023000Z')
-        bundle = Bundle(source={'files': [file_1, file_2]})
+        bundle = Bundle(source={'bundle': {'files': [file_1, file_2]}})
 
         # when:
         target_file = bundle.get_file(file_2['uuid'])
@@ -97,7 +97,7 @@ class BundleTest(TestCase):
         uuid = '5a583ae9-2a28-4d6d-8109-7e47c56bd5ad'
         bundle_file = _create_test_bundle_file(uuid=uuid, name='cell_suspension_0.json',
                                                version='2019-06-05T160722.098000Z', indexed=False)
-        bundle = Bundle(source={'files': [bundle_file]})
+        bundle = Bundle(source={'bundle': {'files': [bundle_file]}})
 
         # and:
         metadata_resource = MetadataResource(metadata_type='cell_suspension_x',

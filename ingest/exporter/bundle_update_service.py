@@ -48,10 +48,11 @@ class Bundle:
 
     def __init__(self, source={}):
         self._source = deepcopy(source)
+        self._bundle = self._source.get('bundle') # because bundle is nested in the root ¯\_(ツ)_/¯
         self._prepare_file_map()
 
     def _prepare_file_map(self):
-        bundle_files = self._source.get('files')
+        bundle_files = self._bundle.get('files')
         if not bundle_files:
             bundle_files = []
         self._file_map = {file.get('uuid'): file for file in bundle_files}
