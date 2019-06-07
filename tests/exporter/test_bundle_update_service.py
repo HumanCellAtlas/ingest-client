@@ -1,6 +1,6 @@
 from unittest import TestCase
 
-from mock import Mock
+from mock import Mock, call
 
 from ingest.api.stagingapi import FileDescription
 from ingest.exporter.bundle_update_service import BundleUpdateService, MetadataResource, \
@@ -208,16 +208,28 @@ class BundleServiceTest(TestCase):
         service = BundleService(dss_client)
 
         # and:
-        test_file_1 = _create_test_bundle_file(uuid='51e37d20-6dc4-41e4-9ae5-36e0c6d4c1e6')
-        test_file_2 = _create_test_bundle_file(uuid='ab81c860-b114-484a-a134-3923a7e0041b')
+        uuid_1 = '51e37d20-6dc4-41e4-9ae5-36e0c6d4c1e6'
+        staging_info_1 = StagingInfo(metadata_uuid=uuid_1, file_name='cell_suspension_0.json',
+                                     cloud_url='http://sample.tld/files/file0.json')
+        uuid_2 = 'ab81c860-b114-484a-a134-3923a7e0041b'
+        staging_info_2 = StagingInfo(metadata_uuid=uuid_2, file_name='cell_suspension_1.json',
+                                     cloud_url='http://sample.tld/files/file1.json')
+
+        # and:
+        file_1 = _create_test_bundle_file(uuid=uuid_1, version='2019-06-07T170321.000000Z')
+        file_2 = _create_test_bundle_file(uuid=uuid_2, version='2019-06-01T103033.000000Z')
         bundle = Bundle(source={'bundle': {'uuid': '25f26f33-9413-45e0-b83c-979ce59cef62',
-                                           'files': [test_file_1, test_file_2]}})
+                                           'files': [file_1, file_2]}})
 
         # when:
-        service.update(bundle)
+        service.update(bundle, [staging_info_1, staging_info_2])
 
         # then:
-        dss_client.put_file.assert_called()
+        dss_client.put_file.assert_has_calls(
+            [call(None, {'url': staging_info_1.cloud_url, 'dss_uuid': uuid_1,
+                         'update_date': file_1['version']}),
+             call(None, {'url': staging_info_2.cloud_url, 'dss_uuid': uuid_2,
+                         'update_date': file_2['version']})], any_order=True)
 
 
 class BundleUpdateServiceTest(TestCase):

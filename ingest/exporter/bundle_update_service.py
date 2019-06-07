@@ -48,7 +48,7 @@ class Bundle:
 
     def __init__(self, source={}):
         self._source = deepcopy(source)
-        self._bundle = self._source.get('bundle') # because bundle is nested in the root ¯\_(ツ)_/¯
+        self._bundle = self._source.get('bundle')  # because bundle is nested in the root ¯\_(ツ)_/¯
         self._prepare_file_map()
         self.uuid = self._bundle.get('uuid')
 
@@ -70,6 +70,10 @@ class Bundle:
         target_file['content-type'] = f'application/json; ' \
             f'dcp-type="{metadata_resource.metadata_type}"'
 
+    def for_each_file(self, action):
+        for file in self._file_map.values():
+            action(file)
+
 
 class MetadataService:
 
@@ -82,7 +86,8 @@ class MetadataService:
 
 
 class StagedMetadataResource:
-    def __init__(self, metadata_resource: MetadataResource, staged_file_description: FileDescription):
+    def __init__(self, metadata_resource: MetadataResource,
+                 staged_file_description: FileDescription):
         self.metadata_resource = metadata_resource
         self.staged_file_description = staged_file_description
 
@@ -96,10 +101,10 @@ class DSSMetadataFileResource:
 
 class StagingInfo:
 
-    def __init__(self, metadata_uuid='', file_description: FileDescription=None):
+    def __init__(self, metadata_uuid='', file_name='', cloud_url=''):
         self.metadata_uuid = metadata_uuid
-        self.file_name = file_description.name if file_description else  None
-        self.cloud_url = file_description.url if file_description else None
+        self.file_name = file_name
+        self.cloud_url = cloud_url
 
 
 class StagingService:
@@ -110,11 +115,11 @@ class StagingService:
     def stage_update(self, staging_area_uuid,
                      metadata_resource: MetadataResource) -> FileDescription:
         file_description = self.staging_client.stageFile(staging_area_uuid,
-                                             metadata_resource.get_staging_file_name(),
-                                             metadata_resource.metadata_json,
-                                             metadata_resource.metadata_type)
+                                                         metadata_resource.get_staging_file_name(),
+                                                         metadata_resource.metadata_json,
+                                                         metadata_resource.metadata_type)
         return StagingInfo(metadata_uuid=metadata_resource.uuid,
-                           file_description=file_description)
+                           file_name=file_description.name, cloud_url=file_description.url)
 
 
 class BundleService:
@@ -126,8 +131,16 @@ class BundleService:
         bundle_source = self.dss_client.get_bundle(uuid)
         return Bundle(source=bundle_source)
 
-    def update(self, bundle):
-        self.dss_client.put_file()
+    def update(self, bundle: Bundle, staging_details: list):
+        cloud_url_map = {info.metadata_uuid: info.cloud_url for info in staging_details}
+
+        def upload_to_dss(file):
+            uuid = file.get('uuid')
+            cloud_url = cloud_url_map.get(uuid)
+            self.dss_client.put_file(None, {'url': cloud_url, 'dss_uuid': uuid,
+                                            'update_date': file.get('version')})
+
+        bundle.for_each_file(upload_to_dss)
 
 
 class BundleUpdateService:
@@ -151,7 +164,7 @@ class BundleUpdateService:
 
         staging_area_id = update_submission["stagingDetails"]["stagingAreaUuid"]["uuid"]
         staged_file_descriptions = [self.staging_service.stage_update(metadata) for metadata in
-                        metadata_resources]
+                                    metadata_resources]
 
     # TODO remove this
     def _temporarily_keep_this(self, bundle_uuid, staged_metadata_resources,
@@ -159,11 +172,14 @@ class BundleUpdateService:
         # get all DSS bundles and patch in the updated DSS files
         dss_bundle_resource = self.get_bundle(bundle_uuid)
         dss_metadata_files = self.dss_store_metadata_updates(staged_metadata_resources)
-        updated_bundle_files = BundleUpdateService.generate_patched_bundle_files(dss_bundle_resource, dss_metadata_files)
-        updated_bundle = self.create_bundle(bundle_uuid, updated_bundle_version, updated_bundle_files)
+        updated_bundle_files = BundleUpdateService.generate_patched_bundle_files(
+            dss_bundle_resource, dss_metadata_files)
+        updated_bundle = self.create_bundle(bundle_uuid, updated_bundle_version,
+                                            updated_bundle_files)
         return updated_bundle
 
-    def stage_metadata_resources(self, metadata_resources: Iterable[MetadataResource], staging_area_id: str) -> Iterable[StagedMetadataResource]:
+    def stage_metadata_resources(self, metadata_resources: Iterable[MetadataResource],
+                                 staging_area_id: str) -> Iterable[StagedMetadataResource]:
         result = list(map(lambda metadata_resource: BundleUpdateService._stage_metadata_resource(
             metadata_resource, staging_area_id, self.staging_client), metadata_resources))
         return result
@@ -178,49 +194,59 @@ class BundleUpdateService:
         return BundleUpdateService._get_bundle(bundle_uuid, self.dss_client)
 
     def create_bundle(self, bundle_uuid: str, bundle_version: str, bundle_files: Iterable[dict]):
-        return BundleUpdateService._create_bundle(bundle_uuid, bundle_version, bundle_files, self.dss_client)
+        return BundleUpdateService._create_bundle(bundle_uuid, bundle_version, bundle_files,
+                                                  self.dss_client)
 
     @staticmethod
     def _get_bundle(bundle_uuid: str, dss_client: DssApi):
         return dss_client.get_bundle(bundle_uuid)
 
     @staticmethod
-    def _create_bundle(bundle_uuid: str, bundle_version: str, bundle_files: Iterable[dict], dss_client: DssApi) -> dict:
+    def _create_bundle(bundle_uuid: str, bundle_version: str, bundle_files: Iterable[dict],
+                       dss_client: DssApi) -> dict:
         return dss_client.put_bundle(bundle_uuid, bundle_version, list(bundle_files))
 
     @staticmethod
-    def _stage_metadata_resource(metadata_resource: MetadataResource, staging_area_id: str, staging_client: StagingApi) -> StagedMetadataResource:
-        metadata_stage_request = BundleUpdateService.generate_metadata_stage_request(staging_area_id, metadata_resource)
+    def _stage_metadata_resource(metadata_resource: MetadataResource, staging_area_id: str,
+                                 staging_client: StagingApi) -> StagedMetadataResource:
+        metadata_stage_request = BundleUpdateService.generate_metadata_stage_request(
+            staging_area_id, metadata_resource)
         staged_metadata = BundleUpdateService._stage_update(metadata_stage_request, staging_client)
         return StagedMetadataResource(metadata_resource, staged_metadata)
 
     @staticmethod
-    def _stage_update(metadata_file_stage_request: MetadataFileStagingRequest, staging_client: StagingApi) -> FileDescription:
+    def _stage_update(metadata_file_stage_request: MetadataFileStagingRequest,
+                      staging_client: StagingApi) -> FileDescription:
         return staging_client.stageFileRequest(metadata_file_stage_request)
 
     @staticmethod
-    def _dss_store_update_file(staged_metadata_file: StagedMetadataResource, dss_client: DssApi) -> DSSMetadataFileResource:
-        dss_file_create_request = BundleUpdateService.generate_dss_metadata_file_create_request(staged_metadata_file)
-        return DSSMetadataFileResource(dss_client.create_file(dss_file_create_request), 
-                                       dss_file_create_request.uuid, 
+    def _dss_store_update_file(staged_metadata_file: StagedMetadataResource,
+                               dss_client: DssApi) -> DSSMetadataFileResource:
+        dss_file_create_request = BundleUpdateService.generate_dss_metadata_file_create_request(
+            staged_metadata_file)
+        return DSSMetadataFileResource(dss_client.create_file(dss_file_create_request),
+                                       dss_file_create_request.uuid,
                                        staged_metadata_file.metadata_resource)
 
     @staticmethod
-    def generate_metadata_stage_request(staging_area_id: str, metadata_resource: MetadataResource) -> MetadataFileStagingRequest:
+    def generate_metadata_stage_request(staging_area_id: str,
+                                        metadata_resource: MetadataResource) -> MetadataFileStagingRequest:
         filename = f'{metadata_resource.uuid}.{metadata_resource.dcp_version}.json'
         metadata_json = metadata_resource.metadata_json
         metadata_type = metadata_resource.metadata_type
         return MetadataFileStagingRequest(staging_area_id, filename, metadata_json, metadata_type)
 
     @staticmethod
-    def generate_dss_metadata_file_create_request(staged_metadata_file: StagedMetadataResource) -> DSSFileCreateRequest:
+    def generate_dss_metadata_file_create_request(
+            staged_metadata_file: StagedMetadataResource) -> DSSFileCreateRequest:
         uuid = staged_metadata_file.metadata_resource.uuid
         version = staged_metadata_file.metadata_resource.dcp_version
         source_cloud_url = staged_metadata_file.staged_file_description.url
         return DSSFileCreateRequest(uuid, version, source_cloud_url)
 
     @staticmethod
-    def generate_uuid_dss_file_map(dss_files: Iterable[DSSMetadataFileResource]) -> Dict[str, DSSMetadataFileResource]:
+    def generate_uuid_dss_file_map(dss_files: Iterable[DSSMetadataFileResource]) -> Dict[
+        str, DSSMetadataFileResource]:
         """
         Generates a hashmap of dss-file-uuid -> dss-file-resource
         :param dss_files:
@@ -230,8 +256,10 @@ class BundleUpdateService:
         return dict(file_list)
 
     @staticmethod
-    def generate_patched_bundle_files(bundle_resource, dss_metadata_update_files: Iterable[DSSMetadataFileResource]) -> Iterable[dict]:
-        uuid_dss_file_map = BundleUpdateService.generate_uuid_dss_file_map(dss_metadata_update_files)
+    def generate_patched_bundle_files(bundle_resource, dss_metadata_update_files: Iterable[
+        DSSMetadataFileResource]) -> Iterable[dict]:
+        uuid_dss_file_map = BundleUpdateService.generate_uuid_dss_file_map(
+            dss_metadata_update_files)
         patched_bundle = dict(bundle_resource)
         bundle_files = patched_bundle["files"]
 
