@@ -196,6 +196,23 @@ class BundleServiceTest(TestCase):
         self.assertEqual(1, bundle.count_files())
         self.assertEqual(test_file, bundle.get_file(test_file['uuid']))
 
+    def test_update(self):
+        # given:
+        dss_client = Mock(name='dss_client')
+        service = BundleService(dss_client)
+
+        # and:
+        test_file_1 = _create_test_bundle_file(uuid='51e37d20-6dc4-41e4-9ae5-36e0c6d4c1e6')
+        test_file_2 = _create_test_bundle_file(uuid='ab81c860-b114-484a-a134-3923a7e0041b')
+        bundle = Bundle(source={'bundle': {'uuid': '25f26f33-9413-45e0-b83c-979ce59cef62',
+                                           'files': [test_file_1, test_file_2]}})
+
+        # when:
+        service.update(bundle)
+
+        # then:
+        dss_client.put_file.assert_called()
+
 
 class BundleUpdateServiceTest(TestCase):
 

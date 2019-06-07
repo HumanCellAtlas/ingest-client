@@ -116,6 +116,9 @@ class BundleService:
         bundle_source = self.dss_client.get_bundle(uuid)
         return Bundle(source=bundle_source)
 
+    def update(self, bundle):
+        self.dss_client.put_file()
+
 
 class BundleUpdateService:
 
