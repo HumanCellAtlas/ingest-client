@@ -94,6 +94,14 @@ class DSSMetadataFileResource:
         self.metadata_resource = metadata_resource
 
 
+class StagingInfo:
+
+    def __init__(self, metadata_uuid='', file_description: FileDescription=None):
+        self.metadata_uuid = metadata_uuid
+        self.file_name = file_description.name if file_description else  None
+        self.cloud_url = file_description.url if file_description else None
+
+
 class StagingService:
 
     def __init__(self, staging_client):
@@ -101,10 +109,12 @@ class StagingService:
 
     def stage_update(self, staging_area_uuid,
                      metadata_resource: MetadataResource) -> FileDescription:
-        return self.staging_client.stageFile(staging_area_uuid,
+        file_description = self.staging_client.stageFile(staging_area_uuid,
                                              metadata_resource.get_staging_file_name(),
                                              metadata_resource.metadata_json,
                                              metadata_resource.metadata_type)
+        return StagingInfo(metadata_uuid=metadata_resource.uuid,
+                           file_description=file_description)
 
 
 class BundleService:

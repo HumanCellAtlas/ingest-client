@@ -4,7 +4,7 @@ from mock import Mock
 
 from ingest.api.stagingapi import FileDescription
 from ingest.exporter.bundle_update_service import BundleUpdateService, MetadataResource, \
-    StagingService, MetadataService, Bundle, BundleService
+    StagingService, MetadataService, Bundle, BundleService, StagingInfo
 
 
 class MetadataResourceTest(TestCase):
@@ -153,19 +153,25 @@ class StagingServiceTest(TestCase):
 
         # and:
         staging_client = Mock(name='staging_client')
-        test_file_description = FileDescription(['chks0mz'], 'application/json', 'file.name', 1024,
-                                                'domain.com/file.url')
-        staging_client.stageFile = Mock(return_value=test_file_description)
+        file_description = FileDescription(['chks0mz'], 'application/json', 'file.name', 1024,
+                                                'http://domain.com/file.url')
+        staging_client.stageFile = Mock(return_value=file_description)
 
         # and:
         staging_service = StagingService(staging_client)
 
         # when:
         staging_area_uuid = '7455716e-9639-41d9-bff9-d763f9ee028d'
-        file_description = staging_service.stage_update(staging_area_uuid, metadata_resource)
+        staging_info = staging_service.stage_update(staging_area_uuid, metadata_resource)
 
         # then:
-        self.assertEqual(test_file_description, file_description)
+        self.assertTrue(type(staging_info) is StagingInfo,
+                        'stage_update should return StagingRecord.')
+        self.assertEqual(metadata_resource.uuid, staging_info.metadata_uuid)
+        self.assertEqual(file_description.name, staging_info.file_name)
+        self.assertEqual(file_description.url, staging_info.cloud_url)
+
+        # and:
         staging_client.stageFile.assert_called_once_with(staging_area_uuid,
                                                          metadata_resource.get_staging_file_name(),
                                                          metadata_resource.metadata_json,
