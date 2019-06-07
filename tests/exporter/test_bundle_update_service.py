@@ -92,6 +92,19 @@ class BundleTest(TestCase):
         self.assertEqual(file_2['version'], target_file.get('version'))
         self.assertEqual(file_2['indexed'], target_file.get('indexed'))
 
+    def test_update_version(self):
+        # given:
+        original_version = '2019-06-03T134835.366000Z'
+        bundle = Bundle(source={'bundle': {'version': original_version}})
+        self.assertEqual(original_version, bundle.get_version())
+
+        # when:
+        updated_version = '2019-06-10T141005.279000Z'
+        bundle.update_version(updated_version)
+
+        # then:
+        self.assertEqual(updated_version, bundle.get_version())
+
     def test_update_file(self):
         # given:
         uuid = '5a583ae9-2a28-4d6d-8109-7e47c56bd5ad'

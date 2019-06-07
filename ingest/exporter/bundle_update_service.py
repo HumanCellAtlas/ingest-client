@@ -58,11 +58,17 @@ class Bundle:
             bundle_files = []
         self._file_map = {file.get('uuid'): file for file in bundle_files}
 
+    def get_version(self):
+        return self._bundle.get('version')
+
     def get_file(self, uuid):
         return self._file_map.get(uuid)
 
     def count_files(self):
         return len(self._file_map)
+
+    def update_version(self, version):
+        self._bundle['version'] = version
 
     def update_file(self, metadata_resource: MetadataResource):
         target_file = self.get_file(metadata_resource.uuid)
