@@ -76,8 +76,7 @@ class Bundle:
     def update_file(self, metadata_resource: MetadataResource):
         target_file = self.get_file(metadata_resource.uuid)
         target_file['version'] = metadata_resource.dcp_version
-        target_file['content-type'] = f'application/json; ' \
-            f'dcp-type="{metadata_resource.metadata_type}"'
+        target_file['content-type'] = f'metadata/{metadata_resource.metadata_type}'
 
 
 class MetadataService:

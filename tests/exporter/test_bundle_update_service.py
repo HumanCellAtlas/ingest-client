@@ -124,8 +124,7 @@ class BundleTest(TestCase):
         # then:
         updated_file = bundle.get_file(uuid)
         self.assertEqual(metadata_resource.dcp_version, updated_file.get('version'))
-        self.assertEqual('application/json; dcp-type="cell_suspension_x"',
-                         updated_file.get('content-type'))
+        self.assertEqual('metadata/cell_suspension_x', updated_file.get('content-type'))
 
 
 class MetadataServiceTest(TestCase):
