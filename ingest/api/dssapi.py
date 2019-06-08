@@ -18,14 +18,6 @@ __date__ = "12/09/2017"
 AUTH_INFO_ENV_VAR = "EXPORTER_AUTH_INFO"
 
 
-
-
-class DSSFileCreateRequest:
-    def __init__(self, uuid, version, source_cloud_url):
-        self.uuid = uuid
-        self.version = version
-        self.source_cloud_url = source_cloud_url
-
 class DssApi:
     def __init__(self, url=None):
         format = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
@@ -46,13 +38,6 @@ class DssApi:
         self.hca_client = hca.dss.DSSClient(swagger_url=f'{self.url}/v1/swagger.json')
         self.hca_client.host = self.url + "/v1"
         self.creator_uid = 8008
-
-    def create_file(self, dss_file_create_request: DSSFileCreateRequest) -> dict:
-        return self.put_file(None, {
-            "url": dss_file_create_request.source_cloud_url,
-            "dss_uuid": dss_file_create_request.uuid,
-            "update_date": dss_file_create_request.version
-        })
 
     def put_file(self, bundle_uuid, file):
         url = file["url"]
