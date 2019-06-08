@@ -64,6 +64,9 @@ class Bundle:
     def get_file(self, uuid):
         return self._file_map.get(uuid)
 
+    def get_files(self):
+        return list(self._file_map.values())
+
     def count_files(self):
         return len(self._file_map)
 
@@ -75,10 +78,6 @@ class Bundle:
         target_file['version'] = metadata_resource.dcp_version
         target_file['content-type'] = f'application/json; ' \
             f'dcp-type="{metadata_resource.metadata_type}"'
-
-    def for_each_file(self, action):
-        for file in self._file_map.values():
-            action(file)
 
 
 class MetadataService:
@@ -139,16 +138,12 @@ class BundleService:
 
     def update(self, bundle: Bundle, staging_details: list):
         cloud_url_map = {info.metadata_uuid: info.cloud_url for info in staging_details}
-        bundle_files = []
-
-        def upload_to_dss(file):
+        bundle_files = bundle.get_files()
+        for file in bundle_files:
             uuid = file.get('uuid')
             cloud_url = cloud_url_map.get(uuid)
             self.dss_client.put_file(None, {'url': cloud_url, 'dss_uuid': uuid,
                                             'update_date': file.get('version')})
-            bundle_files.append(file)
-
-        bundle.for_each_file(upload_to_dss)
         self.dss_client.put_bundle(bundle.uuid, bundle.get_version(), bundle_files)
 
 
