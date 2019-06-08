@@ -229,10 +229,12 @@ class BundleServiceTest(TestCase):
                                      cloud_url='http://sample.tld/files/file1.json')
 
         # and:
+        bundle_uuid = '25f26f33-9413-45e0-b83c-979ce59cef62'
         file_1 = _create_test_bundle_file(uuid=uuid_1, version='2019-06-07T170321.000000Z')
         file_2 = _create_test_bundle_file(uuid=uuid_2, version='2019-06-01T103033.000000Z')
-        bundle = Bundle(source={'bundle': {'uuid': '25f26f33-9413-45e0-b83c-979ce59cef62',
-                                           'files': [file_1, file_2]}})
+        bundle_version = '2019-06-07T220321.010000Z'
+        bundle = Bundle(source={'bundle': {'uuid': bundle_uuid, 'files': [file_1, file_2],
+                                           'version': bundle_version}})
 
         # when:
         service.update(bundle, [staging_info_1, staging_info_2])
@@ -243,6 +245,9 @@ class BundleServiceTest(TestCase):
                          'update_date': file_1['version']}),
              call(None, {'url': staging_info_2.cloud_url, 'dss_uuid': uuid_2,
                          'update_date': file_2['version']})], any_order=True)
+
+        # and:
+        dss_client.put_bundle.assert_called_once_with(bundle_uuid, bundle_version, [file_1, file_2])
 
 
 class BundleUpdateServiceTest(TestCase):

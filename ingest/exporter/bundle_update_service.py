@@ -119,7 +119,7 @@ class StagingService:
         self.staging_client = staging_client
 
     def stage_update(self, staging_area_uuid,
-                     metadata_resource: MetadataResource) -> FileDescription:
+                     metadata_resource: MetadataResource) -> StagingInfo:
         file_description = self.staging_client.stageFile(staging_area_uuid,
                                                          metadata_resource.get_staging_file_name(),
                                                          metadata_resource.metadata_json,
@@ -139,14 +139,17 @@ class BundleService:
 
     def update(self, bundle: Bundle, staging_details: list):
         cloud_url_map = {info.metadata_uuid: info.cloud_url for info in staging_details}
+        bundle_files = []
 
         def upload_to_dss(file):
             uuid = file.get('uuid')
             cloud_url = cloud_url_map.get(uuid)
             self.dss_client.put_file(None, {'url': cloud_url, 'dss_uuid': uuid,
                                             'update_date': file.get('version')})
+            bundle_files.append(file)
 
         bundle.for_each_file(upload_to_dss)
+        self.dss_client.put_bundle(bundle.uuid, bundle.get_version(), bundle_files)
 
 
 class BundleUpdateService:
