@@ -140,3 +140,17 @@ class BundleUpdateService:
         staging_area_id = update_submission["stagingDetails"]["stagingAreaUuid"]["uuid"]
         staged_file_descriptions = [self.staging_service.stage_update(metadata) for metadata in
                                     metadata_resources]
+
+
+class Exporter:
+
+    def __init__(self, metadata_service: MetadataService, staging_service: StagingService,
+                 bundle_service: BundleService):
+        self.metadata_service = metadata_service
+        self.staging_service = staging_service
+        self.bundle_service = bundle_service
+
+    def export_update(self, update_submission: dict, bundle_uuid: str, metadata_urls: list,
+                      update_version: str):
+        for url in metadata_urls:
+            self.metadata_service.fetch_resource(url)

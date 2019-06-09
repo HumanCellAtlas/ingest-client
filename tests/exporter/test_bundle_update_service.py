@@ -4,7 +4,7 @@ from mock import Mock, call
 
 from ingest.api.stagingapi import FileDescription
 from ingest.exporter.bundle_update_service import BundleUpdateService, MetadataResource, \
-    StagingService, MetadataService, Bundle, BundleService, StagingInfo
+    StagingService, MetadataService, Bundle, BundleService, StagingInfo, Exporter
 
 
 class MetadataResourceTest(TestCase):
@@ -282,3 +282,34 @@ class BundleUpdateServiceTest(TestCase):
 
         # then:
         self.assertIsNotNone(updated_bundle)
+
+
+class ExporterTest(TestCase):
+
+    def test_export_update(self):
+        # given:
+        metadata_service = Mock(name='metadata_service')
+        staging_service = Mock(name='staging_service')
+        bundle_service = Mock(name='bundle_servie')
+
+        # and:
+        metadata_urls = ['https://data.hca.tld/biomaterial/123', 'https://data.hca.tld/file/456',
+                         'https://data.hca.tld/file/789']
+        metadata_service.fetch_resource = Mock(side_effect=[Mock() for _ in metadata_urls])
+
+        # and:
+        exporter = Exporter(metadata_service, staging_service, bundle_service)
+
+        # and:
+        bundle_uuid = '9dfca176-0ddf-4384-8b71-b74237edb8be'
+        staging_area_uuid = '947a6528-184e-4a05-9af5-355e1f450609'
+        update_submission = {'stagingDetails': {'stagingAreaUuid': {'uuid': staging_area_uuid}}}
+
+        update_version = '2019-06-09T1913000.000000Z'
+
+        # when:
+        exporter.export_update(update_submission, bundle_uuid, metadata_urls, update_version)
+
+        # then:
+        metadata_service.fetch_resource.assert_has_calls([call(url) for url in metadata_urls],
+                                                         any_order=True)
