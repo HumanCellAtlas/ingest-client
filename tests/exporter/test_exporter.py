@@ -2,10 +2,10 @@ from unittest import TestCase
 
 from mock import Mock, call
 
-from ingest.exporter.bundle_update_service import Exporter
 from ingest.exporter.bundle import Bundle
-from ingest.exporter.staging import StagingInfo
+from ingest.exporter.exporter import Exporter
 from ingest.exporter.metadata import MetadataResource
+from ingest.exporter.staging import StagingInfo
 
 
 def _create_test_bundle_file(uuid='', name='', content_type='biomaterial', version='',

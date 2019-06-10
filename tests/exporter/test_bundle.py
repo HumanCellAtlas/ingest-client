@@ -5,7 +5,7 @@ from mock import Mock, call
 from ingest.exporter.bundle import Bundle, BundleService
 from ingest.exporter.metadata import MetadataResource
 from ingest.exporter.staging import StagingInfo
-from tests.exporter.test_bundle_update_service import _create_test_bundle_file
+from tests.exporter.test_exporter import _create_test_bundle_file
 
 
 class BundleTest(TestCase):
