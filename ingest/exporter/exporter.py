@@ -21,4 +21,5 @@ class Exporter:
             staging_info = self.staging_service.stage_update(staging_area_uuid, metadata_resource)
             staging_details.append(staging_info)
             bundle.update_file(metadata_resource)
+        bundle.update_version(update_version)
         self.bundle_service.update(bundle, staging_details)

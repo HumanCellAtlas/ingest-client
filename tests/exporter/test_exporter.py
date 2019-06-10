@@ -56,4 +56,5 @@ class ExporterTest(TestCase):
             [call(staging_area_uuid, metadata) for metadata in metadata_resources], any_order=True)
         bundle.update_file.assert_has_calls([call(metadata) for metadata in metadata_resources],
                                             any_order=True)
+        bundle.update_version.assert_called_with(update_version)
         bundle_service.update.assert_called_once_with(bundle, staging_details)
