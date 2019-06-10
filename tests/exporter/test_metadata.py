@@ -51,9 +51,9 @@ class MetadataResourceTest(TestCase):
                                                dcp_version='1.0.7')
 
         # expect:
-        self.assertEqual('9b159cae-a1fe-4cce-94bc-146e4aa20553.5.1.0.json',
+        self.assertEqual('specimen_9b159cae-a1fe-4cce-94bc-146e4aa20553.json',
                          metadata_resource_1.get_staging_file_name())
-        self.assertEqual('38e0ee7c-90dc-438a-a0ed-071f9231f590.1.0.7.json',
+        self.assertEqual('donor_organism_38e0ee7c-90dc-438a-a0ed-071f9231f590.json',
                          metadata_resource_2.get_staging_file_name())
 
 

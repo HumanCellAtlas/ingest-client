@@ -25,7 +25,7 @@ class MetadataResource:
         return metadata_resource
 
     def get_staging_file_name(self):
-        return f'{self.uuid}.{self.dcp_version}.json'
+        return f'{self.metadata_type}_{self.uuid}.json'
 
 
 class MetadataService:
