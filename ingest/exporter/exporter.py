@@ -15,9 +15,10 @@ class Exporter:
                       update_version: str):
         bundle = self.bundle_service.fetch(bundle_uuid)
         staging_details = []
+        staging_area_uuid = update_submission['stagingDetails']['stagingAreaUuid']['uuid']
         for url in metadata_urls:
             metadata_resource = self.metadata_service.fetch_resource(url)
-            staging_info = self.staging_service.stage_update(metadata_resource)
+            staging_info = self.staging_service.stage_update(staging_area_uuid, metadata_resource)
             staging_details.append(staging_info)
             bundle.update_file(metadata_resource)
         self.bundle_service.update(bundle, staging_details)
