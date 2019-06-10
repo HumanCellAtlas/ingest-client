@@ -43,6 +43,8 @@ class DssApi:
         url = file["url"]
         uuid = file["dss_uuid"]
 
+        version = datetime.datetime.utcnow().strftime("%Y-%m-%dT%H%M%S.%fZ")
+
         update_date = file.get("update_date")
 
         if update_date:
