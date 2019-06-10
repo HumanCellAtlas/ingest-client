@@ -152,5 +152,11 @@ class Exporter:
 
     def export_update(self, update_submission: dict, bundle_uuid: str, metadata_urls: list,
                       update_version: str):
+        bundle = self.bundle_service.fetch(bundle_uuid)
+        staging_details = []
         for url in metadata_urls:
-            self.metadata_service.fetch_resource(url)
+            metadata_resource = self.metadata_service.fetch_resource(url)
+            staging_info = self.staging_service.stage_update(metadata_resource)
+            staging_details.append(staging_info)
+            bundle.update_file(metadata_resource)
+        self.bundle_service.update(bundle, staging_details)
