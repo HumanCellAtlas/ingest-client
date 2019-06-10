@@ -37,7 +37,7 @@ class ExporterTest(TestCase):
 
         # and:
         bundle_uuid = '9dfca176-0ddf-4384-8b71-b74237edb8be'
-        bundle_files = [{'uuid': uuid} for uuid in metadata_uuids]
+        bundle_files = [{'uuid': uuid, 'name': f'file_{uuid}.json'} for uuid in metadata_uuids]
         bundle = Bundle(source={'bundle': {'uuid': bundle_uuid, 'files': bundle_files}})
         bundle = Mock(wraps=bundle)
         bundle_service.fetch = Mock(return_value=bundle)
@@ -53,7 +53,8 @@ class ExporterTest(TestCase):
 
         # then:
         staging_service.stage_update.assert_has_calls(
-            [call(staging_area_uuid, metadata) for metadata in metadata_resources], any_order=True)
+            [call(staging_area_uuid, f'file_{metadata.uuid}.json', metadata)
+             for metadata in metadata_resources], any_order=True)
         bundle.update_file.assert_has_calls([call(metadata) for metadata in metadata_resources],
                                             any_order=True)
         bundle.update_version.assert_called_with(update_version)
