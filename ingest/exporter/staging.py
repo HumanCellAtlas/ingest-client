@@ -14,9 +14,10 @@ class StagingService:
     def __init__(self, staging_client):
         self.staging_client = staging_client
 
-    def stage_update(self, staging_area_uuid: str, staging_file_name: str,
+    def stage_update(self, staging_area_uuid,
                      metadata_resource: MetadataResource) -> StagingInfo:
-        file_description = self.staging_client.stageFile(staging_area_uuid, staging_file_name,
+        file_description = self.staging_client.stageFile(staging_area_uuid,
+                                                         metadata_resource.get_staging_file_name(),
                                                          metadata_resource.metadata_json,
                                                          metadata_resource.metadata_type)
         return StagingInfo(metadata_uuid=metadata_resource.uuid,

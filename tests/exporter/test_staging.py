@@ -18,9 +18,8 @@ class StagingServiceTest(TestCase):
 
         # and:
         staging_client = Mock(name='staging_client')
-        staging_file_name = 'file_21.json'
-        file_description = FileDescription(['chks0mz'], 'application/json', staging_file_name,
-                                           1024, 'http://domain.com/file.url')
+        file_description = FileDescription(['chks0mz'], 'application/json', 'file.name', 1024,
+                                                'http://domain.com/file.url')
         staging_client.stageFile = Mock(return_value=file_description)
 
         # and:
@@ -28,8 +27,7 @@ class StagingServiceTest(TestCase):
 
         # when:
         staging_area_uuid = '7455716e-9639-41d9-bff9-d763f9ee028d'
-        staging_info = staging_service.stage_update(staging_area_uuid, staging_file_name,
-                                                    metadata_resource)
+        staging_info = staging_service.stage_update(staging_area_uuid, metadata_resource)
 
         # then:
         self.assertTrue(type(staging_info) is StagingInfo,
@@ -40,6 +38,6 @@ class StagingServiceTest(TestCase):
 
         # and:
         staging_client.stageFile.assert_called_once_with(staging_area_uuid,
-                                                         staging_file_name,
+                                                         metadata_resource.get_staging_file_name(),
                                                          metadata_resource.metadata_json,
                                                          metadata_resource.metadata_type)
