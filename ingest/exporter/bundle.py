@@ -51,9 +51,8 @@ class BundleService:
     def update(self, bundle: Bundle, staging_details: list):
         cloud_url_map = {info.metadata_uuid: info.cloud_url for info in staging_details}
         bundle_files = bundle.get_files()
-        for file in bundle_files:
-            uuid = file.get('uuid')
-            cloud_url = cloud_url_map.get(uuid)
+        for uuid, cloud_url in cloud_url_map.items():
+            file = bundle.get_file(uuid)
             self.dss_client.put_file(None, {'url': cloud_url, 'dss_uuid': uuid,
                                             'update_date': file.get('version')})
         self.dss_client.put_bundle(bundle.uuid, bundle.get_version(), bundle_files)

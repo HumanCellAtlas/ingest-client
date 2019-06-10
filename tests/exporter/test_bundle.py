@@ -111,9 +111,12 @@ class BundleServiceTest(TestCase):
         bundle_uuid = '25f26f33-9413-45e0-b83c-979ce59cef62'
         file_1 = _create_test_bundle_file(uuid=uuid_1, version='2019-06-07T170321.000000Z')
         file_2 = _create_test_bundle_file(uuid=uuid_2, version='2019-06-01T103033.000000Z')
+        unchanged_uuid = '66a9da69-62c0-4792-9e89-09235d5e68e1'
+        unchanged_file = _create_test_bundle_file(uuid=unchanged_uuid,
+                                                  version='2019-06-06T112935.000000Z')
         bundle_version = '2019-06-07T220321.010000Z'
-        bundle = Bundle(source={'bundle': {'uuid': bundle_uuid, 'files': [file_1, file_2],
-                                           'version': bundle_version}})
+        bundle = Bundle(source={'bundle': {'uuid': bundle_uuid, 'version': bundle_version,
+                                           'files': [file_1, file_2, unchanged_file]}})
 
         # when:
         service.update(bundle, [staging_info_1, staging_info_2])
@@ -126,4 +129,5 @@ class BundleServiceTest(TestCase):
                          'update_date': file_2['version']})], any_order=True)
 
         # and:
-        dss_client.put_bundle.assert_called_once_with(bundle_uuid, bundle_version, [file_1, file_2])
+        dss_client.put_bundle.assert_called_once_with(bundle_uuid, bundle_version,
+                                                      [file_1, file_2, unchanged_file])
