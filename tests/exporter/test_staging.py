@@ -18,8 +18,9 @@ class StagingServiceTest(TestCase):
 
         # and:
         staging_client = Mock(name='staging_client')
-        file_description = FileDescription(['chks0mz'], 'application/json', 'file.name', 1024,
-                                                'http://domain.com/file.url')
+        staging_file_name = 'file_21.json'
+        file_description = FileDescription(['chks0mz'], 'application/json', staging_file_name,
+                                           1024, 'http://domain.com/file.url')
         staging_client.stageFile = Mock(return_value=file_description)
 
         # and:
@@ -27,7 +28,6 @@ class StagingServiceTest(TestCase):
 
         # when:
         staging_area_uuid = '7455716e-9639-41d9-bff9-d763f9ee028d'
-        staging_file_name = 'file_21.json'
         staging_info = staging_service.stage_update(staging_area_uuid, staging_file_name,
                                                     metadata_resource)
 
