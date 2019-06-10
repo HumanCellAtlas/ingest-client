@@ -3,7 +3,7 @@ from unittest import TestCase
 from mock import Mock, call
 
 from ingest.api.stagingapi import FileDescription
-from ingest.exporter.bundle_update_service import BundleUpdateService, MetadataResource, \
+from ingest.exporter.bundle_update_service import MetadataResource, \
     StagingService, MetadataService, Bundle, BundleService, StagingInfo, Exporter
 
 
@@ -247,41 +247,6 @@ class BundleServiceTest(TestCase):
 
         # and:
         dss_client.put_bundle.assert_called_once_with(bundle_uuid, bundle_version, [file_1, file_2])
-
-
-class BundleUpdateServiceTest(TestCase):
-
-    def test_update_bundle(self):
-        # given:
-        metadata_service = Mock(name='metadata_service')
-        staging_service = Mock(name='staging_service')
-        dss_client = Mock(name='dss_client')
-        service = BundleUpdateService(metadata_service, staging_service, dss_client)
-
-        # and:
-        bundle_file_uuid = '16e3bd3f-34e8-40e6-90b9-9cbfa9b03cf5'
-        test_metadata = MetadataResource(metadata_type='donor_organism',
-                                         uuid=bundle_file_uuid,
-                                         metadata_json={'name': 'sample', 'description': 'test'},
-                                         dcp_version='5.2.1')
-        metadata_service.fetch_resource = Mock(return_value=test_metadata)
-
-        # and:
-        test_file_description = FileDescription(['chkz0m'], 'file', 'sample.ss2', 1024,
-                                                'sample.url')
-        staging_service.stage_update = Mock(return_value=test_file_description)
-
-        # and:
-        bundle_file = Mock(wraps=_create_test_bundle_file(uuid=bundle_file_uuid))
-        dss_client.fetch = Mock(return_value={'bundle': {'files': [bundle_file]}})
-
-        # when:
-        update_submission = {'stagingDetails': {'stagingAreaUuid': {'uuid': '3cce991'}}}
-        callback_list = ['http://api.ingest.tld/metadata/23cb771']
-        updated_bundle = service.update_bundle(update_submission, '67c9d90', 'v3', callback_list)
-
-        # then:
-        self.assertIsNotNone(updated_bundle)
 
 
 class ExporterTest(TestCase):

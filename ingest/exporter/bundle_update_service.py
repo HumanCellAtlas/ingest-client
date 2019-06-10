@@ -122,26 +122,6 @@ class BundleService:
         self.dss_client.put_bundle(bundle.uuid, bundle.get_version(), bundle_files)
 
 
-class BundleUpdateService:
-
-    def __init__(self, metadata_service: MetadataService, staging_service: StagingService,
-                 dss_client: DssApi):
-        self.metadata_service = metadata_service
-        self.staging_service = staging_service
-        self.dss_client = dss_client
-
-    # Note: tricky part here is updating bundles with the correct file-name within the bundle.
-    # To do that, we must know
-    # what we named the file-to-be-updated and ensure to name its update with the same name.
-    def update_bundle(self, update_submission: dict, bundle_uuid: str, updated_bundle_version: str,
-                      metadata_urls: Iterable[str]):
-        metadata_resources = [self.metadata_service.fetch_resource(url) for url in metadata_urls]
-
-        staging_area_id = update_submission["stagingDetails"]["stagingAreaUuid"]["uuid"]
-        staged_file_descriptions = [self.staging_service.stage_update(metadata) for metadata in
-                                    metadata_resources]
-
-
 class Exporter:
 
     def __init__(self, metadata_service: MetadataService, staging_service: StagingService,
