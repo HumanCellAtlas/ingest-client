@@ -137,6 +137,12 @@ class IngestApi:
         r.raise_for_status()
         return r.json()
 
+    def get_entity_by_callback_link(self, callback_link):
+        url = f'{self.url}/{callback_link}'
+        r = requests.get(url, headers=self.headers)
+        r.raise_for_status()
+        return r.json()
+
     def getFileBySubmissionUrlAndFileName(self, submissionUrl, fileName):
         searchUrl = self.get_link_from_resource_url(self.url + '/files/search',
                                                     'findBySubmissionEnvelopesInAndFileName')
@@ -173,13 +179,8 @@ class IngestApi:
         return files
 
     def getBundleManifests(self, id):
-        submissionUrl = self.url + '/submissionEnvelopes/' + id + '/bundleManifests'
-        r = requests.get(submissionUrl, headers=self.headers)
-        bundleManifests = []
-
-        if r.status_code == requests.codes.ok:
-            bundleManifests = json.loads(r.text)
-        return bundleManifests
+        submission_url = self.url + '/submissionEnvelopes/' + id
+        return self.getEntities(submission_url, "bundleManifests", 500)
 
     def createSubmission(self):
         warnings.warn(
