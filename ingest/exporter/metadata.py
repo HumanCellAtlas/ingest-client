@@ -11,8 +11,7 @@ class MetadataResource:
     def _determine_metadata_type(self):
         metadata_type = None
         if self.metadata_json:
-            described_by = self.metadata_json.get('describedBy')
-            metadata_type = described_by.split('/')[-1] if described_by else None
+            metadata_type = self.metadata_json.get('schema_type')
         self.metadata_type = metadata_type
 
     @staticmethod
