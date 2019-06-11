@@ -1,6 +1,6 @@
 from unittest import TestCase
 
-from ingest.exporter import utils
+from ingest.api import utils
 
 
 class UtilsTest(TestCase):
