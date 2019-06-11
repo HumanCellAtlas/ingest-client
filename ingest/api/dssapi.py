@@ -71,7 +71,7 @@ class DssApi:
         while not file_create_complete and tries < max_retries:
             try:
                 tries += 1
-                self.logger.info(f'Creating file {file["name"]} in DSS {uuid}:{version} with params: {json.dumps(params)}')
+                # self.logger.info(f'Creating file {file["name"]} in DSS {uuid}:{version} with params: {json.dumps(params)}')
                 bundle_file = None
 
                 if bundle_uuid:
