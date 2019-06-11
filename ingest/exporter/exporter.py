@@ -1,3 +1,4 @@
+from ingest.api.ingestapi import BundleManifest
 from ingest.exporter.bundle import BundleService
 from ingest.exporter.metadata import MetadataService
 from ingest.exporter.staging import StagingService
@@ -24,7 +25,7 @@ class Exporter:
         bundle.update_version(update_version)
         self.bundle_service.update(bundle, staging_details)
 
-        bundle_manifest = self.metadata_service.ingest_client.BundleManifest()
+        bundle_manifest = BundleManifest()
         bundle_manifest.envelopeUuid = update_submission['uuid']['uuid']
         bundle_manifest.bundleUuid = bundle_uuid
         bundle_manifest.bundleVersion = update_version
