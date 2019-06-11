@@ -45,7 +45,7 @@ class ExporterTest(TestCase):
         # and:
         metadata_urls = [f'https://data.hca.tld/metadata/{uuid}' for uuid in metadata_uuids]
         staging_area_uuid = '947a6528-184e-4a05-9af5-355e1f450609'
-        update_submission = {'stagingDetails': {'stagingAreaUuid': {'uuid': staging_area_uuid}}}
+        update_submission = {'uuid':{'uuid': 'subuuid'}, 'stagingDetails': {'stagingAreaUuid': {'uuid': staging_area_uuid}}}
         update_version = '2019-06-09T1913000.000000Z'
 
         # when:

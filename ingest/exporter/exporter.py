@@ -23,3 +23,9 @@ class Exporter:
             bundle.update_file(metadata_resource)
         bundle.update_version(update_version)
         self.bundle_service.update(bundle, staging_details)
+
+        bundle_manifest = self.metadata_service.ingest_client.BundleManifest()
+        bundle_manifest.envelopeUuid = update_submission['uuid']['uuid']
+        bundle_manifest.bundleUuid = bundle_uuid
+        bundle_manifest.bundleVersion = update_version
+        self.metadata_service.ingest_client.createBundleManifest(bundle_manifest)
