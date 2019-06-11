@@ -11,6 +11,8 @@ import time
 import hca
 from hca.util import SwaggerAPIException
 
+from ingest.api import utils
+
 __author__ = "jupp"
 __license__ = "Apache 2.0"
 __date__ = "12/09/2017"
@@ -43,14 +45,9 @@ class DssApi:
         url = file["url"]
         uuid = file["dss_uuid"]
 
-        version = datetime.datetime.utcnow().strftime("%Y-%m-%dT%H%M%S.%fZ")
-
         update_date = file.get("update_date")
-
-        if update_date:
-            update_date = datetime.datetime.strptime(update_date, "%Y-%m-%dT%H:%M:%S.%fZ")
-            update_date = update_date.strftime("%Y-%m-%dT%H%M%S.%fZ")
-            version = update_date
+        version = utils.to_dss_version(update_date) if update_date \
+            else datetime.datetime.utcnow().strftime("%Y-%m-%dT%H%M%S.%fZ")
 
         # retrying file creation 20 times
         max_retries = 20
