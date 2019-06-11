@@ -11,7 +11,7 @@ class StagingServiceTest(TestCase):
 
     def test_stage_update(self):
         # given:
-        metadata_resource = MetadataResource(metadata_type='donor_organism',
+        metadata_resource = MetadataResource(metadata_type='biomaterial',
                                              uuid='831d4b6e-e8a2-42ce-b7c0-8d6ffcc15370',
                                              metadata_json={'description': 'test'},
                                              dcp_version='4.2.1')
@@ -40,4 +40,4 @@ class StagingServiceTest(TestCase):
         staging_client.stageFile.assert_called_once_with(staging_area_uuid,
                                                          metadata_resource.get_staging_file_name(),
                                                          metadata_resource.metadata_json,
-                                                         metadata_resource.metadata_type)
+                                                         'metadata/biomaterial')

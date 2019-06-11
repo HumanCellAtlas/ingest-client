@@ -16,9 +16,11 @@ class StagingService:
 
     def stage_update(self, staging_area_uuid,
                      metadata_resource: MetadataResource) -> StagingInfo:
+        formatted_type = f'metadata/{metadata_resource.metadata_type}'
         file_description = self.staging_client.stageFile(staging_area_uuid,
                                                          metadata_resource.get_staging_file_name(),
                                                          metadata_resource.metadata_json,
-                                                         metadata_resource.metadata_type)
+                                                         formatted_type)
+
         return StagingInfo(metadata_uuid=metadata_resource.uuid,
                            file_name=file_description.name, cloud_url=file_description.url)
