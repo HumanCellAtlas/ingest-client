@@ -76,7 +76,7 @@ class IngestExporter:
         files_by_type['links'] = list()
         files_by_type['links'].append({
             'content': links,
-            'content_type': '"metadata/{0}"'.format('links'),
+            'content_type': 'metadata/{0}'.format('links'),
             'indexed': is_indexed,
             'dss_filename': 'links.json',
             'dss_uuid': links_file_uuid,
@@ -348,7 +348,7 @@ class IngestExporter:
 
                 prepared_doc = {
                     'content': self.bundle_metadata(doc, metadata_uuid),
-                    'content_type': '"metadata/{0}"'.format(entity_type),
+                    'content_type': 'metadata/{0}'.format(entity_type),
                     'indexed': is_indexed,
                     'dss_filename': file_name,
                     'dss_uuid': metadata_uuid,

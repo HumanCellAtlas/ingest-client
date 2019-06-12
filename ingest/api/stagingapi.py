@@ -96,7 +96,7 @@ class StagingApi:
         self.logger.info(f'Staging file: {fileUrl}')
 
         header = dict(self.header)
-        header['Content-type'] = 'application/json; dcp-type=' + type
+        header['Content-type'] = f'application/json; dcp-type="{type}"'
 
         r = self.session.put(fileUrl, data=json.dumps(body, indent=4), headers=header)
 
