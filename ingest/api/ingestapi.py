@@ -13,10 +13,11 @@ import requests
 from requests import HTTPError
 
 from ingest.api.requests_utils import optimistic_session
+from ingest.utils.token_manager import TokenManager
 
 
 class IngestApi:
-    def __init__(self, url=None, ingest_api_root=None):
+    def __init__(self, url=None, ingest_api_root=None, token_manager: TokenManager=None):
         format = '[%(filename)s:%(lineno)s - %(funcName)20s() ] %(asctime)s - %(name)s - %(levelname)s - %(message)s'
         logging.basicConfig(format=format)
         logging.getLogger("requests").setLevel(logging.WARNING)
@@ -32,11 +33,14 @@ class IngestApi:
         self.headers = {'Content-type': 'application/json'}
         self.submission_links = {}
         self.token = None
+        self.token_manager = token_manager
         self.ingest_api_root = ingest_api_root if ingest_api_root is not None else self.get_root_url()
 
-    def set_token(self, token):
+    def set_token(self, token=None):
         if token:
             self.token = token
+        elif self.token_manager:
+            self.token = self.token_manager.get_token()
             self.logger.debug(f'Token set!')
             self.headers['Authorization'] = self.token
 
