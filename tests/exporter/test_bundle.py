@@ -101,10 +101,6 @@ class BundleServiceTest(TestCase):
         service = BundleService(dss_client)
 
         # and:
-        converted_version = 'converted_version'
-        dss_client.put_file = Mock(return_value={'version': converted_version})
-
-        # and:
         uuid_1 = '51e37d20-6dc4-41e4-9ae5-36e0c6d4c1e6'
         staging_info_1 = StagingInfo(metadata_uuid=uuid_1, file_name='cell_suspension_0.json',
                                      cloud_url='http://sample.tld/files/file0.json')
@@ -134,7 +130,5 @@ class BundleServiceTest(TestCase):
                          'update_date': file_2['version']})], any_order=True)
 
         # and:
-        updated_file_1 = _create_test_bundle_file(uuid=uuid_1, version=converted_version)
-        updated_file_2 = _create_test_bundle_file(uuid=uuid_2, version=converted_version)
-        expected_files = [updated_file_1, updated_file_2, unchanged_file]
+        expected_files = [file_1, file_2, unchanged_file]
         dss_client.put_bundle.assert_called_once_with(bundle_uuid, bundle_version, expected_files)
