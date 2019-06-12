@@ -27,7 +27,9 @@ class ExporterTest(TestCase):
         metadata_uuids = ['0c113d6c-4d3c-4e4a-8134-ae3050e663a6',
                           '37ee1172-8b2d-4500-a3fc-28b46921461b',
                           'e4e62047-69ff-45dc-a4f1-a5346249d217']
-        metadata_resources = [MetadataResource(uuid=uuid) for uuid in metadata_uuids]
+        metadata_version = '2019-06-12T16:12:20.087Z'
+        metadata_resources = [MetadataResource(uuid=uuid, dcp_version=metadata_version)
+                              for uuid in metadata_uuids]
         metadata_service.fetch_resource = Mock(side_effect=metadata_resources)
 
         # and:
@@ -45,7 +47,8 @@ class ExporterTest(TestCase):
         # and:
         metadata_urls = [f'https://data.hca.tld/metadata/{uuid}' for uuid in metadata_uuids]
         staging_area_uuid = '947a6528-184e-4a05-9af5-355e1f450609'
-        update_submission = {'uuid':{'uuid': 'subuuid'}, 'stagingDetails': {'stagingAreaUuid': {'uuid': staging_area_uuid}}}
+        update_submission = {'uuid': {'uuid': 'subuuid'},
+                             'stagingDetails': {'stagingAreaUuid': {'uuid': staging_area_uuid}}}
         update_version = '2019-06-09T1913000.000000Z'
 
         # when:
