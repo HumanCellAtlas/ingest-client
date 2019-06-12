@@ -1,5 +1,6 @@
 from copy import deepcopy
 
+from ingest.api import utils
 from ingest.api.dssapi import DssApi
 from ingest.exporter.metadata import MetadataResource
 
@@ -35,7 +36,7 @@ class Bundle:
 
     def update_file(self, metadata_resource: MetadataResource):
         target_file = self.get_file(metadata_resource.uuid)
-        target_file['version'] = metadata_resource.dcp_version
+        target_file['version'] = utils.to_dss_version(metadata_resource.dcp_version)
         target_file['content-type'] = f'metadata/{metadata_resource.metadata_type}'
 
 

@@ -60,14 +60,14 @@ class BundleTest(TestCase):
         metadata_resource = MetadataResource(metadata_type='cell_suspension_x',
                                              uuid=uuid,
                                              metadata_json={'text': 'description'},
-                                             dcp_version='2019-06-12T141414.077000Z')
+                                             dcp_version='2019-06-12T14:14:14.077Z')
 
         # when:
         bundle.update_file(metadata_resource)
 
         # then:
         updated_file = bundle.get_file(uuid)
-        self.assertEqual(metadata_resource.dcp_version, updated_file.get('version'))
+        self.assertEqual('2019-06-12T141414.077000Z', updated_file.get('version'))
         self.assertEqual('metadata/cell_suspension_x', updated_file.get('content-type'))
 
 
