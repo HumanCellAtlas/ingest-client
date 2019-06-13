@@ -2,7 +2,7 @@ import json
 from unittest import TestCase
 from unittest.mock import patch
 
-from mock import MagicMock
+from mock import MagicMock, Mock
 
 from ingest.api.ingestapi import IngestApi
 
@@ -82,3 +82,59 @@ class IngestApiTest(TestCase):
                 mock_requests_get.side_effect = mock_get_side_effect
 
                 assert 'uuid' in ingestapi.getSubmissionByUuid(mock_submission_uuid)
+
+    @patch('ingest.api.ingestapi.requests')
+    def test_get_all(self, mock_requests):
+        # given
+        ingest_api = IngestApi()
+
+        mocked_responses = {
+            'url?page=0&size=3': {
+                "page": {
+                    "size": 3,
+                    "totalElements": 5,
+                    "totalPages": 2,
+                    "number": 0
+                },
+                "_embedded": {
+                    "bundleManifests": [
+                        {"attr": "value"},
+                        {"attr": "value"},
+                        {"attr": "value"}
+                    ]
+                },
+                "_links": {
+                    "next": {
+                        'href': 'url?page=1&size=3'
+                    }
+                }
+            },
+            'url?page=1&size=3': {
+                "page": {
+                    "size": 3,
+                    "totalElements": 5,
+                    "totalPages": 2,
+                    "number": 1
+                },
+                "_embedded": {
+                    "bundleManifests": [
+                        {"attr": "value"},
+                        {"attr": "value"}
+                    ]
+                },
+                "_links": {
+                }
+            }
+        }
+
+        mock_requests.get = lambda url, headers: self._create_mock_response(url, mocked_responses)
+
+        # when
+        entities = ingest_api.get_all('url?page=0&size=3', "bundleManifests")
+        self.assertEqual(len(list(entities)), 5)
+
+    def _create_mock_response(self, url, mocked_responses):
+        response = MagicMock()
+        response.json.return_value = mocked_responses.get(url)
+        response.raise_for_status = Mock()
+        return response
