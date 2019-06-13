@@ -61,11 +61,11 @@ class IngestExporter:
 
         self.logger.info('Retrieving all process information...')
 
-        process = self.ingest_api.getEntityByUuid('processes', process_uuid)
+        process = self.ingest_api.get_entity_by_uuid('processes', process_uuid)
         process_info = self.get_all_process_info(process)
 
         self.logger.info('Generating bundle files...')
-        submission = self.ingest_api.getEntityByUuid('submissionEnvelopes', submission_uuid)
+        submission = self.ingest_api.get_entity_by_uuid('submissionEnvelopes', submission_uuid)
         is_indexed = submission['triggersAnalysis']
 
         metadata_by_type = self.get_metadata_by_type(process_info)
@@ -189,13 +189,12 @@ class IngestExporter:
                 raise Error('Input bundle manifest has no list of project uuid.')  # very unlikely to happen
 
             project_uuid = project_uuid_lists[0][0]
-            process_info.project = self.ingest_api.getProjectByUuid(project_uuid)
+            process_info.project = self.ingest_api.get_project_by_uuid(project_uuid)
 
         self.recurse_process(process, process_info)
 
         if process_info.project:
-            supplementary_files = self.ingest_api.getRelatedEntities('supplementaryFiles', process_info.project,
-                                                                     'files')
+            supplementary_files = self.ingest_api.get_related_entities('supplementaryFiles', process_info.project, 'files')
             for supplementary_file in supplementary_files:
                 uuid = supplementary_file['uuid']['uuid']
                 process_info.supplementary_files[uuid] = supplementary_file
@@ -203,7 +202,7 @@ class IngestExporter:
         return process_info
 
     def get_project_info(self, process):
-        projects = list(self.ingest_api.getRelatedEntities('projects', process, 'projects'))
+        projects = list(self.ingest_api.get_related_entities('projects', process, 'projects'))
 
         if len(projects) > 1:
             raise MultipleProjectsError('Can only be one project in bundle')
@@ -309,7 +308,7 @@ class IngestExporter:
                 relationship):
             return self.related_entities_cache.get(entity_uuid).get(relationship)
 
-        related_entities = list(self.ingest_api.getRelatedEntities(relationship, entity, entity_type))
+        related_entities = list(self.ingest_api.get_related_entities(relationship, entity, entity_type))
 
         if not self.related_entities_cache.get(entity_uuid):
             self.related_entities_cache[entity_uuid] = {}
@@ -322,7 +321,7 @@ class IngestExporter:
         return related_entities
 
     def get_input_bundle(self, process):
-        bundle_manifests = list(self.ingest_api.getRelatedEntities('inputBundleManifests', process, 'bundleManifests'))
+        bundle_manifests = list(self.ingest_api.get_related_entities('inputBundleManifests', process, 'bundleManifests'))
 
         if len(bundle_manifests) > 0:
             return bundle_manifests[0]

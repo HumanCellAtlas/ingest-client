@@ -19,7 +19,7 @@ class IngestApiTest(TestCase):
         filename = "mock-filename"
 
         # mock the load_root()
-        with patch('ingest.api.ingestapi.IngestApi.get_root_url') as mock_load_root:
+        with patch('ingest.api.ingestapi.IngestApi._get_ingest_links') as mock_load_root:
             root_links = dict()
             root_links["file"] = {"href": api_url + "/files"}
             root_links["submissionEnvelopes"] = {"href": api_url + "/submissionEnvelopes"}
@@ -37,7 +37,8 @@ class IngestApiTest(TestCase):
                 ingest_api.createFile(submission_url, filename, "{}")
             mock_session.assert_called_once_with(f'{submission_url}/files/{filename}')
 
-    def test_get_submission_by_uuid(self):
+    @patch('ingest.api.ingestapi.IngestApi._get_ingest_links')
+    def test_get_submission_by_uuid(self, mock_get_ingest_links):
         api_url = mock_ingest_api_url
         mock_submission_uuid = "mock-submission-uuid"
         submissions_url = api_url + "/submissionEnvelopes"
@@ -45,7 +46,8 @@ class IngestApiTest(TestCase):
         findByUuidRel = "findByUuid"
         findByUuidHref = submission_search_uri + "/findByUuidHref{?uuid}"
 
-        ingestapi = IngestApi(api_url, dict())
+        ingestapi = IngestApi(api_url)
+
         with patch('ingest.api.ingestapi.IngestApi.get_link_from_resource_url') as mock_get_url_for_link:
             def mock_get_url_for_link_patch(*args, **kwargs):
                 if args[0] == submission_search_uri and args[1] == findByUuidRel:

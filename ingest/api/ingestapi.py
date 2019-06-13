@@ -16,10 +16,7 @@ from ingest.api.requests_utils import optimistic_session
 
 
 class IngestApi:
-    def __init__(self, url=None, ingest_api_root=None):
-        format = '[%(filename)s:%(lineno)s - %(funcName)20s() ] %(asctime)s - %(name)s - %(levelname)s - %(message)s'
-        logging.basicConfig(format=format)
-        logging.getLogger("requests").setLevel(logging.WARNING)
+    def __init__(self, url=None):
         self.logger = logging.getLogger(__name__)
 
         if not url and 'INGEST_API' in os.environ:
@@ -28,11 +25,10 @@ class IngestApi:
             url = os.path.expandvars(url)
             self.logger.info("using " + url + " for ingest API")
         self.url = url if url else "http://localhost:8080"
-
         self.headers = {'Content-type': 'application/json'}
         self.submission_links = {}
         self.token = None
-        self.ingest_api_root = ingest_api_root if ingest_api_root is not None else self.get_root_url()
+        self._ingest_links = self._get_ingest_links()
 
     def set_token(self, token):
         if token:
@@ -40,7 +36,7 @@ class IngestApi:
             self.logger.debug(f'Token set!')
             self.headers['Authorization'] = self.token
 
-    def get_root_url(self):
+    def _get_ingest_links(self):
         reply = requests.get(self.url, headers=self.headers)
         return reply.json()["_links"]
 
@@ -63,7 +59,7 @@ class IngestApi:
             r = requests.get(search_url, headers=self.headers)
             if r.status_code == requests.codes.ok:
                 response_j = json.loads(r.text)
-                all_schemas = list(self.getRelatedEntities("latestSchemas", response_j, "schemas"))
+                all_schemas = list(self.get_related_entities("latestSchemas", response_j, "schemas"))
         else:
             all_schemas = list(self.getEntities(schema_url, "schemas"))
 
@@ -79,13 +75,13 @@ class IngestApi:
         return all_schemas
 
     def get_schemas_url(self):
-        if "schemas" in self.ingest_api_root:
-            return self.ingest_api_root["schemas"]["href"].rsplit("{")[0]
+        if "schemas" in self._ingest_links:
+            return self._ingest_links["schemas"]["href"].rsplit("{")[0]
         return None
 
     def getSubmissions(self):
         params = {'sort': 'submissionDate,desc'}
-        r = requests.get(self.ingest_api_root["submissionEnvelopes"]["href"].rsplit("{")[0], params=params,
+        r = requests.get(self._ingest_links["submissionEnvelopes"]["href"].rsplit("{")[0], params=params,
                          headers=self.headers)
         if r.status_code == requests.codes.ok:
             return json.loads(r.text)["_embedded"]["submissionEnvelopes"]
@@ -123,10 +119,10 @@ class IngestApi:
         else:
             raise ValueError("Project " + id + " could not be retrieved")
 
-    def getProjectByUuid(self, uuid):
-        return self.getEntityByUuid('projects', uuid)
+    def get_project_by_uuid(self, uuid):
+        return self.get_entity_by_uuid('projects', uuid)
 
-    def getEntityByUuid(self, entity_type, uuid):
+    def get_entity_by_uuid(self, entity_type, uuid):
         url = self.url + f'/{entity_type}/search/findByUuid?uuid=' + uuid
 
         # TODO make the endpoint consistent
@@ -188,7 +184,7 @@ class IngestApi:
             DeprecationWarning
         )
         try:
-            r = requests.post(self.ingest_api_root["submissionEnvelopes"]["href"].rsplit("{")[0], data="{}",
+            r = requests.post(self._ingest_links["submissionEnvelopes"]["href"].rsplit("{")[0], data="{}",
                               headers=self.headers)
             r.raise_for_status()
             submission = r.json()
@@ -201,7 +197,7 @@ class IngestApi:
 
     def create_submission(self, update_submission=False):
         try:
-            create_submission_url = self.ingest_api_root["submissionEnvelopes"]["href"].rsplit("{")[0]
+            create_submission_url = self._ingest_links["submissionEnvelopes"]["href"].rsplit("{")[0]
 
             if update_submission:
                 create_submission_url = f'{create_submission_url}/updateSubmissions'
@@ -264,7 +260,7 @@ class IngestApi:
             return None
 
     def getSubmissionUri(self, submissionId):
-        return self.ingest_api_root["submissionEnvelopes"]["href"].rsplit("{")[0] + "/" + submissionId
+        return self._ingest_links["submissionEnvelopes"]["href"].rsplit("{")[0] + "/" + submissionId
 
     def get_full_url(self, callback_link):
         return urljoin(self.url, callback_link)
@@ -277,36 +273,36 @@ class IngestApi:
     def getAnalyses(self, submissionUrl):
         return self.getEntities(submissionUrl, "analyses")
 
-    def getEntities(self, submissionUrl, entityType, pageSize=None):
+    def getEntities(self, submissionUrl, entityType):
         r = requests.get(submissionUrl, headers=self.headers)
         if r.status_code == requests.codes.ok:
             if entityType in json.loads(r.text)["_links"]:
-                if not pageSize:
-                    yield from self._getAllObjectsFromSet(json.loads(r.text)["_links"][entityType]["href"], entityType)
-                else:
-                    yield from self._getAllObjectsFromSet(json.loads(r.text)["_links"][entityType]["href"], entityType,
-                                                          pageSize)
+                yield from self.get_all(json.loads(r.text)["_links"][entityType]["href"], entityType)
 
-    def _getAllObjectsFromSet(self, url, entityType, pageSize=None):
-        params = dict()
-        if pageSize:
-            params = {"size": pageSize}
-
-        r = requests.get(url, headers=self.headers, params=params)
+    def get_all(self, url, entity_type):
+        r = requests.get(url, headers=self.headers)
         r.raise_for_status()
-        if r.status_code == requests.codes.ok:
-            if "_embedded" in json.loads(r.text):
-                for entity in json.loads(r.text)["_embedded"][entityType]:
-                    yield entity
-                if "next" in json.loads(r.text)["_links"]:
-                    for entity2 in self._getAllObjectsFromSet(json.loads(r.text)["_links"]["next"]["href"], entityType):
-                        yield entity2
+        result = r.json()
 
-    def getRelatedEntities(self, relation, entity, entityType):
+        count = result.get('page', {}).get('totalElements', 0)
+        entities = result["_embedded"][entity_type] if count > 0 else []
+        yield from entities
+        self.logger.debug(f"GET {entity_type} {json.dumps(result['page'])}")
+
+        while "next" in result["_links"]:
+            next_url = result["_links"]["next"]["href"]
+            r = requests.get(next_url, headers=self.headers)
+            r.raise_for_status()
+            result = r.json()
+            entities = result["_embedded"][entity_type]
+            yield from entities
+            self.logger.debug(f"GET {entity_type} {json.dumps(result['page'])}")
+
+    def get_related_entities(self, relation, entity, entity_type):
         # get the self link from entity
         if relation in entity["_links"]:
-            entityUri = entity["_links"][relation]["href"]
-            for entity in self._getAllObjectsFromSet(entityUri, entityType):
+            entity_uri = entity["_links"][relation]["href"]
+            for entity in self.get_all(entity_uri, entity_type):
                 yield entity
 
     def _updateStatusToPending(self, submissionUrl):
@@ -496,13 +492,11 @@ class IngestApi:
         return requests.put(url, data=data, headers=headers)
 
     def createBundleManifest(self, bundleManifest):
-        r = self._retry_when_http_error(0, self._post_bundle_manifest, bundleManifest,
-                                        self.ingest_api_root["bundleManifests"]["href"].rsplit("{")[0])
+        r = self._retry_when_http_error(0, self._post_bundle_manifest, bundleManifest, self._ingest_links["bundleManifests"]["href"].rsplit("{")[0])
 
         if not (200 <= r.status_code < 300):
-            error_message = "Failed to create bundle manifest at URL {0} with request payload: {1}".format(
-                self.ingest_api_root["bundleManifests"]["href"].rsplit("{")[0],
-                json.dumps(bundleManifest.__dict__))
+            error_message = "Failed to create bundle manifest at URL {0} with request payload: {1}".format(self._ingest_links["bundleManifests"]["href"].rsplit("{")[0],
+                                                                                                           json.dumps(bundleManifest.__dict__))
             self.logger.error(error_message)
             raise ValueError(error_message)
         else:

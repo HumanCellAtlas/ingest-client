@@ -34,7 +34,7 @@ class TestExporter(TestCase):
         exporter = IngestExporter()
 
         # and:
-        exporter.ingest_api.getRelatedEntities = MagicMock(return_value=['bundle1', 'bundle2'])
+        exporter.ingest_api.get_related_entities = MagicMock(return_value=['bundle1', 'bundle2'])
         process = {}
 
         # when:

@@ -33,6 +33,7 @@ class ExporterTest(TestCase):
         metadata_service.fetch_resource = Mock(side_effect=metadata_resources)
 
         # and:
+
         cloud_urls = [f'https://upload.tld/metadata{i}.json' for i in range(0, 3)]
         staging_details = [StagingInfo(cloud_url=url) for url in cloud_urls]
         staging_service.stage_update = Mock(side_effect=staging_details)
