@@ -29,4 +29,4 @@ class Exporter:
         bundle_manifest.envelopeUuid = update_submission['uuid']['uuid']
         bundle_manifest.bundleUuid = bundle_uuid
         bundle_manifest.bundleVersion = update_version
-        self.metadata_service.ingest_client.createBundleManifest(bundle_manifest)
+        self.metadata_service.ingest_client.create_bundle_manifest(bundle_manifest)

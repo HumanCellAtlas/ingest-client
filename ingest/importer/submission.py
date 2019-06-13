@@ -32,7 +32,7 @@ class IngestSubmitter(object):
 
     def _link_submission_to_project(self, entity_map, submission, submission_url):
         project = entity_map.get_project()
-        submission_envelope = self.ingest_api.getSubmissionEnvelope(submission_url)
+        submission_envelope = self.ingest_api.get_submission(submission_url)
         submission_entity = Entity('submission_envelope',
                                    submission_url,
                                    None,
@@ -326,19 +326,19 @@ class Submission(object):
         # TODO: how to get filename?!!!
         if entity.type == 'file':
             file_name = entity.content['file_core']['file_name']
-            response = self.ingest_api.createFile(self.submission_url,
-                                                  file_name,
-                                                  json.dumps(entity.content),
-                                                  uuid=uuid)
+            response = self.ingest_api.create_file(self.submission_url,
+                                                   file_name,
+                                                   entity.content,
+                                                   uuid=uuid)
         elif entity.type == 'project':
-            response = self.ingest_api.createProject(self.submission_url,
-                                                     json.dumps(
+            response = self.ingest_api.create_project(self.submission_url,
+                                                      json.dumps(
                                                          entity.content),
-                                                     uuid=uuid)
+                                                      uuid=uuid)
         else:
-            response = self.ingest_api.createEntity(self.submission_url,
-                                                    json.dumps(entity.content),
-                                                    link_name, uuid=uuid)
+            response = self.ingest_api.create_entity(self.submission_url,
+                                                     json.dumps(entity.content),
+                                                     link_name, uuid=uuid)
         entity.ingest_json = response
         self.metadata_dict[entity.type + '.' + entity.id] = entity
 
@@ -357,7 +357,7 @@ class Submission(object):
 
         from_entity_ingest = from_entity.ingest_json
         to_entity_ingest = to_entity.ingest_json
-        self.ingest_api.linkEntity(from_entity_ingest, to_entity_ingest, relationship)
+        self.ingest_api.link_entity(from_entity_ingest, to_entity_ingest, relationship)
 
     def define_manifest(self, entity_map):
         # TODO provide a better way to serialize
@@ -371,7 +371,7 @@ class Submission(object):
             'expectedLinks': entity_map.count_links()
         })
 
-        self.manifest = self.ingest_api.createSubmissionManifest(self.submission_url, manifest_json)
+        self.manifest = self.ingest_api.create_submission_manifest(self.submission_url, manifest_json)
         return self.manifest
 
     def get_entities(self):

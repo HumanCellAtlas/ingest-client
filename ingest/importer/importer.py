@@ -78,7 +78,7 @@ class XlsImporter:
             self.logger.error(str(e), exc_info=True)
 
         if error_json:
-            self.ingest_api.createSubmissionError(submission_url, error_json)
+            self.ingest_api.create_submission_error(submission_url, error_json)
         else:
             self.logger.info(f'Submission in {submission_url} is done!')
 
