@@ -11,13 +11,17 @@ class Bundle:
         self._source = deepcopy(source)
         self._bundle = self._source.get('bundle')  # because bundle is nested in the root ¯\_(ツ)_/¯
         self._prepare_file_map()
-        self.uuid = self._bundle.get('uuid')
+        self.uuid = self._bundle.get('uuid') if self._bundle else None
 
     def _prepare_file_map(self):
         bundle_files = self._bundle.get('files') if self._bundle else None
         if not bundle_files:
             bundle_files = []
         self._file_map = {file.get('uuid'): file for file in bundle_files}
+
+    @classmethod
+    def create(cls, uuid, version):
+        return Bundle()
 
     def get_version(self):
         return self._bundle.get('version')

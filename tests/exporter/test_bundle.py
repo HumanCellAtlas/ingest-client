@@ -11,6 +11,14 @@ from tests.exporter.test_exporter import _create_test_bundle_file
 
 class BundleTest(TestCase):
 
+    def test_create(self):
+        # when:
+        bundle = Bundle.create(uuid='6fff72c7-0a05-419f-8c78-5c3dd32cea29',
+                               version='2019-06-13T144433.222111Z')
+
+        # expect:
+        self.assertIsNotNone(bundle)
+
     def test_get_file(self):
         # given:
         file_1 = _create_test_bundle_file(uuid='15b22393-cc48-4dff-bc19-22c189d7c35e',
