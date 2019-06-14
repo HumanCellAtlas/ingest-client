@@ -19,9 +19,12 @@ class Bundle:
             bundle_files = []
         self._file_map = {file.get('uuid'): file for file in bundle_files}
 
-    @classmethod
-    def create(cls, uuid, version):
-        return Bundle()
+    @staticmethod
+    def create(uuid, version):
+        return Bundle(source={'bundle': {
+            'uuid': uuid,
+            'version': version
+        }})
 
     def get_version(self):
         return self._bundle.get('version')

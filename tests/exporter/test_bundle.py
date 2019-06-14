@@ -13,11 +13,14 @@ class BundleTest(TestCase):
 
     def test_create(self):
         # when:
-        bundle = Bundle.create(uuid='6fff72c7-0a05-419f-8c78-5c3dd32cea29',
-                               version='2019-06-13T144433.222111Z')
+        uuid = '6fff72c7-0a05-419f-8c78-5c3dd32cea29'
+        version = '2019-06-13T144433.222111Z'
+        bundle = Bundle.create(uuid=uuid,
+                               version=version)
 
         # expect:
-        self.assertIsNotNone(bundle)
+        self.assertEqual(uuid, bundle.uuid)
+        self.assertEqual(version, bundle.get_version())
 
     def test_get_file(self):
         # given:
