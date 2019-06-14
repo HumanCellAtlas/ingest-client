@@ -2,8 +2,24 @@ from copy import deepcopy
 
 from ingest.api import utils
 from ingest.api.dssapi import DssApi
-from ingest.api.ingestapi import BundleManifest
 from ingest.exporter.metadata import MetadataResource
+
+
+class BundleManifest:
+
+    def __init__(self, bundleUuid=None, envelopeUuid={}, bundleVersion=None):
+        self.bundleUuid = bundleUuid
+        self.envelopeUuid = deepcopy(envelopeUuid)
+        self.bundleVersion = bundleVersion
+        self.dataFiles = []
+        self.fileBiomaterialMap = {}
+        self.fileProcessMap = {}
+        self.fileFilesMap = {}
+        self.fileProjectMap = {}
+        self.fileProtocolMap = {}
+
+    def add_bundle_file(self, metadata_type, entry):
+        self.fileProjectMap.update(entry)
 
 
 class Bundle:

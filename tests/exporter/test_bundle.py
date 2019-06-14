@@ -1,9 +1,8 @@
-from copy import deepcopy
 from unittest import TestCase
 
 from mock import Mock, call
 
-from ingest.exporter.bundle import Bundle, BundleService
+from ingest.exporter.bundle import Bundle, BundleService, BundleManifest
 from ingest.exporter.metadata import MetadataResource
 from ingest.exporter.staging import StagingInfo
 from tests.exporter.test_exporter import _create_test_bundle_file
@@ -179,3 +178,17 @@ class BundleServiceTest(TestCase):
         # and:
         expected_files = [file_1, file_2, unchanged_file]
         dss_client.put_bundle.assert_called_once_with(bundle_uuid, bundle_version, expected_files)
+
+
+class BundleManifestTest(TestCase):
+
+    def test_add_bundle_file(self):
+        # given:
+        manifest = BundleManifest()
+
+        # when:
+        project_uuid = '4ae09cb7-4596-4158-86e2-755f7eb9afff'
+        manifest.add_bundle_file('project', {project_uuid: [project_uuid]})
+
+        # expect:
+        self.assertEqual([project_uuid], manifest.fileProjectMap.get(project_uuid))
