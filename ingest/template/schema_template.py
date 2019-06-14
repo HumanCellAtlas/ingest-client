@@ -8,6 +8,8 @@ __author__ = "jupp"
 __license__ = "Apache 2.0"
 __date__ = "01/05/2018"
 
+from collections import defaultdict
+from itertools import chain
 import json
 import re
 import urllib.request
@@ -26,17 +28,18 @@ class SchemaTemplate:
     A schema template is a simplified view over
     JSON schema for the HCA metadata
     """
-
-    def __init__(self, ingest_api_url=None, list_of_schema_urls=None, tab_config=None):
+    def __init__(self, ingest_api_url=None, list_of_schema_urls=None, tab_config=None, migrations=None, migrations_url=None):
 
         # todo remove this hard coding to a default ingest API url
         self.ingest_api_url = ingest_api_url if ingest_api_url else "http://api.ingest.dev.data.humancellatlas.org"
+        self.migrations_url = migrations_url if migrations_url else "https://schema.dev.data.humancellatlas.org/property_migrations"
         self._template = {
             "template_version": "1.0.0",
             "created_date": str(datetime.now()),
             "meta_data_properties": {},
             "labels": {},
-            "tabs": []
+            "tabs": [],
+            "migrations": {}
         }
         self._parser = SchemaParser(self)
 
@@ -45,7 +48,13 @@ class SchemaTemplate:
             # print ("Got schemas from ingest api\n " + "\n".join(list_of_schema_urls))
 
         self.schema_urls = list_of_schema_urls
-        self._load(self.schema_urls)
+
+        if not migrations:
+            migrations = self.get_migrations(self.migrations_url)
+
+        self.property_migrations = migrations
+
+        self._load(self.schema_urls, self.property_migrations)
 
         self._tab_config = TabConfig(init=self._template)
         if tab_config:
@@ -63,30 +72,62 @@ class SchemaTemplate:
             urls.append(url)
         return urls
 
-    def _load(self, list_of_schema_urls):
+    def get_migrations(self, migrations_url):
+        with urllib.request.urlopen(migrations_url) as url:
+            data = {}
+            try:
+                data = json.loads(url.read().decode())["migrations"]
+            except:
+                print("Failed to read schema from " + migrations_url)
+        return data
+
+
+    def _load(self, list_of_schema_urls, list_of_property_migrations):
         """
         given a list of URLs to JSON schema files
         return a SchemaTemplate object
         """
         for uri in list_of_schema_urls:
-            with urllib.request.urlopen(uri) as url:
-                data = {}
-                try:
-                    data = json.loads(url.read().decode())
-                except Exception:
-                    print("Failed to read schema from " + uri)
-                self._parser._load_schema(data)
+                with urllib.request.urlopen(uri) as url:
+                    data = {}
+                    try:
+                        data = json.loads(url.read().decode())
+                    except Exception:
+                        print("Failed to read schema from " + uri)
+                    self._parser._load_schema(data)
+        for migration in list_of_property_migrations:
+            self._parser._load_migration(migration)
         return self
 
-    def get_tabs_config(self, ):
+    def get_tabs_config(self):
         return self._tab_config
 
-    def lookup(self, key):
+    def lookup(self, key, schema_version=None):
         try:
             return self.get(self._template["meta_data_properties"], key)
+        except:
+            if schema_version != None:
+                try:
+                    return(self.lookup_migration(key, schema_version))
+                except Exception:
+                    raise UnknownKeyException(
+                        "Can't map the key to a known JSON schema migration: " + str(key))
+            else:
+                raise UnknownKeyException(
+                    "Can't map the key to a known JSON schema property: " + str(key))
+
+    def lookup_migration(self, key, schema_version):
+        try:
+            migrations = self.get(self._template["migrations"], key)
+
+            for migration in migrations:
+                if "version" in migration and int(schema_version.split(".")[0]) <= int(migration["version"].split(".")[0]):
+                    return migration
+                else:
+                    raise Exception
         except Exception:
             raise UnknownKeyException(
-                "Can't map the key to a known JSON schema property: " + str(key))
+                "Can't map the key to a known JSON schema migration: " + str(key))
 
     def get_template(self):
         return self._template["meta_data_properties"]
@@ -100,7 +141,31 @@ class SchemaTemplate:
             if level_one in tab:
                 self._template["tabs"][i][level_one]["columns"].append(property_key)
 
-    def put(self, property, value):
+    def put_migration(self, property_migration):
+        self._template["migrations"]
+        for k, v in property_migration.items():
+            if k in self._template["migrations"]:
+                self._template["migrations"][k] = self._mergeDict(self._template["migrations"][k], v)
+            else:
+                self._template["migrations"][k] = v
+
+    def _mergeDict(self, dict1, dict2):
+        dict3 = defaultdict(list)
+        for k, v in chain(dict1.items(), dict2.items()):
+            if k in dict3:
+                if isinstance(v, dict):
+                    dict3[k].update(self._mergeDict(dict3[k], v))
+                elif isinstance(v, list) and isinstance(dict3[k], list) and len(v) == len(dict3[k]):
+                    for index, e in enumerate(v):
+                        dict3[k][index].update(self._mergeDict(dict3[k][index], e))
+                else:
+                    dict3[k].update(v)
+            else:
+                dict3[k] = v
+        return dict3
+
+
+    def put (self, property, value):
         '''
         Add a property to the schema template
         :param property:
@@ -179,8 +244,32 @@ class SchemaParser:
         data = jsonref.loads(json.dumps(json_schema))
         return self.__initialise_template(data)
 
+    def _load_migration(self, property_migration):
+        return self.__initialise_property_migration_template(property_migration)
+
     def key_lookup(self, key):
         return self._key_lookup[key]
+
+    def __initialise_property_migration_template(self, property_migration):
+        migrated_property = property_migration["source_schema"] + "." + property_migration["property"]
+
+        migration_info = {}
+
+        if "target_schema" in property_migration and "replaced_by" in property_migration:
+            migration_info["replaced_by"] = property_migration["target_schema"] + "." + property_migration["replaced_by"]
+
+        if "effective_from" in property_migration:
+            migration_info["version"] = property_migration["effective_from"]
+        elif "effective_from_source" in property_migration:
+            migration_info["version"] = property_migration["effective_from"]
+            migration_info["target_version"] = property_migration["effective_from_target"]
+
+        migration_info = {migrated_property.split(".")[-1]: [migration_info]}
+        for part in reversed(migrated_property.split(".")[:-1]):
+            migration_info = {part: migration_info}
+
+        self.schema_template.put_migration(migration_info)
+        return self.schema_template
 
     def __initialise_template(self, data):
 
@@ -327,6 +416,7 @@ class SchemaParser:
             schema.domain_entity = self.get_domain_entity_from_url(url)
             schema.high_level_entity = self.get_high_level_entity_from_url(url)
             schema.module = self.get_module_from_url(url)
+            schema.version = self.get_version_from_url(url)
             schema.url = url
             return schema
 
@@ -341,6 +431,10 @@ class SchemaParser:
         pattern = re.compile("http[s]?://[^/]*/[^/]*/(?P<domain_entity>.*)/(((\d+\.)?(\d+\.)?(\*|\d+))|(latest))/.*")
         match = pattern.search(url)
         return match.group(1) if match else None
+
+    def get_version_from_url(self, url):
+        return url.rsplit('/', 2)[-2]
+
 
     def get_module_from_url(self, url):
         return url.rsplit('/', 1)[-1]
@@ -369,6 +463,7 @@ class Schema:
             "high_level_entity": None,
             "domain_entity": None,
             "module": None,
+            "version": None,
             "url": None,
         }
         return doctict.DotDict(self.dict)

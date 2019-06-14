@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 
 
-from ingest.template.schema_template import SchemaTemplate
+from ingest.template.schema_template import SchemaTemplate, UnknownKeyException
 
 schemas = [
     "https://schema.humancellatlas.org/type/project/5.1.0/project",
-    "https://schema.humancellatlas.org/type/biomaterial/5.1.0/cell_suspension",
+    # "https://schema.humancellatlas.org/type/biomaterial/5.1.0/cell_suspension",
     "https://schema.humancellatlas.org/type/biomaterial/5.1.0/specimen_from_organism",
     "https://schema.humancellatlas.org/type/biomaterial/5.1.1/donor_organism",
     "https://schema.humancellatlas.org/type/file/5.1.0/sequence_file",
@@ -18,9 +18,10 @@ schemas = [
     "https://schema.humancellatlas.org/type/protocol/biomaterial/5.1.0/biomaterial_collection_protocol",
     "https://schema.humancellatlas.org/type/protocol/sequencing/5.1.0/sequencing_protocol",
     "https://schema.humancellatlas.org/type/process/1.0.0/process",
+    "https://schema.dev.data.humancellatlas.org/type/biomaterial/9.0.0/cell_suspension"
 ]
 
-template = SchemaTemplate(list_of_schema_urls=schemas)
+template = SchemaTemplate(list_of_schema_urls=schemas,migrations_url='https://schema.dev.data.humancellatlas.org/property_migrations')
 
 # get key from user friendly name
 
@@ -48,5 +49,26 @@ print (template.lookup("project.project_core.project_title.user_friendly"))
 
 # dump the config in yaml or json
 
-print(template.yaml_dump(tabs_only=True))
+# print(template.yaml_dump(tabs_only=True))
 # print(data.json_dump())
+
+try:
+    print(template.lookup("cell_suspension.total_estimated_cells"))
+except UnknownKeyException as e:
+    print(e)
+
+    # migration = template.lookup_migration("cell_suspension.total_estimated_cells", "8.1.3")
+    migration = template.lookup("cell_suspension.total_estimated_cells", "8.1.3")
+    print ("Migration: " + str(migration))
+
+    print(str(migration.keys()))
+
+    print ("New property: " + str(template.lookup(migration["replaced_by"])))
+
+
+    print (template.lookup(migration["replaced_by"])["user_friendly"])
+
+try:
+    print (template.lookup_migration("cell_suspension.total_estimated_cells", "10.1.3"))
+except UnknownKeyException as e:
+    print(e)
