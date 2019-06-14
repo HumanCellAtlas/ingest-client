@@ -82,6 +82,26 @@ class BundleTest(TestCase):
         self.assertEqual('2019-06-12T141414.077000Z', updated_file.get('version'))
         self.assertEqual('metadata/cell_suspension_x', updated_file.get('content-type'))
 
+    def test_generate_manifest(self):
+        # given:
+        biomaterial_uuid = 'af690c04-8562-4680-bbf4-56bb9f58b265'
+        biomaterial_file = _create_test_bundle_file(uuid=biomaterial_uuid,
+                                                    content_type='biomaterial')
+
+        # and:
+        bundle_uuid = '93d3d2be-36e0-465e-b37f-0f48a998630e'
+        bundle = Bundle(source={'bundle': {
+            'uuid': bundle_uuid,
+            'version': '2019-06-14T102922.001122Z',
+            'files': [biomaterial_file]
+        }})
+
+        # when:
+        manifest = bundle.generate_manifest()
+
+        # then:
+        self.assertIsNotNone(manifest)
+
 
 class BundleServiceTest(TestCase):
 

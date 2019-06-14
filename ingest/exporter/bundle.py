@@ -2,6 +2,7 @@ from copy import deepcopy
 
 from ingest.api import utils
 from ingest.api.dssapi import DssApi
+from ingest.api.ingestapi import BundleManifest
 from ingest.exporter.metadata import MetadataResource
 
 
@@ -47,6 +48,9 @@ class Bundle:
         target_file = self.get_file(metadata_resource.uuid)
         target_file['version'] = utils.to_dss_version(metadata_resource.dcp_version)
         target_file['content-type'] = f'metadata/{metadata_resource.metadata_type}'
+
+    def generate_manifest(self) -> BundleManifest:
+        return BundleManifest()
 
 
 class BundleService:

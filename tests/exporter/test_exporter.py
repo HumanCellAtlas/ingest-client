@@ -10,7 +10,7 @@ from ingest.exporter.staging import StagingInfo
 
 def _create_test_bundle_file(uuid='', name='', content_type='biomaterial', version='',
                              indexed=True):
-    return {'content-type': f'application/json; dcp-type="{content_type}"', 'uuid': uuid,
+    return {'content-type': f'application/json; dcp-type="metadata/{content_type}"', 'uuid': uuid,
             'name': name, 'version': version, 'indexed': indexed}
 
 
