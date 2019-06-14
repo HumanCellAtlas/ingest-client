@@ -8,6 +8,71 @@ from ingest.exporter.staging import StagingInfo
 from tests.exporter.test_exporter import _create_test_bundle_file
 
 
+class BundleManifestTest(TestCase):
+
+    def test_add_bundle_file_biomaterial(self):
+        # given:
+        manifest = BundleManifest()
+
+        # when:
+        biomaterial_uuid = '0a917e84-929b-4a8b-8e26-821eb7b30371'
+        manifest.add_bundle_file('biomaterial', {biomaterial_uuid: [biomaterial_uuid]})
+
+        # expect:
+        self.assertEqual([biomaterial_uuid], manifest.fileBiomaterialMap.get(biomaterial_uuid))
+
+    def test_add_bundle_file_process(self):
+        # given:
+        manifest = BundleManifest()
+
+        # when:
+        process_uuids = ['9fd82f90-274c-425c-a755-9e97f301e65f',
+                         '0903d7f7-fbfc-465b-ae81-5c37b6bb4bbc',
+                         '84c122a0-56ad-47e5-ae33-1558251eb8f9']
+        for process_uuid in process_uuids:
+            manifest.add_bundle_file('process', {process_uuid: [process_uuid]})
+
+        # expect:
+        for process_uuid in process_uuids:
+            self.assertEqual([process_uuid], manifest.fileProcessMap.get(process_uuid))
+
+    def test_add_bundle_file_file(self):
+        # given:
+        manifest = BundleManifest()
+
+        # when:
+        file_uuid = '4e2c6ffb-145e-4e83-bc1f-bf9842bc6d8e'
+        manifest.add_bundle_file('file', {file_uuid: [file_uuid]})
+
+        # then:
+        self.assertEqual([file_uuid], manifest.fileFilesMap.get(file_uuid))
+
+    def test_add_bundle_file_project(self):
+        # given:
+        manifest = BundleManifest()
+
+        # and:
+        project_uuid = '4ae09cb7-4596-4158-86e2-755f7eb9afff'
+        manifest.add_bundle_file('project', {project_uuid: [project_uuid]})
+
+        # expect:
+        self.assertEqual([project_uuid], manifest.fileProjectMap.get(project_uuid))
+
+    def test_add_bundle_file_protocol(self):
+        # given:
+        manifest = BundleManifest()
+
+        # when:
+        protocol_uuids = ['bf601206-26f6-4fba-90ff-86a34a5d9cfd',
+                          '58ef9295-e8ed-46c7-bd5c-af6b67ffb17b']
+        for protocol_uuid in protocol_uuids:
+            manifest.add_bundle_file('protocol', {protocol_uuid: [protocol_uuid]})
+
+        # expect:
+        self.assertEqual([protocol_uuids[0]], manifest.fileProtocolMap.get(protocol_uuids[0]))
+        self.assertEqual([protocol_uuids[1]], manifest.fileProtocolMap.get(protocol_uuids[1]))
+
+
 class BundleTest(TestCase):
 
     def test_create(self):
@@ -178,17 +243,3 @@ class BundleServiceTest(TestCase):
         # and:
         expected_files = [file_1, file_2, unchanged_file]
         dss_client.put_bundle.assert_called_once_with(bundle_uuid, bundle_version, expected_files)
-
-
-class BundleManifestTest(TestCase):
-
-    def test_add_bundle_file(self):
-        # given:
-        manifest = BundleManifest()
-
-        # when:
-        project_uuid = '4ae09cb7-4596-4158-86e2-755f7eb9afff'
-        manifest.add_bundle_file('project', {project_uuid: [project_uuid]})
-
-        # expect:
-        self.assertEqual([project_uuid], manifest.fileProjectMap.get(project_uuid))
