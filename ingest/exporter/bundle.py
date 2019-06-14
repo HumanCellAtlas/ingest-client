@@ -12,6 +12,7 @@ class Bundle:
         self._bundle = self._source.get('bundle')  # because bundle is nested in the root ¯\_(ツ)_/¯
         self._prepare_file_map()
         self.uuid = self._bundle.get('uuid') if self._bundle else None
+        self.creator_uid = self._bundle.get('creator_uid') if self._bundle else None
 
     def _prepare_file_map(self):
         bundle_files = self._bundle.get('files') if self._bundle else None
@@ -20,9 +21,10 @@ class Bundle:
         self._file_map = {file.get('uuid'): file for file in bundle_files}
 
     @staticmethod
-    def create(uuid, version):
+    def create(uuid: str, creator_uid: int, version: str):
         return Bundle(source={'bundle': {
             'uuid': uuid,
+            'creator_uid': creator_uid,
             'version': version
         }})
 
