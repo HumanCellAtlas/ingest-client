@@ -4,15 +4,14 @@ from requests.adapters import HTTPAdapter
 from urllib3.util import retry
 
 
-def create_session_with_retry(retry_policy) -> Session:
+def create_session_with_retry(retry_policy=None) -> Session:
     retry_policy = retry_policy or retry.Retry(
         total=100,
         # seems that this has a default value of 10,
         # setting this to a very high number so that it'll respect the status retry count
 
-        status=17,
-        # status is the no. of retries if response is in status_forcelist,
-        # this count will retry for ~20 mins with back off timeout within
+        status=10,
+        # status is the no. of retries if response is in status_forcelist
 
         read=10,
         status_forcelist=[500, 502, 503, 504, 409],

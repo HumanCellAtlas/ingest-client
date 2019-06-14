@@ -5,18 +5,18 @@ desc goes here
 import json
 import logging
 import os
-import time
-from urllib.parse import urljoin, quote
-
 import requests
+import time
+
+from urllib.parse import urljoin, quote
 
 from ingest.api.requests_utils import create_session_with_retry
 
 
 class IngestApi:
-
     def __init__(self, url=None):
         self.logger = logging.getLogger(__name__)
+        self.session = create_session_with_retry()
 
         if not url and 'INGEST_API' in os.environ:
             url = os.environ['INGEST_API']
@@ -27,8 +27,7 @@ class IngestApi:
         self.token = None
 
         self._ingest_links = self._get_ingest_links()
-        self.session = create_session_with_retry()
-        self.submission_links = {}
+        self._submission_links = {}
         self.logger.info(f"using {self.url} for ingest API")
 
     def set_token(self, token):
@@ -37,7 +36,7 @@ class IngestApi:
             self.logger.debug(f'Token set!')
             self.headers['Authorization'] = self.token
 
-    def get_ingest_links(self):
+    def _get_ingest_links(self):
         r = self.session.get(self.url, headers=self.headers)
         r.raise_for_status()
         return r.json()["_links"]
@@ -169,19 +168,19 @@ class IngestApi:
             r.raise_for_status()
             submission = r.json()
             submission_url = submission["_links"]["self"]["href"].rsplit("{")[0]
-            self.submission_links[submission_url] = submission["_links"]
+            self._submission_links[submission_url] = submission["_links"]
             return submission
         except requests.exceptions.RequestException as err:
             self.logger.error("Request failed: " + str(err))
             raise
 
     def get_submission_links(self, submission_url):
-        if not self.submission_links.get(submission_url):
+        if not self._submission_links.get(submission_url):
             r = self.session.get(submission_url, headers=self.headers)
             r.raise_for_status()
-            self.submission_links[submission_url] = r.json()["_links"]
+            self._submission_links[submission_url] = r.json()["_links"]
 
-        return self.submission_links.get(submission_url)
+        return self._submission_links.get(submission_url)
 
     def get_link_in_submission(self, submission_url, link_name):
         links = self.get_submission_links(submission_url)
@@ -202,11 +201,11 @@ class IngestApi:
         submission_url = self.get_submission_url(submission_id)
         return self.get_link_in_submission(submission_url, state)
 
-    def getSubmissionUri(self, submissionId):
-        return self._ingest_links["submissionEnvelopes"]["href"].rsplit("{")[0] + "/" + submissionId
+    def getSubmissionUri(self, submission_id):
+        return self._ingest_links["submissionEnvelopes"]["href"].rsplit("{")[0] + "/" + submission_id
 
-    def get_submission_url(self, submissionId):
-        return self.ingest_api_root["submissionEnvelopes"]["href"].rsplit("{")[0] + "/" + submissionId
+    def get_submission_url(self, submission_id):
+        return self._ingest_links["submissionEnvelopes"]["href"].rsplit("{")[0] + "/" + submission_id
 
     def get_full_url(self, callback_link):
         return urljoin(self.url, callback_link)
@@ -216,11 +215,11 @@ class IngestApi:
         r.raise_for_status()
         return r.json()
 
-    def get_entities(self, submissionUrl, entityType, pageSize=None):
-        r = self.session.get(submissionUrl, headers=self.headers)
+    def get_entities(self, submission_url, entity_type):
+        r = self.session.get(submission_url, headers=self.headers)
         if r.status_code == requests.codes.ok:
-            if entityType in json.loads(r.text)["_links"]:
-                yield from self.get_all(json.loads(r.text)["_links"][entityType]["href"], entityType)
+            if entity_type in json.loads(r.text)["_links"]:
+                yield from self.get_all(json.loads(r.text)["_links"][entity_type]["href"], entity_type)
 
     def get_all(self, url, entity_type):
         r = self.session.get(url, headers=self.headers)
@@ -239,7 +238,7 @@ class IngestApi:
             result = r.json()
             entities = result["_embedded"][entity_type]
             yield from entities
-            self.logger.debug(f"GET {entity_type} {json.dumps(result['page'])}")
+            self.logger.error(f"GET {entity_type} {json.dumps(result['page'])}")
 
     def get_related_entities(self, relation, entity, entity_type):
         # get the self link from entity
@@ -294,7 +293,7 @@ class IngestApi:
 
                 fileUrl = fileInIngest['_links']['self']['href']
                 time.sleep(0.001)
-                r = self.patch(fileUrl, data=json.dumps({'content': content}), headers=self.headers)
+                r = self.patch(fileUrl, json={'content': content}, headers=self.headers)
                 self.logger.debug(f'Updating existing content of file {fileUrl}.')
 
         r.raise_for_status()
@@ -322,9 +321,9 @@ class IngestApi:
             params["updatingUuid"] = uuid
 
         submission_url = self.get_link_in_submission(submission_url, entity_type)
-        self.logger.debug("posting " + submission_url)
+        self.logger.debug(f"POST {submission_url} {json.dumps(content)}")
 
-        r = self.session.post(submission_url, data=content, headers=self.headers, params=params)
+        r = self.session.post(submission_url, json=content, headers=self.headers, params=params)
         r.raise_for_status()
         return r.json()
 
@@ -374,8 +373,8 @@ class IngestApi:
         return r
 
     def create_bundle_manifest(self, bundleManifest):
-        url = self.ingest_api_root["bundleManifests"]["href"].rsplit("{")[0]
-        r = self.session.post(url, data=json.dumps(bundleManifest.__dict__), headers=self.headers)
+        url = self._ingest_links["bundleManifests"]["href"].rsplit("{")[0]
+        r = self.session.post(url, json=bundleManifest.__dict__, headers=self.headers)
         r.raise_for_status()
         return r.json()
 

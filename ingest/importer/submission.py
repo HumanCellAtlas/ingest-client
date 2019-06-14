@@ -332,12 +332,11 @@ class Submission(object):
                                                    uuid=uuid)
         elif entity.type == 'project':
             response = self.ingest_api.create_project(self.submission_url,
-                                                      json.dumps(
-                                                         entity.content),
+                                                         entity.content,
                                                       uuid=uuid)
         else:
             response = self.ingest_api.create_entity(self.submission_url,
-                                                     json.dumps(entity.content),
+                                                     entity.content,
                                                      link_name, uuid=uuid)
         entity.ingest_json = response
         self.metadata_dict[entity.type + '.' + entity.id] = entity
@@ -361,7 +360,7 @@ class Submission(object):
 
     def define_manifest(self, entity_map):
         # TODO provide a better way to serialize
-        manifest_json = json.dumps({
+        manifest_json = {
             'totalCount': entity_map.count_total(),
             'expectedBiomaterials': entity_map.count_entities_of_type('biomaterial'),
             'expectedProcesses': entity_map.count_entities_of_type('process'),
@@ -369,7 +368,7 @@ class Submission(object):
             'expectedProtocols': entity_map.count_entities_of_type('protocol'),
             'expectedProjects': entity_map.count_entities_of_type('project'),
             'expectedLinks': entity_map.count_links()
-        })
+        }
 
         self.manifest = self.ingest_api.create_submission_manifest(self.submission_url, manifest_json)
         return self.manifest

@@ -25,7 +25,7 @@ class IngestApiTest(TestCase):
             mock_load_root.return_value = root_links
 
             ingest_api = IngestApi(api_url)
-            ingest_api.submission_links[submission_url] = {
+            ingest_api._submission_links[submission_url] = {
                 'files': {
                     'href': submission_url + "/files"
                 }
@@ -81,8 +81,8 @@ class IngestApiTest(TestCase):
                 mock_requests_get.side_effect = mock_get_side_effect
                 assert 'uuid' in ingestapi.getSubmissionByUuid(mock_submission_uuid)
 
-    @patch('ingest.api.ingestapi.requests')
-    def test_get_all(self, mock_requests):
+    @patch('ingest.api.ingestapi.create_session_with_retry')
+    def test_get_all(self, mock_create_session):
         # given
         ingest_api = IngestApi()
 
@@ -125,7 +125,7 @@ class IngestApiTest(TestCase):
             }
         }
 
-        mock_requests.get = lambda url, headers: self._create_mock_response(url, mocked_responses)
+        mock_create_session.return_value.get = lambda url, headers: self._create_mock_response(url, mocked_responses)
 
         # when
         entities = ingest_api.get_all('url?page=0&size=3', "bundleManifests")

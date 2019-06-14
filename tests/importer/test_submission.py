@@ -50,7 +50,7 @@ class SubmissionTest(TestCase):
         ingest.api.ingestapi.requests.get = MagicMock()
         mock_ingest_api = MagicMock(name='ingest_api')
         mock_ingest_api.load_root = MagicMock()
-        mock_ingest_api.createEntity = MagicMock(return_value=new_entity_mock_response)
+        mock_ingest_api.create_entity = MagicMock(return_value=new_entity_mock_response)
 
         submission = Submission(mock_ingest_api, submission_url='url')
 
