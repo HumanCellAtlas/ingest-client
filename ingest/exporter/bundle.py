@@ -51,8 +51,10 @@ class Bundle:
 
     def generate_manifest(self, envelope_uuid) -> BundleManifest:
         envelope_uuid_map = {'uuid': {'uuid': envelope_uuid}}
-        return BundleManifest(bundleUuid=self.uuid, envelopeUuid=envelope_uuid_map,
-                              bundleVersion=self.get_version())
+        manifest = BundleManifest(bundleUuid=self.uuid, envelopeUuid=envelope_uuid_map,
+                                  bundleVersion=self.get_version())
+        manifest.fileBiomaterialMap.update({uuid: [uuid] for uuid in self._file_map.keys()})
+        return manifest
 
 
 class BundleService:

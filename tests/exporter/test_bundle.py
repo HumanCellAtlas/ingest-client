@@ -110,6 +110,13 @@ class BundleTest(TestCase):
         self.assertIsNotNone(manifest_envelope_uuid)
         self.assertEqual(envelope_uuid, manifest_envelope_uuid.get('uuid'))
 
+        # and:
+        self.assertEqual(1, len(manifest.fileBiomaterialMap))
+        file_map_values = manifest.fileBiomaterialMap.get(biomaterial_uuid)
+        self.assertIsNotNone(file_map_values)
+        self.assertEqual(1, len(file_map_values))
+        self.assertTrue(biomaterial_uuid in file_map_values)
+
 
 class BundleServiceTest(TestCase):
 
