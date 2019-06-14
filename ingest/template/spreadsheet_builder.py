@@ -2,32 +2,31 @@
 """
 Given a tabs template and list of schema URLs, will output a spreadsheet in Xls format
 """
-import urllib
 from argparse import ArgumentParser
 
 __author__ = "jupp"
 __license__ = "Apache 2.0"
 __date__ = "08/05/2018"
 
-from ingest.template import schema_template, tabs
+from ingest.template import schema_template
 from ingest.template.tabs import TabConfig
 import xlsxwriter
-
 
 DEFAULT_INGEST_URL = "http://api.ingest.data.humancellatlas.org"
 DEFAULT_SCHEMAS_ENDPOINT = "/schemas/search/latestSchemas"
 DEFAULT_MIGRATIONS_URL = "https://schema.humancellatlas.org/property_migrations"
-
 
 class SpreadsheetBuilder:
     def __init__(self, output_file, hide_row=False):
 
         self.workbook = xlsxwriter.Workbook(output_file)
 
-        self.header_format = self.workbook.add_format({'bold': True, 'bg_color': '#D0D0D0', 'font_size': 12, 'valign': 'vcenter'})
+        self.header_format = self.workbook.add_format(
+            {'bold': True, 'bg_color': '#D0D0D0', 'font_size': 12, 'valign': 'vcenter'})
         self.locked_format = self.workbook.add_format({'locked': True})
         # self.required_header_format = self.workbook.add_format({'bold': True, 'bg_color': '#D0D0D0'})
-        self.desc_format = self.workbook.add_format({'font_color': '#808080', 'italic': True, 'text_wrap': True, 'font_size': 12, 'valign': 'top'})
+        self.desc_format = self.workbook.add_format(
+            {'font_color': '#808080', 'italic': True, 'text_wrap': True, 'font_size': 12, 'valign': 'top'})
         self.include_schemas_tab = False
         self.hidden_row = hide_row
 
@@ -47,9 +46,9 @@ class SpreadsheetBuilder:
 
     def _get_value_for_column(self, template, col_name, property):
         try:
-            uf = str(template.lookup(col_name + "."+property)) if template.lookup(col_name + "."+property) else ""
+            uf = str(template.lookup(col_name + "." + property)) if template.lookup(col_name + "." + property) else ""
             return uf
-        except:
+        except Exception:
             print("No property " + property + " for " + col_name)
             return ""
 
@@ -75,7 +74,7 @@ class SpreadsheetBuilder:
                 uf = uf + " ontology ID"
 
             return uf
-        except:
+        except Exception:
             return key
 
     def save_workbook(self):
@@ -102,41 +101,40 @@ class SpreadsheetBuilder:
                 for cols in detail["columns"]:
 
                     if cols.split(".")[-1] == "text":
-                            uf = self.get_user_friendly(template, cols.replace('.text', '')).upper()
+                        uf = self.get_user_friendly(template, cols.replace('.text', '')).upper()
                     else:
-                        if cols+".text" not in detail["columns"]:
+                        if cols + ".text" not in detail["columns"]:
                             uf = self.get_user_friendly(template, cols).upper()
                     if cols.split(".")[-1] == "text":
                         desc = self._get_value_for_column(template, cols.replace('.text', ''), "description")
                         if desc == "":
                             desc = self._get_value_for_column(template, cols, "description")
                     else:
-                        if cols+".text" not in detail["columns"]:
+                        if cols + ".text" not in detail["columns"]:
                             desc = self._get_value_for_column(template, cols, "description")
                     if cols.split(".")[-1] == "text":
                         required = bool(self._get_value_for_column(template, cols.replace('.text', ''), "required"))
                     else:
-                        if cols+".text" not in detail["columns"]:
+                        if cols + ".text" not in detail["columns"]:
                             required = bool(self._get_value_for_column(template, cols, "required"))
                     if cols.split(".")[-1] == "text":
                         example_text = self._get_value_for_column(template, cols.replace('.text', ''), "example")
                         if example_text == "":
                             example_text = self._get_value_for_column(template, cols, "example")
                     else:
-                        if cols+".text" not in detail["columns"]:
+                        if cols + ".text" not in detail["columns"]:
                             example_text = self._get_value_for_column(template, cols, "example")
                     if cols.split(".")[-1] == "text":
                         guidelines = self._get_value_for_column(template, cols.replace('.text', ''), "guidelines")
                         if guidelines == "":
                             guidelines = self._get_value_for_column(template, cols, "guidelines")
                     else:
-                        if cols+".text" not in detail["columns"]:
+                        if cols + ".text" not in detail["columns"]:
                             guidelines = self._get_value_for_column(template, cols, "guidelines")
 
                     hf = self.header_format
                     if required:
                         uf = uf + " (Required)"
-
 
                     # set the user friendly name
                     worksheet.write(0, col_number, uf, hf)
@@ -151,14 +149,13 @@ class SpreadsheetBuilder:
                     # set the description
                     worksheet.write(1, col_number, desc, self.desc_format)
 
-
                     # write example
                     if example_text:
                         # print("Example " + example_text)
                         worksheet.write(2, col_number, guidelines + ' For example: ' + example_text, self.desc_format)
                     else:
                         # print("Guideline " + guidelines)
-                        worksheet.write(2, col_number, guidelines , self.desc_format)
+                        worksheet.write(2, col_number, guidelines, self.desc_format)
 
                     # set the key
                     worksheet.write(3, col_number, cols, self.locked_format)
@@ -178,9 +175,10 @@ class SpreadsheetBuilder:
                     else:
                         worksheet.write(4, col_number, '', hf)
 
-                    col_number+=1
+                    col_number += 1
 
-                    # worksheet.merge_range(first_col=0, first_row=4, last_col= len(detail["columns"]), last_row=4, cell_format= self.header_format, data="FILL OUT INFORMATION BELOW THIS ROW")
+                    # worksheet.merge_range(first_col=0, first_row=4, last_col= len(detail["columns"]), last_row=4,
+                    # cell_format= self.header_format, data="FILL OUT INFORMATION BELOW THIS ROW")
 
         if self.include_schemas_tab:
             self._write_schemas(template.get_schema_urls())
@@ -188,20 +186,18 @@ class SpreadsheetBuilder:
         return self
 
 
-
-
 if __name__ == '__main__':
     parser = ArgumentParser()
     parser.add_argument("-y", "--yaml", dest="yaml",
-                      help="The YAML file from which to generate the spreadsheet")
+                        help="The YAML file from which to generate the spreadsheet")
     parser.add_argument("-o", "--output", dest="output",
-                      help="Name of the output spreadsheet")
+                        help="Name of the output spreadsheet")
     parser.add_argument("-u", "--url", dest="url",
-                      help="Optional ingest API URL - if not default (prod)")
+                        help="Optional ingest API URL - if not default (prod)")
     parser.add_argument("-m", "--migrations", dest="migrations",
                         help="Optional migrations URL - if not default (prod)")
     parser.add_argument("-r", "--hidden_row", action="store_true",
-                      help="Binary flag - if set, the 4th row will be hidden")
+                        help="Binary flag - if set, the 4th row will be hidden")
     args = parser.parse_args()
 
     if not args.output:

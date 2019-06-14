@@ -1,6 +1,5 @@
-from unittest import TestCase
-
 import copy
+from unittest import TestCase
 
 from mock import MagicMock
 
@@ -80,7 +79,7 @@ class ColumnSpecificationTest(TestCase):
     def test_look_up_nested_object_field(self):
         # given:
         schema_spec = {
-            'product.reviews.rating': {'value_type': 'integer','multivalue': False},
+            'product.reviews.rating': {'value_type': 'integer', 'multivalue': False},
             'product.reviews': {'value_type': 'object', 'multivalue': True}
         }
         schema_template = self._prepare_mock_schema_template('product', 'merchandise/product',
@@ -242,9 +241,17 @@ class ColumnSpecificationTest(TestCase):
         # expect:
         self.assertEqual(ConversionType.LINKED_IDENTITY, column_spec.get_conversion_type())
 
+    def test_get_conversion_type_linked_external_reference_identity(self):
+        # given:
+        column_spec = ColumnSpecification('account.uuid', 'savings_account', 'profile_type',
+                                          DataType.STRING, identity=True, external_reference=True)
+
+        # expect:
+        self.assertEqual(ConversionType.LINKED_EXTERNAL_REFERENCE, column_spec.get_conversion_type())
+
     def test_get_conversion_type_external_reference_identity(self):
         # given:
-        column_spec = ColumnSpecification('account.uuid', 'user', 'profile_type',
+        column_spec = ColumnSpecification('account.uuid', 'account', 'profile_type',
                                           DataType.STRING, identity=True, external_reference=True)
 
         # expect:

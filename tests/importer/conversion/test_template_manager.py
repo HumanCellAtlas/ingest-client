@@ -4,7 +4,6 @@ from mock import MagicMock, patch, call
 from openpyxl import Workbook
 
 from ingest.importer.conversion import conversion_strategy, column_specification
-from ingest.importer.conversion.column_specification import ColumnSpecification
 from ingest.importer.conversion.conversion_strategy import CellConversion
 from ingest.importer.conversion.template_manager import TemplateManager, RowTemplate, InvalidTabName
 from ingest.importer.data_node import DataNode
@@ -53,7 +52,7 @@ class TemplateManagerTest(TestCase):
         donor_worksheet = workbook.create_sheet('Donor')
 
         # when:
-        data_node:DataNode = template_manager.create_template_node(donor_worksheet)
+        data_node: DataNode = template_manager.create_template_node(donor_worksheet)
 
         # then:
         data = data_node.as_dict()
@@ -337,7 +336,7 @@ class TemplateManagerTest(TestCase):
     def test_get_domain_type(self):
         # given:
         template = MagicMock(name='schema_template')
-        schema_spec = {'schema': { 'domain_entity': 'user/profile' }}
+        schema_spec = {'schema': {'domain_entity': 'user/profile'}}
         template.lookup = MagicMock(return_value=schema_spec)
 
         # and:

@@ -1,13 +1,14 @@
-import time
-
 import base64
 import functools
 import json
+import time
+from datetime import datetime
+
 import jwt
 import requests
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives.asymmetric import rsa
-from datetime import datetime
+
 
 class DCPAuthClient(object):
     audience = "https://dev.data.humancellatlas.org/"
@@ -60,8 +61,8 @@ class DCPAuthClient(object):
         keys = requests.get(DCPAuthClient.get_jwks_uri(openid_provider)).json()["keys"]
         return {
             key["kid"]: rsa.RSAPublicNumbers(
-                    e=int.from_bytes(base64.urlsafe_b64decode(key["e"] + "==="), byteorder="big"),
-                    n=int.from_bytes(base64.urlsafe_b64decode(key["n"] + "==="), byteorder="big")
+                e=int.from_bytes(base64.urlsafe_b64decode(key["e"] + "==="), byteorder="big"),
+                n=int.from_bytes(base64.urlsafe_b64decode(key["n"] + "==="), byteorder="big")
             ).public_key(backend=default_backend())
             for key in keys
         }

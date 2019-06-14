@@ -39,9 +39,9 @@ class WorkbookImporterTest(TestCase):
         # and:
         project = MetadataEntity(concrete_type='project', domain_type='project')
         jdelacruz = MetadataEntity(concrete_type='user', domain_type='user', object_id=1,
-                              content={'user_name': 'jdelacruz'})
+                                   content={'user_name': 'jdelacruz'})
         setsuna_f_seiei = MetadataEntity(concrete_type='user', domain_type='user', object_id=96,
-                                       content={'user_name': 'sayyeah'})
+                                         content={'user_name': 'sayyeah'})
         worksheet_importer.do_import = MagicMock(side_effect=[[project],
                                                               [jdelacruz, setsuna_f_seiei]])
 
@@ -130,13 +130,13 @@ class WorkbookImporterTest(TestCase):
 
         # and:
         project = MetadataEntity(domain_type='project', concrete_type='project',
-                                        content={'description': 'test project'})
+                                 content={'description': 'test project'})
         jsmith = MetadataEntity(domain_type='project', concrete_type='contact',
                                 content={'contributors': {'name': 'John',
-                                                           'email': 'jsmith@email.com'}})
+                                                          'email': 'jsmith@email.com'}})
         ppan = MetadataEntity(domain_type='project', concrete_type='contact',
                               content={'contributors': {'name': 'Peter',
-                                                         'email': 'peterpan@email.com'}})
+                                                        'email': 'peterpan@email.com'}})
         worksheet_importer.do_import = MagicMock(side_effect=[[project], [jsmith, ppan]])
 
         # and:
@@ -170,7 +170,6 @@ class WorkbookImporterTest(TestCase):
         project_1 = MetadataEntity(concrete_type='project', domain_type='project', object_id=1)
         project_2 = MetadataEntity(concrete_type='project', domain_type='project', object_id=2)
         worksheet_importer.do_import = MagicMock(side_effect=[[project_1, project_2]])
-
 
         # and:
         workbook = create_test_workbook('Project')

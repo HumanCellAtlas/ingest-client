@@ -1,15 +1,11 @@
 import json
 from unittest import TestCase
 
-import copy
 from mock import MagicMock, patch, call
 
-from ingest.api.ingestapi import IngestApi
-from ingest.importer.data_node import DataNode
+import ingest.api.ingestapi
 from ingest.importer.submission import Submission, Entity, IngestSubmitter, EntityLinker, LinkedEntityNotFound, \
     InvalidLinkInSpreadsheet, MultipleProcessesFound, EntityMap
-
-import ingest.api.ingestapi
 
 
 class SubmissionTest(TestCase):
@@ -44,7 +40,8 @@ class SubmissionTest(TestCase):
                     'title': 'A single protocol'
                 },
                 'submissionEnvelopes': {
-                    'href': 'http://api.ingest.dev.data.humancellatlas.org/protocols/5af1794d6a65a50007755b6a/submissionEnvelopes',
+                    'href': 'http://api.ingest.dev.data.humancellatlas.org/protocols/5af1794d6a65a50007755b6a'
+                            '/submissionEnvelopes',
                     'title': 'Access or create new submission envelopes'
                 }
             }
@@ -182,7 +179,6 @@ class IngestSubmitterTest(TestCase):
         user = Entity('user', 'user_1', {})
         entity_map = EntityMap(product, user, project)
 
-
         # when:
         submitter = IngestSubmitter(ingest_api)
         submitter.submit(entity_map, submission_url='url')
@@ -191,6 +187,31 @@ class IngestSubmitterTest(TestCase):
         submission_constructor.assert_called_with(ingest_api, 'url')
         submission.define_manifest.assert_called_with(entity_map)
         submission.add_entity.assert_has_calls([call(product), call(user)], any_order=True)
+
+    @patch('ingest.importer.submission.Submission')
+    def test_submit_update_entities(self, submission_constructor):
+        # given:
+        ingest_api = MagicMock('ingest_api')
+        ingest_api.getSubmissionEnvelope = MagicMock()
+        submission = self._mock_submission(submission_constructor)
+
+        # and:
+        product = Entity('product', 'product_1', {'k': 'v'})
+        project = Entity('project', 'id', {'k': 'v'})
+        user1 = Entity('user', 'user_1', {'k': 'v'})
+        user2 = Entity('user', 'user_2', {'k': 'v'}, is_reference=True)
+        user3 = Entity('user', 'user_3', {'k': 'v'}, is_reference=True)
+        entity_map = EntityMap(product, user1, user2, user3, project)
+
+        # when:
+        submitter = IngestSubmitter(ingest_api)
+        submitter.submit(entity_map, submission_url='url')
+
+        # then:
+        submission_constructor.assert_called_with(ingest_api, 'url')
+        submission.define_manifest.assert_called_with(entity_map)
+        submission.add_entity.assert_has_calls([call(product), call(user1)], any_order=True)
+        submission.update_entity.assert_has_calls([call(user2), call(user3)], any_order=True)
 
     @patch('ingest.importer.submission.Submission')
     def test_submit_linked_entity(self, submission_constructor):
@@ -233,6 +254,7 @@ class IngestSubmitterTest(TestCase):
         submission = MagicMock('submission')
         submission.define_manifest = MagicMock()
         submission.add_entity = MagicMock()
+        submission.update_entity = MagicMock()
         submission.link_entity = MagicMock()
         submission.manifest = {}
         submission_constructor.return_value = submission
@@ -312,7 +334,6 @@ class EntityMapTest(TestCase):
         # has many element with links
         entity_map.add_entity(Entity('product', 'product_2', {}, direct_links=[{}, {}, {}, {}]))
         self.assertEqual(entity_map.count_links(), 7)
-
 
 
 class EntityLinkerTest(TestCase):
@@ -1042,7 +1063,7 @@ class EntityLinkerTest(TestCase):
                     }
                 }
             },
-            'file':{
+            'file': {
                 'file_id_1': {
                     'content': {
                         'key': 'file_1'

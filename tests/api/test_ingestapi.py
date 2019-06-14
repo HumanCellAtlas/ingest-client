@@ -1,12 +1,10 @@
+import json
 from unittest import TestCase
 from unittest.mock import patch
 
-from mock import MagicMock
+from mock import MagicMock, Mock
 
-import ingest
 from ingest.api.ingestapi import IngestApi
-
-import json
 
 mock_ingest_api_url = "http://mockingestapi.com"
 mock_submission_envelope_id = "mock-envelope-id"
@@ -21,7 +19,7 @@ class IngestApiTest(TestCase):
         filename = "mock-filename"
 
         # mock the load_root()
-        with patch('ingest.api.ingestapi.IngestApi.get_root_url') as mock_load_root:
+        with patch('ingest.api.ingestapi.IngestApi._get_ingest_links') as mock_load_root:
             root_links = dict()
             root_links["file"] = {"href": api_url + "/files"}
             root_links["submissionEnvelopes"] = {"href": api_url + "/submissionEnvelopes"}
@@ -39,7 +37,8 @@ class IngestApiTest(TestCase):
                 ingest_api.createFile(submission_url, filename, "{}")
             mock_session.assert_called_once_with(f'{submission_url}/files/{filename}')
 
-    def test_get_submission_by_uuid(self):
+    @patch('ingest.api.ingestapi.IngestApi._get_ingest_links')
+    def test_get_submission_by_uuid(self, mock_get_ingest_links):
         api_url = mock_ingest_api_url
         mock_submission_uuid = "mock-submission-uuid"
         submissions_url = api_url + "/submissionEnvelopes"
@@ -47,7 +46,8 @@ class IngestApiTest(TestCase):
         findByUuidRel = "findByUuid"
         findByUuidHref = submission_search_uri + "/findByUuidHref{?uuid}"
 
-        ingestapi = IngestApi(api_url, dict())
+        ingestapi = IngestApi(api_url)
+
         with patch('ingest.api.ingestapi.IngestApi.get_link_from_resource_url') as mock_get_url_for_link:
             def mock_get_url_for_link_patch(*args, **kwargs):
                 if args[0] == submission_search_uri and args[1] == findByUuidRel:
@@ -82,3 +82,59 @@ class IngestApiTest(TestCase):
                 mock_requests_get.side_effect = mock_get_side_effect
 
                 assert 'uuid' in ingestapi.getSubmissionByUuid(mock_submission_uuid)
+
+    @patch('ingest.api.ingestapi.requests')
+    def test_get_all(self, mock_requests):
+        # given
+        ingest_api = IngestApi()
+
+        mocked_responses = {
+            'url?page=0&size=3': {
+                "page": {
+                    "size": 3,
+                    "totalElements": 5,
+                    "totalPages": 2,
+                    "number": 0
+                },
+                "_embedded": {
+                    "bundleManifests": [
+                        {"attr": "value"},
+                        {"attr": "value"},
+                        {"attr": "value"}
+                    ]
+                },
+                "_links": {
+                    "next": {
+                        'href': 'url?page=1&size=3'
+                    }
+                }
+            },
+            'url?page=1&size=3': {
+                "page": {
+                    "size": 3,
+                    "totalElements": 5,
+                    "totalPages": 2,
+                    "number": 1
+                },
+                "_embedded": {
+                    "bundleManifests": [
+                        {"attr": "value"},
+                        {"attr": "value"}
+                    ]
+                },
+                "_links": {
+                }
+            }
+        }
+
+        mock_requests.get = lambda url, headers: self._create_mock_response(url, mocked_responses)
+
+        # when
+        entities = ingest_api.get_all('url?page=0&size=3', "bundleManifests")
+        self.assertEqual(len(list(entities)), 5)
+
+    def _create_mock_response(self, url, mocked_responses):
+        response = MagicMock()
+        response.json.return_value = mocked_responses.get(url)
+        response.raise_for_status = Mock()
+        return response

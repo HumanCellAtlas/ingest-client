@@ -9,12 +9,11 @@ __date__ = "12/09/2017"
 import json
 import logging
 import os
-from time import sleep, time
+from time import time
 from urllib.parse import urljoin
 
 import requests
 import requests.packages.urllib3.util.retry as retry
-
 
 DEFAULT_STAGING_URL = os.environ.get('STAGING_API', 'https://upload.dev.data.humancellatlas.org')
 DEFAULT_STAGING_VERSION = os.environ.get('STAGING_API_VERSION', 'v1')
@@ -34,9 +33,9 @@ class StagingApi:
 
         retry_policy = RetryPolicy(
             total=100,  # seems that this has a default value of 10,
-                        # setting this to a very high number so that it'll respect the status retry count
+            # setting this to a very high number so that it'll respect the status retry count
             status=17,  # status is the no. of retries if response is in status_forcelist,
-                        # this count will retry for ~20mins with back off timeout within
+            # this count will retry for ~20mins with back off timeout within
             read=10,
             status_forcelist=[500, 502, 503, 504],
             backoff_factor=0.6,
@@ -85,13 +84,19 @@ class StagingApi:
         self.logger.info('Staging area deleted!')
         return base
 
-    def stageFile(self, submissionId, filename, body, type):
-        fileUrl = urljoin(self.url, self.apiversion + '/area/' + submissionId + "/" + filename)
+    def stageFileRequest(self, file_stage_request: 'MetadataFileStagingRequest'):
+        return self.stageFile(file_stage_request.staging_area_uuid,
+                              file_stage_request.filename,
+                              file_stage_request.metadata_json,
+                              file_stage_request.metadata_type)
+
+    def stageFile(self, stagingAreaId, filename, body, type):
+        fileUrl = urljoin(self.url, self.apiversion + '/area/' + stagingAreaId + "/" + filename)
 
         self.logger.info(f'Staging file: {fileUrl}')
 
         header = dict(self.header)
-        header['Content-type'] = 'application/json; dcp-type=' + type
+        header['Content-type'] = f'application/json; dcp-type="{type}"'
 
         r = self.session.put(fileUrl, data=json.dumps(body, indent=4), headers=header)
 
@@ -125,3 +130,11 @@ class FileDescription:
         self.name = name
         self.size = size
         self.url = url
+
+
+class MetadataFileStagingRequest:
+    def __init__(self, staging_area_uuid, filename, metadata_json, metadata_type):
+        self.staging_area_uuid = staging_area_uuid
+        self.filename = filename
+        self.metadata_json = metadata_json
+        self.metadata_type = metadata_type

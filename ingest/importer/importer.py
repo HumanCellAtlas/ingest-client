@@ -2,6 +2,7 @@ import json
 import logging
 
 import openpyxl
+from openpyxl import load_workbook
 
 import ingest.importer.submission
 from ingest.importer.conversion import template_manager
@@ -10,8 +11,6 @@ from ingest.importer.conversion.template_manager import TemplateManager
 from ingest.importer.spreadsheet.ingest_workbook import IngestWorkbook
 from ingest.importer.spreadsheet.ingest_worksheet import IngestWorksheet
 from ingest.importer.submission import IngestSubmitter, EntityMap, EntityLinker
-
-from openpyxl import load_workbook
 
 format = '[%(filename)s:%(lineno)s - %(funcName)20s() ] %(asctime)s - %(name)s - %(levelname)s - %(message)s'
 logging.basicConfig(format=format)
@@ -33,16 +32,14 @@ class XlsImporter:
         return entity_map
 
     def _generate_spreadsheet_json(self, file_path, project_uuid=None):
-
         ingest_workbook = self._create_ingest_workbook(file_path)
         template_mgr = None
 
         try:
             template_mgr = template_manager.build(ingest_workbook.get_schemas(), self.ingest_api)
         except Exception as e:
-            self.logger.error(e)
             raise SchemaRetrievalError(
-                'An error was encountered while retrieving the schema information to process the spreadsheet.')
+                f'There was an error retrieving the schema information to process the spreadsheet. {str(e)}')
 
         workbook_importer = WorkbookImporter(template_mgr)
         spreadsheet_json = workbook_importer.do_import(ingest_workbook, project_uuid)
@@ -66,7 +63,7 @@ class XlsImporter:
             error_json = json.dumps({
                 'errorCode': 'ingest.importer.submission',
                 'errorType': 'Error',
-                'message':  'An error during submission occurred.',
+                'message': 'An error during submission occurred.',
                 'details': str(e),
 
             })
@@ -88,6 +85,9 @@ class XlsImporter:
         return submission
 
     def insert_uuids(self, submission, file_path):
+        if not submission:
+            return
+
         wb = load_workbook(filename=file_path)
 
         worksheets = {}
@@ -105,8 +105,7 @@ class XlsImporter:
                     worksheets[worksheet_title] = ingest_worksheet
 
                 ingest_worksheet = worksheets.get(worksheet_title)
-                uuid = entity.ingest_json['uuid']['uuid']
-                ingest_worksheet.cell(row=row_index, column=col_idx).value = uuid
+                ingest_worksheet.cell(row=row_index, column=col_idx).value = entity.uuid
 
         return wb.save(file_path)
 
@@ -131,10 +130,12 @@ class _ImportRegistry:
     """
     This is a helper class for managing metadata entities during Workbook import.
     """
+
     def __init__(self):
         self._submittable_registry = {}
         self._module_registry = {}
         self._module_list = []
+        self.project_id = _PROJECT_ID
 
     def add_submittable(self, metadata: MetadataEntity):
         # TODO no test to check case sensitivity
@@ -144,15 +145,16 @@ class _ImportRegistry:
             type_map = {}
             self._submittable_registry[domain_type] = type_map
         if domain_type.lower() == _PROJECT_TYPE:
-            if not type_map.get(_PROJECT_ID):
-                metadata.object_id = _PROJECT_ID
+            if not type_map.get(self.project_id):
+                metadata.object_id = metadata.object_id or self.project_id
+                self.project_id = metadata.object_id
             else:
                 raise MultipleProjectsFound()
         type_map[metadata.object_id] = metadata
 
     def add_module(self, metadata: MetadataEntity):
         if metadata.domain_type.lower() == 'project':
-            metadata.object_id = _PROJECT_ID
+            metadata.object_id = self.project_id
         self._module_list.append(metadata)
 
     def import_modules(self):
@@ -171,7 +173,7 @@ class _ImportRegistry:
 
     def has_project(self):
         project_registry = self._submittable_registry.get(_PROJECT_TYPE)
-        return project_registry and project_registry.get(_PROJECT_ID)
+        return project_registry and project_registry.get(self.project_id)
 
 
 class WorkbookImporter:
@@ -183,8 +185,20 @@ class WorkbookImporter:
 
     def do_import(self, workbook: IngestWorkbook, project_uuid=None):
         registry = _ImportRegistry()
+        importable_worksheets = workbook.importable_worksheets()
 
-        for worksheet in workbook.importable_worksheets():
+        if project_uuid:
+            project_metadata = MetadataEntity(domain_type=_PROJECT_TYPE,
+                                              concrete_type=_PROJECT_TYPE,
+                                              object_id=project_uuid,
+                                              is_reference=True,
+                                              content={})
+            registry.add_submittable(project_metadata)
+
+            importable_worksheets = [ws for ws in importable_worksheets
+                                     if _PROJECT_TYPE not in ws.title.lower()]
+
+        for worksheet in importable_worksheets:
             metadata_entities = self.worksheet_importer.do_import(worksheet)
             module_field_name = worksheet.get_module_field_name()
             for entity in metadata_entities:
@@ -202,7 +216,6 @@ class WorkbookImporter:
 
 
 class WorksheetImporter:
-
     KEY_HEADER_ROW_IDX = 4
     USER_FRIENDLY_HEADER_ROW_IDX = 2
     START_ROW_OFFSET = 5

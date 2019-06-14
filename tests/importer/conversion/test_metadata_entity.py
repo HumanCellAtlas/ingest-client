@@ -111,9 +111,9 @@ class MetadataEntityTest(TestCase):
         product = MetadataEntity(domain_type='product', concrete_type='product', object_id=12,
                                  content={'name': 'test product'})
         john_review = MetadataEntity(domain_type='product', concrete_type='product', object_id=12,
-                                 content={'reviews': {'user': 'john', 'rating': 5}})
+                                     content={'reviews': {'user': 'john', 'rating': 5}})
         mary_review = MetadataEntity(domain_type='product', concrete_type='product', object_id=12,
-                                 content={'reviews': {'user': 'mary', 'rating': 3}})
+                                     content={'reviews': {'user': 'mary', 'rating': 3}})
 
         # when:
         product.add_module_entity(john_review)
@@ -148,4 +148,3 @@ class MetadataEntityTest(TestCase):
         self.assertEqual(test_links, submission_dict.get('links_by_entity'))
         self.assertEqual(test_external_links, submission_dict.get('external_links_by_entity'))
         self.assertEqual(test_linking_details, submission_dict.get('linking_details'))
-

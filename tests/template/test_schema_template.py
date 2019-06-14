@@ -12,9 +12,7 @@ import unittest
 from unittest import TestCase
 
 import tests.template.schema_mock_utils as schema_mock
-from ingest.template.schema_template import RootSchemaException
-from ingest.template.schema_template import SchemaParser
-from ingest.template.schema_template import UnknownKeyException
+from ingest.template.schema_template import RootSchemaException, SchemaParser, UnknownKeyException
 
 
 class TestSchemaTemplate(TestCase):
@@ -27,7 +25,7 @@ class TestSchemaTemplate(TestCase):
 
     def test_schema_lookup(self):
 
-        data='{"id" : "'+self.dummyProjectUri+'", "properties": {"foo": "bar"} }'
+        data = '{"id" : "' + self.dummyProjectUri + '", "properties": {"foo": "bar"} }'
         template = schema_mock.get_template_for_json(data=data)
         self.assertEqual("project", template.lookup('project.schema.domain_entity'))
         self.assertEqual("project", template.lookup('project.schema.module'))
@@ -38,12 +36,11 @@ class TestSchemaTemplate(TestCase):
         with self.assertRaises(RootSchemaException):
             schema_mock.get_template_for_json(data=data)
 
-
     def test_unknown_key_exception(self):
-        data = '{"id" : "'+self.dummyProjectUri+'", "properties": {"foo": "bar"} }'
+        data = '{"id" : "' + self.dummyProjectUri + '", "properties": {"foo": "bar"} }'
         template = schema_mock.get_template_for_json(data=data)
         with self.assertRaises(UnknownKeyException):
-                template.lookup('foo')
+            template.lookup('foo')
 
     def test_get_tab_name(self):
         data = '{"id" : "' + self.dummyDonorUri + '", "properties": {"foo_bar": {"user_friendly" : "Foo bar"}} }'
@@ -63,7 +60,8 @@ class TestSchemaTemplate(TestCase):
             template.get_key_for_label("Bar foo", "Donor organism")
 
     def test_required_fields(self):
-        data = '{"id" : "' + self.dummyDonorUri + '", "required": ["foo_bar"], "properties": { "foo_bar": {"user_friendly" : "Foo bar"}, "bar_foo" : {}} }'
+        data = '{"id" : "' + self.dummyDonorUri + '", "required": ["foo_bar"], "properties": { "foo_bar": {' \
+                                                  '"user_friendly" : "Foo bar"}, "bar_foo" : {}} }'
         template = schema_mock.get_template_for_json(data=data)
 
         self.assertTrue(template.lookup("donor_organism.foo_bar.required"))
@@ -76,7 +74,8 @@ class TestSchemaTemplate(TestCase):
         self.assertFalse(template.lookup("donor_organism.foo_bar.multivalue"))
 
     def test_has_type_list(self):
-        data = '{"id" : "' + self.dummyDonorUri + '", "properties": { "foo_bar": {"type" : "array" , "items" : {"type": "string"}} } }'
+        data = '{"id" : "' + self.dummyDonorUri + '", "properties": { "foo_bar": {"type" : "array" , "items" : {' \
+                                                  '"type": "string"}} } }'
         template = schema_mock.get_template_for_json(data=data)
         self.assertEqual("string", template.lookup("donor_organism.foo_bar.value_type"))
         self.assertTrue(template.lookup("donor_organism.foo_bar.multivalue"))
@@ -181,13 +180,17 @@ class TestSchemaTemplate(TestCase):
         dir_path = os.path.dirname(os.path.realpath(__file__))
 
         biomaterial_core_path = os.path.realpath(os.sep + os.sep + dir_path + os.sep + "biomaterial_core.json")
-        data = '{"id" : "' + self.dummyDonorUri + '", "properties": { "biomaterial_core" : {"user_friendly": "foo", "description" : "foo bar" , "$ref" : "file:'+biomaterial_core_path+'"}}}'
+        data = '{"id" : "' + self.dummyDonorUri + '", "properties": { "biomaterial_core" : {"user_friendly": "foo", ' \
+                                                  '"description" : "foo bar" , "$ref" : "file:' + \
+               biomaterial_core_path + '"}}}'
         template = schema_mock.get_template_for_json(data=data)
 
         self.assertEqual("foo", template.lookup("donor_organism.biomaterial_core.user_friendly"))
-        self.assertEqual("foo bar", template.lookup("donor_organism.biomaterial_core.description") )
-        self.assertEqual("biomaterial id", template.lookup("donor_organism.biomaterial_core.biomaterial_id.user_friendly"))
-        self.assertEqual("a biomaterial id", template.lookup("donor_organism.biomaterial_core.biomaterial_id.description"))
+        self.assertEqual("foo bar", template.lookup("donor_organism.biomaterial_core.description"))
+        self.assertEqual("biomaterial id",
+                         template.lookup("donor_organism.biomaterial_core.biomaterial_id.user_friendly"))
+        self.assertEqual("a biomaterial id",
+                         template.lookup("donor_organism.biomaterial_core.biomaterial_id.description"))
 
     def test_example(self):
         data = '{"id" : "' + self.dummyDonorUri + '", "properties": {"foo_bar": {"example" : "Foo is a bar"}} }'
@@ -199,7 +202,8 @@ class TestSchemaTemplate(TestCase):
         self.assertIsNone(template.lookup("donor_organism.foo_bar.example"))
 
     def test_follows_item_refs(self):
-        data = '{"id" : "' + self.dummyProjectUri + '", "properties": { "foo_bar": {"type" : "array" , "items" : {"type" : "object", "id": "'+self.dummyDonorUri+'"}} } }'
+        data = '{"id" : "' + self.dummyProjectUri + '", "properties": { "foo_bar": {"type" : "array" , "items" : {' \
+                                                    '"type" : "object", "id": "' + self.dummyDonorUri + '"}} } }'
         template = schema_mock.get_template_for_json(data=data)
 
         self.assertEqual("biomaterial", template.lookup("project.foo_bar.schema.domain_entity"))
@@ -216,7 +220,7 @@ class TestSchemaTemplate(TestCase):
         self.assertEqual("foo", schema_parser.get_domain_entity_from_url(url))
         url = 'https://schema.humancellatlas.org/bundle/1.0.0/links'
         self.assertEqual(None, schema_parser.get_domain_entity_from_url(url))
-        url= 'http://schema.dev.data.humancellatlas.org/system/1.0.0/provenance'
+        url = 'http://schema.dev.data.humancellatlas.org/system/1.0.0/provenance'
         self.assertEqual(None, schema_parser.get_domain_entity_from_url(url))
 
     def test_get_high_level_entity_from_url(self):
@@ -230,6 +234,7 @@ class TestSchemaTemplate(TestCase):
         schema_parser = SchemaParser(None)
         url = "https://schema.humancellatlas.org/type/project/5.1.0/project"
         self.assertEqual("project", schema_parser.get_module_from_url(url))
+
 
 if __name__ == '__main__':
     unittest.main()

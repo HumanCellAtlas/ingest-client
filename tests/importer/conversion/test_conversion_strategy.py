@@ -4,11 +4,15 @@ from mock import MagicMock
 
 from ingest.importer.conversion import conversion_strategy
 from ingest.importer.conversion.column_specification import ColumnSpecification, ConversionType
-from ingest.importer.conversion.conversion_strategy import DirectCellConversion, \
-    ListElementCellConversion, CellConversion, IdentityCellConversion, LinkedIdentityCellConversion, \
-    DoNothing, ExternalReferenceCellConversion, LinkingDetailCellConversion, \
-    FieldOfSingleElementListCellConversion
-from ingest.importer.conversion.data_converter import StringConverter, ListConverter
+from ingest.importer.conversion.conversion_strategy import \
+    DirectCellConversion, \
+    ListElementCellConversion, CellConversion, IdentityCellConversion, \
+    LinkedIdentityCellConversion, \
+    DoNothing, LinkedExternalReferenceCellConversion, \
+    LinkingDetailCellConversion, \
+    FieldOfSingleElementListCellConversion, ExternalReferenceCellConversion
+from ingest.importer.conversion.data_converter import StringConverter, \
+    ListConverter
 from ingest.importer.conversion.exceptions import UnknownMainCategory
 from ingest.importer.conversion.metadata_entity import MetadataEntity
 
@@ -49,21 +53,27 @@ class ModuleTest(TestCase):
                                       expected_converter_type=ListConverter,
                                       and_also=self._assert_correct_main_category)
 
-    def test_determine_strategy_for_external_reference_field(self):
-        self._assert_correct_strategy(ConversionType.EXTERNAL_REFERENCE,
-                                      ExternalReferenceCellConversion,
+    def test_determine_strategy_for_linked_external_reference_field(self):
+        self._assert_correct_strategy(ConversionType.LINKED_EXTERNAL_REFERENCE,
+                                      LinkedExternalReferenceCellConversion,
                                       expected_converter_type=ListConverter,
                                       and_also=self._assert_correct_main_category)
+
+    def test_determine_strategy_for_external_reference_field(self):
+        self._assert_correct_strategy(ConversionType.EXTERNAL_REFERENCE,
+                                      ExternalReferenceCellConversion)
 
     def _assert_correct_main_category(self, strategy: CellConversion):
         self.assertEqual('product_type', strategy.main_category)
 
     def _assert_correct_strategy(self, conversion_type, strategy_class,
-                                 expected_converter_type=None, and_also=None):
+                                 expected_converter_type=None,
+                                 and_also=None):
         # given:
         converter = MagicMock('converter')
         column_spec = _mock_column_spec(field_name='product.product_id',
-                                        main_category='product_type', converter=converter,
+                                        main_category='product_type',
+                                        converter=converter,
                                         conversion_type=conversion_type)
 
         # when:
@@ -366,11 +376,11 @@ class LinkedIdentityCellConversionTest(TestCase):
         self.assertTrue(exception_thrown, f'[{UnknownMainCategory.__name__}] not raised.')
 
 
-class ExternalReferenceCellConversionTest(TestCase):
+class LinkedExternalReferenceCellConversionTest(TestCase):
 
     def test_apply(self):
         # given:
-        cell_conversion = ExternalReferenceCellConversion('user.uuid', 'account')
+        cell_conversion = LinkedExternalReferenceCellConversion('user.uuid', 'account')
 
         # when:
         metadata = MetadataEntity()
@@ -384,7 +394,7 @@ class ExternalReferenceCellConversionTest(TestCase):
 
     def test_apply_multiple_values(self):
         # given:
-        cell_conversion = ExternalReferenceCellConversion('company.uuid', 'organisation')
+        cell_conversion = LinkedExternalReferenceCellConversion('company.uuid', 'organisation')
 
         # when:
         metadata = MetadataEntity()
@@ -400,7 +410,7 @@ class ExternalReferenceCellConversionTest(TestCase):
         metadata.add_external_links('store_item', ['109bdd9', 'c3c35e6'])
 
         # and:
-        cell_conversion = ExternalReferenceCellConversion('product.uuid', 'store_item')
+        cell_conversion = LinkedExternalReferenceCellConversion('product.uuid', 'store_item')
 
         # when:
         cell_conversion.apply(metadata, '73de901')
@@ -412,6 +422,21 @@ class ExternalReferenceCellConversionTest(TestCase):
         # and:
         expected_ids = ['109bdd9', '73de901', 'c3c35e6']
         self.assertCountEqual(expected_ids, store_item_list)
+
+
+class ExternalReferenceCellConversionTest(TestCase):
+    def test_apply(self):
+        # given:
+        converter = _create_mock_string_converter()
+        cell_conversion = ExternalReferenceCellConversion('user.uuid', converter)
+        # when:
+        metadata = MetadataEntity()
+        cell_conversion.apply(metadata, '20ea8c50-b1b0-4318-97ff-f32cecf47079')
+
+        # then:
+        expected_id = '20ea8c50-b1b0-4318-97ff-f32cecf47079 - converted'
+        self.assertEqual(expected_id, metadata.object_id)
+        self.assertTrue(expected_id, metadata._is_reference)
 
 
 class LinkingDetailCellConversionTest(TestCase):

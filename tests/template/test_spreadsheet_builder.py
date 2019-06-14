@@ -25,13 +25,13 @@ class TestSchemaTemplate(TestCase):
     def test_no_schemas(self):
         data = \
             f'''{{
-                "id" : "{self.donorUri}", 
+                "id" : "{self.donorUri}",
                 "properties": {{
                     "foo_bar": {{
-                        "user_friendly" : "Foo bar", 
+                        "user_friendly" : "Foo bar",
                         "description" : "this is a foo bar", "example" : "e.g. foo"
                     }}
-                }} 
+                }}
             }}'''
 
         file = "foo.xlsx"

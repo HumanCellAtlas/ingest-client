@@ -3,16 +3,15 @@
 Description goes here
 """
 import datetime
-import hca
 import json
 import logging
 import os
 import time
 
+import hca
 from hca.util import SwaggerAPIException
 
-from ingest.utils.s2s_token_client import S2STokenClient
-from ingest.utils.token_manager import TokenManager
+from ingest.api import utils
 
 __author__ = "jupp"
 __license__ = "Apache 2.0"
@@ -46,14 +45,9 @@ class DssApi:
         url = file["url"]
         uuid = file["dss_uuid"]
 
-        version = datetime.datetime.utcnow().strftime("%Y-%m-%dT%H%M%S.%fZ")
-
         update_date = file.get("update_date")
-
-        if update_date:
-            update_date = datetime.datetime.strptime(update_date, "%Y-%m-%dT%H:%M:%S.%fZ")
-            update_date = update_date.strftime("%Y-%m-%dT%H%M%S.%fZ")
-            version = update_date
+        version = utils.to_dss_version(update_date) if update_date \
+            else datetime.datetime.utcnow().strftime("%Y-%m-%dT%H%M%S.%fZ")
 
         # retrying file creation 20 times
         max_retries = 20
@@ -63,28 +57,43 @@ class DssApi:
         params = {
             'uuid': uuid,
             'version': version,
-            'bundle_uuid': bundle_uuid,
             'creator_uid': self.creator_uid,
             'source_url': url
         }
 
+        if bundle_uuid:
+            params["bundle_uuid"] = bundle_uuid
+
+
         while not file_create_complete and tries < max_retries:
             try:
                 tries += 1
-                self.logger.info(f'Creating file {file["name"]} in DSS {uuid}:{version} with params: {json.dumps(params)}')
-                bundle_file = self.hca_client.put_file(
-                    uuid=uuid,
-                    version=version,
-                    bundle_uuid=bundle_uuid,
-                    creator_uid=self.creator_uid,
-                    source_url=url
-                )
+                # self.logger.info(f'Creating file {file["name"]} in DSS {uuid}:{version} with params: {json.dumps(params)}')
+                bundle_file = None
+
+                if bundle_uuid:
+                    bundle_file = self.hca_client.put_file(
+                        uuid=uuid,
+                        version=version,
+                        bundle_uuid=bundle_uuid,
+                        creator_uid=self.creator_uid,
+                        source_url=url
+                    )
+                else:
+                    bundle_file = self.hca_client.put_file(
+                        uuid=uuid,
+                        version=version,
+                        creator_uid=self.creator_uid,
+                        source_url=url
+                    )
+
                 self.logger.info('Created!')
                 file_create_complete = True
                 return bundle_file
             except Exception as e:
                 self.logger.error(
-                    'Attempt {0} out of {1}: Error in hca_client.put_file method call with params:{2} due to {3}'.format(
+                    'Attempt {0} out of {1}: Error in hca_client.put_file method call with params:{2} due to {'
+                    '3}'.format(
                         str(tries),
                         str(max_retries),
                         json.dumps(params),
@@ -135,7 +144,8 @@ class DssApi:
                     'creator_uid': self.creator_uid
                 }
                 self.logger.error(
-                    'Attempt {0} out of {1}: Error in hca_client.put_bundle method call with params:{2} due to {3}'.format(
+                    'Attempt {0} out of {1}: Error in hca_client.put_bundle method call with params:{2} due to {'
+                    '3}'.format(
                         str(tries),
                         str(max_retries),
                         json.dumps(params),
@@ -145,6 +155,19 @@ class DssApi:
                     raise Error(e)
                 else:
                     time.sleep(60)
+
+    def get_bundle(self, bundle_uuid, version=None):
+        if version:
+            return self.hca_client.get_bundle(
+                uuid=bundle_uuid,
+                replica="aws",
+                version=version
+            )
+        else:
+            return self.hca_client.get_bundle(
+                uuid=bundle_uuid,
+                replica="aws"
+            )
 
     def head_file(self, file_uuid, version=None):
         # finally create the bundle
@@ -156,7 +179,6 @@ class DssApi:
             )
         except Exception as e:
             raise Error(e)
-
 
 # Module Exceptions
 

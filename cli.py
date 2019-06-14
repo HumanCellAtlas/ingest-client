@@ -1,7 +1,4 @@
 #!/usr/bin/env python
-
-# example cli run:
-# python cli.py --submissionEnvelopeUuid=21ec3581-abc2-4e1c-9fd4-abce09aa5c19 --processUuid=b3f91034-f0de-4fb0-a038-b011b9f231b6 --ingest=http://api.ingest.dev.data.humancellatlas.org --dry
 import datetime
 import logging
 import sys

@@ -3,11 +3,9 @@
 desc goes here
 """
 import requests
-from hca.util.exceptions import SwaggerAPIException
 
 __author__ = "jupp"
 __license__ = "Apache 2.0"
-
 
 import json
 import logging
@@ -63,11 +61,11 @@ class IngestExporter:
 
         self.logger.info('Retrieving all process information...')
 
-        process = self.ingest_api.getEntityByUuid('processes', process_uuid)
+        process = self.ingest_api.get_entity_by_uuid('processes', process_uuid)
         process_info = self.get_all_process_info(process)
 
         self.logger.info('Generating bundle files...')
-        submission = self.ingest_api.getEntityByUuid('submissionEnvelopes', submission_uuid)
+        submission = self.ingest_api.get_entity_by_uuid('submissionEnvelopes', submission_uuid)
         is_indexed = submission['triggersAnalysis']
 
         metadata_by_type = self.get_metadata_by_type(process_info)
@@ -78,7 +76,7 @@ class IngestExporter:
         files_by_type['links'] = list()
         files_by_type['links'].append({
             'content': links,
-            'content_type': '"metadata/{0}"'.format('links'),
+            'content_type': 'metadata/{0}'.format('links'),
             'indexed': is_indexed,
             'dss_filename': 'links.json',
             'dss_uuid': links_file_uuid,
@@ -191,12 +189,12 @@ class IngestExporter:
                 raise Error('Input bundle manifest has no list of project uuid.')  # very unlikely to happen
 
             project_uuid = project_uuid_lists[0][0]
-            process_info.project = self.ingest_api.getProjectByUuid(project_uuid)
+            process_info.project = self.ingest_api.get_project_by_uuid(project_uuid)
 
         self.recurse_process(process, process_info)
 
         if process_info.project:
-            supplementary_files = self.ingest_api.getRelatedEntities('supplementaryFiles', process_info.project, 'files')
+            supplementary_files = self.ingest_api.get_related_entities('supplementaryFiles', process_info.project, 'files')
             for supplementary_file in supplementary_files:
                 uuid = supplementary_file['uuid']['uuid']
                 process_info.supplementary_files[uuid] = supplementary_file
@@ -204,7 +202,7 @@ class IngestExporter:
         return process_info
 
     def get_project_info(self, process):
-        projects = list(self.ingest_api.getRelatedEntities('projects', process, 'projects'))
+        projects = list(self.ingest_api.get_related_entities('projects', process, 'projects'))
 
         if len(projects) > 1:
             raise MultipleProjectsError('Can only be one project in bundle')
@@ -306,10 +304,11 @@ class IngestExporter:
     def get_related_entities(self, relationship, entity, entity_type):
         entity_uuid = entity['uuid']['uuid']
 
-        if self.related_entities_cache.get(entity_uuid) and self.related_entities_cache.get(entity_uuid).get(relationship):
+        if self.related_entities_cache.get(entity_uuid) and self.related_entities_cache.get(entity_uuid).get(
+                relationship):
             return self.related_entities_cache.get(entity_uuid).get(relationship)
 
-        related_entities = list(self.ingest_api.getRelatedEntities(relationship, entity, entity_type))
+        related_entities = list(self.ingest_api.get_related_entities(relationship, entity, entity_type))
 
         if not self.related_entities_cache.get(entity_uuid):
             self.related_entities_cache[entity_uuid] = {}
@@ -322,7 +321,7 @@ class IngestExporter:
         return related_entities
 
     def get_input_bundle(self, process):
-        bundle_manifests = list(self.ingest_api.getRelatedEntities('inputBundleManifests', process, 'bundleManifests'))
+        bundle_manifests = list(self.ingest_api.get_related_entities('inputBundleManifests', process, 'bundleManifests'))
 
         if len(bundle_manifests) > 0:
             return bundle_manifests[0]
@@ -338,20 +337,24 @@ class IngestExporter:
             for (metadata_uuid, doc) in metadata_info[entity_type].items():
                 concrete_type = self.get_concrete_entity_type(doc)
 
-                concrete_type_ctr[concrete_type] = 0 if concrete_type not in concrete_type_ctr else concrete_type_ctr[concrete_type] + 1
+                if concrete_type not in concrete_type_ctr:
+                    concrete_type_ctr[concrete_type] = 0
+                else:
+                    concrete_type_ctr[concrete_type] = concrete_type_ctr[concrete_type] + 1
 
                 file_name = '{0}_{1}.json'.format(concrete_type, concrete_type_ctr[concrete_type])
                 upload_filename = '{0}_{1}.json'.format(concrete_type, metadata_uuid)
 
                 prepared_doc = {
                     'content': self.bundle_metadata(doc, metadata_uuid),
-                    'content_type': '"metadata/{0}"'.format(entity_type),
+                    'content_type': 'metadata/{0}'.format(entity_type),
                     'indexed': is_indexed,
                     'dss_filename': file_name,
                     'dss_uuid': metadata_uuid,
                     'upload_filename': upload_filename,
                     'update_date': doc['updateDate'],
-                    'is_from_input_bundle': self._is_from_input_bundle(entity_type, metadata_uuid, process_info.input_bundle)
+                    'is_from_input_bundle': self._is_from_input_bundle(entity_type, metadata_uuid,
+                                                                       process_info.input_bundle)
                 }
 
                 metadata_files_by_type[entity_type].append(prepared_doc)
@@ -439,8 +442,10 @@ class IngestExporter:
             input_data_files = [input_file['dataFileUuid'] for input_file in list(process_info.input_files.values())]
 
             try:
-                # TODO if file is an input file, this file may already be in the data store, need to get the stored version
-                # This assumes that the latest version is the file version in the input bundle, should be a safe assumption for now
+                # TODO if file is an input file, this file may already be in the data store, need to get the stored
+                #  version
+                # This assumes that the latest version is the file version in the input bundle, should be a safe
+                # assumption for now
                 # Ideally, bundle manifest must store the file uuid and version and version must be retrieved from there
 
                 # if metadata file , check is_from_input_bundle flag, if true, do not put file to DSS again
@@ -477,9 +482,11 @@ class IngestExporter:
                     timeout=1200  # 20 minutes
                 )
             except polling.TimeoutException as te:
-                self.logger.error(f'File {created_file["uuid"]}/{created_file["version"]} with name {created_file["name"]} takes too long to be copied.')
+                self.logger.error(f'''File {created_file["uuid"]}/{created_file["version"]} with name {created_file[
+                    "name"]} takes too long to be copied.''')
                 raise
-            self.logger.info(f'File {created_file["uuid"]}/{created_file["version"]} with name {created_file["name"]} is successfully copied!')
+            self.logger.info(f'''File {created_file["uuid"]}/{created_file["version"]} with name {created_file[
+                "name"]} is successfully copied!''')
 
     def _is_file_copied(self, created_file):
         try:
@@ -581,6 +588,7 @@ class IngestExporter:
         tmp_file.write(content)
         tmp_file.close()
 
+
 class File:
     def __init__(self):
         self.name = ""
@@ -620,6 +628,7 @@ class MultipleProjectsError(Error):
 
 class InvalidBundleError(Error):
     """There was a failure in bundle validation."""
+
 
 class BundleFileUploadError(Error):
     """There was a failure in bundle file upload."""
