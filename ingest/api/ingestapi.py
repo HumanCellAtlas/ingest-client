@@ -274,7 +274,7 @@ class IngestApi:
             params["updatingUuid"] = uuid
 
         time.sleep(0.001)
-        r = self.session.post(submission_files_url, data=json.dumps(file_to_create_object),
+        r = self.session.post(submission_files_url, json=file_to_create_object,
                          headers=self.headers, params=params)
 
         # TODO Investigate why core is returning internal server error
@@ -282,19 +282,19 @@ class IngestApi:
             search_files = self.get_file_by_submission_url_and_filename(submission_url, filename)
 
             if search_files and search_files.get('_embedded') and search_files['_embedded'].get('files'):
-                fileInIngest = search_files['_embedded'].get('files')[0]
-                content = fileInIngest.get('content')
-                newContent = json.loads(content)
+                file_in_ingest = search_files['_embedded'].get('files')[0]
+                existing_content = file_in_ingest.get('content')
+                new_content = existing_content
 
-                if content:
-                    content.update(newContent)
+                if existing_content:
+                    new_content.update(content)
                 else:
-                    content = newContent
+                    new_content = content
 
-                fileUrl = fileInIngest['_links']['self']['href']
+                file_url = file_in_ingest['_links']['self']['href']
                 time.sleep(0.001)
-                r = self.patch(fileUrl, json={'content': content}, headers=self.headers)
-                self.logger.debug(f'Updating existing content of file {fileUrl}.')
+                r = self.session.patch(file_url, json={'content': new_content}, headers=self.headers)
+                self.logger.debug(f'Updating existing content of file {file_url}.')
 
         r.raise_for_status()
 
