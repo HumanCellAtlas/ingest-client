@@ -1,4 +1,5 @@
 from unittest import TestCase
+from uuid import uuid4
 
 from mock import Mock, call
 
@@ -148,8 +149,8 @@ class BundleTest(TestCase):
 
     def test_generate_manifest(self):
         # given:
-        biomaterial_uuid = 'af690c04-8562-4680-bbf4-56bb9f58b265'
-        biomaterial_file = _create_test_bundle_file(uuid=biomaterial_uuid,
+        metadata_uuid = 'af690c04-8562-4680-bbf4-56bb9f58b265'
+        metadata_file = _create_test_bundle_file(uuid=metadata_uuid,
                                                     content_type='biomaterial')
 
         # and:
@@ -158,7 +159,7 @@ class BundleTest(TestCase):
         bundle = Bundle(source={'bundle': {
             'uuid': bundle_uuid,
             'version': bundle_version,
-            'files': [biomaterial_file]
+            'files': [metadata_file]
         }})
 
         # when:
@@ -174,12 +175,49 @@ class BundleTest(TestCase):
         self.assertIsNotNone(manifest_envelope_uuid)
         self.assertEqual(envelope_uuid, manifest_envelope_uuid.get('uuid'))
 
+    def test_generate_manifest_with_correct_file_maps(self):
+        def random_uuids(count):
+            return [str(uuid4()) for _ in range(0, count)]
+
+        self._do_test_generate_manifest('project', random_uuids(1))
+        self._do_test_generate_manifest('biomaterial', random_uuids(3))
+        self._do_test_generate_manifest('file', random_uuids(2))
+        self._do_test_generate_manifest('process', random_uuids(5))
+        self._do_test_generate_manifest('protocol', random_uuids(1))
+
+    _bundle_attr_map = {
+        'project': 'fileProjectMap',
+        'biomaterial': 'fileBiomaterialMap',
+        'file': 'fileFilesMap',
+        'process': 'fileProcessMap',
+        'protocol': 'fileProtocolMap'
+    }
+
+    def _do_test_generate_manifest(self, metadata_type: str, file_uuids: list):
+        # given:
+        metadata_files = [_create_test_bundle_file(uuid=file_uuid, content_type=metadata_type)
+                          for file_uuid in file_uuids]
+
         # and:
-        self.assertEqual(1, len(manifest.fileBiomaterialMap))
-        file_map_values = manifest.fileBiomaterialMap.get(biomaterial_uuid)
-        self.assertIsNotNone(file_map_values)
-        self.assertEqual(1, len(file_map_values))
-        self.assertTrue(biomaterial_uuid in file_map_values)
+        bundle = Bundle(source={'bundle': {
+            'uuid': '21aabf53-2eaf-43a6-a0cb-6fcf4a14754b',
+            'version': '2019-06-14T133659.101112Z',
+            'files': metadata_files
+        }})
+
+        # when:
+        manifest = bundle.generate_manifest('cffaa257-71ab-422f-bdb9-2a696b68bb33')
+
+        # then:
+        entry_count = len(file_uuids)
+        self.assertEqual(entry_count, len(manifest.fileBiomaterialMap))
+        file_map_attr = self._bundle_attr_map.get(metadata_type)
+        metadata_file_map = getattr(manifest, file_map_attr)
+        self.assertEqual(entry_count, len(metadata_file_map),
+                         f'expecting [{entry_count}] entries in {file_map_attr}')
+        for file_uuid, file_map_values in metadata_file_map.items():
+            self.assertEqual(1, len(file_map_values))
+            self.assertTrue(file_uuid in file_map_values)
 
 
 class BundleServiceTest(TestCase):

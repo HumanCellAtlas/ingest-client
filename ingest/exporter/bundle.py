@@ -1,3 +1,4 @@
+import re
 from copy import deepcopy
 
 from ingest.api import utils
@@ -34,6 +35,9 @@ class BundleManifest:
             file_map.update(entry)
         else:
             raise KeyError(f'Cannot map unknown metadata type [{metadata_type}].')
+
+
+_CONTENT_TYPE_PATTERN = re.compile('.*"metadata/(?P<data_type>\\w+)".*')
 
 
 class Bundle:
@@ -77,6 +81,7 @@ class Bundle:
     def update_file(self, metadata_resource: MetadataResource):
         target_file = self.get_file(metadata_resource.uuid)
         target_file['version'] = utils.to_dss_version(metadata_resource.dcp_version)
+        # TODO content type needs to be complete HTTP-esque string not just "metadata/*"
         target_file['content-type'] = f'metadata/{metadata_resource.metadata_type}'
 
     def generate_manifest(self, envelope_uuid) -> BundleManifest:
@@ -84,6 +89,12 @@ class Bundle:
         manifest = BundleManifest(bundleUuid=self.uuid, envelopeUuid=envelope_uuid_map,
                                   bundleVersion=self.get_version())
         manifest.fileBiomaterialMap.update({uuid: [uuid] for uuid in self._file_map.keys()})
+        for file_uuid, file in self._file_map.items():
+            pattern_match = _CONTENT_TYPE_PATTERN.match(file.get('content-type'))
+            if pattern_match:
+                content_type = pattern_match.group('data_type')
+                mapping = {file_uuid: [file_uuid]}
+                manifest.add_bundle_file(content_type, mapping)
         return manifest
 
 
