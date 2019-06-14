@@ -90,17 +90,25 @@ class BundleTest(TestCase):
 
         # and:
         bundle_uuid = '93d3d2be-36e0-465e-b37f-0f48a998630e'
+        bundle_version = '2019-06-14T102922.001122Z'
         bundle = Bundle(source={'bundle': {
             'uuid': bundle_uuid,
-            'version': '2019-06-14T102922.001122Z',
+            'version': bundle_version,
             'files': [biomaterial_file]
         }})
 
         # when:
-        manifest = bundle.generate_manifest()
+        envelope_uuid = 'c1cec0de-d72b-40d6-a536-f47d922518b2'
+        manifest = bundle.generate_manifest(envelope_uuid)
 
         # then:
-        self.assertIsNotNone(manifest)
+        self.assertEqual(bundle_uuid, manifest.bundleUuid)
+        self.assertEqual(bundle_version, manifest.bundleVersion)
+
+        # and: uuid is 2 branches deep
+        manifest_envelope_uuid = manifest.envelopeUuid.get('uuid')
+        self.assertIsNotNone(manifest_envelope_uuid)
+        self.assertEqual(envelope_uuid, manifest_envelope_uuid.get('uuid'))
 
 
 class BundleServiceTest(TestCase):

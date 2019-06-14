@@ -49,8 +49,10 @@ class Bundle:
         target_file['version'] = utils.to_dss_version(metadata_resource.dcp_version)
         target_file['content-type'] = f'metadata/{metadata_resource.metadata_type}'
 
-    def generate_manifest(self) -> BundleManifest:
-        return BundleManifest()
+    def generate_manifest(self, envelope_uuid) -> BundleManifest:
+        envelope_uuid_map = {'uuid': {'uuid': envelope_uuid}}
+        return BundleManifest(bundleUuid=self.uuid, envelopeUuid=envelope_uuid_map,
+                              bundleVersion=self.get_version())
 
 
 class BundleService:

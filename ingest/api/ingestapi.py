@@ -7,6 +7,7 @@ import logging
 import os
 import time
 import warnings
+from copy import deepcopy
 from urllib.parse import urljoin, quote
 
 import requests
@@ -550,10 +551,11 @@ class IngestApi:
 
 
 class BundleManifest:
-    def __init__(self):
-        self.bundleUuid = None
-        self.bundleVersion = None
-        self.envelopeUuid = {}
+
+    def __init__(self, bundleUuid=None, envelopeUuid={}, bundleVersion=None):
+        self.bundleUuid = bundleUuid
+        self.envelopeUuid = deepcopy(envelopeUuid)
+        self.bundleVersion = bundleVersion
         self.dataFiles = []
         self.fileBiomaterialMap = {}
         self.fileProcessMap = {}
