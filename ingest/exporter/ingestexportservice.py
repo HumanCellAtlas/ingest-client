@@ -4,6 +4,8 @@ desc goes here
 """
 import requests
 
+import ingest.exporter.bundle
+
 __author__ = "jupp"
 __license__ = "Apache 2.0"
 
@@ -84,7 +86,7 @@ class IngestExporter:
         })
 
         # restructure bundle manifest
-        bundle_manifest = ingestapi.BundleManifest()
+        bundle_manifest = ingest.exporter.bundle.BundleManifest()
         bundle_manifest.envelopeUuid = submission_uuid
         bundle_manifest.bundleUuid = bundle_uuid
         bundle_manifest.bundleVersion = bundle_version

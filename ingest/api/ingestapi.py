@@ -542,15 +542,3 @@ class IngestApi:
         else:
             return False
 
-
-class BundleManifest:
-    def __init__(self):
-        self.bundleUuid = None
-        self.bundleVersion = None
-        self.envelopeUuid = {}
-        self.dataFiles = []
-        self.fileBiomaterialMap = {}
-        self.fileProcessMap = {}
-        self.fileFilesMap = {}
-        self.fileProjectMap = {}
-        self.fileProtocolMap = {}
