@@ -32,22 +32,17 @@ ERROR_TEMPLATE = {
 
 
 class IngestExporter:
-    def __init__(self, options=None):
+    def __init__(self, ingest_api, dss_api, staging_api, options=None):
         format = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
         logging.basicConfig(format=format)
         self.logger = logging.getLogger(__name__)
 
-        self.dryrun = options.dry if options and options.dry else False
-        self.outputDir = options.output if options and options.output else None
+        self.dry_run = options.dry if options and options.dry else False
+        self.output_dir = options.output if options and options.output else None
 
-        self.ingestUrl = options.ingest if options and options.ingest else os.path.expandvars(DEFAULT_INGEST_URL)
-
-        self.stagingUrl = options.staging if options and options.staging else os.path.expandvars(DEFAULT_STAGING_URL)
-        self.dssUrl = options.dss if options and options.dss else os.path.expandvars(DEFAULT_DSS_URL)
-
-        self.staging_api = stagingapi.StagingApi()
-        self.dss_api = dssapi.DssApi()
-        self.ingest_api = ingestapi.IngestApi(self.ingestUrl)
+        self.staging_api = staging_api
+        self.dss_api = dss_api
+        self.ingest_api = ingest_api
         self.related_entities_cache = {}
 
     def export_bundle(self, bundle_uuid, bundle_version, submission_uuid, process_uuid):
@@ -55,7 +50,7 @@ class IngestExporter:
         self.related_entities_cache = {}
         saved_bundle_uuid = None
 
-        if not self.dryrun and not self.staging_api.hasStagingArea(submission_uuid):
+        if not self.dry_run and not self.staging_api.hasStagingArea(submission_uuid):
             error_message = "Can't do export as no upload area has been created."
             raise NoUploadAreaFoundError(error_message)
 
@@ -94,7 +89,7 @@ class IngestExporter:
 
         self.logger.info('Generating bundle files...')
 
-        if self.dryrun:
+        if self.dry_run:
             self.logger.info('Export is using dry run mode.')
             self.logger.info('Dumping bundle files...')
 
@@ -103,7 +98,7 @@ class IngestExporter:
                     bundle_file = metadata_doc
                     filename = bundle_file['upload_filename']
                     content = bundle_file['content']
-                    output_dir = self.outputDir if self.outputDir else bundle_manifest.bundleUuid
+                    output_dir = self.output_dir if self.output_dir else bundle_manifest.bundleUuid
                     self.dump_to_file(json.dumps(content, indent=4), filename, output_dir=output_dir)
 
             self.logger.info('Dry run for bundle ' + bundle_manifest.bundleUuid)

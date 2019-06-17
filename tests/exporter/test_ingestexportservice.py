@@ -25,14 +25,15 @@ class TestExporter(TestCase):
         self.longMessage = True
         pass
 
-    @patch('ingest.api.dssapi.DssApi')
-    def test_get_input_bundle(self, dss_api_constructor):
+    def test_get_input_bundle(self):
         # given:
-        dss_api_constructor.return_value = MagicMock('dss_api')
+        dss_api = MagicMock('dss_api')
+        ingest_api = MagicMock('ingest_api')
+        staging_api = MagicMock('staging_api')
 
         # and:
-        exporter = IngestExporter()
-
+        exporter = IngestExporter(ingest_api=ingest_api, dss_api=dss_api,
+                                  staging_api=staging_api)
         # and:
         exporter.ingest_api.get_related_entities = MagicMock(return_value=['bundle1', 'bundle2'])
         process = {}
@@ -44,13 +45,14 @@ class TestExporter(TestCase):
         self.assertEqual('bundle1', input_bundle)
 
     @unittest.skip
-    @patch('ingest.api.dssapi.DssApi')
-    def test_upload_metadata_files(self, dss_api_constructor):
+    def test_upload_metadata_files(self):
         # given:
-        dss_api_constructor.return_value = MagicMock('dss_api')
+        dss_api = MagicMock('dss_api')
+        ingest_api = MagicMock('ingest_api')
+        staging_api = MagicMock('staging_api')
 
         # and:
-        exporter = IngestExporter()
+        exporter = IngestExporter(ingest_api=ingest_api, dss_api=dss_api, staging_api=staging_api)
 
         # and:
         file_desc = stagingapi.FileDescription('checksums', 'contentType', 'name', 'name', 'file_url')
@@ -104,13 +106,14 @@ class TestExporter(TestCase):
                 self.assertEqual(metadata_file['dss_uuid'], 'uuid')
                 self.assertEqual(metadata_file['upload_file_url'], 'file_url')
 
-    @patch('ingest.api.dssapi.DssApi')
-    def test_upload_metadata_files_error(self, dss_api_constructor):
+    def test_upload_metadata_files_error(self):
         # given:
-        dss_api_constructor.return_value = MagicMock('dss_api')
+        dss_api = MagicMock('dss_api')
+        ingest_api = MagicMock('ingest_api')
+        staging_api = MagicMock('staging_api')
 
         # and:
-        exporter = IngestExporter()
+        exporter = IngestExporter(ingest_api=ingest_api, dss_api=dss_api, staging_api=staging_api)
 
         # and:
         exporter.upload_file = Mock(side_effect=Exception('test upload file error'))
@@ -158,13 +161,14 @@ class TestExporter(TestCase):
         with self.assertRaises(ingestexportservice.BundleFileUploadError) as e:
             metadata_files = exporter.upload_metadata_files('sub_uuid', metadata_files_info)
 
-    @patch('ingest.api.dssapi.DssApi')
-    def test_put_bundle_in_dss_error(self, dss_api_constructor):
+    def test_put_bundle_in_dss_error(self):
         # given:
-        dss_api_constructor.return_value = MagicMock('dss_api')
+        dss_api = MagicMock('dss_api')
+        ingest_api = MagicMock('ingest_api')
+        staging_api = MagicMock('staging_api')
 
         # and:
-        exporter = IngestExporter()
+        exporter = IngestExporter(ingest_api=ingest_api, dss_api=dss_api, staging_api=staging_api)
 
         # and:
         exporter.dss_api.put_bundle = Mock(side_effect=Exception('test create bundle error'))
