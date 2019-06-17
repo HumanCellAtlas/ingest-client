@@ -25,4 +25,4 @@ class Exporter:
             bundle.update_file(metadata_resource)
         bundle.update_version(update_version)
         self.bundle_service.update(bundle, staging_details)
-        self.ingest_api.createBundleManifest(bundle.generate_manifest())
+        self.ingest_api.create_bundle_manifest(bundle.generate_manifest())

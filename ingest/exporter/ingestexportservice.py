@@ -117,7 +117,7 @@ class IngestExporter:
                 if submission_url:
                     report = ERROR_TEMPLATE.copy()
                     report['details'] = str(bundle_error)
-                    self.ingest_api.createSubmissionError(submission_url, report)
+                    self.ingest_api.create_submission_error(submission_url, report)
                 raise
 
             metadata_files = self.get_metadata_files(files_by_type)
@@ -139,7 +139,7 @@ class IngestExporter:
                 self.put_bundle_in_dss(bundle_uuid, bundle_version, created_files)
 
                 self.logger.info('Saving bundle manifest...')
-                self.ingest_api.createBundleManifest(bundle_manifest)
+                self.ingest_api.create_bundle_manifest(bundle_manifest)
 
                 saved_bundle_uuid = bundle_manifest.bundleUuid
 
@@ -152,7 +152,7 @@ class IngestExporter:
                 if submission_url:
                     report = ERROR_TEMPLATE.copy()
                     report['details'] = str(unresolvable_exception)
-                    self.ingest_api.createSubmissionError(submission_url, json.dumps(report))
+                    self.ingest_api.create_submission_error(submission_url, json.dumps(report))
                 raise
         return saved_bundle_uuid
 

@@ -50,7 +50,7 @@ class SubmissionTest(TestCase):
         ingest.api.ingestapi.requests.get = MagicMock()
         mock_ingest_api = MagicMock(name='ingest_api')
         mock_ingest_api.load_root = MagicMock()
-        mock_ingest_api.createEntity = MagicMock(return_value=new_entity_mock_response)
+        mock_ingest_api.create_entity = MagicMock(return_value=new_entity_mock_response)
 
         submission = Submission(mock_ingest_api, submission_url='url')
 
@@ -68,7 +68,7 @@ class SubmissionTest(TestCase):
     def _do_test_define_manifest(self, total_count):
         # given:
         ingest_api = MagicMock('ingest_api')
-        ingest_api.createSubmissionManifest = MagicMock()
+        ingest_api.create_submission_manifest = MagicMock()
         url = 'http://core.sample.com/submission/8fd733'
         submission = Submission(ingest_api, url)
 
@@ -89,14 +89,14 @@ class SubmissionTest(TestCase):
         submission.define_manifest(entity_map)
 
         # then:
-        ingest_api.createSubmissionManifest.assert_called()
-        ingest_api_args, __ = ingest_api.createSubmissionManifest.call_args
+        ingest_api.create_submission_manifest.assert_called()
+        ingest_api_args, __ = ingest_api.create_submission_manifest.call_args
         self.assertEqual(2, len(ingest_api_args))
         self.assertEqual(url, ingest_api_args[0])
 
         # and:
         raw_json = ingest_api_args[1]
-        submitted_json = json.loads(raw_json)
+        submitted_json = raw_json
         self.assertEqual(total_count, submitted_json['totalCount'])
         self.assertEqual(count_per_entity['biomaterial'], submitted_json['expectedBiomaterials'])
         self.assertEqual(count_per_entity['process'], submitted_json['expectedProcesses'])
@@ -170,7 +170,7 @@ class IngestSubmitterTest(TestCase):
     def test_submit(self, submission_constructor):
         # given:
         ingest_api = MagicMock('ingest_api')
-        ingest_api.getSubmissionEnvelope = MagicMock()
+        ingest_api.get_submission = MagicMock()
         submission = self._mock_submission(submission_constructor)
 
         # and:
@@ -192,7 +192,7 @@ class IngestSubmitterTest(TestCase):
     def test_submit_update_entities(self, submission_constructor):
         # given:
         ingest_api = MagicMock('ingest_api')
-        ingest_api.getSubmissionEnvelope = MagicMock()
+        ingest_api.get_submission = MagicMock()
         submission = self._mock_submission(submission_constructor)
 
         # and:
@@ -217,7 +217,7 @@ class IngestSubmitterTest(TestCase):
     def test_submit_linked_entity(self, submission_constructor):
         # given:
         ingest_api = MagicMock('ingest_api')
-        ingest_api.getSubmissionEnvelope = MagicMock()
+        ingest_api.get_submission = MagicMock()
         ingest_api.patch = MagicMock()
         ingest_api.get_link_from_resource = MagicMock()
         submission = self._mock_submission(submission_constructor)

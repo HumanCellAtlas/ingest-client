@@ -2,6 +2,7 @@ import json
 from unittest import TestCase
 from unittest.mock import patch
 
+import requests
 from mock import MagicMock, Mock
 
 from ingest.api.ingestapi import IngestApi
@@ -11,80 +12,137 @@ mock_submission_envelope_id = "mock-envelope-id"
 
 
 class IngestApiTest(TestCase):
-
-    def test_create_file(self):
+    @patch('ingest.api.ingestapi.IngestApi.get_link_in_submission')
+    @patch('ingest.api.ingestapi.create_session_with_retry')
+    def test_create_file(self,  mock_create_session, mock_get_link):
+        ingest_api = IngestApi()
+        mock_get_link.return_value = 'url/sub/id/files'
+        mock_create_session.return_value.post.return_value.json.return_value = {'uuid': 'file-uuid'}
+        mock_create_session.return_value.post.return_value.status_code = requests.codes.ok
         api_url = mock_ingest_api_url
         submission_id = mock_submission_envelope_id
         submission_url = api_url + "/" + submission_id
         filename = "mock-filename"
 
-        # mock the load_root()
-        with patch('ingest.api.ingestapi.IngestApi._get_ingest_links') as mock_load_root:
-            root_links = dict()
-            root_links["file"] = {"href": api_url + "/files"}
-            root_links["submissionEnvelopes"] = {"href": api_url + "/submissionEnvelopes"}
-            mock_load_root.return_value = root_links
+        file = ingest_api.create_file(submission_url, filename, {})
+        self.assertEqual(file, {'uuid': 'file-uuid'})
+        mock_create_session.return_value.post\
+            .assert_called_with('url/sub/id/files/mock-filename',
+                                headers={'Content-type': 'application/json'},
+                                json={'fileName': 'mock-filename', 'content': {}},
+                                params={})
 
-            ingest_api = IngestApi(api_url)
-            ingest_api.submission_links[submission_url] = {
-                'files': {
-                    'href': submission_url + "/files"
-                }
+    @patch('ingest.api.ingestapi.IngestApi.get_file_by_submission_url_and_filename')
+    @patch('ingest.api.ingestapi.IngestApi.get_link_in_submission')
+    @patch('ingest.api.ingestapi.create_session_with_retry')
+    def test_create_file_conflict(self, mock_create_session, mock_get_link, mock_get_file):
+        ingest_api = IngestApi()
+        mock_get_file.return_value = {
+            '_embedded': {
+                'files': [
+                    {
+                        'content': {'attr': 'value'},
+                        '_links': {'self': {'href': 'existing-file-url'}}
+                    }
+                ]
             }
+        }
 
-            with patch('ingest.api.ingestapi.optimistic_session') as mock_session:
-                mock_session.return_value = MagicMock()
-                ingest_api.createFile(submission_url, filename, "{}")
-            mock_session.assert_called_once_with(f'{submission_url}/files/{filename}')
-
-    @patch('ingest.api.ingestapi.IngestApi._get_ingest_links')
-    def test_get_submission_by_uuid(self, mock_get_ingest_links):
+        mock_get_link.return_value = 'url/sub/id/files'
+        mock_create_session.return_value.patch.return_value.json.return_value = 'response'
+        mock_create_session.return_value.post.return_value.status_code = requests.codes.conflict
         api_url = mock_ingest_api_url
-        mock_submission_uuid = "mock-submission-uuid"
-        submissions_url = api_url + "/submissionEnvelopes"
-        submission_search_uri = submissions_url + "/search"
-        findByUuidRel = "findByUuid"
-        findByUuidHref = submission_search_uri + "/findByUuidHref{?uuid}"
+        submission_id = mock_submission_envelope_id
+        submission_url = api_url + "/" + submission_id
+        filename = "mock-filename"
 
-        ingestapi = IngestApi(api_url)
+        file = ingest_api.create_file(submission_url, filename, {'attr2': 'value2'})
+        self.assertEqual(file, 'response')
+        mock_create_session.return_value.post.assert_called_once()
+        mock_create_session.return_value.patch \
+            .assert_called_with('existing-file-url',
+                                headers={'Content-type': 'application/json'},
+                                json={'content': {'attr': 'value', 'attr2': 'value2'}})
 
-        with patch('ingest.api.ingestapi.IngestApi.get_link_from_resource_url') as mock_get_url_for_link:
-            def mock_get_url_for_link_patch(*args, **kwargs):
-                if args[0] == submission_search_uri and args[1] == findByUuidRel:
-                    return findByUuidHref
+    @patch('ingest.api.ingestapi.IngestApi.get_file_by_submission_url_and_filename')
+    @patch('ingest.api.ingestapi.IngestApi.get_link_in_submission')
+    @patch('ingest.api.ingestapi.create_session_with_retry')
+    def test_create_file_conflict(self, mock_create_session, mock_get_link,
+                                  mock_get_file):
+        ingest_api = IngestApi()
+        mock_get_file.return_value = {
+            '_embedded': {
+                'files': [
+                    {
+                        'content': None,
+                        '_links': {'self': {'href': 'existing-file-url'}}
+                    }
+                ]
+            }
+        }
 
-            mock_get_url_for_link.side_effect = mock_get_url_for_link_patch
+        mock_get_link.return_value = 'url/sub/id/files'
+        mock_create_session.return_value.patch.return_value.json.return_value = 'response'
+        mock_create_session.return_value.post.return_value.status_code = requests.codes.conflict
+        api_url = mock_ingest_api_url
+        submission_id = mock_submission_envelope_id
+        submission_url = api_url + "/" + submission_id
+        filename = "mock-filename"
 
-            with patch('ingest.api.ingestapi.requests.get') as mock_requests_get:
-                def mock_get_side_effect(*args, **kwargs):
-                    mock_response = {}
-                    mock_response_payload = {}
+        file = ingest_api.create_file(submission_url, filename, {'attr': 'value'})
+        self.assertEqual(file, 'response')
+        mock_create_session.return_value.post.assert_called_once()
+        mock_create_session.return_value.patch \
+            .assert_called_with('existing-file-url',
+                                headers={'Content-type': 'application/json'},
+                                json={'content': {'attr': 'value'}})
 
-                    if args[0] == submission_search_uri + "/findByUuidHref" \
-                            and 'params' in kwargs \
-                            and 'uuid' in kwargs['params'] \
-                            and kwargs['params']['uuid'] == mock_submission_uuid:
-                        mock_response['status_code'] = 200
-                        mock_response_payload = {"uuid": {"uuid": mock_submission_uuid}}
-                    else:
-                        mock_response['status_code'] = 404
+    @patch('ingest.api.ingestapi.IngestApi.get_file_by_submission_url_and_filename')
+    @patch('ingest.api.ingestapi.IngestApi.get_link_in_submission')
+    @patch('ingest.api.ingestapi.create_session_with_retry')
+    def test_create_file_internal_server_error(self, mock_create_session, mock_get_link,
+                                  mock_get_file):
+        ingest_api = IngestApi()
+        mock_get_file.return_value = {
+            '_embedded': {
+                'files': [
+                    {
+                        'content': {'attr': 'value'},
+                        '_links': {'self': {'href': 'existing-file-url'}}
+                    }
+                ]
+            }
+        }
 
-                    mock_response['json'] = lambda _self: mock_response_payload
-                    mock_response['text'] = json.dumps(mock_response_payload)
+        mock_get_link.return_value = 'url/sub/id/files'
+        mock_create_session.return_value.patch.return_value.json.return_value = 'response'
+        mock_create_session.return_value.post.return_value.status_code = requests.codes.internal_server_error
+        api_url = mock_ingest_api_url
+        submission_id = mock_submission_envelope_id
+        submission_url = api_url + "/" + submission_id
+        filename = "mock-filename"
 
-                    def raise_for_status():
-                        raise Exception("test failed")
+        file = ingest_api.create_file(submission_url, filename,
+                                      {'attr2': 'value2'})
+        self.assertEqual(file, 'response')
+        mock_create_session.return_value.post.assert_called_once()
+        mock_create_session.return_value.patch \
+            .assert_called_with('existing-file-url',
+                                headers={'Content-type': 'application/json'},
+                                json={'content': {'attr': 'value',
+                                                  'attr2': 'value2'}})
 
-                    mock_response['raise_for_status'] = lambda _self: raise_for_status()
+    @patch('ingest.api.ingestapi.IngestApi.get_link_from_resource_url')
+    @patch('ingest.api.ingestapi.create_session_with_retry')
+    def test_get_submission_by_uuid(self, mock_create_session, mock_get_link):
+        mock_get_link.return_value = 'url/{?uuid}'
+        ingest_api = IngestApi()
+        mock_create_session.return_value.get.return_value.json.return_value = {'uuid': 'submission-uuid'}
+        submission = ingest_api.get_submission_by_uuid('uuid')
+        self.assertEqual(submission, {'uuid': 'submission-uuid'})
 
-                    return type("MockResponse", (), mock_response)()
-
-                mock_requests_get.side_effect = mock_get_side_effect
-
-                assert 'uuid' in ingestapi.getSubmissionByUuid(mock_submission_uuid)
-
-    @patch('ingest.api.ingestapi.requests')
-    def test_get_all(self, mock_requests):
+    @patch('ingest.api.ingestapi.create_session_with_retry')
+    def test_get_all(self, mock_create_session):
         # given
         ingest_api = IngestApi()
 
@@ -127,13 +185,14 @@ class IngestApiTest(TestCase):
             }
         }
 
-        mock_requests.get = lambda url, headers: self._create_mock_response(url, mocked_responses)
+        mock_create_session.return_value.get = lambda url, headers: self._create_mock_response(url, mocked_responses)
 
         # when
         entities = ingest_api.get_all('url?page=0&size=3', "bundleManifests")
         self.assertEqual(len(list(entities)), 5)
 
-    def _create_mock_response(self, url, mocked_responses):
+    @staticmethod
+    def _create_mock_response(url, mocked_responses):
         response = MagicMock()
         response.json.return_value = mocked_responses.get(url)
         response.raise_for_status = Mock()
