@@ -11,6 +11,8 @@ import time
 from urllib.parse import urljoin, quote
 
 from ingest.api.requests_utils import create_session_with_retry
+from ingest.utils.s2s_token_client import S2STokenClient
+from ingest.utils.token_manager import TokenManager
 
 
 class IngestApi:
@@ -30,11 +32,21 @@ class IngestApi:
         self._submission_links = {}
         self.logger.info(f"using {self.url} for ingest API")
 
+        self.s2s_token_client = S2STokenClient()
+        gcp_credentials_file = os.environ.get('GOOGLE_APPLICATION_CREDENTIALS')
+        self.s2s_token_client.setup_from_file(gcp_credentials_file)
+        self.token_manager = TokenManager(token_client=self.s2s_token_client)
+
     def set_token(self, token):
         if token:
             self.token = token
             self.logger.debug(f'Token set!')
             self.headers['Authorization'] = self.token
+
+    def _get_headers_with_auth(self):
+        token = self.token_manager.get_token()
+        self.headers["Authorization"] = f"Bearer {token}"
+        return self.headers
 
     def _get_ingest_links(self):
         r = self.session.get(self.url, headers=self.headers)
@@ -226,10 +238,8 @@ class IngestApi:
         r.raise_for_status()
         result = r.json()
 
-        count = result.get('page', {}).get('totalElements', 0)
-        entities = result["_embedded"][entity_type] if count > 0 else []
+        entities = result["_embedded"][entity_type] if '_embedded' in result else []
         yield from entities
-        self.logger.debug(f"GET {entity_type} {json.dumps(result['page'])}")
 
         while "next" in result["_links"]:
             next_url = result["_links"]["next"]["href"]
@@ -374,7 +384,8 @@ class IngestApi:
 
     def create_bundle_manifest(self, bundleManifest):
         url = self._ingest_links["bundleManifests"]["href"].rsplit("{")[0]
-        r = self.session.post(url, json=bundleManifest.__dict__, headers=self.headers)
+        headers = self._get_headers_with_auth()
+        r = self.session.post(url, json=bundleManifest.__dict__, headers=headers)
         r.raise_for_status()
         return r.json()
 
