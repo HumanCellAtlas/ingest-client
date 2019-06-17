@@ -5,18 +5,16 @@ desc goes here
 import json
 import logging
 import os
-import requests
 import time
-
 from urllib.parse import urljoin, quote
 
+import requests
+
 from ingest.api.requests_utils import create_session_with_retry
-from ingest.utils.s2s_token_client import S2STokenClient
-from ingest.utils.token_manager import TokenManager
 
 
 class IngestApi:
-    def __init__(self, url=None):
+    def __init__(self, url=None, token_manager=None):
         self.logger = logging.getLogger(__name__)
         self.session = create_session_with_retry()
 
@@ -32,20 +30,19 @@ class IngestApi:
         self._submission_links = {}
         self.logger.info(f"using {self.url} for ingest API")
 
-        self.s2s_token_client = S2STokenClient()
-        gcp_credentials_file = os.environ.get('GOOGLE_APPLICATION_CREDENTIALS')
-        self.s2s_token_client.setup_from_file(gcp_credentials_file)
-        self.token_manager = TokenManager(token_client=self.s2s_token_client)
+        self.token_manager = token_manager
 
-    def set_token(self, token):
-        if token:
+    def set_token(self, token=None):
+        if self.token_manager:
+            self.token = self.token_manager.get_token()
+        elif token:
             self.token = token
             self.logger.debug(f'Token set!')
-            self.headers['Authorization'] = self.token
+        else:
+            raise ValueError("No token or token manager found!")
 
-    def _get_headers_with_auth(self):
-        token = self.token_manager.get_token()
-        self.headers["Authorization"] = f"Bearer {token}"
+        self.headers['Authorization'] = self.token
+
         return self.headers
 
     def _get_ingest_links(self):
@@ -384,8 +381,8 @@ class IngestApi:
 
     def create_bundle_manifest(self, bundleManifest):
         url = self._ingest_links["bundleManifests"]["href"].rsplit("{")[0]
-        headers = self._get_headers_with_auth()
-        r = self.session.post(url, json=bundleManifest.__dict__, headers=headers)
+        self.set_token()
+        r = self.session.post(url, json=bundleManifest.__dict__, headers=self.headers)
         r.raise_for_status()
         return r.json()
 
