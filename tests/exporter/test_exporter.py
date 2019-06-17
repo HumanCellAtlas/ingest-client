@@ -27,22 +27,12 @@ class ExporterTest(TestCase):
         metadata_uuids = ['0c113d6c-4d3c-4e4a-8134-ae3050e663a6',
                           '37ee1172-8b2d-4500-a3fc-28b46921461b',
                           'e4e62047-69ff-45dc-a4f1-a5346249d217']
-        metadata_version = '2019-06-12T16:12:20.087Z'
-        metadata_resources = [MetadataResource(uuid=uuid, dcp_version=metadata_version)
-                              for uuid in metadata_uuids]
-        metadata_service.fetch_resource = Mock(side_effect=metadata_resources)
-
-        # and:
-        cloud_urls = [f'https://upload.tld/metadata{i}.json' for i in range(0, 3)]
-        staging_details = [StagingInfo(cloud_url=url) for url in cloud_urls]
-        staging_service.stage_update = Mock(side_effect=staging_details)
-
-        # and:
         bundle_uuid = '9dfca176-0ddf-4384-8b71-b74237edb8be'
-        bundle_files = [{'uuid': uuid} for uuid in metadata_uuids]
-        bundle = Bundle(source={'bundle': {'uuid': bundle_uuid, 'files': bundle_files}})
-        bundle = Mock(wraps=bundle)
-        bundle_service.fetch = Mock(return_value=bundle)
+
+        # and:
+        metadata_resources = self._set_up_metadata_service(metadata_service, metadata_uuids)
+        staging_details = self._set_up_staging_service(staging_service)
+        bundle = self._set_up_bundle_service(bundle_service, bundle_uuid, metadata_uuids)
 
         # and:
         metadata_urls = [f'https://data.hca.tld/metadata/{uuid}' for uuid in metadata_uuids]
@@ -61,3 +51,26 @@ class ExporterTest(TestCase):
                                             any_order=True)
         bundle.update_version.assert_called_with(update_version)
         bundle_service.update.assert_called_once_with(bundle, staging_details)
+
+    @staticmethod
+    def _set_up_bundle_service(bundle_service, bundle_uuid, metadata_uuids):
+        bundle_files = [{'uuid': uuid} for uuid in metadata_uuids]
+        bundle = Bundle(source={'bundle': {'uuid': bundle_uuid, 'files': bundle_files}})
+        bundle = Mock(wraps=bundle)
+        bundle_service.fetch = Mock(return_value=bundle)
+        return bundle
+
+    @staticmethod
+    def _set_up_staging_service(staging_service):
+        cloud_urls = [f'https://upload.tld/metadata{i}.json' for i in range(0, 3)]
+        staging_details = [StagingInfo(cloud_url=url) for url in cloud_urls]
+        staging_service.stage_update = Mock(side_effect=staging_details)
+        return staging_details
+
+    @staticmethod
+    def _set_up_metadata_service(metadata_service, metadata_uuids):
+        metadata_version = '2019-06-12T16:12:20.087Z'
+        metadata_resources = [MetadataResource(uuid=uuid, dcp_version=metadata_version)
+                              for uuid in metadata_uuids]
+        metadata_service.fetch_resource = Mock(side_effect=metadata_resources)
+        return metadata_resources
