@@ -391,18 +391,3 @@ class IngestApi:
         }
         r = self.session.patch(submission_url, data=json.dumps(staging_details))
         r.raise_for_status()
-
-
-class BundleManifest:
-    def __init__(self):
-        self.bundleUuid = None
-        self.bundleVersion = None
-        self.envelopeUuid = {}
-        self.dataFiles = []
-        self.fileBiomaterialMap = {}
-        self.fileProcessMap = {}
-        self.fileFilesMap = {}
-        self.fileProjectMap = {}
-        self.fileProtocolMap = {}
-
-

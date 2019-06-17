@@ -77,7 +77,7 @@ class SchemaTemplate:
             data = {}
             try:
                 data = json.loads(url.read().decode())["migrations"]
-            except:
+            except Exception:
                 print("Failed to read schema from " + migrations_url)
         return data
 
@@ -88,13 +88,13 @@ class SchemaTemplate:
         return a SchemaTemplate object
         """
         for uri in list_of_schema_urls:
-                with urllib.request.urlopen(uri) as url:
-                    data = {}
-                    try:
-                        data = json.loads(url.read().decode())
-                    except Exception:
-                        print("Failed to read schema from " + uri)
-                    self._parser._load_schema(data)
+            with urllib.request.urlopen(uri) as url:
+                data = {}
+                try:
+                    data = json.loads(url.read().decode())
+                except Exception:
+                    print("Failed to read schema from " + uri)
+                self._parser._load_schema(data)
         for migration in list_of_property_migrations:
             self._parser._load_migration(migration)
         return self
@@ -105,7 +105,7 @@ class SchemaTemplate:
     def lookup(self, key, schema_version=None):
         try:
             return self.get(self._template["meta_data_properties"], key)
-        except:
+        except Exception:
             if schema_version != None:
                 try:
                     return(self.lookup_migration(key, schema_version))

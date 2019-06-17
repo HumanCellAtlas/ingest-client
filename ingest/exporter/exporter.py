@@ -1,13 +1,14 @@
-from ingest.api.ingestapi import BundleManifest
-from ingest.exporter.bundle import BundleService
+from ingest.api.ingestapi import IngestApi
+from ingest.exporter.bundle import BundleService, BundleManifest
 from ingest.exporter.metadata import MetadataService
 from ingest.exporter.staging import StagingService
 
 
 class Exporter:
 
-    def __init__(self, metadata_service: MetadataService, staging_service: StagingService,
-                 bundle_service: BundleService):
+    def __init__(self, ingest_api: IngestApi, metadata_service: MetadataService,
+                 staging_service: StagingService, bundle_service: BundleService):
+        self.ingest_api = ingest_api
         self.metadata_service = metadata_service
         self.staging_service = staging_service
         self.bundle_service = bundle_service
@@ -24,9 +25,4 @@ class Exporter:
             bundle.update_file(metadata_resource)
         bundle.update_version(update_version)
         self.bundle_service.update(bundle, staging_details)
-
-        bundle_manifest = BundleManifest()
-        bundle_manifest.envelopeUuid = update_submission['uuid']['uuid']
-        bundle_manifest.bundleUuid = bundle_uuid
-        bundle_manifest.bundleVersion = update_version
-        self.metadata_service.ingest_client.create_bundle_manifest(bundle_manifest)
+        self.ingest_api.create_bundle_manifest(bundle.generate_manifest())

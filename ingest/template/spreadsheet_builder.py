@@ -34,7 +34,6 @@ class SpreadsheetBuilder:
 
         self.include_schemas_tab = include_schemas_tab
         if tabs_template:
-
             tabs_parser = TabConfig()
             tabs = tabs_parser.load(tabs_template)
             template = schema_template.SchemaTemplate(list_of_schema_urls=schema_urls, tab_config=tabs)
