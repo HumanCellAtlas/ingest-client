@@ -16,6 +16,7 @@ DEFAULT_INGEST_URL = "http://api.ingest.data.humancellatlas.org"
 DEFAULT_SCHEMAS_ENDPOINT = "/schemas/search/latestSchemas"
 DEFAULT_MIGRATIONS_URL = "https://schema.humancellatlas.org/property_migrations"
 
+
 class SpreadsheetBuilder:
     def __init__(self, output_file, hide_row=False):
 
@@ -240,4 +241,3 @@ if __name__ == '__main__':
     spreadsheet_builder = SpreadsheetBuilder(output_file, hide_row)
     spreadsheet_builder.generate_workbook(tabs_template=args.yaml, schema_urls=all_schemas)
     spreadsheet_builder.save_workbook()
-

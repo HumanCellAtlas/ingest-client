@@ -1,4 +1,3 @@
-import json
 import logging
 
 import requests
@@ -332,7 +331,7 @@ class Submission(object):
                                                    uuid=uuid)
         elif entity.type == 'project':
             response = self.ingest_api.create_project(self.submission_url,
-                                                         entity.content,
+                                                      entity.content,
                                                       uuid=uuid)
         else:
             response = self.ingest_api.create_entity(self.submission_url,
@@ -349,7 +348,8 @@ class Submission(object):
 
     def link_entity(self, from_entity, to_entity, relationship):
         if from_entity.is_reference and not from_entity.ingest_json:
-            from_entity.ingest_json = self.ingest_api.get_entity_by_uuid(self.ENTITY_LINK[from_entity.type], from_entity.id)
+            from_entity.ingest_json = self.ingest_api.get_entity_by_uuid(self.ENTITY_LINK[from_entity.type],
+                                                                         from_entity.id)
 
         if to_entity.is_reference and not to_entity.ingest_json:
             to_entity.ingest_json = self.ingest_api.get_entity_by_uuid(self.ENTITY_LINK[to_entity.type], to_entity.id)

@@ -92,7 +92,7 @@ class IngestApi:
     def getSubmissions(self):
         params = {'sort': 'submissionDate,desc'}
         r = self.session.get(self._ingest_links["submissionEnvelopes"]["href"].rsplit("{")[0], params=params,
-                         headers=self.headers)
+                             headers=self.headers)
         if r.status_code == requests.codes.ok:
             return json.loads(r.text)["_embedded"]["submissionEnvelopes"]
 
@@ -134,7 +134,8 @@ class IngestApi:
         return r.json()
 
     def get_file_by_submission_url_and_filename(self, submission_url, filename):
-        search_url = self.get_link_from_resource_url(self.url + '/files/search', 'findBySubmissionEnvelopesInAndFileName')
+        search_url = self.get_link_from_resource_url(self.url + '/files/search',
+                                                     'findBySubmissionEnvelopesInAndFileName')
         search_url = search_url.replace('{?submissionEnvelope,fileName}', '')
         r = self.session.get(search_url, params={'submissionEnvelope': submission_url, 'fileName': filename})
         if r.status_code == requests.codes.ok:
@@ -173,7 +174,7 @@ class IngestApi:
                 create_submission_url = f'{create_submission_url}/updateSubmissions'
 
             r = self.session.post(create_submission_url, data="{}",
-                              headers=self.headers)
+                                  headers=self.headers)
             r.raise_for_status()
             submission = r.json()
             submission_url = submission["_links"]["self"]["href"].rsplit("{")[0]
@@ -282,7 +283,7 @@ class IngestApi:
 
         time.sleep(0.001)
         r = self.session.post(submission_files_url, json=file_to_create_object,
-                         headers=self.headers, params=params)
+                              headers=self.headers, params=params)
 
         # TODO Investigate why core is returning internal server error
         if r.status_code == requests.codes.conflict or r.status_code == requests.codes.internal_server_error:
@@ -362,7 +363,8 @@ class IngestApi:
         from_entity_links_relationship_href = from_entity_links_relationship[
             "href"] if "href" in from_entity_links_relationship else None
         if not from_entity_links_relationship_href:
-            raise ValueError("Error: from_entity_links_relationship for relationship {0} has no href".format(relationship))
+            raise ValueError(
+                "Error: from_entity_links_relationship for relationship {0} has no href".format(relationship))
 
         from_uri = from_entity["_links"][relationship]["href"]
         to_uri = self.get_link_from_resource(to_entity, 'self')

@@ -1,4 +1,3 @@
-import requests
 from requests import Session
 from requests.adapters import HTTPAdapter
 from urllib3.util import retry
@@ -20,7 +19,7 @@ def create_session_with_retry(retry_policy=None) -> Session:
             ['HEAD', 'GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'TRACE'])
     )
     session = Session()
-    adapter = requests.adapters.HTTPAdapter(max_retries=retry_policy)
+    adapter = HTTPAdapter(max_retries=retry_policy)
     session.mount('http://', adapter)
     session.mount('https://', adapter)
     return session
