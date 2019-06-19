@@ -28,7 +28,7 @@ class SchemaTemplate:
     A schema template is a simplified view over
     JSON schema for the HCA metadata
     """
-    def __init__(self, ingest_api_url=None, list_of_schema_urls=None, tab_config=None, migrations=None, migrations_url=None):
+    def __init__(self, ingest_api_url=None, list_of_schema_urls=None, json_schema_docs=None, tab_config=None, migrations=None, migrations_url=None):
 
         # todo remove this hard coding to a default ingest API url
         self.ingest_api_url = ingest_api_url if ingest_api_url else "http://api.ingest.dev.data.humancellatlas.org"
@@ -43,7 +43,7 @@ class SchemaTemplate:
         }
         self._parser = SchemaParser(self)
 
-        if not list_of_schema_urls:
+        if not list_of_schema_urls and not json_schema_docs:
             list_of_schema_urls = self.get_latest_submittable_schemas(self.ingest_api_url)
             # print ("Got schemas from ingest api\n " + "\n".join(list_of_schema_urls))
 
@@ -54,7 +54,11 @@ class SchemaTemplate:
 
         self.property_migrations = migrations
 
-        self._load(self.schema_urls, self.property_migrations)
+        if json_schema_docs and not list_of_schema_urls:
+            self._load_from_json_docs(json_schema_docs, migrations)
+
+        if self.schema_urls:
+            self._load(self.schema_urls, self.property_migrations)
 
         self._tab_config = TabConfig(init=self._template)
         if tab_config:
@@ -99,6 +103,18 @@ class SchemaTemplate:
             self._parser._load_migration(migration)
         return self
 
+    def _load_from_json_docs(self, json_schema_docs, property_migrations):
+        """
+        given a set of JSON schema files
+        return a SchemaTemplate object
+        """
+        for json_doc in json_schema_docs:
+            self._parser._load_schema(json_doc)
+
+        for migration in property_migrations:
+            self._parser._load_migration(migration)
+        return self
+
     def get_tabs_config(self):
         return self._tab_config
 
@@ -106,25 +122,23 @@ class SchemaTemplate:
         try:
             return self.get(self._template["meta_data_properties"], key)
         except Exception:
-            if schema_version != None:
-                try:
-                    return(self.lookup_migration(key, schema_version))
-                except Exception:
-                    raise UnknownKeyException(
-                        "Can't map the key to a known JSON schema migration: " + str(key))
-            else:
+            # if schema_version != None:
+            try:
+                # return(self.lookup_migration(key, schema_version))
+                return(self.lookup_migration(key))
+
+            except Exception:
                 raise UnknownKeyException(
                     "Can't map the key to a known JSON schema property: " + str(key))
 
-    def lookup_migration(self, key, schema_version):
+    def lookup_migration(self, key, schema_version=None):
         try:
             migrations = self.get(self._template["migrations"], key)
 
-            for migration in migrations:
-                if "version" in migration and int(schema_version.split(".")[0]) <= int(migration["version"].split(".")[0]):
-                    return migration
-                else:
-                    raise Exception
+            if len(migrations) == 1:
+                return migrations[0]
+            else:
+                raise Exception("More than one migration found for key: " + str(key))
         except Exception:
             raise UnknownKeyException(
                 "Can't map the key to a known JSON schema migration: " + str(key))
