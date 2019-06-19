@@ -10,7 +10,7 @@ from unittest.mock import patch, MagicMock
 
 from ingest.template.schema_template import SchemaTemplate
 
-import json
+import json, sys, os
 
 @patch('urllib.request.urlopen')
 def get_template_for_json(mock_urlopen, data="{}"):
@@ -20,7 +20,8 @@ def get_template_for_json(mock_urlopen, data="{}"):
     cm.__enter__.return_value = cm
     mock_urlopen.return_value = cm
 
-    with open('template/property_migrations.json') as json_file:
+    dn = os.path.dirname(os.path.realpath(__file__))
+    with open(dn + '/property_migrations.json') as json_file:
         migrations = json.load(json_file)
 
     return SchemaTemplate(list_of_schema_urls=['test_url'], migrations=migrations["migrations"])
