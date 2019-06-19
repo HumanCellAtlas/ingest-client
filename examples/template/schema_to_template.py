@@ -52,12 +52,12 @@ print (template.lookup("project.project_core.project_title.user_friendly"))
 # print(template.yaml_dump(tabs_only=True))
 # print(data.json_dump())
 
-# try:
 print(template.lookup("cell_suspension.total_estimated_cells"))
-# except UnknownKeyException as e:
-#     print(e)
 
-    # migration = template.lookup_migration("cell_suspension.total_estimated_cells", "8.1.3")
+print(template.lookup("cell_suspension.total_estimated_cells.user_friendly"))
+
+print(template.lookup("cell_suspension.total_estimated_cells")["user_friendly"])
+
 migration = template.lookup("cell_suspension.total_estimated_cells", "8.1.3")
 print ("Migration: " + str(migration))
 

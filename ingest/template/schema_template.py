@@ -122,10 +122,8 @@ class SchemaTemplate:
         try:
             return self.get(self._template["meta_data_properties"], key)
         except Exception:
-            # if schema_version != None:
             try:
-                # return(self.lookup_migration(key, schema_version))
-                return(self.lookup_migration(key))
+                return(self.lookup_migration(key, schema_version))
 
             except Exception:
                 raise UnknownKeyException(
@@ -133,12 +131,24 @@ class SchemaTemplate:
 
     def lookup_migration(self, key, schema_version=None):
         try:
+            field_name = ""
+            if key.split(".")[-1] in self._parser._new_template().keys():
+                field_name = "." + key.split(".")[-1]
+                key = ".".join(key.split(".")[:-1])
             migrations = self.get(self._template["migrations"], key)
+            if schema_version == None:
 
-            if len(migrations) == 1:
-                return migrations[0]
+                if len(migrations) == 1:
+                    return self.lookup(migrations[0]["replaced_by"] + field_name)
+                else:
+                    raise Exception("More than one migration found for key: " + str(key))
             else:
-                raise Exception("More than one migration found for key: " + str(key))
+                for migration in migrations:
+                    if "version" in migration and int(schema_version.split(".")[0]) <= int(
+                            migration["version"].split(".")[0]):
+                        return migration
+                    else:
+                        raise Exception
         except Exception:
             raise UnknownKeyException(
                 "Can't map the key to a known JSON schema migration: " + str(key))
