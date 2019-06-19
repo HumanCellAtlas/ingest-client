@@ -139,10 +139,13 @@ class SchemaTemplate:
                 field_name = "." + key.split(".")[-1]
                 key = ".".join(key.split(".")[:-1])
             migrations = self.get(self._template["migrations"], key)
-            if schema_version == None:
+            if schema_version is None:
 
                 if len(migrations) == 1:
-                    return migrations[0]["replaced_by"] + field_name
+                    if "replaced_by" in migrations[0]:
+                        return migrations[0]["replaced_by"] + field_name
+                    else:
+                        return ""
                 else:
                     raise Exception("More than one migration found for key: " + str(key))
             else:
