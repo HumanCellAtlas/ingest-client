@@ -132,29 +132,38 @@ class SchemaTemplate:
             raise UnknownKeyException(
                 "Can't map the key to a known JSON schema property: " + str(key))
 
+    def latest_replaced_by(self, key):
+        try:
+            replaced_by = self._lookup_migration(key)
+
+            try:
+                latest = self.lookup(replaced_by)
+                return (latest)
+            except UnknownKeyException:
+                return self.latest_replaced_by(latest)
+        except Exception:
+            raise UnknownKeyException(
+                "Can't map the key to a known JSON schema property: " + str(key))
+
     def _lookup_migration(self, key, schema_version=None):
         try:
             field_name = ""
             if key.split(".")[-1] in self._parser._new_template().keys():
                 field_name = "." + key.split(".")[-1]
                 key = ".".join(key.split(".")[:-1])
-            migrations = self.get(self._template["migrations"], key)
+            migration = self.get(self._template["migrations"], key)
             if schema_version is None:
 
-                if len(migrations) == 1:
-                    if "replaced_by" in migrations[0]:
-                        return migrations[0]["replaced_by"] + field_name
-                    else:
-                        return ""
+                if "replaced_by" in migration:
+                    return migration["replaced_by"] + field_name
                 else:
-                    raise Exception("More than one migration found for key: " + str(key))
+                    return ""
             else:
-                for migration in migrations:
-                    if "version" in migration and int(schema_version.split(".")[0]) <= int(
-                            migration["version"].split(".")[0]):
-                        return migration
-                    else:
-                        raise Exception
+                if "version" in migration and int(schema_version.split(".")[0]) <= int(
+                        migration["version"].split(".")[0]):
+                    return migration
+                else:
+                    raise Exception
         except Exception:
             raise UnknownKeyException(
                 "Can't map the key to a known JSON schema migration: " + str(key))
@@ -291,10 +300,10 @@ class SchemaParser:
         if "effective_from" in property_migration:
             migration_info["version"] = property_migration["effective_from"]
         elif "effective_from_source" in property_migration:
-            migration_info["version"] = property_migration["effective_from"]
+            migration_info["version"] = property_migration["effective_from_source"]
             migration_info["target_version"] = property_migration["effective_from_target"]
 
-        migration_info = {migrated_property.split(".")[-1]: [migration_info]}
+        migration_info = {migrated_property.split(".")[-1]: migration_info}
         for part in reversed(migrated_property.split(".")[:-1]):
             migration_info = {part: migration_info}
 
