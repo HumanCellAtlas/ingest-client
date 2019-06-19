@@ -52,23 +52,28 @@ print (template.lookup("project.project_core.project_title.user_friendly"))
 # print(template.yaml_dump(tabs_only=True))
 # print(data.json_dump())
 
-print(template.lookup("cell_suspension.total_estimated_cells"))
+try:
+    print(template.lookup("cell_suspension.total_estimated_cells"))
+except Exception as e:
+    print(e)
 
-print(template.lookup("cell_suspension.total_estimated_cells.user_friendly"))
+    print(template.replaced_by("cell_suspension.total_estimated_cells"))
 
-print(template.lookup("cell_suspension.total_estimated_cells")["user_friendly"])
+    print(template.replaced_by("cell_suspension.total_estimated_cells.user_friendly"))
 
-migration = template.lookup("cell_suspension.total_estimated_cells", "8.1.3")
-print ("Migration: " + str(migration))
+    print(template.lookup(template.replaced_by("cell_suspension.total_estimated_cells"))["user_friendly"])
 
-print(str(migration.keys()))
+    migration = template.replaced_by("cell_suspension.total_estimated_cells", "8.1.3")
+    print ("Migration: " + str(migration))
 
-print ("New property: " + str(template.lookup(migration["replaced_by"])))
+    print(str(migration.keys()))
+
+    print ("New property: " + str(template.lookup(migration["replaced_by"])))
 
 
-print (template.lookup(migration["replaced_by"])["user_friendly"])
+    print (template.lookup(migration["replaced_by"])["user_friendly"])
 
 try:
-    print (template.lookup_migration("cell_suspension.total_estimated_cells", "10.1.3"))
+    print (template._lookup_migration("cell_suspension.total_estimated_cells", "10.1.3"))
 except UnknownKeyException as e:
     print(e)
