@@ -127,22 +127,24 @@ class SchemaTemplate:
 
     def replaced_by(self, key, schema_version=None):
         try:
-            return (self._lookup_migration(key, schema_version))
+            field_name = ""
+            if key.split(".")[-1] in self._parser._new_template().keys():
+                field_name = "." + key.split(".")[-1]
+                key = ".".join(key.split(".")[:-1])
+
+            return (self._lookup_migration(key, schema_version)) + field_name
         except Exception:
             raise UnknownKeyException(
                 "Can't map the key to a known JSON schema property: " + str(key))
 
     def _lookup_migration(self, key, schema_version=None):
         try:
-            field_name = ""
-            if key.split(".")[-1] in self._parser._new_template().keys():
-                field_name = "." + key.split(".")[-1]
-                key = ".".join(key.split(".")[:-1])
+
             migrations = self.get(self._template["migrations"], key)
             if schema_version == None:
 
                 if len(migrations) == 1:
-                    return migrations[0]["replaced_by"] + field_name
+                    return migrations[0]["replaced_by"]
                 else:
                     raise Exception("More than one migration found for key: " + str(key))
             else:
@@ -155,6 +157,25 @@ class SchemaTemplate:
         except Exception:
             raise UnknownKeyException(
                 "Can't map the key to a known JSON schema migration: " + str(key))
+
+    def _find_migration_object(self, fq_key, version):
+        backtrack_fq_key = ""
+        while True:
+            try:
+                migration_object = self.get(self._template["migrations"], fq_key)
+                return migration_object, backtrack_fq_key
+            except Exception:
+                fq_key = fq_key.split(".")
+                backtrack_fq_key = fq_key.pop() + "." + backtrack_fq_key
+                fq_key = ".".join(fq_key)
+                if not "." in fq_key:
+                    break
+
+    def _get_latest_key(self, fq_key, version):
+        migration_object, backtrack = self._find_migration_object(fq_key, version)
+        new_fq_key = migration_object.get('replaced_by')
+        new_fq_key += "." + backtrack
+        return new_fq_key
 
     def get_template(self):
         return self._template["meta_data_properties"]
@@ -169,7 +190,6 @@ class SchemaTemplate:
                 self._template["tabs"][i][level_one]["columns"].append(property_key)
 
     def put_migration(self, property_migration):
-        self._template["migrations"]
         for k, v in property_migration.items():
             if k in self._template["migrations"]:
                 self._template["migrations"][k] = self._mergeDict(self._template["migrations"][k], v)

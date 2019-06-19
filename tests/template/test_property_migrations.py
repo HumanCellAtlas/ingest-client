@@ -40,6 +40,13 @@ class TestSchemaTemplate(TestCase):
         # self.assertEqual("project", template.lookup('project.schema.module'))
         # self.assertEqual("type", template.lookup('project.schema.high_level_entity'))
 
+    def test_backtrack_lookup(self):
+
+        data = '{"id" : "' + self.dummyCellSuspension + '", "properties": {"selected_cell_types" : {"user_friendly": "Selected cell type(s)"}} }'
+        template = schema_mock.get_template_for_json(data=data)
+
+        self.assertEqual("cell_suspension.selected_cell_types.ontology", template.replaced_by('cell_suspension.selected_cell_type.ontology'))
+
 
 if __name__ == '__main__':
     unittest.main()
