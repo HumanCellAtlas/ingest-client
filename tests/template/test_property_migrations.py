@@ -34,18 +34,23 @@ class TestSchemaTemplate(TestCase):
         self.assertEqual("cell_suspension.selected_cell_types", template.replaced_by('cell_suspension.selected_cell_type'))
 
 
-        # print(template.lookup('cell_suspension.selected_cell_types'))
-
-        # self.assertEqual("project", template.lookup('cell_suspension.selected_cell_type'))
-        # self.assertEqual("project", template.lookup('project.schema.module'))
-        # self.assertEqual("type", template.lookup('project.schema.high_level_entity'))
-
     def test_backtrack_lookup(self):
 
         data = '{"id" : "' + self.dummyCellSuspension + '", "properties": {"selected_cell_types" : {"user_friendly": "Selected cell type(s)"}} }'
         template = schema_mock.get_template_for_json(data=data)
 
         self.assertEqual("cell_suspension.selected_cell_types.ontology", template.replaced_by('cell_suspension.selected_cell_type.ontology'))
+        self.assertEqual("cell_suspension.selected_cell_types.text.user_friendly", template.replaced_by('cell_suspension.selected_cell_type.text.user_friendly'))
+
+    def test_version_lookups(self):
+
+        data = '{"id" : "' + self.dummyCellSuspension + '", "properties": {"selected_cell_types_foo" : {"user_friendly": "Selected cell type(s)"}} }'
+        template = schema_mock.get_template_for_json(data=data)
+
+        self.assertEqual("cell_suspension.selected_cell_types_foo", template.latest_replaced_by('cell_suspension.selected_cell_type'))
+        self.assertEqual("cell_suspension.selected_cell_types", template.replaced_at('cell_suspension.selected_cell_type', "13.5.2"))
+        self.assertEqual("cell_suspension.selected_cell_types", template.replaced_at('cell_suspension.selected_cell_type', "14.5.2"))
+        self.assertEqual("cell_suspension.selected_cell_types_foo", template.replaced_at('cell_suspension.selected_cell_type', "16.5.2"))
 
 
 if __name__ == '__main__':

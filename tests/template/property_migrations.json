@@ -420,6 +420,15 @@
       "type": "renamed property"
     },
     {
+      "source_schema": "cell_suspension",
+      "property": "selected_cell_types",
+      "target_schema": "cell_suspension",
+      "replaced_by": "selected_cell_types_foo",
+      "effective_from": "15.0.0",
+      "reason": "Here for unit tests only",
+      "type": "renamed property"
+    },
+    {
       "source_schema": "analysis_file",
       "property": "file_core.file_format",
       "target_schema": "analysis_file",

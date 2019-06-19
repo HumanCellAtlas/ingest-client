@@ -137,28 +137,63 @@ class SchemaTemplate:
             raise UnknownKeyException(
                 "Can't map the key to a known JSON schema property: " + str(key))
 
-    def _lookup_migration(self, key, schema_version=None):
+    def latest_replaced_by(self, key):
+        try:
+            replaced_by = self._lookup_migration(key)
+
+            try:
+                self.lookup(replaced_by)
+                return replaced_by
+            except UnknownKeyException:
+                return self.latest_replaced_by(replaced_by)
+        except Exception:
+            raise UnknownKeyException(
+                "Can't map the key to a known JSON schema property: " + str(key))
+
+    def replaced_at(self, key, schema_version):
+        try:
+            replaced_by = self._lookup_migration(key)
+            version = self._lookup_migration_version(key)
+
+            next_replaced_by_version = self._lookup_migration_version(replaced_by) or schema_version
+
+            if int(version.split(".")[0]) <= int(schema_version.split(".")[0]) <= int(next_replaced_by_version.split(".")[0]):
+                return replaced_by
+            else:
+                return self.replaced_at(replaced_by, schema_version)
+        except Exception:
+            raise UnknownKeyException(
+                "Can't map the key to a known JSON schema property: " + str(key))
+
+
+    def _lookup_migration(self, key):
         try:
 
-            migrations = self.get(self._template["migrations"], key)
-            if schema_version == None:
+            migration, backtrack = self._find_migration_object(key)
 
-                if len(migrations) == 1:
-                    return migrations[0]["replaced_by"]
-                else:
-                    raise Exception("More than one migration found for key: " + str(key))
+            # migration = self.get(self._template["migrations"], key)
+            if "replaced_by" in migration:
+                if (backtrack):
+                    return migration["replaced_by"] + backtrack
+                return migration["replaced_by"]
             else:
-                for migration in migrations:
-                    if "version" in migration and int(schema_version.split(".")[0]) <= int(
-                            migration["version"].split(".")[0]):
-                        return migration
-                    else:
-                        raise Exception
+                return ""
+
         except Exception:
             raise UnknownKeyException(
                 "Can't map the key to a known JSON schema migration: " + str(key))
 
-    def _find_migration_object(self, fq_key, version):
+    def _lookup_migration_version(self, key):
+
+        migration, backtrack = self._find_migration_object(key)
+
+        # migration = self.get(self._template["migrations"], key)
+        if "version" in migration:
+            return migration["version"]
+        return None
+
+
+    def _find_migration_object(self, fq_key):
         backtrack_fq_key = ""
         while True:
             try:
@@ -166,7 +201,7 @@ class SchemaTemplate:
                 return migration_object, backtrack_fq_key
             except Exception:
                 fq_key = fq_key.split(".")
-                backtrack_fq_key = fq_key.pop() + "." + backtrack_fq_key
+                backtrack_fq_key = "." + fq_key.pop()
                 fq_key = ".".join(fq_key)
                 if not "." in fq_key:
                     break
@@ -308,10 +343,10 @@ class SchemaParser:
         if "effective_from" in property_migration:
             migration_info["version"] = property_migration["effective_from"]
         elif "effective_from_source" in property_migration:
-            migration_info["version"] = property_migration["effective_from"]
+            migration_info["version"] = property_migration["effective_from_source"]
             migration_info["target_version"] = property_migration["effective_from_target"]
 
-        migration_info = {migrated_property.split(".")[-1]: [migration_info]}
+        migration_info = {migrated_property.split(".")[-1]: migration_info}
         for part in reversed(migrated_property.split(".")[:-1]):
             migration_info = {part: migration_info}
 
