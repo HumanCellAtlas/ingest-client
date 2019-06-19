@@ -125,14 +125,14 @@ class SchemaTemplate:
             raise UnknownKeyException(
                 "Can't map the key to a known JSON schema property: " + str(key))
 
-    def replaced_by(self, key, schema_version=None):
+    def replaced_by(self, key):
         try:
             field_name = ""
             if key.split(".")[-1] in self._parser._new_template().keys():
                 field_name = "." + key.split(".")[-1]
                 key = ".".join(key.split(".")[:-1])
 
-            return (self._lookup_migration(key, schema_version)) + field_name
+            return (self._lookup_migration(key)) + field_name
         except Exception:
             raise UnknownKeyException(
                 "Can't map the key to a known JSON schema property: " + str(key))
