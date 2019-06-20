@@ -151,7 +151,7 @@ class BundleTest(TestCase):
         # given:
         metadata_uuid = 'af690c04-8562-4680-bbf4-56bb9f58b265'
         metadata_file = _create_test_bundle_file(uuid=metadata_uuid,
-                                                    content_type='biomaterial')
+                                                 content_type='biomaterial')
 
         # and:
         bundle_uuid = '93d3d2be-36e0-465e-b37f-0f48a998630e'

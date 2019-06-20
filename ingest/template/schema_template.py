@@ -28,11 +28,14 @@ class SchemaTemplate:
     A schema template is a simplified view over
     JSON schema for the HCA metadata
     """
-    def __init__(self, ingest_api_url=None, list_of_schema_urls=None, json_schema_docs=None, tab_config=None, migrations=None, migrations_url=None):
+    def __init__(self, ingest_api_url=None, list_of_schema_urls=None,
+                 json_schema_docs=None, tab_config=None, migrations=None, migrations_url=None):
 
         # todo remove this hard coding to a default ingest API url
-        self.ingest_api_url = ingest_api_url if ingest_api_url else "http://api.ingest.dev.data.humancellatlas.org"
-        self.migrations_url = migrations_url if migrations_url else "https://schema.dev.data.humancellatlas.org/property_migrations"
+        self.ingest_api_url = ingest_api_url \
+            if ingest_api_url else "http://api.ingest.dev.data.humancellatlas.org"
+        self.migrations_url = migrations_url \
+            if migrations_url else "https://schema.dev.data.humancellatlas.org/property_migrations"
         self._template = {
             "template_version": "1.0.0",
             "created_date": str(datetime.now()),
@@ -160,7 +163,9 @@ class SchemaTemplate:
 
             next_replaced_by_version = self._lookup_migration_version(replaced_by) or schema_version
 
-            if int(version.split(".")[0]) <= int(schema_version.split(".")[0]) <= int(next_replaced_by_version.split(".")[0]):
+            if int(version.split(".")[0]) \
+                    <= int(schema_version.split(".")[0]) \
+                    <= int(next_replaced_by_version.split(".")[0]):
                 return replaced_by
             else:
                 return self.replaced_by_at(replaced_by, schema_version)
@@ -208,12 +213,6 @@ class SchemaTemplate:
                 fq_key = ".".join(fq_key)
                 if not "." in fq_key:
                     break
-
-    def _get_latest_key(self, fq_key, version):
-        migration_object, backtrack = self._find_migration_object(fq_key, version)
-        new_fq_key = migration_object.get('replaced_by')
-        new_fq_key += "." + backtrack
-        return new_fq_key
 
     def get_template(self):
         return self._template["meta_data_properties"]
@@ -341,7 +340,8 @@ class SchemaParser:
         migration_info = {}
 
         if "target_schema" in property_migration and "replaced_by" in property_migration:
-            migration_info["replaced_by"] = property_migration["target_schema"] + "." + property_migration["replaced_by"]
+            migration_info["replaced_by"] = \
+                property_migration["target_schema"] + "." + property_migration["replaced_by"]
 
         if "effective_from" in property_migration:
             migration_info["version"] = property_migration["effective_from"]
