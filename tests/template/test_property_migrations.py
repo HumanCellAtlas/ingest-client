@@ -52,6 +52,8 @@ class TestSchemaTemplate(TestCase):
         self.assertEqual("cell_suspension.selected_cell_types", template.replaced_by_at('cell_suspension.selected_cell_type', "14.5.2"))
         self.assertEqual("cell_suspension.selected_cell_types_foo", template.replaced_by_at('cell_suspension.selected_cell_types_foo', "16.5.2"))
         self.assertEqual("project.contributors.project_role.text", template.replaced_by_at('project.contributors.project_role', "14.0.0"))
+        self.assertEqual("project.contributors.project_role", template.replaced_by_at('project.contributors.project_role', "9.0.0"))
+        self.assertEqual("analysis_protocol.protocol_core.protocol_id", template.replaced_by_at('analysis_protocol.protocol_core.protocol_id', "9.0.0"))
 
     def test_migration_failures(self):
         data = '{"id" : "' + self.dummyCellSuspension + '", "properties": {"selected_cell_types_foo" : {"user_friendly": "Selected cell type(s)"}} }'
@@ -63,11 +65,9 @@ class TestSchemaTemplate(TestCase):
         with self.assertRaises(UnknownKeyException):
             self.assertTrue(template.replaced_by_latest('foo.bar'))
 
-        with self.assertRaises(UnknownKeyException):
-            self.assertTrue(template.replaced_by_at('foo.bar', "12.0.2"))
+        self.assertEqual("foo.bar", template.replaced_by_at('foo.bar', "12.0.2"))
+        self.assertEqual("foo.bar", template.replaced_by('foo.bar'))
 
-        with self.assertRaises(UnknownKeyException):
-            self.assertTrue(template.replaced_by('foo.bar'))
 
 if __name__ == '__main__':
     unittest.main()

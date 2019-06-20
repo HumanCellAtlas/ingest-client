@@ -141,25 +141,45 @@ class SchemaTemplate:
                 "Can't map the key to a known JSON schema property: " + str(key))
 
     def replaced_by_latest(self, key):
-        try:
-            replaced_by = self._lookup_migration(key)
+        """
+        Tells you the latest fully qualified key if it has been replaced. This
+        function will check that it is also valid in the latest loaded schema
+        :param key:
+        :param schema_version:
+        :return:
+        """
+        replaced_by = self._lookup_migration(key)
 
-            try:
-                self.lookup(replaced_by)
-                return replaced_by
-            except UnknownKeyException:
-                return self.replaced_by_latest(replaced_by)
-        except Exception:
-            raise UnknownKeyException(
-                "Can't map the key to a known JSON schema property: " + str(key))
+        try:
+            self.lookup(replaced_by)
+            return replaced_by
+        except UnknownKeyException:
+            if key == replaced_by:
+                raise UnknownKeyException(
+                    "Can't map the key to a known JSON schema property: " + str(key))
+            return self.replaced_by_latest(replaced_by)
+
 
     def replaced_by_at(self, key, schema_version):
+        """
+        Tells you if the fully qualified key has been replaced at this version.
+        This method will not check if it is a valid key in the schema, it only
+        tells you if it has been replaced. If it hasn't been replaced it will return the key
+        :param key:
+        :param schema_version:
+        :return:
+        """
         try:
             replaced_by = self._lookup_migration(key)
-            if not replaced_by:
+            if key == replaced_by:
                 return key
 
             version = self._lookup_migration_version(key)
+
+            if int(schema_version.split(".")[0]) < int(version.split(".")[0]):
+                # the requested schema version is before the migration so
+                # just return the original key
+                return key
 
             next_replaced_by_version = self._lookup_migration_version(replaced_by) or schema_version
             if version == next_replaced_by_version:
@@ -177,21 +197,17 @@ class SchemaTemplate:
 
 
     def _lookup_migration(self, key):
-        try:
 
-            migration, backtrack = self._find_migration_object(key)
+        migration, backtrack = self._find_migration_object(key)
 
-            # migration = self.get(self._template["migrations"], key)
-            if "replaced_by" in migration:
-                if (backtrack):
-                    return migration["replaced_by"] + backtrack
-                return migration["replaced_by"]
-            else:
-                return ""
+        # migration = self.get(self._template["migrations"], key)
+        if "replaced_by" in migration:
+            if (backtrack):
+                return migration["replaced_by"] + backtrack
+            return migration["replaced_by"]
+        else:
+            return key
 
-        except Exception:
-            raise UnknownKeyException(
-                "Can't map the key to a known JSON schema migration: " + str(key))
 
     def _lookup_migration_version(self, key):
 
@@ -215,6 +231,7 @@ class SchemaTemplate:
                 fq_key = ".".join(fq_key)
                 if not "." in fq_key:
                     break
+        return {}, backtrack_fq_key
 
     def get_template(self):
         return self._template["meta_data_properties"]
