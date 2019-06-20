@@ -2,67 +2,103 @@
 """
 desc goes here
 """
+import json
+import logging
+import os
 import time
-from requests import HTTPError
+from urllib.parse import urljoin, quote
 
-__author__ = "jupp"
-__license__ = "Apache 2.0"
+import requests
 
-import json, os, requests, logging, uuid
+from ingest.api.requests_utils import create_session_with_retry
 
 
 class IngestApi:
-    def __init__(self, url=None):
-        formatter = logging.Formatter(
-            '[%(filename)s:%(lineno)s - %(funcName)20s() ] %(asctime)s - %(name)s - %(levelname)s - %(message)s')
-        logging.basicConfig(formatter=formatter)
-        logging.getLogger("requests").setLevel(logging.WARNING)
+    def __init__(self, url=None, token_manager=None):
         self.logger = logging.getLogger(__name__)
+        self.session = create_session_with_retry()
 
         if not url and 'INGEST_API' in os.environ:
             url = os.environ['INGEST_API']
             # expand interpolated env vars
             url = os.path.expandvars(url)
-            self.logger.info("using " + url + " for ingest API")
         self.url = url if url else "http://localhost:8080"
-
-        self.ingest_api = None
         self.headers = {'Content-type': 'application/json'}
+        self.token = None
 
-        self.submission_links = {}
-        self.load_root()
+        self._ingest_links = self._get_ingest_links()
+        self._submission_links = {}
+        self.logger.info(f"using {self.url} for ingest API")
 
-    def load_root(self):
-        if not self.ingest_api:
-            reply = requests.get(self.url, headers=self.headers)
-            self.ingest_api = reply.json()["_links"]
+        self.token_manager = token_manager
+
+    def set_token(self, token=None):
+        if self.token_manager:
+            self.token = self.token_manager.get_token()
+        elif token:
+            self.token = token
+            self.logger.debug(f'Token set!')
+        else:
+            raise ValueError("No token or token manager found!")
+
+        self.headers['Authorization'] = self.token
+
+        return self.headers
+
+    def _get_ingest_links(self):
+        r = self.session.get(self.url, headers=self.headers)
+        r.raise_for_status()
+        return r.json()["_links"]
+
+    def get_link_from_resource_url(self, resource_url, link_name):
+        r = self.session.get(resource_url, headers=self.headers)
+        r.raise_for_status()
+        links = r.json().get('_links', {})
+        return links.get(link_name, {}).get('href')
+
+    def get_link_from_resource(self, resource, link_name):
+        links = resource.get('_links', {})
+        return links.get(link_name, {}).get('href')
+
+    def get_schemas(self, latest_only=True, high_level_entity=None, domain_entity=None, concrete_entity=None):
+        schema_url = self.get_schemas_url()
+        all_schemas = []
+
+        if latest_only:
+            search_url = self.get_link_from_resource_url(schema_url, "search")
+            r = self.session.get(search_url, headers=self.headers)
+            if r.status_code == requests.codes.ok:
+                response_j = json.loads(r.text)
+                all_schemas = list(self.get_related_entities("latestSchemas", response_j, "schemas"))
+        else:
+            all_schemas = list(self.get_entities(schema_url, "schemas"))
+
+        if high_level_entity:
+            all_schemas = list(filter(lambda schema: schema.get('highLevelEntity') == high_level_entity, all_schemas))
+
+        if domain_entity:
+            all_schemas = list(filter(lambda schema: schema.get('domainEntity') == domain_entity, all_schemas))
+
+        if concrete_entity:
+            all_schemas = list(filter(lambda schema: schema.get('concreteEntity') == concrete_entity, all_schemas))
+
+        return all_schemas
+
+    def get_schemas_url(self):
+        if "schemas" in self._ingest_links:
+            return self._ingest_links["schemas"]["href"].rsplit("{")[0]
+        return None
 
     def getSubmissions(self):
         params = {'sort': 'submissionDate,desc'}
-        r = requests.get(self.ingest_api["submissionEnvelopes"]["href"].rsplit("{")[0], params=params,
+        r = self.session.get(self._ingest_links["submissionEnvelopes"]["href"].rsplit("{")[0], params=params,
                          headers=self.headers)
         if r.status_code == requests.codes.ok:
             return json.loads(r.text)["_embedded"]["submissionEnvelopes"]
 
-    def getSubmissionIfModifiedSince(self, submissionId, datetimeUTC):
-        submissionUrl = self.getSubmissionUri(submissionId)
-        headers = self.headers
-
-        if datetimeUTC:
-            headers = {'If-Modified-Since': datetimeUTC}
-
-        self.logger.info('headers:' + str(headers))
-        r = requests.get(submissionUrl, headers=headers)
-
-        if r.status_code == requests.codes.ok:
-            submission = json.loads(r.text)
-            return submission
-        else:
-            self.logger.error(str(r))
-
     def getProjects(self, id):
         submissionUrl = self.url + '/submissionEnvelopes/' + id + '/projects'
-        r = requests.get(submissionUrl, headers=self.headers)
+        r = self.session.get(submissionUrl, headers=self.headers)
         projects = []
         if r.status_code == requests.codes.ok:
             projects = json.loads(r.text)
@@ -70,340 +106,296 @@ class IngestApi:
 
     def getProjectById(self, id):
         submissionUrl = self.url + '/projects/' + id
-        r = requests.get(submissionUrl, headers=self.headers)
+        r = self.session.get(submissionUrl, headers=self.headers)
         if r.status_code == requests.codes.ok:
             project = json.loads(r.text)
             return project
         else:
             raise ValueError("Project " + id + " could not be retrieved")
 
-    def getProjectByUuid(self, uuid):
-        url =  self.url + '/projects/search/findByUuid?uuid=' + uuid
-        r = requests.get(url, headers=self.headers)
+    def get_project_by_uuid(self, uuid):
+        return self.get_entity_by_uuid('projects', uuid)
+
+    def get_entity_by_uuid(self, entity_type, uuid):
+        url = self.url + f'/{entity_type}/search/findByUuid?uuid=' + uuid
+
+        # TODO make the endpoint consistent
+        if entity_type == 'submissionEnvelopes':
+            url = self.url + f'/{entity_type}/search/findByUuidUuid?uuid=' + uuid
+
+        r = self.session.get(url, headers=self.headers)
         r.raise_for_status()
         return r.json()
 
-    def getSubmissionEnvelope(self, submissionUrl):
-        r = requests.get(submissionUrl, headers=self.headers)
-        if r.status_code == requests.codes.ok:
-            submissionEnvelope = json.loads(r.text)
-            return submissionEnvelope
-        else:
-            raise ValueError("Submission Envelope " + submissionUrl + " could not be retrieved")
+    def get_entity_by_callback_link(self, callback_link):
+        url = f'{self.url}/{callback_link}'
+        r = self.session.get(url, headers=self.headers)
+        r.raise_for_status()
+        return r.json()
 
-    def getFiles(self, id):
-        submissionUrl = self.url + '/submissionEnvelopes/' + id + '/files'
-        r = requests.get(submissionUrl, headers=self.headers)
+    def get_file_by_submission_url_and_filename(self, submission_url, filename):
+        search_url = self.get_link_from_resource_url(self.url + '/files/search', 'findBySubmissionEnvelopesInAndFileName')
+        search_url = search_url.replace('{?submissionEnvelope,fileName}', '')
+        r = self.session.get(search_url, params={'submissionEnvelope': submission_url, 'fileName': filename})
+        if r.status_code == requests.codes.ok:
+            return r.json()
+        return None
+
+    def get_submission(self, submission_url):
+        r = self.session.get(submission_url, headers=self.headers)
+        r.raise_for_status()
+        r.json()
+
+    def get_submission_by_uuid(self, submission_uuid):
+        search_link = self.get_link_from_resource_url(self.url + '/submissionEnvelopes/search', 'findByUuid')
+        search_link = search_link.replace('{?uuid}', '')  # TODO: use a REST traverser instead of requests?
+        r = self.session.get(search_link, params={'uuid': submission_uuid})
+        r.raise_for_status()
+        return r.json()
+
+    def get_files(self, id):
+        submission_url = self.url + '/submissionEnvelopes/' + id + '/files'
+        r = self.session.get(submission_url, headers=self.headers)
         files = []
         if r.status_code == requests.codes.ok:
             files = json.loads(r.text)
         return files
 
-    def getBundleManifests(self, id):
-        submissionUrl = self.url + '/submissionEnvelopes/' + id + '/bundleManifests'
-        r = requests.get(submissionUrl, headers=self.headers)
-        bundleManifests = []
+    def get_bundle_manifests(self, id):
+        submission_url = self.url + '/submissionEnvelopes/' + id
+        return self.get_entities(submission_url, "bundleManifests", 500)
 
-        if r.status_code == requests.codes.ok:
-            bundleManifests = json.loads(r.text)
-        return bundleManifests
-
-    def createSubmission(self, token):
-        auth_headers = {'Content-type': 'application/json',
-                        'Authorization': token
-                        }
+    def create_submission(self, update_submission=False):
         try:
-            r = requests.post(self.ingest_api["submissionEnvelopes"]["href"].rsplit("{")[0], data="{}",
-                              headers=auth_headers)
+            create_submission_url = self._ingest_links["submissionEnvelopes"]["href"].rsplit("{")[0]
+
+            if update_submission:
+                create_submission_url = f'{create_submission_url}/updateSubmissions'
+
+            r = self.session.post(create_submission_url, data="{}",
+                              headers=self.headers)
             r.raise_for_status()
-            submissionUrl = json.loads(r.text)["_links"]["self"]["href"].rsplit("{")[0]
-            self.submission_links[submissionUrl] = json.loads(r.text)["_links"]
-            return submissionUrl
+            submission = r.json()
+            submission_url = submission["_links"]["self"]["href"].rsplit("{")[0]
+            self._submission_links[submission_url] = submission["_links"]
+            return submission
         except requests.exceptions.RequestException as err:
-            self.logger.error("Request failed: ", err)
+            self.logger.error("Request failed: " + str(err))
             raise
 
-    def finishSubmission(self, submissionUrl):
-        r = requests.put(submissionUrl, headers=self.headers)
-        if r.status_code == requests.codes.update:
-            self.logger.info("Submission complete!")
-            return r.text
+    def get_submission_links(self, submission_url):
+        if not self._submission_links.get(submission_url):
+            r = self.session.get(submission_url, headers=self.headers)
+            r.raise_for_status()
+            self._submission_links[submission_url] = r.json()["_links"]
 
-    def updateSubmissionState(self, submissionId, state):
-        state_url = self.getSubmissionStateUrl(submissionId, state)
+        return self._submission_links.get(submission_url)
 
-        if state_url:
-            r = requests.put(state_url, headers=self.headers)
+    def get_link_in_submission(self, submission_url, link_name):
+        links = self.get_submission_links(submission_url)
+        if link_name in links:
+            link_obj = links.get(link_name)
+            link = link_obj['href'].rsplit("{")[0]
+            return link
 
-        return self.handleResponse(r)
+        raise ValueError(f"{link_name} is not in submission resource links")
 
-    def getSubmissionStateUrl(self, submissionId, state):
-        submissionUrl = self.getSubmissionUri(submissionId)
-        response = requests.get(submissionUrl, headers=self.headers)
-        submission = self.handleResponse(response)
+    def update_submission_state(self, submission_id, state):
+        state_url = self.get_submission_state_url(submission_id, state)
+        r = self.session.put(state_url, headers=self.headers)
+        r.raise_for_status()
+        return r.json()
 
-        if submission and state in submission['_links']:
-            return submission['_links'][state]["href"].rsplit("{")[0]
+    def get_submission_state_url(self, submission_id, state):
+        submission_url = self.get_submission_url(submission_id)
+        return self.get_link_in_submission(submission_url, state)
 
-        return None
+    def getSubmissionUri(self, submission_id):
+        return self._ingest_links["submissionEnvelopes"]["href"].rsplit("{")[0] + "/" + submission_id
 
-    def handleResponse(self, response):
-        if response.ok:
-            return json.loads(response.text)
-        else:
-            self.logger.error('Response:' + response.text)
-            return None
+    def get_submission_url(self, submission_id):
+        return self._ingest_links["submissionEnvelopes"]["href"].rsplit("{")[0] + "/" + submission_id
 
-    def getSubmissionUri(self, submissionId):
-        return self.ingest_api["submissionEnvelopes"]["href"].rsplit("{")[0] + "/" + submissionId
+    def get_full_url(self, callback_link):
+        return urljoin(self.url, callback_link)
 
-    def getAssayUrl(self, assayCallbackLink):
-        # TODO check if callback link already has a leading slash
-        return self.url + "/" + assayCallbackLink
+    def get_process(self, process_url):
+        r = self.session.get(process_url, headers=self.headers)
+        r.raise_for_status()
+        return r.json()
 
-    def getAssay(self, assayUrl):
-        r = requests.get(assayUrl, headers=self.headers)
+    def get_entities(self, submission_url, entity_type):
+        r = self.session.get(submission_url, headers=self.headers)
         if r.status_code == requests.codes.ok:
-            return r.json()
+            if entity_type in json.loads(r.text)["_links"]:
+                yield from self.get_all(json.loads(r.text)["_links"][entity_type]["href"], entity_type)
 
+    def get_all(self, url, entity_type):
+        r = self.session.get(url, headers=self.headers)
+        r.raise_for_status()
+        result = r.json()
 
-    def getAnalyses(self, submissionUrl):
-        return self.getEntities(submissionUrl, "analyses")
+        entities = result["_embedded"][entity_type] if '_embedded' in result else []
+        yield from entities
 
-    def getEntities(self, submissionUrl, entityType):
-        r = requests.get(submissionUrl, headers=self.headers)
-        if r.status_code == requests.codes.ok:
-            if entityType in json.loads(r.text)["_links"]:
-                # r2 = requests.get(, headers=self.headers)
-                for entity in self._getAllObjectsFromSet(json.loads(r.text)["_links"][entityType]["href"], entityType):
-                    yield entity
+        while "next" in result["_links"]:
+            next_url = result["_links"]["next"]["href"]
+            r = self.session.get(next_url, headers=self.headers)
+            r.raise_for_status()
+            result = r.json()
+            entities = result["_embedded"][entity_type]
+            yield from entities
+            self.logger.error(f"GET {entity_type} {json.dumps(result['page'])}")
 
-    def _getAllObjectsFromSet(self, url, entityType, pageSize=None):
-        params = dict()
-        if pageSize:
-            params = {"size": pageSize}
-
-        r = requests.get(url, headers=self.headers, params=params)
-        if r.status_code == requests.codes.ok:
-            if "_embedded" in json.loads(r.text):
-                for entity in json.loads(r.text)["_embedded"][entityType]:
-                    yield entity
-                if "next" in json.loads(r.text)["_links"]:
-                    for entity2 in self._getAllObjectsFromSet(json.loads(r.text)["_links"]["next"]["href"], entityType):
-                        yield entity2
-
-    def getRelatedEntities(self, relation, entity, entityType):
+    def get_related_entities(self, relation, entity, entity_type):
         # get the self link from entity
         if relation in entity["_links"]:
-            entityUri = entity["_links"][relation]["href"]
-            for entity in self._getAllObjectsFromSet(entityUri, entityType):
+            entity_uri = entity["_links"][relation]["href"]
+            for entity in self.get_all(entity_uri, entity_type):
                 yield entity
 
-    def _updateStatusToPending(self, submissionUrl):
-        r = requests.patch(submissionUrl, data="{\"submissionStatus\" : \"Pending\"}", headers=self.headers)
+    def create_project(self, submission_url, content, uuid=None):
+        return self.create_entity(submission_url, content, "projects", uuid)
 
-    def createProject(self, submissionUrl, jsonObject, token):
-        return self.createEntity(submissionUrl, jsonObject, "projects", token)
+    def create_biomaterial(self, submission_url, content, uuid=None):
+        return self.create_entity(submission_url, content, "biomaterials", uuid)
 
-    def createBiomaterial(self, submissionUrl, jsonObject):
-        return self.createEntity(submissionUrl, jsonObject, "biomaterials")
+    def create_process(self, submission_url, json_object, uuid=None):
+        return self.create_entity(submission_url, json_object, "processes", uuid)
 
-    def createProcess(self, submissionUrl, jsonObject):
-        return self.createEntity(submissionUrl, jsonObject, "processes")
+    def create_protocol(self, submission_url, content, uuid=None):
+        return self.create_entity(submission_url, content, "protocols", uuid)
 
-    # def createDonor(self, submissionUrl, jsonObject):
-    #     return self.createBiomaterial(submissionUrl, jsonObject)
+    def create_file(self, submission_url, filename, content, uuid=None):
+        submission_files_url = self.get_link_in_submission(submission_url, 'files')
 
-    def createProtocol(self, submissionUrl, jsonObject):
-        return self.createEntity(submissionUrl, jsonObject, "protocols")
+        submission_files_url = submission_files_url + "/" + quote(filename)
 
-    # def createAnalysis(self, submissionUrl, jsonObject):
-    #     return self.createEntity(submissionUrl, jsonObject, "analyses")
-
-    def createFile(self, submissionUrl, fileName, jsonObject):
-        submissionUrl = self.submission_links[submissionUrl]["files"]['href'].rsplit("{")[0]
-        self.logger.debug("posting " + submissionUrl)
-        fileToCreateObject = {
-            "fileName": fileName,
-            "content": json.loads(jsonObject)
+        file_to_create_object = {
+            "fileName": filename,
+            "content": content
         }
-        r = requests.post(submissionUrl, data=json.dumps(fileToCreateObject),
-                          headers=self.headers)
-        if r.status_code == requests.codes.created or r.status_code == requests.codes.accepted:
-            return json.loads(r.text)
-        raise ValueError('Create file failed: File ' + fileName + " - " + r.text)
 
-    def createEntity(self, submissionUrl, jsonObject, entityType, token=None):
-        self.logger.debug(".", )
-        auth_headers = {'Content-type': 'application/json',
-                        'Authorization': token
-                        }
-        submissionUrl = self.submission_links[submissionUrl][entityType]['href'].rsplit("{")[0]
+        params = {}
+        if uuid:
+            params["updatingUuid"] = uuid
 
-        self.logger.debug("posting " + submissionUrl)
-        r = requests.post(submissionUrl, data=jsonObject,
-                          headers=auth_headers)
-        if r.status_code == requests.codes.created or r.status_code == requests.codes.accepted:
-            return json.loads(r.text)
+        time.sleep(0.001)
+        r = self.session.post(submission_files_url, json=file_to_create_object,
+                         headers=self.headers, params=params)
 
-    # given a HCA object return the URI for the object from ingest
-    def getObjectId(self, entity):
-        if "_links" in entity:
-            entityUrl = entity["_links"]["self"]["href"].rsplit("{")[0]
-            return entityUrl
-        raise ValueError('Can\'t get id for ' + json.dumps(entity) + ' is it a HCA entity?')
+        # TODO Investigate why core is returning internal server error
+        if r.status_code == requests.codes.conflict or r.status_code == requests.codes.internal_server_error:
+            search_files = self.get_file_by_submission_url_and_filename(submission_url, filename)
 
-    def getObjectUuid(self, entityUri):
-        r = requests.get(entityUri,
-                         headers=self.headers)
+            if search_files and search_files.get('_embedded') and search_files['_embedded'].get('files'):
+                file_in_ingest = search_files['_embedded'].get('files')[0]
+                existing_content = file_in_ingest.get('content')
+                new_content = existing_content
+
+                if existing_content:
+                    new_content.update(content)
+                else:
+                    new_content = content
+
+                file_url = file_in_ingest['_links']['self']['href']
+                time.sleep(0.001)
+                r = self.session.patch(file_url, json={'content': new_content}, headers=self.headers)
+                self.logger.debug(f'Updating existing content of file {file_url}.')
+
+        r.raise_for_status()
+
+        return r.json()
+
+    def create_submission_manifest(self, submission_url, data):
+        return self.create_entity(submission_url, data, 'submissionManifest')
+
+    def patch(self, url, patch):
+        r = self.session.patch(url, json=patch, headers=self.headers)
+        r.raise_for_status()
+        return r
+
+    def put(self, url, data):
+        r = self.session.put(url, json=data, headers=self.headers)
+        return r
+
+    def create_submission_error(self, submission_url, data):
+        return self.create_entity(submission_url, data, 'submissionErrors')
+
+    def create_entity(self, submission_url, content, entity_type, uuid=None):
+        params = {}
+        if uuid:
+            params["updatingUuid"] = uuid
+
+        submission_url = self.get_link_in_submission(submission_url, entity_type)
+        self.logger.debug(f"POST {submission_url} {json.dumps(content)}")
+
+        r = self.session.post(submission_url, json=content, headers=self.headers, params=params)
+        r.raise_for_status()
+        return r.json()
+
+    def get_object_uuid(self, entity_uri):
+        r = self.session.get(entity_uri, headers=self.headers)
         if r.status_code == requests.codes.ok:
             return json.loads(r.text)["uuid"]["uuid"]
 
-    def linkEntity(self, fromEntity, toEntity, relationship):
-        if not fromEntity:
-            raise ValueError("Error: fromEntity is None")
+    def link_entity(self, from_entity, to_entity, relationship):
+        if not from_entity:
+            raise ValueError("Error: from_entity is None")
 
-        if not toEntity:
-            raise ValueError("Error: toEntity is None")
+        if not to_entity:
+            raise ValueError("Error: to_entity is None")
 
         if not relationship:
             raise ValueError("Error: relationship is None")
 
         # check each dict in turn for non-None-ness
 
-        fromEntityLinks = fromEntity["_links"] if "_links" in fromEntity else None
-        if not fromEntityLinks:
-            raise ValueError("Error: fromEntity has no _links")
+        from_entity_links = from_entity["_links"] if "_links" in from_entity else None
+        if not from_entity_links:
+            raise ValueError("Error: from_entity has no _links")
 
-        fromEntityLinksRelationship = fromEntityLinks[relationship] if relationship in fromEntityLinks else None
-        if not fromEntityLinksRelationship:
-            raise ValueError("Error: fromEntityLinks has no {0} relationship".format(relationship))
+        from_entity_links_relationship = from_entity_links[relationship] if relationship in from_entity_links else None
+        if not from_entity_links_relationship:
+            raise ValueError("Error: from_entity_links has no {0} relationship".format(relationship))
 
-        fromEntityLinksRelationshipHref = fromEntityLinksRelationship["href"] if "href" in fromEntityLinksRelationship else None
-        if not fromEntityLinksRelationshipHref:
-            raise ValueError("Error: fromEntityLinksRelationship for relationship {0} has no href".format(relationship))
+        from_entity_links_relationship_href = from_entity_links_relationship[
+            "href"] if "href" in from_entity_links_relationship else None
+        if not from_entity_links_relationship_href:
+            raise ValueError("Error: from_entity_links_relationship for relationship {0} has no href".format(relationship))
 
-        fromUri = fromEntity["_links"][relationship]["href"]
-        toUri = self.getObjectId(toEntity)
+        from_uri = from_entity["_links"][relationship]["href"]
+        to_uri = self.get_link_from_resource(to_entity, 'self')
 
-        self._retry_when_http_error(0, self._post_link_entity, fromUri, toUri)
+        self.logger.debug('fromUri ' + from_uri + ' toUri:' + to_uri)
 
-    def _post_link_entity(self, fromUri, toUri):
-        self.logger.debug('fromUri ' + fromUri + ' toUri:' + toUri);
-
-        headers = {'Content-type': 'text/uri-list'}
-
-        r = requests.post(fromUri.rsplit("{")[0],
-                          data=toUri.rsplit("{")[0], headers=headers)
+        headers = {
+            'Content-type': 'text/uri-list',
+            'Authorization': self.headers['Authorization']
+        }
+        r = self.session.post(from_uri.rsplit("{")[0],
+                              data=to_uri.rsplit("{")[0], headers=headers)
+        r.raise_for_status()
 
         return r
 
-    def _retry_when_http_error(self, tries, func, *args):
-        max_retries = 5
+    def create_bundle_manifest(self, bundleManifest):
+        url = self._ingest_links["bundleManifests"]["href"].rsplit("{")[0]
+        self.set_token()
+        r = self.session.post(url, json=bundleManifest.__dict__, headers=self.headers)
+        r.raise_for_status()
+        return r.json()
 
-        if tries < max_retries:
-            self.logger.info("no of tries: " + str(tries + 1))
-            r = None
-            
-            try:
-                r = func(*args)
-                r.raise_for_status()
-
-            except HTTPError:
-                self.logger.error("\nResponse was: " + str(r.status_code) + " (" + r.text + ")")
-                tries += 1
-                time.sleep(1)
-                r = self._retry_when_http_error(tries, func, *args)
-
-            except requests.ConnectionError as e:
-                self.logger.exception(str(e))
-                tries += 1
-                time.sleep(1)
-                r = self._retry_when_http_error(tries, func, *args)
-
-            except Exception as e:
-                self.logger.exception(str(e))
-                tries += 1
-                time.sleep(1)
-                r = self._retry_when_http_error(tries, func, *args)
-
-            return r
-        else:
-            error_message = "Maximum no of tries reached: " + str(max_retries)
-            self.logger.error(error_message)
-            return None
-
-    def _request_post(self, url, data, params, headers):
-        if params:
-            return requests.post(url, data=data, params=params, headers=headers)
-
-        return requests.post(url, data=data, headers=headers)
-
-    def _request_put(self, url, data, params, headers):
-        if params:
-            return requests.put(url, data=data, params=params, headers=headers)
-
-        return requests.put(url, data=data, headers=headers)
-
-    def createBundleManifest(self, bundleManifest):
-        r = self._retry_when_http_error(0, self._post_bundle_manifest, bundleManifest, self.ingest_api["bundleManifests"]["href"].rsplit("{")[0])
-
-        if not (200 <= r.status_code < 300):
-            error_message = "Failed to create bundle manifest at URL {0} with request payload: {1}".format(self.ingest_api["bundleManifests"]["href"].rsplit("{")[0],
-                                                                                                           json.dumps(bundleManifest.__dict__))
-            self.logger.error(error_message)
-            raise ValueError(error_message)
-        else:
-            self.logger.info("successfully created bundle manifest")
-
-    def _post_bundle_manifest(self, bundleManifest, url):
-        return requests.post(url, data=json.dumps(bundleManifest.__dict__), headers=self.headers)
-
-    def updateSubmissionWithStagingCredentials(self, subUrl, uuid, submissionCredentials):
-        stagingDetails = \
-            {
-                "stagingDetails": {
-                    "stagingAreaUuid": {
-                        "uuid": uuid
-                    },
-                    "stagingAreaLocation": {
-                        "value": submissionCredentials
-                    }
+    def update_staging_details(self, submission_url, uuid, staging_area_location):
+        staging_details = {
+            "stagingDetails": {
+                "stagingAreaUuid": {
+                    "uuid": uuid
+                },
+                "stagingAreaLocation": {
+                    "value": staging_area_location
                 }
             }
-
-        if self.retrySubmissionUpdateWithStagingDetails(subUrl, stagingDetails, 0):
-            self.logger.debug("envelope updated with staging details " + json.dumps(stagingDetails))
-        else:
-            self.logger.error("Failed to update envelope with staging details: " + json.dumps(stagingDetails))
-
-    def retrySubmissionUpdateWithStagingDetails(self, subUrl, stagingDetails, tries):
-        if tries < 5:
-            # do a GET request to get latest submission envelope
-            entity_response = requests.get(subUrl)
-            etag = entity_response.headers['ETag']
-            if etag:
-                # set the etag header so we get 412 if someone beats us to set validating
-                self.headers['If-Match'] = etag
-                r = requests.patch(subUrl, data=json.dumps(stagingDetails))
-                try:
-                    r.raise_for_status()
-                    return True
-                except HTTPError:
-                    self.logger.error("PATCHing submission envelope with creds failed, retrying")
-                    tries += 1
-                    self.retrySubmissionUpdateWithStagingDetails(subUrl, stagingDetails, tries)
-        else:
-            return False
-
-
-class BundleManifest:
-    def __init__(self):
-        self.bundleUuid = str(uuid.uuid4())
-        self.envelopeUuid = {}
-        self.dataFiles = []
-        self.fileBiomaterialMap = {}
-        self.fileProcessMap = {}
-        self.fileFilesMap = {}
-        self.fileProjectMap = {}
-        self.fileProtocolMap = {}
+        }
+        r = self.session.patch(submission_url, data=json.dumps(staging_details))
+        r.raise_for_status()

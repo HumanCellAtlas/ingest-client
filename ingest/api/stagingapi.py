@@ -11,22 +11,45 @@ install_aliases()
 from urllib.parse import urljoin
 
 import json
-import os
-import requests
 import logging
+import os
+from time import time
+from urllib.parse import urljoin
 
-from time import sleep
+import requests
+import requests.packages.urllib3.util.retry as retry
 
-DEFAULT_STAGING_URL = os.environ.get('STAGING_API', 'https://staging.dev.data.humancellatlas.org')
+DEFAULT_STAGING_URL = os.environ.get('STAGING_API', 'https://upload.dev.data.humancellatlas.org')
 DEFAULT_STAGING_VERSION = os.environ.get('STAGING_API_VERSION', 'v1')
 INGEST_API_KEY = os.environ.get('INGEST_API_KEY', 'zero-pupil-until-funny')
+
+
+class RetryPolicy(retry.Retry):
+    def __init__(self, retry_after_status_codes={301}, **kwargs):
+        super(RetryPolicy, self).__init__(**kwargs)
+        self.RETRY_AFTER_STATUS_CODES = frozenset(retry_after_status_codes | retry.Retry.RETRY_AFTER_STATUS_CODES)
 
 
 class StagingApi:
     def __init__(self, url=None, apikey=None, apiversion=None):
         formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
         logging.basicConfig(formatter=formatter)
-        logging.getLogger("requests").setLevel(logging.WARNING)
+
+        retry_policy = RetryPolicy(
+            total=100,  # seems that this has a default value of 10,
+            # setting this to a very high number so that it'll respect the status retry count
+            status=17,  # status is the no. of retries if response is in status_forcelist,
+            # this count will retry for ~20mins with back off timeout within
+            read=10,
+            status_forcelist=[500, 502, 503, 504],
+            backoff_factor=0.6,
+            method_whitelist=frozenset(['HEAD', 'GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'TRACE'])
+        )
+
+        self.session = requests.Session()
+        adapter = requests.adapters.HTTPAdapter(max_retries=retry_policy)
+        self.session.mount('https://', adapter)
+
         self.logger = logging.getLogger(__name__)
 
         if not apiversion and DEFAULT_STAGING_VERSION:
@@ -37,89 +60,71 @@ class StagingApi:
             url = DEFAULT_STAGING_URL
             # expand interpolated env vars
             self.url = os.path.expandvars(url)
-            self.logger.info("using " + url + " for staging API")
-        self.url = url if url else "https://staging.dev.data.humancellatlas.org"
+            self.logger.info(f'Using {url} for staging API')
+        self.url = url if url else 'https://upload.dev.data.humancellatlas.org'
 
         if not apikey and INGEST_API_KEY:
             apikey = INGEST_API_KEY
-        self.apikey = apikey if apikey else "zero-pupil-until-funny"
+        self.apikey = apikey if apikey else 'zero-pupil-until-funny'
 
         self.header = {'Api-Key': self.apikey, 'Content-type': 'application/json'}
 
     def createStagingArea(self, submissionId):
+        start_time = time()
+        self.logger.info('Creating staging area!')
         base = urljoin(self.url, self.apiversion + '/area/' + submissionId)
-        r = requests.post(base, headers=self.header)
-        if r.status_code == requests.codes.created:
-            print ("Waiting 10 seconds for IAM policy to take effect..."),
-            sleep(10)
-            print ("staging area created!:" + base)
-            return json.loads(r.text)
 
-        raise ValueError('Can\'t create staging area for sub id:' + submissionId + ', Error:' + r.text)
+        r = self.session.post(base, headers=self.header)
+        r.raise_for_status()
+        self.logger.info(f'Staging area created!: {base}')
+        self.logger.info("Execution Time: %s seconds" % (time() - start_time))
+        return r.json()
 
     def deleteStagingArea(self, submissionId):
+        self.logger.info('Deleting staging area!')
         base = urljoin(self.url, self.apiversion + '/area/' + submissionId)
-        try:
+        r = self.session.delete(base, headers=self.header)
+        r.raise_for_status()
+        self.logger.info('Staging area deleted!')
+        return base
 
-            r = requests.delete(base, headers=self.header)
-            if r.status_code == requests.codes.no_content:
-                print ("staging area deleted!")
-                return base
-            else:
-                return base
-        except:
-            raise ValueError('Can\'t delete staging area for sub id:' + submissionId)
+    def stageFileRequest(self, file_stage_request: 'MetadataFileStagingRequest'):
+        return self.stageFile(file_stage_request.staging_area_uuid,
+                              file_stage_request.filename,
+                              file_stage_request.metadata_json,
+                              file_stage_request.metadata_type)
 
-    def stageFile(self, submissionId, filename, body, type):
+    def stageFile(self, stagingAreaId, filename, body, type):
+        fileUrl = urljoin(self.url, self.apiversion + '/area/' + stagingAreaId + "/" + filename)
 
-        fileUrl = urljoin(self.url, self.apiversion + '/area/' + submissionId + "/" + filename)
+        self.logger.info(f'Staging file: {fileUrl}')
 
         header = dict(self.header)
-        header['Content-type'] = 'application/json; dcp-type=' + type
+        header['Content-type'] = f'application/json; dcp-type="{type}"'
 
-        r = self._retry_when_http_error(0, self._put_file, fileUrl, body, header)
+        r = self.session.put(fileUrl, data=json.dumps(body, indent=4), headers=header)
 
-        if r and (r.status_code == requests.codes.ok or requests.codes.created):
-            responseObject = json.loads(r.text)
-            return FileDescription(responseObject["checksums"], type, responseObject["name"], responseObject["size"],
-                                   responseObject["url"], )
+        r.raise_for_status()
+        res = r.json()
+        return FileDescription(res['checksums'], type, res['name'], res['size'], res['url'])
 
-        raise ValueError('Can\'t create staging area for sub id:' + submissionId)
+    def getFile(self, submissionId, filename):
+        fileUrl = urljoin(self.url, self.apiversion + '/area/' + submissionId + "/" + filename)
+        self.logger.info(f'GET file: {fileUrl}')
+        r = self.session.get(fileUrl, headers=self.header)
 
-    def _put_file(self, fileUrl, body, header):
-        r = requests.put(fileUrl, data=json.dumps(body, indent=4), headers=header)
-        return r
+        if r.status_code == requests.codes.not_found:
+            return None
+        else:
+            r.raise_for_status()
+
+        res = r.json()
+        return FileDescription(res['checksums'], type, res['name'], res['size'], res['url'])
 
     def hasStagingArea(self, submissionId):
-        base = urljoin(self.url, self.apiversion + '/area/' + submissionId + '/files_info')
-
-        r = requests.put(base, data="{}", headers=self.header)
+        base = urljoin(self.url, self.apiversion + '/area/' + submissionId)
+        r = self.session.head(base, headers=self.header)
         return r.status_code == requests.codes.ok
-
-    """
-        func should return http response r
-    """
-
-    def _retry_when_http_error(self, tries, func, *args):
-        max_retries = 5
-
-        if tries < max_retries:
-            self.logger.debug("no of tries: " + str(tries + 1))
-            r = func(*args)
-
-            try:
-                r.raise_for_status()
-            except requests.HTTPError:
-                self.logger.error("\nResponse was: " + str(r.status_code) + " (" + r.text + ")")
-                tries += 1
-                sleep(1)
-                r = self._retry_when_http_error(tries, func, *args)
-
-            return r
-        else:
-            error_message = "Maximum no of tries reached: " + str(max_retries)
-            self.logger.error(error_message)
-            return None
 
 
 class FileDescription:
@@ -129,3 +134,11 @@ class FileDescription:
         self.name = name
         self.size = size
         self.url = url
+
+
+class MetadataFileStagingRequest:
+    def __init__(self, staging_area_uuid, filename, metadata_json, metadata_type):
+        self.staging_area_uuid = staging_area_uuid
+        self.filename = filename
+        self.metadata_json = metadata_json
+        self.metadata_type = metadata_type

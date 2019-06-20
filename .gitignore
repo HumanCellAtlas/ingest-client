@@ -6,6 +6,12 @@ __pycache__/
 # C extensions
 *.so
 
+# emacs backup files
+*~
+
+# mac os finder 
+.DS_Store
+
 # Distribution / packaging
 .Python
 build/
@@ -105,3 +111,7 @@ venv.bak/
 /setup.cfg
 
 .idea
+_local
+
+gcp.json
+_local/
