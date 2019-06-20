@@ -17,8 +17,6 @@ import time
 import polling
 
 import ingest.api.dssapi as dssapi
-import ingest.api.ingestapi as ingestapi
-import ingest.api.stagingapi as stagingapi
 from requests.exceptions import HTTPError
 
 DEFAULT_INGEST_URL = os.environ.get('INGEST_API', 'http://api.ingest.dev.data.humancellatlas.org')
@@ -191,7 +189,8 @@ class IngestExporter:
         self.recurse_process(process, process_info)
 
         if process_info.project:
-            supplementary_files = self.ingest_api.get_related_entities('supplementaryFiles', process_info.project, 'files')
+            supplementary_files = self.ingest_api.get_related_entities('supplementaryFiles', process_info.project,
+                                                                       'files')
             for supplementary_file in supplementary_files:
                 uuid = supplementary_file['uuid']['uuid']
                 process_info.supplementary_files[uuid] = supplementary_file
@@ -318,7 +317,8 @@ class IngestExporter:
         return related_entities
 
     def get_input_bundle(self, process):
-        bundle_manifests = list(self.ingest_api.get_related_entities('inputBundleManifests', process, 'bundleManifests'))
+        bundle_manifests = list(
+            self.ingest_api.get_related_entities('inputBundleManifests', process, 'bundleManifests'))
 
         if len(bundle_manifests) > 0:
             return bundle_manifests[0]

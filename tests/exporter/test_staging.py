@@ -19,7 +19,7 @@ class StagingServiceTest(TestCase):
         # and:
         staging_client = Mock(name='staging_client')
         file_description = FileDescription(['chks0mz'], 'application/json', 'file.name', 1024,
-                                                'http://domain.com/file.url')
+                                           'http://domain.com/file.url')
         staging_client.stageFile = Mock(return_value=file_description)
 
         # and:

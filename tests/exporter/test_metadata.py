@@ -66,7 +66,7 @@ class MetadataServiceTest(TestCase):
         raw_metadata = {'entityType': 'biomaterial',
                         'uuid': {'uuid': uuid},
                         'content': {'describedBy': 'https://hca.tld/types/cell_suspension',
-                            'schema_type': 'biomaterial', 'text': 'test'},
+                                    'schema_type': 'biomaterial', 'text': 'test'},
                         'dcpVersion': '8.2.7'}
         ingest_client.get_entity_by_callback_link = Mock(return_value=raw_metadata)
 

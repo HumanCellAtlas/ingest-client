@@ -1,5 +1,5 @@
 from ingest.api.ingestapi import IngestApi
-from ingest.exporter.bundle import BundleService, BundleManifest
+from ingest.exporter.bundle import BundleService
 from ingest.exporter.metadata import MetadataService
 from ingest.exporter.staging import StagingService
 
