@@ -15,7 +15,11 @@ class ColumnSpecificationTest(TestCase):
     def test_look_up_id_field(self):
         # given:
         schema_spec = {
-            'product.id': {'value_type': 'integer', 'multivalue': False, 'identifiable': True}
+            'product.id': {
+                'value_type': 'integer',
+                'multivalue': False,
+                'identifiable': True
+            }
         }
         schema_template = self._prepare_mock_schema_template('product', 'merchandise/product',
                                                              schema_spec)
@@ -32,7 +36,13 @@ class ColumnSpecificationTest(TestCase):
 
     def test_look_up_object_field(self):
         # given:
-        schema_spec = {'product.name': {'value_type': 'string', 'multivalue': False}}
+        schema_spec = {
+            'product.name': {
+                'value_type': 'string',
+                'multivalue': False
+            }
+        }
+
         schema_template = self._prepare_mock_schema_template('product', 'merchandise/product',
                                                              schema_spec)
 

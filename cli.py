@@ -1,12 +1,18 @@
 #!/usr/bin/env python
 import datetime
 import logging
+import os
 import sys
 import uuid
 
 from optparse import OptionParser
 
+from ingest.api.dssapi import DssApi
+from ingest.api.ingestapi import IngestApi
+from ingest.api.stagingapi import StagingApi
 from ingest.exporter.ingestexportservice import IngestExporter
+from ingest.utils.s2s_token_client import S2STokenClient
+from ingest.utils.token_manager import TokenManager
 
 if __name__ == '__main__':
     format = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
@@ -55,7 +61,14 @@ if __name__ == '__main__':
     if options.bundle_version:
         bundle_version = options.bundle_version
 
-    exporter = IngestExporter(options)
+    staging_api = StagingApi(url=options.staging)
+    dss_api = DssApi(url=options.dss)
+    s2s_token_client = S2STokenClient()
+    gcp_credentials_file = os.environ.get('GOOGLE_APPLICATION_CREDENTIALS')
+    s2s_token_client.setup_from_file(gcp_credentials_file)
+    token_manager = TokenManager(token_client=s2s_token_client)
+    ingest_api = IngestApi(token_manager=token_manager)
+    exporter = IngestExporter(staging_api=staging_api, ingest_api=ingest_api, dss_api=dss_api)
     exporter.export_bundle(bundle_uuid=bundle_uuid,
                            bundle_version=bundle_version,
                            submission_uuid=options.submission_uuid,
