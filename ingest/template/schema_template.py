@@ -137,7 +137,7 @@ class SchemaTemplate:
             raise UnknownKeyException(
                 "Can't map the key to a known JSON schema property: " + str(key))
 
-    def latest_replaced_by(self, key):
+    def replaced_by_latest(self, key):
         try:
             replaced_by = self._lookup_migration(key)
 
@@ -145,14 +145,17 @@ class SchemaTemplate:
                 self.lookup(replaced_by)
                 return replaced_by
             except UnknownKeyException:
-                return self.latest_replaced_by(replaced_by)
+                return self.replaced_by_latest(replaced_by)
         except Exception:
             raise UnknownKeyException(
                 "Can't map the key to a known JSON schema property: " + str(key))
 
-    def replaced_at(self, key, schema_version):
+    def replaced_by_at(self, key, schema_version):
         try:
             replaced_by = self._lookup_migration(key)
+            if not replaced_by:
+                return key
+
             version = self._lookup_migration_version(key)
 
             next_replaced_by_version = self._lookup_migration_version(replaced_by) or schema_version
@@ -160,7 +163,7 @@ class SchemaTemplate:
             if int(version.split(".")[0]) <= int(schema_version.split(".")[0]) <= int(next_replaced_by_version.split(".")[0]):
                 return replaced_by
             else:
-                return self.replaced_at(replaced_by, schema_version)
+                return self.replaced_by_at(replaced_by, schema_version)
         except Exception:
             raise UnknownKeyException(
                 "Can't map the key to a known JSON schema property: " + str(key))

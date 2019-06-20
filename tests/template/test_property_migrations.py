@@ -47,11 +47,26 @@ class TestSchemaTemplate(TestCase):
         data = '{"id" : "' + self.dummyCellSuspension + '", "properties": {"selected_cell_types_foo" : {"user_friendly": "Selected cell type(s)"}} }'
         template = schema_mock.get_template_for_json(data=data)
 
-        self.assertEqual("cell_suspension.selected_cell_types_foo", template.latest_replaced_by('cell_suspension.selected_cell_type'))
-        self.assertEqual("cell_suspension.selected_cell_types", template.replaced_at('cell_suspension.selected_cell_type', "13.5.2"))
-        self.assertEqual("cell_suspension.selected_cell_types", template.replaced_at('cell_suspension.selected_cell_type', "14.5.2"))
-        self.assertEqual("cell_suspension.selected_cell_types_foo", template.replaced_at('cell_suspension.selected_cell_type', "16.5.2"))
+        self.assertEqual("cell_suspension.selected_cell_types_foo", template.replaced_by_latest('cell_suspension.selected_cell_type'))
+        self.assertEqual("cell_suspension.selected_cell_types", template.replaced_by_at('cell_suspension.selected_cell_type', "13.5.2"))
+        self.assertEqual("cell_suspension.selected_cell_types", template.replaced_by_at('cell_suspension.selected_cell_type', "14.5.2"))
+        self.assertEqual("cell_suspension.selected_cell_types_foo", template.replaced_by_at('cell_suspension.selected_cell_types_foo', "16.5.2"))
 
+    def test_migration_failures(self):
+        data = '{"id" : "' + self.dummyCellSuspension + '", "properties": {"selected_cell_types_foo" : {"user_friendly": "Selected cell type(s)"}} }'
+        template = schema_mock.get_template_for_json(data=data)
+
+        with self.assertRaises(UnknownKeyException):
+            self.assertTrue(template.lookup("foo.bar"))
+
+        with self.assertRaises(UnknownKeyException):
+            self.assertTrue(template.replaced_by_latest('foo.bar'))
+
+        with self.assertRaises(UnknownKeyException):
+            self.assertTrue(template.replaced_by_at('foo.bar', "12.0.2"))
+
+        with self.assertRaises(UnknownKeyException):
+            self.assertTrue(template.replaced_by('foo.bar'))
 
 if __name__ == '__main__':
     unittest.main()
