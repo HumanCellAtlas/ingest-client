@@ -162,6 +162,8 @@ class SchemaTemplate:
             version = self._lookup_migration_version(key)
 
             next_replaced_by_version = self._lookup_migration_version(replaced_by) or schema_version
+            if version == next_replaced_by_version:
+                next_replaced_by_version = schema_version
 
             if int(version.split(".")[0]) \
                     <= int(schema_version.split(".")[0]) \

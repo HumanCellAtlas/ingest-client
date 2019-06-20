@@ -51,6 +51,7 @@ class TestSchemaTemplate(TestCase):
         self.assertEqual("cell_suspension.selected_cell_types", template.replaced_by_at('cell_suspension.selected_cell_type', "13.5.2"))
         self.assertEqual("cell_suspension.selected_cell_types", template.replaced_by_at('cell_suspension.selected_cell_type', "14.5.2"))
         self.assertEqual("cell_suspension.selected_cell_types_foo", template.replaced_by_at('cell_suspension.selected_cell_types_foo', "16.5.2"))
+        self.assertEqual("project.contributors.project_role.text", template.replaced_by_at('project.contributors.project_role', "14.0.0"))
 
     def test_migration_failures(self):
         data = '{"id" : "' + self.dummyCellSuspension + '", "properties": {"selected_cell_types_foo" : {"user_friendly": "Selected cell type(s)"}} }'
