@@ -8,12 +8,12 @@ __author__ = "jupp"
 __license__ = "Apache 2.0"
 __date__ = "01/05/2018"
 
+from collections import defaultdict
+from itertools import chain
 import json
 import re
 import urllib.request
-from collections import defaultdict
 from datetime import datetime
-from itertools import chain
 
 import jsonref
 from yaml import dump as yaml_dump, load as yaml_load
@@ -28,13 +28,14 @@ class SchemaTemplate:
     A schema template is a simplified view over
     JSON schema for the HCA metadata
     """
-    def __init__(self, ingest_api_url=None, list_of_schema_urls=None, json_schema_docs=None,
-                 tab_config=None, migrations=None, migrations_url=None):
+    def __init__(self, ingest_api_url=None, list_of_schema_urls=None,
+                 json_schema_docs=None, tab_config=None, migrations=None, migrations_url=None):
 
         # todo remove this hard coding to a default ingest API url
-        self.ingest_api_url = ingest_api_url if ingest_api_url else "http://api.ingest.dev.data.humancellatlas.org"
-        self.migrations_url = migrations_url if migrations_url else \
-            "https://schema.dev.data.humancellatlas.org/property_migrations"
+        self.ingest_api_url = ingest_api_url \
+            if ingest_api_url else "http://api.ingest.dev.data.humancellatlas.org"
+        self.migrations_url = migrations_url \
+            if migrations_url else "https://schema.dev.data.humancellatlas.org/property_migrations"
         self._template = {
             "template_version": "1.0.0",
             "created_date": str(datetime.now()),
@@ -87,6 +88,7 @@ class SchemaTemplate:
                 print("Failed to read schema from " + migrations_url)
         return data
 
+
     def _load(self, list_of_schema_urls, list_of_property_migrations):
         """
         given a list of URLs to JSON schema files
@@ -119,33 +121,98 @@ class SchemaTemplate:
     def get_tabs_config(self):
         return self._tab_config
 
-    def lookup(self, key, schema_version=None):
+    def lookup(self, key):
         try:
             return self.get(self._template["meta_data_properties"], key)
-        except Exception:
-            if schema_version is not None:
-                try:
-                    return (self.lookup_migration(key, schema_version))
-                except Exception:
-                    raise UnknownKeyException(
-                        "Can't map the key to a known JSON schema migration: " + str(key))
-            else:
-                raise UnknownKeyException(
-                    "Can't map the key to a known JSON schema property: " + str(key))
+        except:
+            raise UnknownKeyException(
+                "Can't map the key to a known JSON schema property: " + str(key))
 
-    def lookup_migration(self, key, schema_version=None):
+    def replaced_by(self, key):
         try:
-            migrations = self.get(self._template["migrations"], key)
+            field_name = ""
+            if key.split(".")[-1] in self._parser._new_template().keys():
+                field_name = "." + key.split(".")[-1]
+                key = ".".join(key.split(".")[:-1])
 
-            for migration in migrations:
-                if "version" in migration and int(schema_version.split(".")[0]) <= int(
-                        migration["version"].split(".")[0]):
-                    return migration
-                else:
-                    raise Exception
+            return (self._lookup_migration(key)) + field_name
+        except Exception:
+            raise UnknownKeyException(
+                "Can't map the key to a known JSON schema property: " + str(key))
+
+    def replaced_by_latest(self, key):
+        try:
+            replaced_by = self._lookup_migration(key)
+
+            try:
+                self.lookup(replaced_by)
+                return replaced_by
+            except UnknownKeyException:
+                return self.replaced_by_latest(replaced_by)
+        except Exception:
+            raise UnknownKeyException(
+                "Can't map the key to a known JSON schema property: " + str(key))
+
+    def replaced_by_at(self, key, schema_version):
+        try:
+            replaced_by = self._lookup_migration(key)
+            if not replaced_by:
+                return key
+
+            version = self._lookup_migration_version(key)
+
+            next_replaced_by_version = self._lookup_migration_version(replaced_by) or schema_version
+
+            if int(version.split(".")[0]) \
+                    <= int(schema_version.split(".")[0]) \
+                    <= int(next_replaced_by_version.split(".")[0]):
+                return replaced_by
+            else:
+                return self.replaced_by_at(replaced_by, schema_version)
+        except Exception:
+            raise UnknownKeyException(
+                "Can't map the key to a known JSON schema property: " + str(key))
+
+
+    def _lookup_migration(self, key):
+        try:
+
+            migration, backtrack = self._find_migration_object(key)
+
+            # migration = self.get(self._template["migrations"], key)
+            if "replaced_by" in migration:
+                if (backtrack):
+                    return migration["replaced_by"] + backtrack
+                return migration["replaced_by"]
+            else:
+                return ""
+
         except Exception:
             raise UnknownKeyException(
                 "Can't map the key to a known JSON schema migration: " + str(key))
+
+    def _lookup_migration_version(self, key):
+
+        migration, backtrack = self._find_migration_object(key)
+
+        # migration = self.get(self._template["migrations"], key)
+        if "version" in migration:
+            return migration["version"]
+        return None
+
+
+    def _find_migration_object(self, fq_key):
+        backtrack_fq_key = ""
+        while True:
+            try:
+                migration_object = self.get(self._template["migrations"], fq_key)
+                return migration_object, backtrack_fq_key
+            except Exception:
+                fq_key = fq_key.split(".")
+                backtrack_fq_key = "." + fq_key.pop()
+                fq_key = ".".join(fq_key)
+                if not "." in fq_key:
+                    break
 
     def get_template(self):
         return self._template["meta_data_properties"]
@@ -160,7 +227,6 @@ class SchemaTemplate:
                 self._template["tabs"][i][level_one]["columns"].append(property_key)
 
     def put_migration(self, property_migration):
-        self._template["migrations"]
         for k, v in property_migration.items():
             if k in self._template["migrations"]:
                 self._template["migrations"][k] = self._mergeDict(self._template["migrations"][k], v)
@@ -182,7 +248,8 @@ class SchemaTemplate:
                 dict3[k] = v
         return dict3
 
-    def put(self, property, value):
+
+    def put (self, property, value):
         '''
         Add a property to the schema template
         :param property:
@@ -273,16 +340,16 @@ class SchemaParser:
         migration_info = {}
 
         if "target_schema" in property_migration and "replaced_by" in property_migration:
-            migration_info["replaced_by"] = property_migration["target_schema"] + "." + property_migration[
-                "replaced_by"]
+            migration_info["replaced_by"] = \
+                property_migration["target_schema"] + "." + property_migration["replaced_by"]
 
         if "effective_from" in property_migration:
             migration_info["version"] = property_migration["effective_from"]
         elif "effective_from_source" in property_migration:
-            migration_info["version"] = property_migration["effective_from"]
+            migration_info["version"] = property_migration["effective_from_source"]
             migration_info["target_version"] = property_migration["effective_from_target"]
 
-        migration_info = {migrated_property.split(".")[-1]: [migration_info]}
+        migration_info = {migrated_property.split(".")[-1]: migration_info}
         for part in reversed(migrated_property.split(".")[:-1]):
             migration_info = {part: migration_info}
 
@@ -453,6 +520,7 @@ class SchemaParser:
     def get_version_from_url(self, url):
         return url.rsplit('/', 2)[-2]
 
+
     def get_module_from_url(self, url):
         return url.rsplit('/', 1)[-1]
 
@@ -496,6 +564,10 @@ class RootSchemaException(Error):
 
 class UnknownKeyException(Error):
     """Can't map the key to a known property"""
+
+class NoReplacementException(Error):
+    """Can't map the key to a known property"""
+
 
 
 if __name__ == '__main__':
