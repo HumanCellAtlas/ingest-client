@@ -28,8 +28,8 @@ class SchemaTemplate:
     A schema template is a simplified view over
     JSON schema for the HCA metadata
     """
-    def __init__(self, ingest_api_url=None, list_of_schema_urls=None, tab_config=None, migrations=None,
-                 migrations_url=None):
+    def __init__(self, ingest_api_url=None, list_of_schema_urls=None, json_schema_docs=None,
+                 tab_config=None, migrations=None, migrations_url=None):
 
         # todo remove this hard coding to a default ingest API url
         self.ingest_api_url = ingest_api_url if ingest_api_url else "http://api.ingest.dev.data.humancellatlas.org"
