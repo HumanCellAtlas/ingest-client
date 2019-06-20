@@ -28,7 +28,6 @@ class SchemaTemplate:
     A schema template is a simplified view over
     JSON schema for the HCA metadata
     """
-
     def __init__(self, ingest_api_url=None, list_of_schema_urls=None, tab_config=None, migrations=None,
                  migrations_url=None):
 
@@ -46,7 +45,7 @@ class SchemaTemplate:
         }
         self._parser = SchemaParser(self)
 
-        if not list_of_schema_urls:
+        if not list_of_schema_urls and not json_schema_docs:
             list_of_schema_urls = self.get_latest_submittable_schemas(self.ingest_api_url)
             # print ("Got schemas from ingest api\n " + "\n".join(list_of_schema_urls))
 
@@ -57,7 +56,11 @@ class SchemaTemplate:
 
         self.property_migrations = migrations
 
-        self._load(self.schema_urls, self.property_migrations)
+        if json_schema_docs and not list_of_schema_urls:
+            self._load_from_json_docs(json_schema_docs, migrations)
+
+        if self.schema_urls:
+            self._load(self.schema_urls, self.property_migrations)
 
         self._tab_config = TabConfig(init=self._template)
         if tab_config:
@@ -101,6 +104,18 @@ class SchemaTemplate:
             self._parser._load_migration(migration)
         return self
 
+    def _load_from_json_docs(self, json_schema_docs, property_migrations):
+        """
+        given a set of JSON schema files
+        return a SchemaTemplate object
+        """
+        for json_doc in json_schema_docs:
+            self._parser._load_schema(json_doc)
+
+        for migration in property_migrations:
+            self._parser._load_migration(migration)
+        return self
+
     def get_tabs_config(self):
         return self._tab_config
 
@@ -118,7 +133,7 @@ class SchemaTemplate:
                 raise UnknownKeyException(
                     "Can't map the key to a known JSON schema property: " + str(key))
 
-    def lookup_migration(self, key, schema_version):
+    def lookup_migration(self, key, schema_version=None):
         try:
             migrations = self.get(self._template["migrations"], key)
 
