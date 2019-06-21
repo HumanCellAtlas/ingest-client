@@ -87,6 +87,20 @@ class BundleManifestTest(TestCase):
             file_map = getattr(manifest, file_map_name)
             self.assertEqual(0, len(file_map), f'Expected [{file_map_name}] to be empty.')
 
+    def test_add_bundle_file_data(self):
+        # given:
+        manifest = BundleManifest()
+
+        # when:
+        file_uuids = ['2141b403-7b3a-4e5c-83af-05c6c8d5ab9a',
+                           '1830d1c9-5c55-4586-be1b-eee16fea0c51',
+                           'c3b4dee4-a6d0-41b0-b1b4-726d95995d4d']
+        for file_uuid in file_uuids:
+            manifest.add_bundle_file('data', {file_uuid: [file_uuid]})
+
+        # then:
+        self.assertEqual(file_uuids, manifest.dataFiles)
+
 
 def _create_test_bundle(bundle_uuid, bundle_version, *metadata_file):
     bundle = Bundle(source={'bundle': {

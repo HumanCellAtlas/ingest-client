@@ -5,6 +5,7 @@ from ingest.api import utils
 from ingest.api.dssapi import DssApi
 from ingest.exporter.metadata import MetadataResource
 
+_BUNDLE_FILE_TYPE_DATA = 'data'
 _BUNDLE_FILE_TYPE_LINKS = 'links'
 
 _metadata_type_attr_map = {
@@ -30,7 +31,9 @@ class BundleManifest:
         self.fileProtocolMap = {}
 
     def add_bundle_file(self, metadata_type, entry: dict):
-        if metadata_type != _BUNDLE_FILE_TYPE_LINKS:
+        if metadata_type == _BUNDLE_FILE_TYPE_DATA:
+            self.dataFiles.extend(entry.keys())
+        elif metadata_type != _BUNDLE_FILE_TYPE_LINKS:
             attr_mapping = _metadata_type_attr_map.get(metadata_type)
             if attr_mapping:
                 file_map = getattr(self, attr_mapping)
