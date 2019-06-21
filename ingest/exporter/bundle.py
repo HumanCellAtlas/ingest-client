@@ -39,7 +39,7 @@ class BundleManifest:
                 raise KeyError(f'Cannot map unknown metadata type [{metadata_type}].')
 
 
-_CONTENT_TYPE_PATTERN = re.compile('.*"metadata/(?P<data_type>\\w+)".*')
+_CONTENT_TYPE_PATTERN = re.compile('.*dcp-type="(metadata/)?(?P<data_type>\\w+)".*')
 
 
 class Bundle:
