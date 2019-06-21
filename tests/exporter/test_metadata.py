@@ -7,13 +7,26 @@ from ingest.exporter.metadata import MetadataResource, MetadataService, Metadata
 
 class MetadataResourceTest(TestCase):
 
+    def test_determine_metadata_type(self):
+        # given:
+        test_urls = ['https://someurl/biomaterials/some-id',
+                     'https://someurl/projects/some-id',
+                     'https://someurl/processes/some-id',
+                     'https://someurl/files/some-id',
+                     'https://someurl/protocols/some-id']
+
+        # when
+        metadata_types = list(map(lambda metadata_url: MetadataResource._determine_metadata_type(metadata_url), test_urls))
+
+        # then:
+        self.assertEqual(metadata_types, ['biomaterial', 'project', 'process', 'file', 'protocol'])
+
     def test_from_dict(self):
         # given:
         uuid_value = '3f3212da-d5d0-4e55-b31d-83243fa02e0d'
-        data = {'entityType': 'biomaterial',
-                'uuid': {'uuid': uuid_value},
-                'content': {'describedBy': 'https://hca.tld/types/donor_organism',
-                            'schema_type': 'biomaterial', 'description': 'test'},
+        data = {'uuid': {'uuid': uuid_value},
+                'content': {'some': {'content': ['we', 'are', 'agnostic', 'of']}},
+                '_links': {'self':{'href': 'https://someurl/biomaterials/some-id'}},
                 'dcpVersion': '6.9.1'}
 
         # when:
@@ -62,10 +75,9 @@ class MetadataServiceTest(TestCase):
         # given:
         ingest_client = Mock(name='ingest_client')
         uuid = '301636f7-f97b-4379-bf77-c5dcd9f17bcb'
-        raw_metadata = {'entityType': 'biomaterial',
-                        'uuid': {'uuid': uuid},
-                        'content': {'describedBy': 'https://hca.tld/types/cell_suspension',
-                                    'schema_type': 'biomaterial', 'text': 'test'},
+        raw_metadata = {'uuid': {'uuid': uuid},
+                        'content': {'some': {'content': ['we', 'are', 'agnostic', 'of']}},
+                        '_links': {'self': {'href': 'https://someurl/biomaterials/some-id'}},
                         'dcpVersion': '8.2.7'}
         ingest_client.get_entity_by_callback_link = Mock(return_value=raw_metadata)
 
