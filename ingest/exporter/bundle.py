@@ -90,8 +90,7 @@ class Bundle:
         target_file['content-type'] = f'metadata/{metadata_resource.metadata_type}'
 
     def generate_manifest(self, envelope_uuid) -> BundleManifest:
-        envelope_uuid_map = {'uuid': {'uuid': envelope_uuid}}
-        manifest = BundleManifest(bundleUuid=self.uuid, envelopeUuid=envelope_uuid_map,
+        manifest = BundleManifest(bundleUuid=self.uuid, envelopeUuid=envelope_uuid,
                                   bundleVersion=self.get_version())
         for file_uuid, file in self._file_map.items():
             pattern_match = _CONTENT_TYPE_PATTERN.match(file.get('content-type'))

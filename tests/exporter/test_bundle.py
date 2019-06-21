@@ -202,11 +202,7 @@ class BundleTest(TestCase):
         # then:
         self.assertEqual(bundle_uuid, manifest.bundleUuid)
         self.assertEqual(bundle_version, manifest.bundleVersion)
-
-        # and: uuid is 2 branches deep
-        manifest_envelope_uuid = manifest.envelopeUuid.get('uuid')
-        self.assertIsNotNone(manifest_envelope_uuid)
-        self.assertEqual(envelope_uuid, manifest_envelope_uuid.get('uuid'))
+        self.assertEqual(envelope_uuid, manifest.envelopeUuid)
 
     _bundle_attr_map = {
         'project': 'fileProjectMap',
