@@ -26,7 +26,7 @@ class MetadataResource:
         if resource_path in resource_path_type_map:
             return resource_path_type_map[resource_path]
         else:
-            raise MetadataTypeParseException(msg=f'Failed to parse metadata type for resource at {metadata_url}')
+            raise MetadataTypeParseException(f'Failed to parse metadata type for resource at {metadata_url}')
 
     @staticmethod
     def from_dict(data: dict):

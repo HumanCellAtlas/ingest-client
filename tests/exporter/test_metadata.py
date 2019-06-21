@@ -2,7 +2,7 @@ from unittest import TestCase
 
 from mock import Mock
 
-from ingest.exporter.metadata import MetadataResource, MetadataService, MetadataParseException
+from ingest.exporter.metadata import MetadataResource, MetadataService, MetadataParseException, MetadataTypeParseException
 
 
 class MetadataResourceTest(TestCase):
@@ -20,6 +20,16 @@ class MetadataResourceTest(TestCase):
 
         # then:
         self.assertEqual(metadata_types, ['biomaterial', 'project', 'process', 'file', 'protocol'])
+
+    def test_determine_metadata_type_unknown(self):
+        # given
+        test_url = 'https:/someurl/roboticmaterial/some-id'
+
+        # when
+        parse_attempt = lambda: MetadataResource._determine_metadata_type(test_url)
+
+        # then
+        self.assertRaises(MetadataTypeParseException, parse_attempt)
 
     def test_from_dict(self):
         # given:
