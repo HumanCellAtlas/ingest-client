@@ -224,12 +224,12 @@ class BundleTest(TestCase):
 
         # then:
         entry_count = len(file_uuids)
-        target_map = getattr(manifest, self._bundle_attr_map[metadata_type])
-        self.assertEqual(entry_count, len(target_map))
         file_map_attr = self._bundle_attr_map.get(metadata_type)
         metadata_file_map = getattr(manifest, file_map_attr)
         self.assertEqual(entry_count, len(metadata_file_map),
                          f'expecting [{entry_count}] entries in {file_map_attr}')
+
+        # and: verify correct map entries
         for file_uuid, file_map_values in metadata_file_map.items():
             self.assertEqual(1, len(file_map_values))
             self.assertTrue(file_uuid in file_map_values)
