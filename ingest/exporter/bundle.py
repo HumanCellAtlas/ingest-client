@@ -5,13 +5,15 @@ from ingest.api import utils
 from ingest.api.dssapi import DssApi
 from ingest.exporter.metadata import MetadataResource
 
+_BUNDLE_FILE_TYPE_DATA = 'data'
+_BUNDLE_FILE_TYPE_LINKS = 'links'
 
 _metadata_type_attr_map = {
     'biomaterial': 'fileBiomaterialMap',
     'file': 'fileFilesMap',
     'process': 'fileProcessMap',
     'project': 'fileProjectMap',
-    'protocol': 'fileProtocolMap'
+    'protocol': 'fileProtocolMap',
 }
 
 
@@ -29,15 +31,18 @@ class BundleManifest:
         self.fileProtocolMap = {}
 
     def add_bundle_file(self, metadata_type, entry: dict):
-        attr_mapping = _metadata_type_attr_map.get(metadata_type)
-        if attr_mapping:
-            file_map = getattr(self, attr_mapping)
-            file_map.update(entry)
-        else:
-            raise KeyError(f'Cannot map unknown metadata type [{metadata_type}].')
+        if metadata_type == _BUNDLE_FILE_TYPE_DATA:
+            self.dataFiles.extend(entry.keys())
+        elif metadata_type != _BUNDLE_FILE_TYPE_LINKS:
+            attr_mapping = _metadata_type_attr_map.get(metadata_type)
+            if attr_mapping:
+                file_map = getattr(self, attr_mapping)
+                file_map.update(entry)
+            else:
+                raise KeyError(f'Cannot map unknown metadata type [{metadata_type}].')
 
 
-_CONTENT_TYPE_PATTERN = re.compile('.*"metadata/(?P<data_type>\\w+)".*')
+_CONTENT_TYPE_PATTERN = re.compile('.*dcp-type="(metadata/)?(?P<data_type>\\w+)".*')
 
 
 class Bundle:
@@ -88,7 +93,6 @@ class Bundle:
         envelope_uuid_map = {'uuid': {'uuid': envelope_uuid}}
         manifest = BundleManifest(bundleUuid=self.uuid, envelopeUuid=envelope_uuid_map,
                                   bundleVersion=self.get_version())
-        manifest.fileBiomaterialMap.update({uuid: [uuid] for uuid in self._file_map.keys()})
         for file_uuid, file in self._file_map.items():
             pattern_match = _CONTENT_TYPE_PATTERN.match(file.get('content-type'))
             if pattern_match:
