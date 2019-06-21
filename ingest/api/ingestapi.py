@@ -246,7 +246,7 @@ class IngestApi:
             result = r.json()
             entities = result["_embedded"][entity_type]
             yield from entities
-            self.logger.error(f"GET {entity_type} {json.dumps(result['page'])}")
+            self.logger.info(f"GET {entity_type} {json.dumps(result['page'])}")
 
     def get_related_entities(self, relation, entity, entity_type):
         # get the self link from entity
