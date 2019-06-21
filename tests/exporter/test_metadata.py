@@ -2,7 +2,7 @@ from unittest import TestCase
 
 from mock import Mock
 
-from ingest.exporter.metadata import MetadataResource, MetadataService
+from ingest.exporter.metadata import MetadataResource, MetadataService, MetadataParseException
 
 
 class MetadataResourceTest(TestCase):
@@ -28,16 +28,15 @@ class MetadataResourceTest(TestCase):
         # and:
         self.assertEqual(uuid_value, metadata.uuid)
 
-    def test_from_dict_with_missing_info(self):
+    def test_from_dict_fail_fast_with_missing_info(self):
         # given:
         data = {'entityType': 'cell_suspension'}
 
         # when:
-        metadata = MetadataResource.from_dict(data)
+        parse_attempt = lambda: MetadataResource.from_dict(data)
 
         # then:
-        self.assertIsNone(metadata.dcp_version)
-        self.assertIsNone(metadata.uuid)
+        self.assertRaises(MetadataParseException, parse_attempt)
 
     def test_get_staging_file_name(self):
         # given:

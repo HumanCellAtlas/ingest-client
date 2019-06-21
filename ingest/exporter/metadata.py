@@ -1,3 +1,6 @@
+class MetadataParseException(Exception):
+    pass
+
 class MetadataResource:
 
     def __init__(self, metadata_type=None, metadata_json=None, uuid=None, dcp_version=None):
@@ -16,12 +19,15 @@ class MetadataResource:
 
     @staticmethod
     def from_dict(data: dict):
-        uuid_object = data.get('uuid')
-        uuid = uuid_object.get('uuid') if uuid_object else None
-        content = data.get('content')
-        metadata_resource = MetadataResource(uuid=uuid, metadata_json=content,
-                                             dcp_version=data.get('dcpVersion'))
-        return metadata_resource
+        try:
+            uuid = data['uuid']['uuid']
+            content = data['content']
+            dcp_version = data['dcpVersion']
+            metadata_resource = MetadataResource(uuid=uuid, metadata_json=content,
+                                                 dcp_version=dcp_version)
+            return metadata_resource
+        except KeyError as e:
+            raise MetadataParseException(e)
 
     def get_staging_file_name(self):
         return f'{self.metadata_type}_{self.uuid}.json'
