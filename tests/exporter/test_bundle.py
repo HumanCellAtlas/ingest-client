@@ -73,6 +73,20 @@ class BundleManifestTest(TestCase):
         self.assertEqual([protocol_uuids[0]], manifest.fileProtocolMap.get(protocol_uuids[0]))
         self.assertEqual([protocol_uuids[1]], manifest.fileProtocolMap.get(protocol_uuids[1]))
 
+    def test_add_bundle_file_ignore_links(self):
+        # given:
+        manifest = BundleManifest()
+
+        # when:
+        links_uuid = '085431d7-a40d-4d25-8c71-a077a69acf62'
+        manifest.add_bundle_file('links', {links_uuid: [links_uuid]})
+
+        # then:
+        map_names = ['biomaterial', 'files', 'process', 'project', 'protocol']
+        for file_map_name in [f'file{name.capitalize()}Map' for name in map_names]:
+            file_map = getattr(manifest, file_map_name)
+            self.assertEqual(0, len(file_map), f'Expected [{file_map_name}] to be empty.')
+
 
 class BundleTest(TestCase):
 

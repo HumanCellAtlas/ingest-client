@@ -5,13 +5,14 @@ from ingest.api import utils
 from ingest.api.dssapi import DssApi
 from ingest.exporter.metadata import MetadataResource
 
+_BUNDLE_FILE_TYPE_LINKS = 'links'
 
 _metadata_type_attr_map = {
     'biomaterial': 'fileBiomaterialMap',
     'file': 'fileFilesMap',
     'process': 'fileProcessMap',
     'project': 'fileProjectMap',
-    'protocol': 'fileProtocolMap'
+    'protocol': 'fileProtocolMap',
 }
 
 
@@ -29,12 +30,13 @@ class BundleManifest:
         self.fileProtocolMap = {}
 
     def add_bundle_file(self, metadata_type, entry: dict):
-        attr_mapping = _metadata_type_attr_map.get(metadata_type)
-        if attr_mapping:
-            file_map = getattr(self, attr_mapping)
-            file_map.update(entry)
-        else:
-            raise KeyError(f'Cannot map unknown metadata type [{metadata_type}].')
+        if metadata_type != _BUNDLE_FILE_TYPE_LINKS:
+            attr_mapping = _metadata_type_attr_map.get(metadata_type)
+            if attr_mapping:
+                file_map = getattr(self, attr_mapping)
+                file_map.update(entry)
+            else:
+                raise KeyError(f'Cannot map unknown metadata type [{metadata_type}].')
 
 
 _CONTENT_TYPE_PATTERN = re.compile('.*"metadata/(?P<data_type>\\w+)".*')
