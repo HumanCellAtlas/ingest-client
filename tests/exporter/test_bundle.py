@@ -175,6 +175,14 @@ class BundleTest(TestCase):
         self.assertIsNotNone(manifest_envelope_uuid)
         self.assertEqual(envelope_uuid, manifest_envelope_uuid.get('uuid'))
 
+    _bundle_attr_map = {
+        'project': 'fileProjectMap',
+        'biomaterial': 'fileBiomaterialMap',
+        'file': 'fileFilesMap',
+        'process': 'fileProcessMap',
+        'protocol': 'fileProtocolMap'
+    }
+
     def test_generate_manifest_with_correct_file_maps(self):
         def random_uuids(count):
             return [str(uuid4()) for _ in range(0, count)]
@@ -184,14 +192,6 @@ class BundleTest(TestCase):
         self._do_test_generate_manifest('file', random_uuids(2))
         self._do_test_generate_manifest('process', random_uuids(5))
         self._do_test_generate_manifest('protocol', random_uuids(1))
-
-    _bundle_attr_map = {
-        'project': 'fileProjectMap',
-        'biomaterial': 'fileBiomaterialMap',
-        'file': 'fileFilesMap',
-        'process': 'fileProcessMap',
-        'protocol': 'fileProtocolMap'
-    }
 
     def _do_test_generate_manifest(self, metadata_type: str, file_uuids: list):
         # given:
@@ -210,7 +210,8 @@ class BundleTest(TestCase):
 
         # then:
         entry_count = len(file_uuids)
-        self.assertEqual(entry_count, len(manifest.fileBiomaterialMap))
+        target_map = getattr(manifest, self._bundle_attr_map[metadata_type])
+        self.assertEqual(entry_count, len(target_map))
         file_map_attr = self._bundle_attr_map.get(metadata_type)
         metadata_file_map = getattr(manifest, file_map_attr)
         self.assertEqual(entry_count, len(metadata_file_map),
@@ -218,6 +219,15 @@ class BundleTest(TestCase):
         for file_uuid, file_map_values in metadata_file_map.items():
             self.assertEqual(1, len(file_map_values))
             self.assertTrue(file_uuid in file_map_values)
+
+        # and:
+        self._assert_maps_are_empty_except(manifest, metadata_type)
+
+    def _assert_maps_are_empty_except(self, bundle_manifest: BundleManifest, target_type: str):
+        for metadata_type, map_name in self._bundle_attr_map.items():
+            if metadata_type != target_type:
+                bundle_file_map = getattr(bundle_manifest, map_name)
+                self.assertEqual(0, len(bundle_file_map), f'Expected [{map_name}] to be empty.')
 
 
 class BundleServiceTest(TestCase):

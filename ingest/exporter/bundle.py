@@ -88,7 +88,6 @@ class Bundle:
         envelope_uuid_map = {'uuid': {'uuid': envelope_uuid}}
         manifest = BundleManifest(bundleUuid=self.uuid, envelopeUuid=envelope_uuid_map,
                                   bundleVersion=self.get_version())
-        manifest.fileBiomaterialMap.update({uuid: [uuid] for uuid in self._file_map.keys()})
         for file_uuid, file in self._file_map.items():
             pattern_match = _CONTENT_TYPE_PATTERN.match(file.get('content-type'))
             if pattern_match:
