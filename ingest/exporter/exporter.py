@@ -10,6 +10,7 @@ class SubmissionEnvelope:
 
     def __init__(self, source={}):
         self._source = deepcopy(source)
+        self.uuid = None
         self.staging_area_uuid = self._process_staging_area_uuid()
 
     def _process_staging_area_uuid(self):

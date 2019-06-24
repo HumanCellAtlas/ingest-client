@@ -17,6 +17,13 @@ def _create_test_bundle_file(uuid='', name='', content_type_prefix='metadata',
 
 class SubmissionEnvelopeTest(TestCase):
 
+    def test_get_uuid(self):
+        # given:
+        no_uuid = SubmissionEnvelope()
+
+        # expect:
+        self.assertIsNone(no_uuid.uuid)
+
     def test_get_staging_area_uuid(self):
         # given:
         no_staging_area = SubmissionEnvelope()
