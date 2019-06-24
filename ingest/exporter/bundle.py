@@ -42,7 +42,9 @@ class BundleManifest:
                 raise KeyError(f'Cannot map unknown metadata type [{metadata_type}].')
 
 
-_CONTENT_TYPE_PATTERN = re.compile('.*dcp-type="?(metadata/)?(?P<data_type>\\w+)"?.*')
+_DSS_CONTENT_TYPE_PATTERN = re.compile('.*dcp-type="?(metadata/)?(?P<data_type>\\w+)"?.*')
+
+_DSS_CONTENT_TYPE_TEMPLATE = 'application/json; dcp-type="metadata/{0}"'
 
 
 class Bundle:
@@ -86,14 +88,14 @@ class Bundle:
     def update_file(self, metadata_resource: MetadataResource):
         target_file = self.get_file(metadata_resource.uuid)
         target_file['version'] = utils.to_dss_version(metadata_resource.dcp_version)
-        # TODO content type needs to be complete HTTP-esque string not just "metadata/*"
-        target_file['content-type'] = f'metadata/{metadata_resource.metadata_type}'
+        target_file['content-type'] = _DSS_CONTENT_TYPE_TEMPLATE.format(
+            metadata_resource.metadata_type)
 
     def generate_manifest(self, envelope_uuid) -> BundleManifest:
         manifest = BundleManifest(bundleUuid=self.uuid, envelopeUuid=envelope_uuid,
                                   bundleVersion=self.get_version())
         for file_uuid, file in self._file_map.items():
-            pattern_match = _CONTENT_TYPE_PATTERN.match(file.get('content-type'))
+            pattern_match = _DSS_CONTENT_TYPE_PATTERN.match(file.get('content-type'))
             if pattern_match:
                 content_type = pattern_match.group('data_type')
                 mapping = {file_uuid: [file_uuid]}
