@@ -16,14 +16,18 @@ class Exporter:
     def export_update(self, update_submission: dict, bundle_uuid: str, metadata_urls: list,
                       update_version: str):
         bundle = self.bundle_service.fetch(bundle_uuid)
-        staging_details = []
         staging_area_uuid = update_submission['stagingDetails']['stagingAreaUuid']['uuid']
+        staging_details = self._apply_metadata_updates(bundle, metadata_urls, staging_area_uuid)
+        bundle.update_version(update_version)
+        self.bundle_service.update(bundle, staging_details)
+        submission_uuid = update_submission['uuid']['uuid']
+        self.ingest_api.create_bundle_manifest(bundle.generate_manifest(submission_uuid))
+
+    def _apply_metadata_updates(self, bundle, metadata_urls, staging_area_uuid):
+        staging_details = []
         for url in metadata_urls:
             metadata_resource = self.metadata_service.fetch_resource(url)
             staging_info = self.staging_service.stage_update(staging_area_uuid, metadata_resource)
             staging_details.append(staging_info)
             bundle.update_file(metadata_resource)
-        bundle.update_version(update_version)
-        self.bundle_service.update(bundle, staging_details)
-        submission_uuid = update_submission['uuid']['uuid']
-        self.ingest_api.create_bundle_manifest(bundle.generate_manifest(submission_uuid))
+        return staging_details
