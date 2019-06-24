@@ -36,15 +36,15 @@ class Exporter:
         self.staging_service = staging_service
         self.bundle_service = bundle_service
 
-    def export_update(self, update_submission: dict, bundle_uuid: str, metadata_urls: list,
+    def export_update(self, submission_source: dict, bundle_uuid: str, metadata_urls: list,
                       update_version: str):
         bundle = self.bundle_service.fetch(bundle_uuid)
-        # TODO define abstraction to manage these assumptions on the structure of update_submission
-        staging_area_uuid = update_submission['stagingDetails']['stagingAreaUuid']['uuid']
-        staging_details = self._apply_metadata_updates(bundle, metadata_urls, staging_area_uuid)
+        submission = SubmissionEnvelope(source=submission_source)
+        staging_details = self._apply_metadata_updates(bundle, metadata_urls,
+                                                       submission.staging_area_uuid)
         bundle.update_version(update_version)
         self.bundle_service.update(bundle, staging_details)
-        manifest = bundle.generate_manifest(update_submission['uuid']['uuid'])
+        manifest = bundle.generate_manifest(submission.uuid)
         self.ingest_api.create_bundle_manifest(manifest)
 
     def _apply_metadata_updates(self, bundle, metadata_urls, staging_area_uuid):
