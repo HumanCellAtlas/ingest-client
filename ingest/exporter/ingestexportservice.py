@@ -1,23 +1,19 @@
 #!/usr/bin/env python
-"""
-desc goes here
-"""
-import requests
-
-import ingest.exporter.bundle
-
-__author__ = "jupp"
-__license__ = "Apache 2.0"
-
 import json
 import logging
 import os
 import uuid
 import time
 import polling
+import requests
 
-import ingest.api.dssapi as dssapi
+import ingest.exporter.bundle
+
 from requests.exceptions import HTTPError
+
+from ingest.api.dssapi import DssApi, BundleAlreadyExist
+from ingest.api.ingestapi import IngestApi
+from ingest.api.stagingapi import StagingApi
 
 DEFAULT_INGEST_URL = os.environ.get('INGEST_API', 'http://api.ingest.dev.data.humancellatlas.org')
 DEFAULT_STAGING_URL = os.environ.get('STAGING_API', 'http://upload.dev.data.humancellatlas.org')
@@ -30,7 +26,7 @@ ERROR_TEMPLATE = {
 
 
 class IngestExporter:
-    def __init__(self, ingest_api, dss_api, staging_api, options=None):
+    def __init__(self, ingest_api:IngestApi, dss_api: DssApi, staging_api: StagingApi, options=None):
         format = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
         logging.basicConfig(format=format)
         self.logger = logging.getLogger(__name__)
@@ -138,7 +134,7 @@ class IngestExporter:
 
                 self.logger.info('Bundle ' + bundle_uuid + ' was successfully created!')
                 self.logger.info("Execution Time: %s seconds" % (time.time() - start_time))
-            except dssapi.BundleAlreadyExist as bundle_already_exist:
+            except BundleAlreadyExist as bundle_already_exist:
                 raise
             except Error as unresolvable_exception:
                 submission_url = self._extract_submission_url(submission)
@@ -420,7 +416,7 @@ class IngestExporter:
     def put_bundle_in_dss(self, bundle_uuid, bundle_version, created_files):
         try:
             created_bundle = self.dss_api.put_bundle(bundle_uuid, bundle_version, created_files)
-        except dssapi.BundleAlreadyExist as bundle_exist:
+        except BundleAlreadyExist as bundle_exist:
             raise
         except Exception as e:
             message = 'An error occurred while putting bundle in DSS: ' + str(e)

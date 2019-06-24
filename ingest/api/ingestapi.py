@@ -34,7 +34,7 @@ class IngestApi:
 
     def set_token(self, token=None):
         if self.token_manager:
-            self.token = self.token_manager.get_token()
+            self.token = f'Bearer {self.token_manager.get_token()}'
         elif token:
             self.token = token
             self.logger.debug(f'Token set!')
