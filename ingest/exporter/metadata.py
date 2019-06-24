@@ -1,6 +1,7 @@
 class MetadataParseException(Exception):
     pass
 
+
 class MetadataResource:
 
     def __init__(self, metadata_type=None, metadata_json=None, uuid=None, dcp_version=None):
@@ -23,9 +24,7 @@ class MetadataResource:
             uuid = data['uuid']['uuid']
             content = data['content']
             dcp_version = data['dcpVersion']
-            metadata_resource = MetadataResource(uuid=uuid, metadata_json=content,
-                                                 dcp_version=dcp_version)
-            return metadata_resource
+            return MetadataResource(uuid=uuid, metadata_json=content, dcp_version=dcp_version)
         except KeyError as e:
             raise MetadataParseException(e)
 

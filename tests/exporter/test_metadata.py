@@ -33,10 +33,11 @@ class MetadataResourceTest(TestCase):
         data = {'entityType': 'cell_suspension'}
 
         # when:
-        parse_attempt = lambda: MetadataResource.from_dict(data)
+        with self.assertRaises(MetadataParseException) as test:
+            MetadataResource.from_dict(data)
 
         # then:
-        self.assertRaises(MetadataParseException, parse_attempt)
+        self.assertIsNotNone(test.exception)
 
     def test_get_staging_file_name(self):
         # given:
