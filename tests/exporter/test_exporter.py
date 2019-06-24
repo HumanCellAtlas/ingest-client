@@ -34,9 +34,7 @@ class ExporterTest(TestCase):
         # and:
         metadata_resources = self._set_up_metadata_service(metadata_service, metadata_uuids)
         staging_details = self._set_up_staging_service(staging_service)
-        bundle_manifest = Mock(name='bundle_manifest')
-        bundle = self._set_up_bundle_service(bundle_service, bundle_uuid, metadata_uuids,
-                                             bundle_manifest)
+        bundle = self._set_up_bundle_service(bundle_service, bundle_uuid, metadata_uuids)
 
         # and:
         metadata_urls = [f'https://data.hca.tld/metadata/{uuid}' for uuid in metadata_uuids]
@@ -55,12 +53,17 @@ class ExporterTest(TestCase):
                                             any_order=True)
         bundle.update_version.assert_called_with(update_version)
         bundle_service.update.assert_called_once_with(bundle, staging_details)
-        ingest_api.createBundleManifest.is_called_once_with(bundle_manifest)
+
+        # and: assert correct bundle manifest generated
+        main_arg, *_ = ingest_api.create_bundle_manifest.call_args #unpack list of args
+        bundle_manifest = main_arg[0]
+        self.assertEqual(len(metadata_uuids), len(bundle_manifest.fileBiomaterialMap))
 
     @staticmethod
     def _set_up_metadata_service(metadata_service, metadata_uuids):
         metadata_version = '2019-06-12T16:12:20.087Z'
-        metadata_resources = [MetadataResource(uuid=uuid, dcp_version=metadata_version)
+        metadata_resources = [MetadataResource(uuid=uuid, dcp_version=metadata_version,
+                                               metadata_type='biomaterial')
                               for uuid in metadata_uuids]
         metadata_service.fetch_resource = Mock(side_effect=metadata_resources)
         return metadata_resources
@@ -73,10 +76,9 @@ class ExporterTest(TestCase):
         return staging_details
 
     @staticmethod
-    def _set_up_bundle_service(bundle_service, bundle_uuid, metadata_uuids, bundle_manifest):
+    def _set_up_bundle_service(bundle_service, bundle_uuid, metadata_uuids):
         bundle_files = [{'uuid': uuid} for uuid in metadata_uuids]
         bundle = Bundle(source={'bundle': {'uuid': bundle_uuid, 'files': bundle_files}})
         bundle = Mock(wraps=bundle)
         bundle_service.fetch = Mock(return_value=bundle)
-        bundle.generate_manifest = Mock(return_value=bundle_manifest)
         return bundle
