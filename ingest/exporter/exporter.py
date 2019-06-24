@@ -1,7 +1,18 @@
+from copy import deepcopy
+
 from ingest.api.ingestapi import IngestApi
 from ingest.exporter.bundle import BundleService
 from ingest.exporter.metadata import MetadataService
 from ingest.exporter.staging import StagingService
+
+
+class SubmissionEnvelope:
+
+    def __init__(self, source={}):
+        self.source = deepcopy(source)
+
+    def get_staging_area_uuid(self):
+        pass
 
 
 class Exporter:

@@ -3,7 +3,7 @@ from unittest import TestCase
 from mock import Mock, call
 
 from ingest.exporter.bundle import Bundle
-from ingest.exporter.exporter import Exporter
+from ingest.exporter.exporter import Exporter, SubmissionEnvelope
 from ingest.exporter.metadata import MetadataResource
 from ingest.exporter.staging import StagingInfo
 
@@ -13,6 +13,16 @@ def _create_test_bundle_file(uuid='', name='', content_type_prefix='metadata',
     dcp_type = f'"{content_type_prefix}/{content_type}"' if content_type_prefix else content_type
     return {'content-type': f'application/json; dcp-type={dcp_type}', 'uuid': uuid,
             'name': name, 'version': version, 'indexed': indexed}
+
+
+class SubmissionEnvelopeTest(TestCase):
+
+    def test_get_staging_area_uuid(self):
+        # given:
+        no_staging_area = SubmissionEnvelope()
+
+        # expect:
+        self.assertIsNone(no_staging_area.get_staging_area_uuid())
 
 
 class ExporterTest(TestCase):
