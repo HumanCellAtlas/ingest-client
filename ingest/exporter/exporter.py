@@ -10,8 +10,12 @@ class SubmissionEnvelope:
 
     def __init__(self, source={}):
         self._source = deepcopy(source)
-        self.uuid = None
+        self.uuid = self._process_uuid()
         self.staging_area_uuid = self._process_staging_area_uuid()
+
+    def _process_uuid(self):
+        uuid_obj = self._source.get('uuid')
+        return uuid_obj.get('uuid') if uuid_obj else None
 
     def _process_staging_area_uuid(self):
         staging_area_uuid = None

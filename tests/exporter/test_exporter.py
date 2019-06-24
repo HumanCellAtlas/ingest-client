@@ -20,9 +20,18 @@ class SubmissionEnvelopeTest(TestCase):
     def test_get_uuid(self):
         # given:
         no_uuid = SubmissionEnvelope()
+        submission_uuid = 'e2bd764f-9f75-40a6-85fd-5bbeba6964ce'
+        valid = SubmissionEnvelope(source={
+            'uuid': {
+                'uuid': submission_uuid
+            }
+        })
+        incomplete = SubmissionEnvelope(source={'uuid': {}})
 
         # expect:
         self.assertIsNone(no_uuid.uuid)
+        self.assertEqual(submission_uuid, valid.uuid)
+        self.assertIsNone(incomplete.uuid)
 
     def test_get_staging_area_uuid(self):
         # given:
