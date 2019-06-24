@@ -20,9 +20,22 @@ class SubmissionEnvelopeTest(TestCase):
     def test_get_staging_area_uuid(self):
         # given:
         no_staging_area = SubmissionEnvelope()
+        staging_area_uuid = 'c3b4dee4-a6d0-41b0-b1b4-726d95995d4d'
+        valid = SubmissionEnvelope(source={
+            'stagingDetails': {
+                'stagingAreaUuid': {
+                    'uuid': staging_area_uuid
+                }
+            }
+        })
+        incomplete = SubmissionEnvelope(source={
+            'stagingDetails': {}
+        })
 
         # expect:
-        self.assertIsNone(no_staging_area.get_staging_area_uuid())
+        self.assertIsNone(no_staging_area.staging_area_uuid)
+        self.assertEqual(staging_area_uuid, valid.staging_area_uuid)
+        self.assertIsNone(incomplete.staging_area_uuid)
 
 
 class ExporterTest(TestCase):

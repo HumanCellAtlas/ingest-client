@@ -9,10 +9,17 @@ from ingest.exporter.staging import StagingService
 class SubmissionEnvelope:
 
     def __init__(self, source={}):
-        self.source = deepcopy(source)
+        self._source = deepcopy(source)
+        self.staging_area_uuid = self._process_staging_area_uuid()
 
-    def get_staging_area_uuid(self):
-        pass
+    def _process_staging_area_uuid(self):
+        staging_area_uuid = None
+        staging_details = self._source.get('stagingDetails')
+        if staging_details:
+            uuid_obj = staging_details.get('stagingAreaUuid')
+            if uuid_obj:
+                staging_area_uuid = uuid_obj.get('uuid')
+        return staging_area_uuid
 
 
 class Exporter:
