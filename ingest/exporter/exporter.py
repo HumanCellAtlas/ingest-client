@@ -8,8 +8,8 @@ from ingest.exporter.staging import StagingService
 
 class SubmissionEnvelope:
 
-    def __init__(self, source={}):
-        self._source = deepcopy(source)
+    def __init__(self, source=None):
+        self._source = deepcopy(source) if source else {}
         self.uuid = self._process_uuid()
         self.staging_area_uuid = self._process_staging_area_uuid()
 
