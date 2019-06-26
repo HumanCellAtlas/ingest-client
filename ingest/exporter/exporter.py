@@ -1,7 +1,30 @@
+from copy import deepcopy
+
 from ingest.api.ingestapi import IngestApi
 from ingest.exporter.bundle import BundleService
 from ingest.exporter.metadata import MetadataService
 from ingest.exporter.staging import StagingService
+
+
+class SubmissionEnvelope:
+
+    def __init__(self, source={}):
+        self._source = deepcopy(source)
+        self.uuid = self._process_uuid()
+        self.staging_area_uuid = self._process_staging_area_uuid()
+
+    def _process_uuid(self):
+        uuid_obj = self._source.get('uuid')
+        return uuid_obj.get('uuid') if uuid_obj else None
+
+    def _process_staging_area_uuid(self):
+        staging_area_uuid = None
+        staging_details = self._source.get('stagingDetails')
+        if staging_details:
+            uuid_obj = staging_details.get('stagingAreaUuid')
+            if uuid_obj:
+                staging_area_uuid = uuid_obj.get('uuid')
+        return staging_area_uuid
 
 
 class Exporter:
@@ -13,17 +36,22 @@ class Exporter:
         self.staging_service = staging_service
         self.bundle_service = bundle_service
 
-    def export_update(self, update_submission: dict, bundle_uuid: str, metadata_urls: list,
+    def export_update(self, submission_source: dict, bundle_uuid: str, metadata_urls: list,
                       update_version: str):
         bundle = self.bundle_service.fetch(bundle_uuid)
+        submission = SubmissionEnvelope(source=submission_source)
+        staging_details = self._apply_metadata_updates(bundle, metadata_urls,
+                                                       submission.staging_area_uuid)
+        bundle.update_version(update_version)
+        self.bundle_service.update(bundle, staging_details)
+        manifest = bundle.generate_manifest(submission.uuid)
+        self.ingest_api.create_bundle_manifest(manifest)
+
+    def _apply_metadata_updates(self, bundle, metadata_urls, staging_area_uuid):
         staging_details = []
-        staging_area_uuid = update_submission['stagingDetails']['stagingAreaUuid']['uuid']
         for url in metadata_urls:
             metadata_resource = self.metadata_service.fetch_resource(url)
             staging_info = self.staging_service.stage_update(staging_area_uuid, metadata_resource)
             staging_details.append(staging_info)
             bundle.update_file(metadata_resource)
-        bundle.update_version(update_version)
-        self.bundle_service.update(bundle, staging_details)
-        submission_uuid = update_submission['uuid']['uuid']
-        self.ingest_api.create_bundle_manifest(bundle.generate_manifest(submission_uuid))
+        return staging_details

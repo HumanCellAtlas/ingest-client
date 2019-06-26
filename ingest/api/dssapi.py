@@ -37,8 +37,14 @@ class DssApi:
 
         self.headers = {'Content-type': 'application/json'}
 
-        self.hca_client = hca.dss.DSSClient(swagger_url=f'{self.url}/v1/swagger.json')
-        self.hca_client.host = self.url + "/v1"
+        self.dss_client = None
+
+        self.init_dss_client()
+
+    def init_dss_client(self):
+        self.dss_client = hca.dss.DSSClient(
+            swagger_url=f'{self.url}/v1/swagger.json')
+        self.dss_client.host = self.url + "/v1"
         self.creator_uid = 8008
 
     def put_file(self, bundle_uuid, file):
@@ -67,12 +73,11 @@ class DssApi:
         while not file_create_complete and tries < max_retries:
             try:
                 tries += 1
-                # self.logger.info(f'Creating file {file["name"]} in DSS {uuid}:{version} with params: {json.dumps(
-                # params)}')
+                self.logger.info(f'Creating file in DSS {uuid}:{version} with params: {json.dumps(params)}')
                 bundle_file = None
 
                 if bundle_uuid:
-                    bundle_file = self.hca_client.put_file(
+                    bundle_file = self.dss_client.put_file(
                         uuid=uuid,
                         version=version,
                         bundle_uuid=bundle_uuid,
@@ -80,7 +85,7 @@ class DssApi:
                         source_url=url
                     )
                 else:
-                    bundle_file = self.hca_client.put_file(
+                    bundle_file = self.dss_client.put_file(
                         uuid=uuid,
                         version=version,
                         creator_uid=self.creator_uid,
@@ -118,7 +123,7 @@ class DssApi:
             try:
                 tries += 1
                 self.logger.info(f'Creating bundle in DSS {bundle_uuid}:{version}')
-                bundle = self.hca_client.put_bundle(
+                bundle = self.dss_client.put_bundle(
                     uuid=bundle_uuid,
                     version=version,
                     replica="aws",
@@ -158,13 +163,13 @@ class DssApi:
 
     def get_bundle(self, bundle_uuid, version=None):
         if version:
-            return self.hca_client.get_bundle(
+            return self.dss_client.get_bundle(
                 uuid=bundle_uuid,
                 replica="aws",
                 version=version
             )
         else:
-            return self.hca_client.get_bundle(
+            return self.dss_client.get_bundle(
                 uuid=bundle_uuid,
                 replica="aws"
             )
@@ -172,7 +177,7 @@ class DssApi:
     def head_file(self, file_uuid, version=None):
         # finally create the bundle
         try:
-            return self.hca_client.head_file(
+            return self.dss_client.head_file(
                 uuid=file_uuid,
                 version=version,
                 replica="aws"

@@ -2,41 +2,18 @@ from unittest import TestCase
 
 from mock import Mock
 
-from ingest.exporter.metadata import MetadataResource, MetadataService, MetadataParseException, MetadataTypeParseException
+from ingest.exporter.metadata import MetadataResource, MetadataService, MetadataParseException
 
 
 class MetadataResourceTest(TestCase):
 
-    def test_determine_metadata_type(self):
-        # given:
-        test_urls = ['https://someurl/biomaterials/some-id',
-                     'https://someurl/projects/some-id',
-                     'https://someurl/processes/some-id',
-                     'https://someurl/files/some-id',
-                     'https://someurl/protocols/some-id']
-
-        # when
-        metadata_types = list(map(lambda metadata_url: MetadataResource._determine_metadata_type(metadata_url), test_urls))
-
-        # then:
-        self.assertEqual(metadata_types, ['biomaterial', 'project', 'process', 'file', 'protocol'])
-
-    def test_determine_metadata_type_unknown(self):
-        # given
-        test_url = 'https:/someurl/roboticmaterial/some-id'
-
-        # when
-        parse_attempt = lambda: MetadataResource._determine_metadata_type(test_url)
-
-        # then
-        self.assertRaises(MetadataTypeParseException, parse_attempt)
-
     def test_from_dict(self):
         # given:
         uuid_value = '3f3212da-d5d0-4e55-b31d-83243fa02e0d'
-        data = {'uuid': {'uuid': uuid_value},
-                'content': {'some': {'content': ['we', 'are', 'agnostic', 'of']}},
-                '_links': {'self':{'href': 'https://someurl/biomaterials/some-id'}},
+        data = {'entityType': 'biomaterial',
+                'uuid': {'uuid': uuid_value},
+                'content': {'describedBy': 'https://hca.tld/types/donor_organism',
+                            'schema_type': 'biomaterial', 'description': 'test'},
                 'dcpVersion': '6.9.1'}
 
         # when:
@@ -56,10 +33,11 @@ class MetadataResourceTest(TestCase):
         data = {'entityType': 'cell_suspension'}
 
         # when:
-        parse_attempt = lambda: MetadataResource.from_dict(data)
+        with self.assertRaises(MetadataParseException) as test:
+            MetadataResource.from_dict(data)
 
         # then:
-        self.assertRaises(MetadataParseException, parse_attempt)
+        self.assertIsNotNone(test.exception)
 
     def test_get_staging_file_name(self):
         # given:
@@ -85,9 +63,10 @@ class MetadataServiceTest(TestCase):
         # given:
         ingest_client = Mock(name='ingest_client')
         uuid = '301636f7-f97b-4379-bf77-c5dcd9f17bcb'
-        raw_metadata = {'uuid': {'uuid': uuid},
-                        'content': {'some': {'content': ['we', 'are', 'agnostic', 'of']}},
-                        '_links': {'self': {'href': 'https://someurl/biomaterials/some-id'}},
+        raw_metadata = {'entityType': 'biomaterial',
+                        'uuid': {'uuid': uuid},
+                        'content': {'describedBy': 'https://hca.tld/types/cell_suspension',
+                                    'schema_type': 'biomaterial', 'text': 'test'},
                         'dcpVersion': '8.2.7'}
         ingest_client.get_entity_by_callback_link = Mock(return_value=raw_metadata)
 

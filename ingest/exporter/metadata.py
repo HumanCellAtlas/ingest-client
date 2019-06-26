@@ -1,8 +1,6 @@
 class MetadataParseException(Exception):
     pass
 
-class MetadataTypeParseException(Exception):
-    pass
 
 class MetadataResource:
 
@@ -11,22 +9,14 @@ class MetadataResource:
         self.uuid = uuid
         self.dcp_version = dcp_version
         self.metadata_type = metadata_type
+        if not metadata_type:
+            self._determine_metadata_type()
 
-    @staticmethod
-    def _determine_metadata_type(metadata_url: str):
-        resource_path_type_map = {
-            "biomaterials": "biomaterial",
-            "projects": "project",
-            "files": "file",
-            "protocols": "protocol",
-            "processes": "process"
-        }
-
-        resource_path = metadata_url.split("/")[-2]
-        if resource_path in resource_path_type_map:
-            return resource_path_type_map[resource_path]
-        else:
-            raise MetadataTypeParseException(f'Failed to parse metadata type for resource at {metadata_url}')
+    def _determine_metadata_type(self):
+        metadata_type = None
+        if self.metadata_json:
+            metadata_type = self.metadata_json.get('schema_type')
+        self.metadata_type = metadata_type
 
     @staticmethod
     def from_dict(data: dict):
@@ -34,11 +24,7 @@ class MetadataResource:
             uuid = data['uuid']['uuid']
             content = data['content']
             dcp_version = data['dcpVersion']
-            self_url = data['_links']['self']['href']
-            metadata_type = MetadataResource._determine_metadata_type(self_url)
-            metadata_resource = MetadataResource(metadata_type=metadata_type, uuid=uuid, metadata_json=content,
-                                                 dcp_version=dcp_version)
-            return metadata_resource
+            return MetadataResource(uuid=uuid, metadata_json=content, dcp_version=dcp_version)
         except KeyError as e:
             raise MetadataParseException(e)
 

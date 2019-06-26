@@ -182,7 +182,8 @@ class BundleTest(TestCase):
         # then:
         updated_file = bundle.get_file(uuid)
         self.assertEqual('2019-06-12T141414.077000Z', updated_file.get('version'))
-        self.assertEqual('metadata/cell_suspension_x', updated_file.get('content-type'))
+        self.assertEqual('application/json; dcp-type="metadata/cell_suspension_x"',
+                         updated_file.get('content-type'))
 
     def test_generate_manifest(self):
         # given:
