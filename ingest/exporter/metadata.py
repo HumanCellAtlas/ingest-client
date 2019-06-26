@@ -4,16 +4,10 @@ class MetadataParseException(Exception):
 
 class MetadataResource:
 
-    def __init__(self, metadata_type=None, metadata_json=None, uuid=None, dcp_version=None):
+    def __init__(self, metadata_type, metadata_json, uuid, dcp_version):
         self.metadata_json = metadata_json
         self.uuid = uuid
         self.dcp_version = dcp_version
-        self.metadata_type = metadata_type
-
-    def _determine_metadata_type(self):
-        metadata_type = None
-        if self.metadata_json:
-            metadata_type = self.metadata_json.get('schema_type')
         self.metadata_type = metadata_type
 
     @staticmethod
@@ -23,7 +17,7 @@ class MetadataResource:
             content = data['content']
             dcp_version = data['dcpVersion']
             metadata_type = data['type']
-            return MetadataResource(metadata_type=metadata_type, uuid=uuid, metadata_json=content, dcp_version=dcp_version)
+            return MetadataResource(metadata_type, content, uuid, dcp_version)
         except KeyError as e:
             raise MetadataParseException(e)
 
