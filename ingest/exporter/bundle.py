@@ -78,10 +78,6 @@ class Bundle:
     def _prepare_file_map(bundle_files: list):
         return {file['uuid']: file for file in bundle_files}
 
-    @staticmethod
-    def create(uuid: str, creator_uid: int, version: str):
-        return Bundle(uuid, {}, version, creator_uid)
-
     def get_version(self):
         return self.version
 

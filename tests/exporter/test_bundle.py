@@ -116,18 +116,6 @@ def _create_test_bundle_source(bundle_uuid, bundle_version, metadata_files, crea
 
 class BundleTest(TestCase):
 
-    def test_create(self):
-        # when:
-        uuid = '6fff72c7-0a05-419f-8c78-5c3dd32cea29'
-        creator_uid = 5050
-        version = '2019-06-13T144433.222111Z'
-        bundle = Bundle.create(uuid, creator_uid, version)
-
-        # expect:
-        self.assertEqual(uuid, bundle.uuid)
-        self.assertEqual(creator_uid, bundle.creator_uid)
-        self.assertEqual(version, bundle.get_version())
-
     def test_create_from_source(self):
         # given
         creator_uid = 5050
