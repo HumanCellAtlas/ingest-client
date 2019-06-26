@@ -41,6 +41,40 @@ class SubmissionEnvelopeTest(TestCase):
         # then
         self.assertEqual(staging_area_uuid, uuid)
 
+    def test_from_dict(self):
+        # given
+        submission_uuid = 'e2bd764f-9f75-40a6-85fd-5bbeba6964ce'
+        staging_area_uuid = 'aaad764d-9f75-40a6-85fd-5bbeba6964ce'
+        submission_source = {
+            'uuid': {
+                'uuid': submission_uuid
+            },
+            'stagingDetails': {
+                'stagingAreaUuid': {
+                    'uuid': staging_area_uuid
+                }
+            }
+        }
+
+        # when
+        envelope = SubmissionEnvelope.from_dict(submission_source)
+
+        # then
+        self.assertEqual(envelope.uuid, submission_uuid)
+        self.assertEqual(envelope.staging_area_uuid, staging_area_uuid)
+
+    def test_from_dict_fail_fast(self):
+        # given
+        unprocessable_source = {
+            'uuid': 'some-uuid',
+            'stagingUuid': 'some-other-uuid'
+        }
+
+        # then
+        with self.assertRaises(SubmissionEnvelopeParseException):
+            # when
+            SubmissionEnvelope.from_dict(unprocessable_source)
+
 class ExporterTest(TestCase):
 
     def test_export_update(self):

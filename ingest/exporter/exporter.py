@@ -22,7 +22,7 @@ class SubmissionEnvelope:
             uuid = source['uuid']['uuid']
             staging_area_uuid = source['stagingDetails']['stagingAreaUuid']['uuid']
             return SubmissionEnvelope(uuid, staging_area_uuid)
-        except KeyError as e:
+        except (KeyError, TypeError) as e:
             raise SubmissionEnvelopeParseException(e)
 
     def _process_uuid(self):
