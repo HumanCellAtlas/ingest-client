@@ -49,43 +49,53 @@ _DSS_CONTENT_TYPE_PATTERN = re.compile('.*dcp-type="?(metadata/)?(?P<data_type>\
 _DSS_CONTENT_TYPE_TEMPLATE = 'application/json; dcp-type="metadata/{0}"'
 
 
+class BundleParseFromSourceException(Exception):
+    pass
+
+
 class Bundle:
 
-    def __init__(self, *, source: dict):
-        self._source = deepcopy(source)
-        self._bundle = self._source.get('bundle')  # because bundle is nested in the root ¯\_(ツ)_/¯
-        self._prepare_file_map()
-        self.uuid = self._bundle.get('uuid') if self._bundle else None
-        self.creator_uid = self._bundle.get('creator_uid') if self._bundle else None
+    def __init__(self, uuid: str, files: dict, version: str, creator_uid: int):
+        self.uuid = uuid
+        self.files = files
+        self.version = version
+        self.creator_uid = creator_uid
 
-    def _prepare_file_map(self):
-        bundle_files = self._bundle.get('files') if self._bundle else None
-        if not bundle_files:
-            bundle_files = []
-        self._file_map = {file.get('uuid'): file for file in bundle_files}
+    @staticmethod
+    def bundle_from_source(source: dict):
+        try:
+            bundle_source = source['bundle']
+
+            uuid = bundle_source['uuid']
+            version = bundle_source['version']
+            creator_uid = bundle_source['creator_uid']
+            files = Bundle._prepare_file_map(bundle_source['files'])
+            return Bundle(uuid, files, version, creator_uid)
+        except KeyError as e:
+            raise BundleParseFromSourceException(e)
+
+    @staticmethod
+    def _prepare_file_map(bundle_files: list):
+        return {file['uuid']: file for file in bundle_files}
 
     @staticmethod
     def create(uuid: str, creator_uid: int, version: str):
-        return Bundle(source={'bundle': {
-            'uuid': uuid,
-            'creator_uid': creator_uid,
-            'version': version
-        }})
+        return Bundle(uuid, {}, version, creator_uid)
 
     def get_version(self):
-        return self._bundle.get('version')
+        return self.version
 
     def get_file(self, uuid):
-        return self._file_map.get(uuid)
+        return self.files.get(uuid)
 
     def get_files(self):
-        return list(self._file_map.values())
+        return list(self.files.values())
 
     def count_files(self):
-        return len(self._file_map)
+        return len(self.files)
 
     def update_version(self, version):
-        self._bundle['version'] = version
+        self.version = version
 
     def update_file(self, metadata_resource: MetadataResource):
         target_file = self.get_file(metadata_resource.uuid)
@@ -96,7 +106,7 @@ class Bundle:
     def generate_manifest(self, envelope_uuid) -> BundleManifest:
         manifest = BundleManifest(bundleUuid=self.uuid, envelopeUuid=envelope_uuid,
                                   bundleVersion=self.get_version())
-        for file_uuid, file in self._file_map.items():
+        for file_uuid, file in self.files.items():
             pattern_match = _DSS_CONTENT_TYPE_PATTERN.match(file.get('content-type'))
             if pattern_match:
                 content_type = pattern_match.group('data_type')
@@ -112,7 +122,7 @@ class BundleService:
 
     def fetch(self, uuid: str) -> Bundle:
         bundle_source = self.dss_client.get_bundle(uuid)
-        return Bundle(source=bundle_source)
+        return Bundle.bundle_from_source(bundle_source)
 
     def update(self, bundle: Bundle, staging_details: list):
         cloud_url_map = {info.metadata_uuid: info.cloud_url for info in staging_details}

@@ -115,7 +115,14 @@ class ExporterTest(TestCase):
     @staticmethod
     def _set_up_bundle_service(bundle_service, bundle_uuid, metadata_uuids):
         bundle_files = [{'uuid': uuid} for uuid in metadata_uuids]
-        bundle = Bundle(source={'bundle': {'uuid': bundle_uuid, 'files': bundle_files}})
+        bundle = Bundle.bundle_from_source({
+            'bundle': {
+                'uuid': bundle_uuid,
+                'version':'2019-06-12T16:12:20.087Z',
+                'creator_uid': 5050,
+                'files': bundle_files
+            }
+        })
         bundle = Mock(wraps=bundle)
         bundle_service.fetch = Mock(return_value=bundle)
         return bundle

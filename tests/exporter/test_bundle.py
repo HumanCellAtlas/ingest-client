@@ -102,13 +102,16 @@ class BundleManifestTest(TestCase):
         self.assertEqual(file_uuids, manifest.dataFiles)
 
 
-def _create_test_bundle(bundle_uuid, bundle_version, *metadata_file):
-    bundle = Bundle(source={'bundle': {
-        'uuid': bundle_uuid,
-        'version': bundle_version,
-        'files': metadata_file
-    }})
-    return bundle
+def _create_test_bundle_source(bundle_uuid, bundle_version, metadata_files, creator_uid):
+    bundle_source = {
+        'bundle': {
+            'creator_uid': creator_uid,
+            'uuid': bundle_uuid,
+            'version': bundle_version,
+            'files': metadata_files
+        }
+     }
+    return bundle_source
 
 
 class BundleTest(TestCase):
@@ -125,15 +128,41 @@ class BundleTest(TestCase):
         self.assertEqual(creator_uid, bundle.creator_uid)
         self.assertEqual(version, bundle.get_version())
 
+    def test_create_from_source(self):
+        # given
+        creator_uid = 5050
+        metadata_uuid = 'af690c04-8562-4680-bbf4-56bb9f58b265'
+        metadata_file = _create_test_bundle_file(uuid=metadata_uuid,
+                                                 content_type='biomaterial')
+
+        bundle_uuid = '93d3d2be-36e0-465e-b37f-0f48a998630e'
+        bundle_version = '2019-06-14T102922.001122Z'
+        bundle_source = _create_test_bundle_source(bundle_uuid, bundle_version, [metadata_file], creator_uid)
+
+        # when
+        bundle = Bundle.bundle_from_source(bundle_source)
+
+        # expect:
+        self.assertEqual(bundle.uuid, bundle_uuid)
+        self.assertEqual(bundle.creator_uid, creator_uid)
+        self.assertEqual(bundle.version, bundle_version)
+        self.assertTrue(metadata_uuid in bundle.files)
+
+
     def test_get_file(self):
         # given:
+        creator_uid = 5050
+        bundle_uuid = '93d3d2be-36e0-465e-b37f-0f48a998630e'
+        bundle_version = '2019-06-14T102922.001122Z'
         file_1 = _create_test_bundle_file(uuid='15b22393-cc48-4dff-bc19-22c189d7c35e',
                                           name='donor_organism_0.json',
                                           version='2019-06-06T1033833.011000Z')
         file_2 = _create_test_bundle_file(uuid='b56f4e1f-3651-463e-8e6f-b931ea5f21a2',
                                           name='donor_organism_1.json',
                                           version='2019-06-06T1034255.023000Z')
-        bundle = Bundle(source={'bundle': {'files': [file_1, file_2]}})
+
+        bundle_source = _create_test_bundle_source(bundle_uuid, bundle_version, [file_1, file_2], creator_uid)
+        bundle = Bundle.bundle_from_source(bundle_source)
 
         # when:
         target_file = bundle.get_file(file_2['uuid'])
@@ -153,7 +182,7 @@ class BundleTest(TestCase):
     def test_update_version(self):
         # given:
         original_version = '2019-06-03T134835.366000Z'
-        bundle = Bundle(source={'bundle': {'version': original_version}})
+        bundle = Bundle('some-uuid', {}, original_version, 8000)
         self.assertEqual(original_version, bundle.get_version())
 
         # when:
@@ -165,10 +194,16 @@ class BundleTest(TestCase):
 
     def test_update_file(self):
         # given:
+        creator_uid = 5050
+        bundle_uuid = '93d3d2be-36e0-465e-b37f-0f48a998630e'
+        bundle_version = '2019-06-14T102922.001122Z'
+
         uuid = '5a583ae9-2a28-4d6d-8109-7e47c56bd5ad'
         bundle_file = _create_test_bundle_file(uuid=uuid, name='cell_suspension_0.json',
                                                version='2019-06-05T160722.098000Z', indexed=False)
-        bundle = Bundle(source={'bundle': {'files': [bundle_file]}})
+
+        bundle_source = _create_test_bundle_source(bundle_uuid, bundle_version, [bundle_file], creator_uid)
+        bundle = Bundle.bundle_from_source(bundle_source)
 
         # and:
         metadata_resource = MetadataResource(metadata_type='cell_suspension_x',
@@ -194,7 +229,10 @@ class BundleTest(TestCase):
         # and:
         bundle_uuid = '93d3d2be-36e0-465e-b37f-0f48a998630e'
         bundle_version = '2019-06-14T102922.001122Z'
-        bundle = _create_test_bundle(bundle_uuid, bundle_version, metadata_file)
+        creator_uid = 5050
+
+        bundle_source = _create_test_bundle_source(bundle_uuid, bundle_version, [metadata_file], creator_uid)
+        bundle = Bundle.bundle_from_source(bundle_source)
 
         # when:
         envelope_uuid = 'c1cec0de-d72b-40d6-a536-f47d922518b2'
@@ -229,11 +267,11 @@ class BundleTest(TestCase):
                           for file_uuid in file_uuids]
 
         # and:
-        bundle = Bundle(source={'bundle': {
-            'uuid': '21aabf53-2eaf-43a6-a0cb-6fcf4a14754b',
-            'version': '2019-06-14T133659.101112Z',
-            'files': metadata_files
-        }})
+        bundle_uuid = '93d3d2be-36e0-465e-b37f-0f48a998630e'
+        bundle_version = '2019-06-14T102922.001122Z'
+        creator_uid = 5050
+        bundle_source = _create_test_bundle_source(bundle_uuid, bundle_version, metadata_files, creator_uid)
+        bundle = Bundle.bundle_from_source(bundle_source)
 
         # when:
         manifest = bundle.generate_manifest('cffaa257-71ab-422f-bdb9-2a696b68bb33')
@@ -271,7 +309,9 @@ class BundleTest(TestCase):
         # and:
         bundle_uuid = '4149ef7d-c4ad-47b5-b053-0cfb7d14c597'
         bundle_version = '2019-06-21T133113.313313Z'
-        bundle = _create_test_bundle(bundle_uuid, bundle_version, *data_files)
+        creator_uid = 5050
+        bundle_source = _create_test_bundle_source(bundle_uuid, bundle_version, data_files, creator_uid)
+        bundle = Bundle.bundle_from_source(bundle_source)
 
         # when:
         envelope_uuid = '7416da14-8535-4923-80d9-a7b0b062d70e'
@@ -286,20 +326,22 @@ class BundleServiceTest(TestCase):
     def test_fetch(self):
         # given:
         dss_client = Mock(name='dss_client')
-        uuid = '69f92d53-0d25-4577-948d-dad76dd190cc'
+        bundle_uuid = '69f92d53-0d25-4577-948d-dad76dd190cc'
+        bundle_version = '2019-06-21T133113.313313Z'
+        creator_uid = 5050
         test_file = _create_test_bundle_file(uuid='0c43ccf0-04ed-41af-9213-be3bcae14c06')
-        bundle_source = {'bundle': {'uuid': uuid, 'files': [test_file]}}
+        bundle_source = _create_test_bundle_source(bundle_uuid, bundle_version, [test_file], creator_uid)
         dss_client.get_bundle = Mock(return_value=bundle_source)
 
         # and:
         service = BundleService(dss_client)
 
         # when:
-        bundle = service.fetch(uuid)
+        bundle = service.fetch(bundle_uuid)
 
         # then:
         self.assertTrue(type(bundle) is Bundle, 'get_bundle should return a Bundle.')
-        self.assertEqual(uuid, bundle.uuid)
+        self.assertEqual(bundle_uuid, bundle.uuid)
 
         # and:
         self.assertEqual(1, bundle.count_files())
@@ -320,14 +362,16 @@ class BundleServiceTest(TestCase):
 
         # and:
         bundle_uuid = '25f26f33-9413-45e0-b83c-979ce59cef62'
+        creator_uid = 5050
         file_1 = _create_test_bundle_file(uuid=uuid_1, version='2019-06-07T170321.000000Z')
         file_2 = _create_test_bundle_file(uuid=uuid_2, version='2019-06-01T103033.000000Z')
         unchanged_uuid = '66a9da69-62c0-4792-9e89-09235d5e68e1'
         unchanged_file = _create_test_bundle_file(uuid=unchanged_uuid,
                                                   version='2019-06-06T112935.000000Z')
         bundle_version = '2019-06-07T220321.010000Z'
-        bundle = Bundle(source={'bundle': {'uuid': bundle_uuid, 'version': bundle_version,
-                                           'files': [file_1, file_2, unchanged_file]}})
+
+        bundle_source = _create_test_bundle_source(bundle_uuid, bundle_version, [file_1, file_2, unchanged_file], creator_uid)
+        bundle = Bundle.bundle_from_source(bundle_source)
 
         # when:
         service.update(bundle, [staging_info_1, staging_info_2])
