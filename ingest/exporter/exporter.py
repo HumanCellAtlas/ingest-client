@@ -6,12 +6,24 @@ from ingest.exporter.metadata import MetadataService
 from ingest.exporter.staging import StagingService
 
 
+class SubmissionEnvelopeParseException(Exception):
+    pass
+
+
 class SubmissionEnvelope:
 
-    def __init__(self, source=None):
-        self._source = deepcopy(source) if source else {}
-        self.uuid = self._process_uuid()
-        self.staging_area_uuid = self._process_staging_area_uuid()
+    def __init__(self, uuid, staging_area_uuid):
+        self.uuid = uuid
+        self.staging_area_uuid = staging_area_uuid
+
+    @staticmethod
+    def from_dict(source: dict):
+        try:
+            uuid = source['uuid']['uuid']
+            staging_area_uuid = source['stagingDetails']['stagingAreaUuid']['uuid']
+            return SubmissionEnvelope(uuid, staging_area_uuid)
+        except KeyError as e:
+            raise SubmissionEnvelopeParseException(e)
 
     def _process_uuid(self):
         uuid_obj = self._source.get('uuid')
@@ -39,7 +51,7 @@ class Exporter:
     def export_update(self, submission_source: dict, bundle_uuid: str, metadata_urls: list,
                       update_version: str):
         bundle = self.bundle_service.fetch(bundle_uuid)
-        submission = SubmissionEnvelope(source=submission_source)
+        submission = SubmissionEnvelope.from_dict(submission_source)
         staging_details = self._apply_metadata_updates(bundle, metadata_urls,
                                                        submission.staging_area_uuid)
         bundle.update_version(update_version)

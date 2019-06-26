@@ -3,7 +3,7 @@ from unittest import TestCase
 from mock import Mock, call
 
 from ingest.exporter.bundle import Bundle
-from ingest.exporter.exporter import Exporter, SubmissionEnvelope
+from ingest.exporter.exporter import Exporter, SubmissionEnvelope, SubmissionEnvelopeParseException
 from ingest.exporter.metadata import MetadataResource
 from ingest.exporter.staging import StagingInfo
 
@@ -19,40 +19,27 @@ class SubmissionEnvelopeTest(TestCase):
 
     def test_get_uuid(self):
         # given:
-        no_uuid = SubmissionEnvelope()
         submission_uuid = 'e2bd764f-9f75-40a6-85fd-5bbeba6964ce'
-        valid = SubmissionEnvelope(source={
-            'uuid': {
-                'uuid': submission_uuid
-            }
-        })
-        incomplete = SubmissionEnvelope(source={'uuid': {}})
+        staging_area_uuid = 'mock-uuid'
+        envelope = SubmissionEnvelope(submission_uuid, staging_area_uuid)
 
-        # expect:
-        self.assertIsNone(no_uuid.uuid)
-        self.assertEqual(submission_uuid, valid.uuid)
-        self.assertIsNone(incomplete.uuid)
+        # when
+        uuid = envelope.uuid
+
+        # then
+        self.assertEqual(submission_uuid, uuid)
 
     def test_get_staging_area_uuid(self):
         # given:
-        no_staging_area = SubmissionEnvelope()
-        staging_area_uuid = 'c3b4dee4-a6d0-41b0-b1b4-726d95995d4d'
-        valid = SubmissionEnvelope(source={
-            'stagingDetails': {
-                'stagingAreaUuid': {
-                    'uuid': staging_area_uuid
-                }
-            }
-        })
-        incomplete = SubmissionEnvelope(source={
-            'stagingDetails': {}
-        })
+        submission_uuid = 'mock-uuid'
+        staging_area_uuid = 'e2bd764f-9f75-40a6-85fd-5bbeba6964ce'
+        envelope = SubmissionEnvelope(submission_uuid, staging_area_uuid)
 
-        # expect:
-        self.assertIsNone(no_staging_area.staging_area_uuid)
-        self.assertEqual(staging_area_uuid, valid.staging_area_uuid)
-        self.assertIsNone(incomplete.staging_area_uuid)
+        # when
+        uuid = envelope.staging_area_uuid
 
+        # then
+        self.assertEqual(staging_area_uuid, uuid)
 
 class ExporterTest(TestCase):
 
