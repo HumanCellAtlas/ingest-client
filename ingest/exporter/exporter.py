@@ -25,19 +25,6 @@ class SubmissionEnvelope:
         except (KeyError, TypeError) as e:
             raise SubmissionEnvelopeParseException(e)
 
-    def _process_uuid(self):
-        uuid_obj = self._source.get('uuid')
-        return uuid_obj.get('uuid') if uuid_obj else None
-
-    def _process_staging_area_uuid(self):
-        staging_area_uuid = None
-        staging_details = self._source.get('stagingDetails')
-        if staging_details:
-            uuid_obj = staging_details.get('stagingAreaUuid')
-            if uuid_obj:
-                staging_area_uuid = uuid_obj.get('uuid')
-        return staging_area_uuid
-
 
 class Exporter:
 
