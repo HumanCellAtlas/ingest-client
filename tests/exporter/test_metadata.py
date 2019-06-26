@@ -10,7 +10,7 @@ class MetadataResourceTest(TestCase):
     def test_from_dict(self):
         # given:
         uuid_value = '3f3212da-d5d0-4e55-b31d-83243fa02e0d'
-        data = {'type': 'biomaterial',
+        data = {'type': 'Biomaterial',
                 'uuid': {'uuid': uuid_value},
                 'content': {'some': {'content': ['we', 'are', 'agnostic', 'of']}},
                 'dcpVersion': '6.9.1'}
@@ -60,7 +60,7 @@ class MetadataServiceTest(TestCase):
         # given:
         ingest_client = Mock(name='ingest_client')
         uuid = '301636f7-f97b-4379-bf77-c5dcd9f17bcb'
-        raw_metadata = {'type': 'biomaterial',
+        raw_metadata = {'type': 'Biomaterial',
                         'uuid': {'uuid': uuid},
                         'content': {'some': {'content': ['we', 'are', 'agnostic', 'of']}},
                         'dcpVersion': '8.2.7'}

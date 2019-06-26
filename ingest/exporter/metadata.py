@@ -16,7 +16,7 @@ class MetadataResource:
             uuid = data['uuid']['uuid']
             content = data['content']
             dcp_version = data['dcpVersion']
-            metadata_type = data['type']
+            metadata_type = data['type'].lower()
             return MetadataResource(metadata_type, content, uuid, dcp_version)
         except KeyError as e:
             raise MetadataParseException(e)
