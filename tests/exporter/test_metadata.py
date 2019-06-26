@@ -30,14 +30,12 @@ class MetadataResourceTest(TestCase):
 
     def test_from_dict_fail_fast_with_missing_info(self):
         # given:
-        data = {'entityType': 'cell_suspension'}
-
-        # when:
-        with self.assertRaises(MetadataParseException) as test:
+        data = {}
+        # then:
+        with self.assertRaises(MetadataParseException):
+            # when
             MetadataResource.from_dict(data)
 
-        # then:
-        self.assertIsNotNone(test.exception)
 
     def test_get_staging_file_name(self):
         # given:
