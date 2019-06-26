@@ -71,7 +71,7 @@ class Bundle:
             creator_uid = bundle_source['creator_uid']
             files = Bundle._prepare_file_map(bundle_source['files'])
             return Bundle(uuid, files, version, creator_uid)
-        except KeyError as e:
+        except (KeyError, TypeError) as e:
             raise BundleParseFromSourceException(e)
 
     @staticmethod
