@@ -51,7 +51,7 @@ _DSS_CONTENT_TYPE_TEMPLATE = 'application/json; dcp-type="metadata/{0}"'
 
 class Bundle:
 
-    def __init__(self, source={}):
+    def __init__(self, *, source: dict):
         self._source = deepcopy(source)
         self._bundle = self._source.get('bundle')  # because bundle is nested in the root ¯\_(ツ)_/¯
         self._prepare_file_map()
