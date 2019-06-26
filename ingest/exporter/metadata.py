@@ -9,8 +9,6 @@ class MetadataResource:
         self.uuid = uuid
         self.dcp_version = dcp_version
         self.metadata_type = metadata_type
-        if not metadata_type:
-            self._determine_metadata_type()
 
     def _determine_metadata_type(self):
         metadata_type = None
@@ -24,7 +22,8 @@ class MetadataResource:
             uuid = data['uuid']['uuid']
             content = data['content']
             dcp_version = data['dcpVersion']
-            return MetadataResource(uuid=uuid, metadata_json=content, dcp_version=dcp_version)
+            metadata_type = data['type']
+            return MetadataResource(metadata_type=metadata_type, uuid=uuid, metadata_json=content, dcp_version=dcp_version)
         except KeyError as e:
             raise MetadataParseException(e)
 

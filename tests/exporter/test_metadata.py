@@ -10,10 +10,9 @@ class MetadataResourceTest(TestCase):
     def test_from_dict(self):
         # given:
         uuid_value = '3f3212da-d5d0-4e55-b31d-83243fa02e0d'
-        data = {'entityType': 'biomaterial',
+        data = {'type': 'biomaterial',
                 'uuid': {'uuid': uuid_value},
-                'content': {'describedBy': 'https://hca.tld/types/donor_organism',
-                            'schema_type': 'biomaterial', 'description': 'test'},
+                'content': {'some': {'content': ['we', 'are', 'agnostic', 'of']}},
                 'dcpVersion': '6.9.1'}
 
         # when:
@@ -61,10 +60,9 @@ class MetadataServiceTest(TestCase):
         # given:
         ingest_client = Mock(name='ingest_client')
         uuid = '301636f7-f97b-4379-bf77-c5dcd9f17bcb'
-        raw_metadata = {'entityType': 'biomaterial',
+        raw_metadata = {'type': 'biomaterial',
                         'uuid': {'uuid': uuid},
-                        'content': {'describedBy': 'https://hca.tld/types/cell_suspension',
-                                    'schema_type': 'biomaterial', 'text': 'test'},
+                        'content': {'some': {'content': ['we', 'are', 'agnostic', 'of']}},
                         'dcpVersion': '8.2.7'}
         ingest_client.get_entity_by_callback_link = Mock(return_value=raw_metadata)
 
