@@ -19,9 +19,9 @@ _metadata_type_attr_map = {
 
 class BundleManifest:
 
-    def __init__(self, bundleUuid=None, envelopeUuid={}, bundleVersion=None):
+    def __init__(self, bundleUuid=None, envelopeUuid=None, bundleVersion=None):
         self.bundleUuid = bundleUuid
-        self.envelopeUuid = deepcopy(envelopeUuid)
+        self.envelopeUuid = envelopeUuid if envelopeUuid is not None else {}
         self.bundleVersion = bundleVersion
         self.dataFiles = []
         self.fileBiomaterialMap = {}
