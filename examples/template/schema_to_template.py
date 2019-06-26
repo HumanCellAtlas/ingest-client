@@ -63,17 +63,13 @@ except Exception as e:
 
     print(template.lookup(template.replaced_by("cell_suspension.total_estimated_cells"))["user_friendly"])
 
-    migration = template.replaced_by("cell_suspension.total_estimated_cells", "8.1.3")
-    print ("Migration: " + str(migration))
+    migration = template.replaced_by("cell_suspension.total_estimated_cells")
 
-    print(str(migration.keys()))
-
-    print ("New property: " + str(template.lookup(migration["replaced_by"])))
+    print ("New property: " + migration)
 
 
-    print (template.lookup(migration["replaced_by"])["user_friendly"])
 
-try:
-    print (template._lookup_migration("cell_suspension.total_estimated_cells", "10.1.3"))
-except UnknownKeyException as e:
-    print(e)
+# try:
+#     print (template._lookup_migration("cell_suspension.total_estimated_cells", "10.1.3"))
+# except UnknownKeyException as e:
+#     print(e)
