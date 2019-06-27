@@ -52,9 +52,12 @@ class IngestApi:
             self.token = token
             self.logger.debug(f'Token set!')
         else:
-            raise ValueError("No token or token manager found!")
+            # TODO do nothing for now and put a warning that token is not set,
+            # think how the ingest api consumers can explicitly provide headers or tokens
+            self.logger.warning("No token or token manager found!")
 
-        self.headers['Authorization'] = self.token
+        if self.token:
+            self.headers['Authorization'] = self.token
 
         return self.headers
 
