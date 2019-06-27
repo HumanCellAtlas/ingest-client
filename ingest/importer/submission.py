@@ -33,7 +33,7 @@ class IngestSubmitter(object):
         project = entity_map.get_project()
         submission_envelope = self.ingest_api.get_submission(submission_url)
         submission_entity = Entity('submission_envelope',
-                                   submission_url,
+                                   submission_envelope['uuid']['uuid'],
                                    None,
                                    is_reference=True,
                                    ingest_json=submission_envelope

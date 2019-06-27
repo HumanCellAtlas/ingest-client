@@ -119,9 +119,9 @@ class IngestApi:
             projects = json.loads(r.text)
         return projects
 
-    def getProjectById(self, id):
-        submissionUrl = self.url + '/projects/' + id
-        r = self.get(submissionUrl, headers=self.get_headers())
+    def get_project_by_id(self, id):
+        submission_url = self.url + '/projects/' + id
+        r = self.get(submission_url, headers=self.get_headers())
         if r.status_code == requests.codes.ok:
             project = json.loads(r.text)
             return project
@@ -160,7 +160,7 @@ class IngestApi:
     def get_submission(self, submission_url):
         r = self.get(submission_url, headers=self.get_headers())
         r.raise_for_status()
-        r.json()
+        return r.json()
 
     def get_submission_by_uuid(self, submission_uuid):
         search_link = self.get_link_from_resource_url(self.url + '/submissionEnvelopes/search', 'findByUuid')
@@ -326,8 +326,6 @@ class IngestApi:
     def create_submission_manifest(self, submission_url, data):
         return self.create_entity(submission_url, data, 'submissionManifest')
 
-
-
     def create_submission_error(self, submission_url, data):
         return self.create_entity(submission_url, data, 'submissionErrors')
 
@@ -377,7 +375,7 @@ class IngestApi:
         from_uri = from_entity["_links"][relationship]["href"]
         to_uri = self.get_link_from_resource(to_entity, 'self')
 
-        self.logger.debug('fromUri ' + from_uri + ' toUri:' + to_uri)
+        self.logger.info('fromUri ' + from_uri + ' toUri:' + to_uri)
 
         headers = {
             'Content-type': 'text/uri-list',

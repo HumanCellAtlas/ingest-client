@@ -5,7 +5,7 @@ from urllib3.util import retry
 
 def create_session_with_retry(retry_policy=None) -> Session:
     retry_policy = retry_policy or retry.Retry(
-        total=100,
+        total=50,
         # seems that this has a default value of 10,
         # setting this to a very high number so that it'll respect the status retry count
 
@@ -13,7 +13,7 @@ def create_session_with_retry(retry_policy=None) -> Session:
         # status is the no. of retries if response is in status_forcelist
 
         read=10,
-        status_forcelist=[500, 502, 503, 504, 409],
+        status_forcelist=[409],
         backoff_factor=0.6,
         method_whitelist=frozenset(
             ['HEAD', 'GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'TRACE'])
