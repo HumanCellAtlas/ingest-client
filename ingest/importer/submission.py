@@ -286,7 +286,8 @@ class Submission(object):
         'process': 'processes',
         'file': 'files',
         'protocol': 'protocols',
-        'project': 'projects'
+        'project': 'projects',
+        'submission_envelope': 'submissionEnvelopes'
     }
 
     def __init__(self, ingest_api, submission_url):

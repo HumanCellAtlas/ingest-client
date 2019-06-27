@@ -45,25 +45,19 @@ class IngestApi:
         r = self.session.put(url, json=data, headers=self.get_headers())
         return r
 
-    def set_token(self, token=None):
-        if self.token_manager:
-            self.token = f'Bearer {self.token_manager.get_token()}'
-        elif token:
-            self.token = token
-            self.logger.debug(f'Token set!')
-        else:
-            # TODO do nothing for now and put a warning that token is not set,
-            # think how the ingest api consumers can explicitly provide headers or tokens
-            self.logger.warning("No token or token manager found!")
-
-        if self.token:
-            self.headers['Authorization'] = self.token
+    def set_token(self, token):
+        self.token = token
+        self.headers['Authorization'] = self.token
+        self.logger.debug(f'Token set!')
 
         return self.headers
 
     def get_headers(self):
         # refresh token
-        self.set_token()
+        if self.token_manager:
+            self.set_token(f'Bearer {self.token_manager.get_token()}')
+            self.logger.debug(f'Token refreshed!')
+
         return self.headers
 
     def _get_ingest_links(self):
@@ -397,7 +391,6 @@ class IngestApi:
 
     def create_bundle_manifest(self, bundleManifest):
         url = self._ingest_links["bundleManifests"]["href"].rsplit("{")[0]
-        self.set_token()
         r = self.session.post(url, json=bundleManifest.__dict__, headers=self.get_headers())
         r.raise_for_status()
         return r.json()
