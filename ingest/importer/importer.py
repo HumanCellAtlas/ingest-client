@@ -101,6 +101,8 @@ class XlsImporter:
                     worksheet = wb.get_sheet_by_name(worksheet_title)
                     ingest_worksheet = IngestWorksheet(worksheet=worksheet)
                     column_header = f'{entity.concrete_type}.uuid'
+                    if column_header in ingest_worksheet.get_column_headers():
+                        continue
                     ingest_worksheet.insert_column_with_header(column_header, col_idx)
                     worksheets[worksheet_title] = ingest_worksheet
 

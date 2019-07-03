@@ -23,9 +23,9 @@ class IngestSubmitter(object):
 
         self._add_or_update_entities(entities, submission)
 
-        self._link_submission_to_project(entity_map, submission, submission_url)
-
-        self._link_entities(entities, entity_map, submission)
+        if not submission.is_update():
+            self._link_submission_to_project(entity_map, submission, submission_url)
+            self._link_entities(entities, entity_map, submission)
 
         return submission
 
@@ -297,6 +297,10 @@ class Submission(object):
         self.manifest = None
         self.logger = logging.getLogger(__name__)
 
+    def is_update(self):
+        submission = self.ingest_api.get_submission(self.submission_url)
+        return submission.get('isUpdate', False)
+
     def get_submission_url(self):
         return self.submission_url
 
@@ -368,7 +372,8 @@ class Submission(object):
             'expectedFiles': entity_map.count_entities_of_type('file'),
             'expectedProtocols': entity_map.count_entities_of_type('protocol'),
             'expectedProjects': entity_map.count_entities_of_type('project'),
-            'expectedLinks': entity_map.count_links()
+            'expectedLinks': entity_map.count_links(),
+            'actualLinks': 0
         }
 
         self.manifest = self.ingest_api.create_submission_manifest(self.submission_url, manifest_json)
