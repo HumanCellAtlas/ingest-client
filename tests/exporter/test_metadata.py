@@ -7,6 +7,22 @@ from ingest.exporter.metadata import MetadataResource, MetadataService, Metadata
 
 class MetadataResourceTest(TestCase):
 
+    def test_provenance_from_dict(self):
+        # given:
+        uuid_value = '3f3212da-d5d0-4e55-b31d-83243fa02e0d'
+        data = {'uuid': {'uuid': uuid_value},
+                'submissionDate': 'a submission date',
+                'updateDate': 'an update date'}
+
+        # when:
+        metadata_provenance = MetadataResource.provenance_from_dict(data)
+
+        # then:
+        self.assertIsNotNone(metadata_provenance)
+        self.assertEqual(uuid_value, metadata_provenance.uuid)
+        self.assertEqual('a submission date', metadata_provenance.submission_date)
+        self.assertEqual('an update date', metadata_provenance.update_date)
+
     def test_from_dict(self):
         # given:
         uuid_value = '3f3212da-d5d0-4e55-b31d-83243fa02e0d'
