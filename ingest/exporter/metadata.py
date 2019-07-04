@@ -3,8 +3,8 @@ class MetadataParseException(Exception):
     pass
 
 class MetadataProvenance:
-    def __init__(self, uuid: str, submission_date: str, update_date: str):
-        self.uuid = uuid
+    def __init__(self, document_id: str, submission_date: str, update_date: str):
+        self.document_id = document_id
         self.submission_date = submission_date
         self.update_date = update_date
 

@@ -19,7 +19,7 @@ class MetadataResourceTest(TestCase):
 
         # then:
         self.assertIsNotNone(metadata_provenance)
-        self.assertEqual(uuid_value, metadata_provenance.uuid)
+        self.assertEqual(uuid_value, metadata_provenance.document_id)
         self.assertEqual('a submission date', metadata_provenance.submission_date)
         self.assertEqual('an update date', metadata_provenance.update_date)
 
