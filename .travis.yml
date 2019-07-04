@@ -1,22 +1,26 @@
 language: python
 python:
-  - "3.6"
+- '3.6'
 install:
-  - pip install -r requirements.txt
-  - pip install -r requirements-dev.txt
-  - pip list
+- pip install -r requirements.txt
+- pip install -r requirements-dev.txt
+- pip list
 before_script:
-  - curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
-  - chmod +x ./cc-test-reporter
-  - ./cc-test-reporter before-build
+- curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64
+  > ./cc-test-reporter
+- chmod +x ./cc-test-reporter
+- "./cc-test-reporter before-build"
 script:
-  - nosetests --with-coverage --cover-erase --cover-package=ingest --cover-xml
+- nosetests --with-coverage --cover-erase --cover-package=ingest --cover-xml
 after_script:
-  - ./cc-test-reporter after-build --exit-code $TRAVIS_TEST_RESULT
+- "./cc-test-reporter after-build --exit-code $TRAVIS_TEST_RESULT"
 after_success:
-  - bash <(curl -s https://codecov.io/bash)
+- bash <(curl -s https://codecov.io/bash)
 notifications:
+  matrix:
   - slack: humancellatlas:VpHVbri4SQhHvnYQ5abP8t5f
+  slack:
+    secure: I9Gxg7ptpVtxg1hljP8xT8y8th/wAeNE8u7wfstJffzPP20JPdGIP1lnh/DUyj/PBanQmgC1UKmaU9eMm81SZx7Z9sY3ChPUu0eTvDWhWIViOFbhbIkBBAQR76XVMZzznNh9ZZaDSwO4syy9kmNnQyvChNcCeoxTEae1PZbhlwR1R7dN/CJm1pPi9zZ/1qeAe1VyeZgvIM6Ut4oiEu54HWW4eqrhFVIUyPofQCC73hEIma7kPo9zgnCKwFF1GZe8TawywwYrNdrmsCWDy0UOKdsllJXO5zCpDo8G0ADRhKCMHTwylSvzdSo9zdENwanGBi1VqpTIqcWCaCzk8L80c7ZXTZl0SZPY2uq3jgeJBZFozo8zdXWOcHB73DqByLmtMqjG88WoGdA+Fzuf7u+MwyHTph4c9Vk0tnHwue3Xg0IZbtYVdQA6Tj2JxlQNYgB9Fq29ibYXka3lx5Wz19RtNyiI8q7LKjLz0azw0nVsPpwMAstA5ejGyBIY61TvYX1/zwaAsXLytYoxXhf9j6tSaO34yMcEeVsE5Vm+C7BZ9fg2YzyBOtvsChxwEtvGr/egAG0Md7KCSYzDfEgfUpo2DCqQD1k+ltWzjPQG008Hq/lPq83i/fk0qIMjCEOglHOvTAHL5Nh2Uz0kK7BMXw9f9dULamaCEFXSjcIZXg1Pbzg=
 env:
   global:
-    - CC_TEST_REPORTER_ID=af7b8795f745aa23f884031d04c2f8f15fc2048270e28e9d3f38ccf0b43538e3
+  - CC_TEST_REPORTER_ID=af7b8795f745aa23f884031d04c2f8f15fc2048270e28e9d3f38ccf0b43538e3
