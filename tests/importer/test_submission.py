@@ -257,6 +257,7 @@ class IngestSubmitterTest(TestCase):
         submission.update_entity = MagicMock()
         submission.link_entity = MagicMock()
         submission.manifest = {}
+        submission.is_update = lambda: False
         submission_constructor.return_value = submission
         return submission
 
