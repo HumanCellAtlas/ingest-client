@@ -23,6 +23,18 @@ class MetadataResourceTest(TestCase):
         self.assertEqual('a submission date', metadata_provenance.submission_date)
         self.assertEqual('an update date', metadata_provenance.update_date)
 
+    def test_provenance_from_dict_fail_fast(self):
+        # given:
+        uuid_value = '3f3212da-d5d0-4e55-b31d-83243fa02e0d'
+        data = {'uuid': uuid_value,  # unexpected structure structure
+                'submissionDate': 'a submission date',
+                'updateDate': 'an update date'}
+
+        # then:
+        with self.assertRaises(MetadataParseException):
+            # when
+            MetadataResource.provenance_from_dict(data)
+
     def test_from_dict(self):
         # given:
         uuid_value = '3f3212da-d5d0-4e55-b31d-83243fa02e0d'
