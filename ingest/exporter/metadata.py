@@ -29,7 +29,7 @@ class MetadataResource:
             metadata_type = data['type'].lower()
             provenance = MetadataResource.provenance_from_dict(data)
             return MetadataResource(metadata_type, metadata_json, uuid, dcp_version, provenance)
-        except KeyError as e:
+        except (KeyError, TypeError) as e:
             raise MetadataParseException(e)
 
     @staticmethod
@@ -40,7 +40,7 @@ class MetadataResource:
             update_date = data['updateDate']
 
             return MetadataProvenance(uuid, submission_date, update_date)
-        except KeyError as e:
+        except (KeyError, TypeError) as e:
             raise MetadataParseException(e)
 
     def get_staging_file_name(self):
