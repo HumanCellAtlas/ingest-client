@@ -42,5 +42,5 @@ class StagingServiceTest(TestCase):
         # and:
         staging_client.stageFile.assert_called_once_with(staging_area_uuid,
                                                          metadata_resource.get_staging_file_name(),
-                                                         metadata_resource.metadata_json,
+                                                         metadata_resource.to_bundle_metadata(),
                                                          'metadata/biomaterial')

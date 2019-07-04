@@ -19,7 +19,7 @@ class StagingService:
         formatted_type = f'metadata/{metadata_resource.metadata_type}'
         file_description = self.staging_client.stageFile(staging_area_uuid,
                                                          metadata_resource.get_staging_file_name(),
-                                                         metadata_resource.metadata_json,
+                                                         metadata_resource.to_bundle_metadata(),
                                                          formatted_type)
 
         return StagingInfo(metadata_uuid=metadata_resource.uuid,
