@@ -50,7 +50,7 @@ class MetadataResource:
         bundle_metadata = dict()
 
         content = deepcopy(self.metadata_json)
-        provenance = self.provenance.to_dict()
+        provenance = {'provenance': self.provenance.to_dict()}
 
         bundle_metadata.update(content)
         bundle_metadata.update(provenance)
