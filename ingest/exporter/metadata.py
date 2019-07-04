@@ -1,28 +1,60 @@
+from copy import deepcopy
 class MetadataParseException(Exception):
     pass
 
+class MetadataProvenance:
+    def __init__(self, uuid: str, submission_date: str, update_date: str):
+        self.uuid = uuid
+        self.submission_date = submission_date
+        self.update_date = update_date
+
+    def to_dict(self):
+        return deepcopy(self.__dict__)
 
 class MetadataResource:
 
-    def __init__(self, metadata_type, metadata_json, uuid, dcp_version):
+    def __init__(self, metadata_type, metadata_json, uuid, dcp_version, provenance: MetadataProvenance):
         self.metadata_json = metadata_json
         self.uuid = uuid
         self.dcp_version = dcp_version
         self.metadata_type = metadata_type
+        self.provenance = provenance
 
     @staticmethod
     def from_dict(data: dict):
         try:
+            metadata_json = data['content']
             uuid = data['uuid']['uuid']
-            content = data['content']
             dcp_version = data['dcpVersion']
             metadata_type = data['type'].lower()
-            return MetadataResource(metadata_type, content, uuid, dcp_version)
+            provenance = MetadataResource.provenance_from_dict(data)
+            return MetadataResource(metadata_type, metadata_json, uuid, dcp_version, provenance)
+        except KeyError as e:
+            raise MetadataParseException(e)
+
+    @staticmethod
+    def provenance_from_dict(data: dict):
+        try:
+            uuid = data['uuid']['uuid']
+            submission_date = data['submissionDate']
+            update_date = data['updateDate']
+
+            return MetadataProvenance(uuid, submission_date, update_date)
         except KeyError as e:
             raise MetadataParseException(e)
 
     def get_staging_file_name(self):
         return f'{self.metadata_type}_{self.uuid}.json'
+
+    def to_bundle_metadata(self) -> dict:
+        bundle_metadata = dict()
+
+        content = deepcopy(self.metadata_json)
+        provenance = self.provenance.to_dict()
+
+        bundle_metadata.update(content)
+        bundle_metadata.update(provenance)
+        return bundle_metadata
 
 
 class MetadataService:

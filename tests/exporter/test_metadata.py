@@ -2,7 +2,7 @@ from unittest import TestCase
 
 from mock import Mock
 
-from ingest.exporter.metadata import MetadataResource, MetadataService, MetadataParseException
+from ingest.exporter.metadata import MetadataResource, MetadataService, MetadataParseException, MetadataProvenance
 
 
 class MetadataResourceTest(TestCase):
@@ -13,7 +13,9 @@ class MetadataResourceTest(TestCase):
         data = {'type': 'Biomaterial',
                 'uuid': {'uuid': uuid_value},
                 'content': {'some': {'content': ['we', 'are', 'agnostic', 'of']}},
-                'dcpVersion': '6.9.1'}
+                'dcpVersion': '6.9.1',
+                'submissionDate': 'a date',
+                'updateDate': 'another date'}
 
         # when:
         metadata = MetadataResource.from_dict(data)
@@ -41,11 +43,17 @@ class MetadataResourceTest(TestCase):
         metadata_resource_1 = MetadataResource(metadata_type='specimen',
                                                uuid='9b159cae-a1fe-4cce-94bc-146e4aa20553',
                                                metadata_json={'description': 'test'},
-                                               dcp_version='5.1.0')
+                                               dcp_version='5.1.0',
+                                               provenance=MetadataProvenance('9b159cae-a1fe-4cce-94bc-146e4aa20553',
+                                                                             'some date',
+                                                                             'some other date'))
         metadata_resource_2 = MetadataResource(metadata_type='donor_organism',
                                                uuid='38e0ee7c-90dc-438a-a0ed-071f9231f590',
                                                metadata_json={'text': 'sample'},
-                                               dcp_version='1.0.7')
+                                               dcp_version='1.0.7',
+                                               provenance=MetadataProvenance('38e0ee7c-90dc-438a-a0ed-071f9231f590',
+                                                                             'some date',
+                                                                             'some other date'))
 
         # expect:
         self.assertEqual('specimen_9b159cae-a1fe-4cce-94bc-146e4aa20553.json',
@@ -63,7 +71,10 @@ class MetadataServiceTest(TestCase):
         raw_metadata = {'type': 'Biomaterial',
                         'uuid': {'uuid': uuid},
                         'content': {'some': {'content': ['we', 'are', 'agnostic', 'of']}},
-                        'dcpVersion': '8.2.7'}
+                        'dcpVersion': '8.2.7',
+                        'submissionDate': 'a submission date',
+                        'updateDate': 'an update date'
+                        }
         ingest_client.get_entity_by_callback_link = Mock(return_value=raw_metadata)
 
         # and:
@@ -78,3 +89,5 @@ class MetadataServiceTest(TestCase):
         self.assertEqual(uuid, metadata_resource.uuid)
         self.assertEqual(raw_metadata['content'], metadata_resource.metadata_json)
         self.assertEqual(raw_metadata['dcpVersion'], metadata_resource.dcp_version)
+        self.assertEqual(raw_metadata['submissionDate'], metadata_resource.provenance.submission_date)
+        self.assertEqual(raw_metadata['updateDate'], metadata_resource.provenance.update_date)

@@ -4,7 +4,7 @@ from mock import Mock, call
 
 from ingest.exporter.bundle import Bundle
 from ingest.exporter.exporter import Exporter, SubmissionEnvelope, SubmissionEnvelopeParseException
-from ingest.exporter.metadata import MetadataResource
+from ingest.exporter.metadata import MetadataResource, MetadataProvenance
 from ingest.exporter.staging import StagingInfo
 
 
@@ -122,7 +122,8 @@ class ExporterTest(TestCase):
     @staticmethod
     def _set_up_metadata_service(metadata_service, metadata_uuids):
         metadata_version = '2019-06-12T16:12:20.087Z'
-        metadata_resources = [MetadataResource("biomaterial", {}, uuid, metadata_version) for uuid in metadata_uuids]
+        metadata_resources = [MetadataResource("biomaterial", {}, uuid, metadata_version, MetadataProvenance("", "", ""))
+                              for uuid in metadata_uuids]
         metadata_service.fetch_resource = Mock(side_effect=metadata_resources)
         return metadata_resources
 

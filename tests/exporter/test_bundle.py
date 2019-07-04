@@ -4,7 +4,7 @@ from uuid import uuid4
 from mock import Mock, call
 
 from ingest.exporter.bundle import Bundle, BundleService, BundleManifest
-from ingest.exporter.metadata import MetadataResource
+from ingest.exporter.metadata import MetadataResource, MetadataProvenance
 from ingest.exporter.staging import StagingInfo
 from tests.exporter.test_exporter import _create_test_bundle_file
 
@@ -197,7 +197,8 @@ class BundleTest(TestCase):
         metadata_resource = MetadataResource(metadata_type='cell_suspension_x',
                                              uuid=uuid,
                                              metadata_json={'text': 'description'},
-                                             dcp_version='2019-06-12T14:14:14.077Z')
+                                             dcp_version='2019-06-12T14:14:14.077Z',
+                                             provenance=MetadataProvenance("", "", ""))
 
         # when:
         bundle.update_file(metadata_resource)

@@ -3,7 +3,7 @@ from unittest import TestCase
 from mock import Mock
 
 from ingest.api.stagingapi import FileDescription
-from ingest.exporter.metadata import MetadataResource
+from ingest.exporter.metadata import MetadataResource, MetadataProvenance
 from ingest.exporter.staging import StagingInfo, StagingService
 
 
@@ -14,7 +14,10 @@ class StagingServiceTest(TestCase):
         metadata_resource = MetadataResource(metadata_type='biomaterial',
                                              uuid='831d4b6e-e8a2-42ce-b7c0-8d6ffcc15370',
                                              metadata_json={'description': 'test'},
-                                             dcp_version='4.2.1')
+                                             dcp_version='4.2.1',
+                                             provenance=MetadataProvenance('831d4b6e-e8a2-42ce-b7c0-8d6ffcc15370',
+                                                                           'a submission date',
+                                                                           'an update date'))
 
         # and:
         staging_client = Mock(name='staging_client')
