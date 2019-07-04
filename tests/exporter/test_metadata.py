@@ -65,6 +65,25 @@ class MetadataResourceTest(TestCase):
             # when
             MetadataResource.from_dict(data)
 
+    def test_to_bundle_metadata(self):
+        # given:
+        uuid_value = '3f3212da-d5d0-4e55-b31d-83243fa02e0d'
+        data = {'type': 'Biomaterial',
+                'uuid': {'uuid': uuid_value},
+                'content': {'some': {'content': ['we', 'are', 'agnostic', 'of']}},
+                'dcpVersion': '6.9.1',
+                'submissionDate': 'a date',
+                'updateDate': 'another date'}
+        metadata = MetadataResource.from_dict(data)
+
+        # when
+        bundle_metadata = metadata.to_bundle_metadata()
+
+        # then:
+        self.assertTrue('provenance' in bundle_metadata)
+        self.assertTrue(data['content'] <= bundle_metadata)  # <= operator checks if a dict is subset of another dict
+        self.assertTrue(metadata.provenance.to_dict() <= bundle_metadata)
+
 
     def test_get_staging_file_name(self):
         # given:
