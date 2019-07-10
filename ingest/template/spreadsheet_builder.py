@@ -69,6 +69,7 @@ class SpreadsheetBuilder:
         try:
             uf = str(template.lookup(key)) if template.lookup(key) else col_name
 
+            # **TO DO:** If customisable user friendly names are ever implemented in the metadata schemas, remove the customisation code bel
             wrapper = ".".join(col_name.split(".")[:-1])
             if template.lookup(wrapper)['schema']['module'] \
                     and (template.lookup(wrapper)['schema']['module'] == 'purchased_reagents'
