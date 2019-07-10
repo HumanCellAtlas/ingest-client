@@ -81,7 +81,7 @@ class SpreadsheetBuilder:
             if '.ontology' in col_name:
                 uf = uf + " ontology ID"
 
-            if "Biomaterial" in uf:
+            if "Biomaterial " in uf:
                 schema_name = col_name.split(".")[0]
 
                 for schema in template.get_tabs_config().lookup('tabs'):
@@ -92,7 +92,7 @@ class SpreadsheetBuilder:
                 if primary_schema != schema_name:
                     uf = "Input " + uf
 
-            if "Protocol" in uf:
+            if "Protocol " in uf:
                 schema_name = col_name.split(".")[0]
 
                 for schema in template.get_tabs_config().lookup('tabs'):
