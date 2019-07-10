@@ -52,7 +52,7 @@ class SpreadsheetBuilder:
             print("No property " + property + " for " + col_name)
             return ""
 
-    def get_user_friendly(self, template, col_name):
+    def get_user_friendly(self, template, col_name, primary_schema):
 
         if '.text' in col_name:
             parent = col_name.replace('.text', '')
@@ -68,10 +68,36 @@ class SpreadsheetBuilder:
             key = col_name + ".user_friendly"
         try:
             uf = str(template.lookup(key)) if template.lookup(key) else col_name
+
+            wrapper = ".".join(col_name.split(".")[:-1])
+            if template.lookup(wrapper)['schema']['module'] \
+                    and (template.lookup(wrapper)['schema']['module'] == 'purchased_reagents'
+                         or template.lookup(wrapper)['schema']['module'] == 'barcode') \
+                    and template.lookup(wrapper)['multivalue'] == False:
+                uf = template.lookup(wrapper)['user_friendly'] + " - " + uf
             if '.ontology_label' in col_name:
                 uf = uf + " ontology label"
             if '.ontology' in col_name:
                 uf = uf + " ontology ID"
+
+            if "Biomaterial" in uf:
+                schema_name = col_name.split(".")[0]
+
+                for schema in template.get_tabs_config().lookup('tabs'):
+                    if schema_name == list(schema.keys())[0]:
+                        schema_uf = schema[schema_name]['display_name']
+                uf = uf.replace("Biomaterial", schema_uf)
+
+                if primary_schema != schema_name:
+                    uf = "Input " + uf
+
+            if "Protocol" in uf:
+                schema_name = col_name.split(".")[0]
+
+                for schema in template.get_tabs_config().lookup('tabs'):
+                    if schema_name == list(schema.keys())[0]:
+                        schema_uf = schema[schema_name]['display_name']
+                uf = uf.replace("Protocol", schema_uf)
 
             return uf
         except Exception:
@@ -101,10 +127,10 @@ class SpreadsheetBuilder:
                 for cols in detail["columns"]:
 
                     if cols.split(".")[-1] == "text":
-                        uf = self.get_user_friendly(template, cols.replace('.text', '')).upper()
+                        uf = self.get_user_friendly(template, cols.replace('.text', ''), tab_name).upper()
                     else:
                         if cols + ".text" not in detail["columns"]:
-                            uf = self.get_user_friendly(template, cols).upper()
+                            uf = self.get_user_friendly(template, cols, tab_name).upper()
                     if cols.split(".")[-1] == "text":
                         desc = self._get_value_for_column(template, cols.replace('.text', ''), "description")
                         if desc == "":
