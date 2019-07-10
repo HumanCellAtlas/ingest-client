@@ -69,7 +69,8 @@ class SpreadsheetBuilder:
         try:
             uf = str(template.lookup(key)) if template.lookup(key) else col_name
 
-            # **TO DO:** If customisable user friendly names are ever implemented in the metadata schemas, remove the customisation code bel
+            # **TO DO:** If customisable user friendly names are ever implemented in the metadata schemas, remove the customisation code below
+            # For any purchased_reagents or barcode module imports that aren't arrays, prepend each user friendly name with the name of the wrapper property
             wrapper = ".".join(col_name.split(".")[:-1])
             if template.lookup(wrapper)['schema']['module'] \
                     and (template.lookup(wrapper)['schema']['module'] == 'purchased_reagents'
@@ -81,6 +82,9 @@ class SpreadsheetBuilder:
             if '.ontology' in col_name:
                 uf = uf + " ontology ID"
 
+            # For core fields such as Biomaterial ID or Protocol name, update the user-friendly name to the more specific type, eg
+            # Donor organism ID or Library preparation protocol name
+            # For linking biomaterial fields, also prepend the field with "Input"
             if "Biomaterial " in uf:
                 schema_name = col_name.split(".")[0]
 
