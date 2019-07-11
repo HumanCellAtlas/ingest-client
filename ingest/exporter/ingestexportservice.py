@@ -10,6 +10,7 @@ import requests
 import ingest.exporter.bundle
 
 from requests.exceptions import HTTPError
+from copy import deepcopy
 
 from ingest.api.dssapi import DssApi, BundleAlreadyExist
 from ingest.api.ingestapi import IngestApi
@@ -62,7 +63,7 @@ class IngestExporter:
         metadata_by_type = self.get_metadata_by_type(process_info)
         files_by_type = self.prepare_metadata_files(metadata_by_type, process_info, is_indexed)
 
-        links = self.bundle_links(process_info.links)
+        links = self.bundle_links(process_info.links.get_links())
         links_file_uuid = str(uuid.uuid4())
         files_by_type['links'] = list()
         files_by_type['links'].append({
@@ -246,7 +247,7 @@ class IngestExporter:
 
         if input_biomaterials:
             if derived_files:
-                process_info.links.append({
+                process_info.links.add_link({
                     'process': process_uuid,
                     'inputs': [input_biomaterial['uuid']['uuid'] for input_biomaterial in input_biomaterials],
                     'input_type': 'biomaterial',
@@ -261,7 +262,7 @@ class IngestExporter:
                 })
 
             if derived_biomaterials:
-                process_info.links.append({
+                process_info.links.add_link({
                     'process': process_uuid,
                     'inputs': [input_biomaterial['uuid']['uuid'] for input_biomaterial in input_biomaterials],
                     'input_type': 'biomaterial',
@@ -276,7 +277,7 @@ class IngestExporter:
                 })
 
         if input_files and derived_files:
-            process_info.links.append({
+            process_info.links.add_link({
                 'process': process_uuid,
                 'inputs': [input_file['uuid']['uuid'] for input_file in input_files],
                 'input_type': 'file',
@@ -603,10 +604,26 @@ class ProcessInfo:
         self.protocols = {}
         self.supplementary_files = {}
 
-        self.links = []
+        self.links = LinkSet()
 
         self.input_bundle = None
 
+
+class LinkSet:
+    def __init__(self):
+        self.link_uuids = set()  # the uuid of a link is just the uuid of the process denoting the link
+        self.links = []
+
+    def add_link(self, link: dict):
+        link_uuid = link["process"]
+        if link_uuid in self.link_uuids:
+            pass
+        else:
+            self.link_uuids.add(link_uuid)
+            self.links.append(link)
+
+    def get_links(self):
+        return [deepcopy(link) for link in self.links]
 
 # Module Exceptions
 
