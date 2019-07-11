@@ -3,13 +3,14 @@ import json
 import os
 import unittest
 from unittest import TestCase
+from copy import deepcopy
 
 import requests
 from mock import MagicMock, Mock, patch
 
 import ingest.api.stagingapi as stagingapi
 import ingest.exporter.ingestexportservice as ingestexportservice
-from ingest.exporter.ingestexportservice import IngestExporter
+from ingest.exporter.ingestexportservice import IngestExporter, LinkSet
 
 BASE_PATH = os.path.dirname(__file__)
 
@@ -427,6 +428,30 @@ class TestExporter(TestCase):
             json_from_expected_bundle_file('analysis/expected/Mouse Melanoma_project_bundle.json')['hca_ingest'][
                 'document_id']
         )
+
+    def test_add_links_no_duplicates(self):
+        # given
+        mock_link = {
+            "process": "4674424e-3ab1-491c-8295-a68c7bb04b61",
+            "inputs": ["aaa4424e-3ab1-491c-8295-a68c7bb04b61", "bbb4424e-3ab1-491c-8295-a68c7bb04b61"],
+            "input_type": "file",
+            "outputs": ["ccc4424e-3ab1-491c-8295-a68c7bb04b61", "ddd4424e-3ab1-491c-8295-a68c7bb04b61"],
+            "protocols": []
+        }
+
+        another_mock_link = copy.deepcopy(mock_link)
+        another_mock_link["process"] = "5554424e-3ab1-491c-8295-a68c7bb04b61"
+
+        # when
+        links = LinkSet()
+        links.add_link(mock_link)
+        links.add_link(another_mock_link)
+        links.add_link(mock_link)
+
+        # then
+        self.assertTrue(len(links.get_links()) == 2)
+        self.assertTrue(links.get_links()[0] == mock_link)
+        self.assertTrue(links.get_links()[1] == another_mock_link)
 
     def _create_entity_template(self):
         return {
