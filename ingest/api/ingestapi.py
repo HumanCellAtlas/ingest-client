@@ -297,7 +297,10 @@ class IngestApi:
             params["updatingUuid"] = uuid
 
         time.sleep(0.001)
-        r = self.session.post(submission_files_url, json=file_to_create_object,
+
+        # Do not use session retries here as it will throw requests.exceptions.RetryError for http 409 error
+        # We want to retry that error when creating files by doing a subsequent PATCH requests to update the metadata
+        r = requests.post(submission_files_url, json=file_to_create_object,
                               headers=self.get_headers(), params=params)
 
         # TODO Investigate why core is returning internal server error

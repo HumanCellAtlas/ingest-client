@@ -17,11 +17,12 @@ class IngestApiTest(TestCase):
 
     @patch('ingest.api.ingestapi.IngestApi.get_link_in_submission')
     @patch('ingest.api.ingestapi.create_session_with_retry')
-    def test_create_file(self, mock_create_session, mock_get_link):
+    @patch('ingest.api.ingestapi.requests.post')
+    def test_create_file(self, mock_requests_post, mock_create_session, mock_get_link):
         ingest_api = IngestApi(token_manager=self.token_manager)
         mock_get_link.return_value = 'url/sub/id/files'
-        mock_create_session.return_value.post.return_value.json.return_value = {'uuid': 'file-uuid'}
-        mock_create_session.return_value.post.return_value.status_code = requests.codes.ok
+        mock_requests_post.return_value.json.return_value = {'uuid': 'file-uuid'}
+        mock_requests_post.return_value.status_code = requests.codes.ok
         api_url = mock_ingest_api_url
         submission_id = mock_submission_envelope_id
         submission_url = api_url + "/" + submission_id
@@ -29,8 +30,7 @@ class IngestApiTest(TestCase):
 
         file = ingest_api.create_file(submission_url, filename, {})
         self.assertEqual(file, {'uuid': 'file-uuid'})
-        mock_create_session.return_value.post \
-            .assert_called_with('url/sub/id/files/mock-filename',
+        mock_requests_post.assert_called_with('url/sub/id/files/mock-filename',
                                 headers={'Content-type': 'application/json', 'Authorization': 'Bearer token'},
                                 json={'fileName': 'mock-filename', 'content': {}},
                                 params={})
@@ -38,7 +38,8 @@ class IngestApiTest(TestCase):
     @patch('ingest.api.ingestapi.IngestApi.get_file_by_submission_url_and_filename')
     @patch('ingest.api.ingestapi.IngestApi.get_link_in_submission')
     @patch('ingest.api.ingestapi.create_session_with_retry')
-    def test_create_file_conflict(self, mock_create_session, mock_get_link, mock_get_file):
+    @patch('ingest.api.ingestapi.requests.post')
+    def test_create_file_conflict(self, mock_requests_post, mock_create_session, mock_get_link, mock_get_file):
         ingest_api = IngestApi(token_manager=self.token_manager)
         mock_get_file.return_value = {
             '_embedded': {
@@ -53,7 +54,7 @@ class IngestApiTest(TestCase):
 
         mock_get_link.return_value = 'url/sub/id/files'
         mock_create_session.return_value.patch.return_value.json.return_value = 'response'
-        mock_create_session.return_value.post.return_value.status_code = requests.codes.conflict
+        mock_requests_post.return_value.status_code = requests.codes.conflict
         api_url = mock_ingest_api_url
         submission_id = mock_submission_envelope_id
         submission_url = api_url + "/" + submission_id
@@ -61,7 +62,7 @@ class IngestApiTest(TestCase):
 
         file = ingest_api.create_file(submission_url, filename, {'attr2': 'value2'})
         self.assertEqual(file, 'response')
-        mock_create_session.return_value.post.assert_called_once()
+        mock_requests_post.assert_called_once()
         mock_create_session.return_value.patch \
             .assert_called_with('existing-file-url',
                                 headers={'Content-type': 'application/json', 'Authorization': 'Bearer token'},
@@ -70,7 +71,8 @@ class IngestApiTest(TestCase):
     @patch('ingest.api.ingestapi.IngestApi.get_file_by_submission_url_and_filename')
     @patch('ingest.api.ingestapi.IngestApi.get_link_in_submission')
     @patch('ingest.api.ingestapi.create_session_with_retry')
-    def test_create_file_internal_server_error(self, mock_create_session, mock_get_link,
+    @patch('ingest.api.ingestapi.requests.post')
+    def test_create_file_internal_server_error(self, mock_requests_post, mock_create_session, mock_get_link,
                                                mock_get_file):
         ingest_api = IngestApi(token_manager=self.token_manager)
         mock_get_file.return_value = {
@@ -86,7 +88,7 @@ class IngestApiTest(TestCase):
 
         mock_get_link.return_value = 'url/sub/id/files'
         mock_create_session.return_value.patch.return_value.json.return_value = 'response'
-        mock_create_session.return_value.post.return_value.status_code = requests.codes.internal_server_error
+        mock_requests_post.return_value.status_code = requests.codes.internal_server_error
         api_url = mock_ingest_api_url
         submission_id = mock_submission_envelope_id
         submission_url = api_url + "/" + submission_id
@@ -95,7 +97,7 @@ class IngestApiTest(TestCase):
         file = ingest_api.create_file(submission_url, filename,
                                       {'attr2': 'value2'})
         self.assertEqual(file, 'response')
-        mock_create_session.return_value.post.assert_called_once()
+        mock_requests_post.assert_called_once()
         mock_create_session.return_value.patch \
             .assert_called_with('existing-file-url',
                                 headers={'Content-type': 'application/json', 'Authorization': 'Bearer token'},
