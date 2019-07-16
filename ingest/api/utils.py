@@ -1,9 +1,10 @@
 from datetime import datetime
 
 INGEST_DATE_FORMAT = "%Y-%m-%dT%H:%M:%S.%fZ"
+INGEST_DATE_FORMAT_SHORT = "%Y-%m-%dT%H:%M:%SZ"
 DSS_VERSION_FORMAT = "%Y-%m-%dT%H%M%S.%fZ"
 
-_expected_formats = [INGEST_DATE_FORMAT, DSS_VERSION_FORMAT]
+_expected_formats = [INGEST_DATE_FORMAT, DSS_VERSION_FORMAT, INGEST_DATE_FORMAT_SHORT]
 
 
 def to_dss_version(date_str: str):

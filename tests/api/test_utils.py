@@ -12,11 +12,13 @@ class UtilsTest(TestCase):
 
         # and:
         iso_date = '2019-06-12T09:49:25.000Z'
+        iso_date_short = '2019-06-12T09:49:25Z'
         dss_version_date = '2019-06-12T094925.000000Z'
         weird_date = '2019:06:12Y09-49-25.000X'
 
         # expect:
         self.assertEqual(expected_date, utils.parse_date_string(iso_date))
+        self.assertEqual(expected_date, utils.parse_date_string(iso_date_short))
         self.assertEqual(expected_date, utils.parse_date_string(dss_version_date))
 
         # and:
