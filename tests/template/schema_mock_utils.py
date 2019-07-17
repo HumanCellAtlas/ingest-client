@@ -6,11 +6,12 @@ __author__ = "jupp"
 __license__ = "Apache 2.0"
 __date__ = "25/05/2018"
 
+import json
+import os
 from unittest.mock import patch, MagicMock
 
 from ingest.template.schema_template import SchemaTemplate
 
-import json, sys, os
 
 @patch('urllib.request.urlopen')
 def get_template_for_json(mock_urlopen, data="{}"):

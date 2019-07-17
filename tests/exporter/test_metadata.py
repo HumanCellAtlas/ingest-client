@@ -82,8 +82,8 @@ class MetadataResourceTest(TestCase):
         # then:
         self.assertTrue('provenance' in bundle_metadata)
         self.assertTrue(bundle_metadata['provenance'] == metadata.provenance.to_dict())
-        self.assertTrue(set(data['content'].keys()) <= set(bundle_metadata.keys()))  # <= operator checks if a dict is subset of another dict
-
+        self.assertTrue(set(data['content'].keys()) <= set(
+            bundle_metadata.keys()))  # <= operator checks if a dict is subset of another dict
 
     def test_get_staging_file_name(self):
         # given:

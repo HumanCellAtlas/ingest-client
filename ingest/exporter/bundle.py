@@ -1,5 +1,4 @@
 import re
-from copy import deepcopy
 
 from ingest.api import utils
 from ingest.api.dssapi import DssApi

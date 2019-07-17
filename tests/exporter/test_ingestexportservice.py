@@ -3,7 +3,6 @@ import json
 import os
 import unittest
 from unittest import TestCase
-from copy import deepcopy
 
 import requests
 from mock import MagicMock, Mock, patch

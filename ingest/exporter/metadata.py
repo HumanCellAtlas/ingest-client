@@ -1,6 +1,9 @@
 from copy import deepcopy
+
+
 class MetadataParseException(Exception):
     pass
+
 
 class MetadataProvenance:
     def __init__(self, document_id: str, submission_date: str, update_date: str):
@@ -10,6 +13,7 @@ class MetadataProvenance:
 
     def to_dict(self):
         return deepcopy(self.__dict__)
+
 
 class MetadataResource:
 

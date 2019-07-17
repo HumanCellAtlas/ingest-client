@@ -75,6 +75,7 @@ class SubmissionEnvelopeTest(TestCase):
             # when
             SubmissionEnvelope.from_dict(unprocessable_source)
 
+
 class ExporterTest(TestCase):
 
     def test_export_update(self):
@@ -115,15 +116,16 @@ class ExporterTest(TestCase):
         bundle_service.update.assert_called_once_with(bundle, staging_details)
 
         # and: assert correct bundle manifest generated
-        main_arg, *_ = ingest_api.create_bundle_manifest.call_args #unpack list of args
+        main_arg, *_ = ingest_api.create_bundle_manifest.call_args  # unpack list of args
         bundle_manifest = main_arg[0]
         self.assertEqual(len(metadata_uuids), len(bundle_manifest.fileBiomaterialMap))
 
     @staticmethod
     def _set_up_metadata_service(metadata_service, metadata_uuids):
         metadata_version = '2019-06-12T16:12:20.087Z'
-        metadata_resources = [MetadataResource("biomaterial", {}, uuid, metadata_version, MetadataProvenance("", "", ""))
-                              for uuid in metadata_uuids]
+        metadata_resources = [
+            MetadataResource("biomaterial", {}, uuid, metadata_version, MetadataProvenance("", "", ""))
+            for uuid in metadata_uuids]
         metadata_service.fetch_resource = Mock(side_effect=metadata_resources)
         return metadata_resources
 
@@ -140,7 +142,7 @@ class ExporterTest(TestCase):
         bundle = Bundle.bundle_from_source({
             'bundle': {
                 'uuid': bundle_uuid,
-                'version':'2019-06-12T16:12:20.087Z',
+                'version': '2019-06-12T16:12:20.087Z',
                 'creator_uid': 5050,
                 'files': bundle_files
             }
