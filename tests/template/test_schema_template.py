@@ -12,7 +12,8 @@ import unittest
 from unittest import TestCase
 
 import tests.template.schema_mock_utils as schema_mock
-from ingest.template.schema_template import RootSchemaException, SchemaParser, UnknownKeyException
+from ingest.template.schema_template import SchemaParser
+from ingest.template.exceptions import RootSchemaException, UnknownKeySchemaException
 
 
 class TestSchemaTemplate(TestCase):
@@ -39,14 +40,14 @@ class TestSchemaTemplate(TestCase):
     def test_unknown_key_exception(self):
         data = '{"id" : "' + self.dummyProjectUri + '", "properties": {"foo": "bar"} }'
         template = schema_mock.get_template_for_json(data=data)
-        with self.assertRaises(UnknownKeyException):
+        with self.assertRaises(UnknownKeySchemaException):
             template.lookup('foo')
 
     def test_get_tab_name(self):
         data = '{"id" : "' + self.dummyDonorUri + '", "properties": {"foo_bar": {"user_friendly" : "Foo bar"}} }'
         template = schema_mock.get_template_for_json(data=data)
 
-        tabs = template.get_tabs_config()
+        tabs = template.tab_config
         self.assertEqual("donor_organism", tabs.get_key_for_label("donor_organism"))
         self.assertEqual("donor_organism", tabs.get_key_for_label("Donor organism"))
 
@@ -56,7 +57,7 @@ class TestSchemaTemplate(TestCase):
 
         self.assertEqual("donor_organism.foo_bar", template.get_key_for_label("Foo bar", "Donor organism"))
 
-        with self.assertRaises(UnknownKeyException):
+        with self.assertRaises(UnknownKeySchemaException):
             template.get_key_for_label("Bar foo", "Donor organism")
 
     def test_required_fields(self):
@@ -104,7 +105,7 @@ class TestSchemaTemplate(TestCase):
     def test_get_key_for_label(self):
         data = f'{{"id" : "{self.dummyDonorUri}"}}'
         template = schema_mock.get_template_for_json(data=data)
-        tabs = template.get_tabs_config()
+        tabs = template.tab_config
         self.assertEqual("donor_organism", tabs.get_key_for_label("Donor organism"))
         self.assertEqual('donor_organism', tabs.get_key_for_label('donor_organism'))
 
@@ -141,7 +142,7 @@ class TestSchemaTemplate(TestCase):
         exception_raised = None
         try:
             template.get_tab_key('does not exist')
-        except UnknownKeyException as exception:
+        except UnknownKeySchemaException as exception:
             exception_raised = exception
 
         # then:
@@ -173,7 +174,7 @@ class TestSchemaTemplate(TestCase):
         self.assertFalse(template.lookup("donor_organism.foo_bar.external_reference"))
         self.assertFalse(template.lookup("donor_organism.foo_bar.identifiable"))
 
-        with self.assertRaises(UnknownKeyException):
+        with self.assertRaises(UnknownKeySchemaException):
             self.assertTrue(template.lookup("donor_organism.format.uuid.retrievable"))
 
     def test_referenced_property(self):
@@ -210,30 +211,48 @@ class TestSchemaTemplate(TestCase):
 
     def test_get_domain_entity_from_url(self):
         schema_parser = SchemaParser(None)
+
         url = "https://schema.humancellatlas.org/type/project/5.1.0/project"
-        self.assertEqual("project", schema_parser.get_domain_entity_from_url(url))
+        high_level_schema = schema_parser.create_and_populate_schema_given_information_in_url(url)
+        self.assertEqual("project", high_level_schema.domain_entity)
+
         url = "https://schema.humancellatlas.org/type/foo/bar/5.1.0/project"
-        self.assertEqual("foo/bar", schema_parser.get_domain_entity_from_url(url))
+        high_level_schema = schema_parser.create_and_populate_schema_given_information_in_url(url)
+        self.assertEqual("foo/bar", high_level_schema.domain_entity)
+
         url = "https://schema.humancellatlas.org/type/foo/bar/latest/project"
-        self.assertEqual("foo/bar", schema_parser.get_domain_entity_from_url(url))
+        high_level_schema = schema_parser.create_and_populate_schema_given_information_in_url(url)
+        self.assertEqual("foo/bar", high_level_schema.domain_entity)
+
         url = "https://schema.humancellatlas.org/type/foo/latest/project"
-        self.assertEqual("foo", schema_parser.get_domain_entity_from_url(url))
+        high_level_schema = schema_parser.create_and_populate_schema_given_information_in_url(url)
+        self.assertEqual("foo", high_level_schema.domain_entity)
+
         url = 'https://schema.humancellatlas.org/bundle/1.0.0/links'
-        self.assertEqual(None, schema_parser.get_domain_entity_from_url(url))
+        high_level_schema = schema_parser.create_and_populate_schema_given_information_in_url(url)
+        self.assertEqual(None, high_level_schema.domain_entity)
+
         url = 'http://schema.dev.data.humancellatlas.org/system/1.0.0/provenance'
-        self.assertEqual(None, schema_parser.get_domain_entity_from_url(url))
+        high_level_schema = schema_parser.create_and_populate_schema_given_information_in_url(url)
+        self.assertEqual(None, high_level_schema.domain_entity)
 
     def test_get_high_level_entity_from_url(self):
         schema_parser = SchemaParser(None)
+
         url = "https://schema.humancellatlas.org/type/project/5.1.0/project"
-        self.assertEqual("type", schema_parser.get_high_level_entity_from_url(url))
+        high_level_schema = schema_parser.create_and_populate_schema_given_information_in_url(url)
+        self.assertEqual("type", high_level_schema.high_level_entity)
+
         url = 'http://schema.dev.data.humancellatlas.org/system/1.0.0/provenance'
-        self.assertEqual('system', schema_parser.get_high_level_entity_from_url(url))
+        high_level_schema = schema_parser.create_and_populate_schema_given_information_in_url(url)
+        self.assertEqual("system", high_level_schema.high_level_entity)
 
     def test_get_module_from_url(self):
         schema_parser = SchemaParser(None)
+
         url = "https://schema.humancellatlas.org/type/project/5.1.0/project"
-        self.assertEqual("project", schema_parser.get_module_from_url(url))
+        high_level_schema = schema_parser.create_and_populate_schema_given_information_in_url(url)
+        self.assertEqual("project", high_level_schema.module)
 
 
 if __name__ == '__main__':

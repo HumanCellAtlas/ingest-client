@@ -10,7 +10,7 @@ import unittest
 from unittest import TestCase
 
 import tests.template.schema_mock_utils as schema_mock
-from ingest.template.schema_template import UnknownKeyException
+from ingest.template.exceptions import UnknownKeySchemaException
 
 
 class TestSchemaTemplate(TestCase):
@@ -27,7 +27,7 @@ class TestSchemaTemplate(TestCase):
 
         self.assertEqual("Selected cell type(s)", template.lookup('cell_suspension.selected_cell_types.user_friendly'))
 
-        with self.assertRaises(UnknownKeyException):
+        with self.assertRaises(UnknownKeySchemaException):
             self.assertTrue(template.lookup("cell_suspension.selected_cell_type"))
 
         self.assertEqual("cell_suspension.selected_cell_types",
@@ -68,10 +68,10 @@ class TestSchemaTemplate(TestCase):
                                                         '"user_friendly": "Selected cell type(s)"}} }'
         template = schema_mock.get_template_for_json(data=data)
 
-        with self.assertRaises(UnknownKeyException):
+        with self.assertRaises(UnknownKeySchemaException):
             self.assertTrue(template.lookup("foo.bar"))
 
-        with self.assertRaises(UnknownKeyException):
+        with self.assertRaises(UnknownKeySchemaException):
             self.assertTrue(template.replaced_by_latest('foo.bar'))
 
         self.assertEqual("foo.bar", template.replaced_by_at('foo.bar', "12.0.2"))

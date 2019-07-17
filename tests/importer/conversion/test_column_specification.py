@@ -7,7 +7,7 @@ from ingest.importer.conversion import column_specification
 from ingest.importer.conversion.column_specification import ColumnSpecification, ConversionType
 from ingest.importer.conversion.data_converter import DataType, IntegerConverter, \
     BooleanConverter, ListConverter, StringConverter, DefaultConverter
-from ingest.template.schema_template import UnknownKeyException
+from ingest.template.exceptions import UnknownKeySchemaException
 
 
 class ColumnSpecificationTest(TestCase):
@@ -156,7 +156,7 @@ class ColumnSpecificationTest(TestCase):
     def test_look_up_unknown_header(self):
         # given:
         schema_template = MagicMock(name='schema_template')
-        schema_template.lookup = MagicMock(side_effect=UnknownKeyException())
+        schema_template.lookup = MagicMock(side_effect=UnknownKeySchemaException())
 
         # when:
         spec = column_specification.look_up(schema_template, 'product.info.unknown', 'product')

@@ -36,7 +36,7 @@ class LinkedSheetBuilder:
 
     def _build(self, template):
 
-        tabs = template.get_tabs_config()
+        tabs = template.tab_config()
         if (self.link_config is not False) and (self.autofill_scale != 0):  # some precalculation for whole sheet
             self._value_linking()
 
@@ -435,9 +435,9 @@ class LinkedSheetBuilder:
 
             tabs_parser = TabConfig()
             tabs = tabs_parser.load(tabs_template)
-            template = schema_template.SchemaTemplate(list_of_schema_urls=schema_urls, tab_config=tabs)
+            template = schema_template.SchemaTemplate(metadata_schema_urls=schema_urls, tab_config=tabs)
         else:
-            template = schema_template.SchemaTemplate(list_of_schema_urls=schema_urls)
+            template = schema_template.SchemaTemplate(metadata_schema_urls=schema_urls)
 
         self._build(template)
         return self
@@ -474,8 +474,6 @@ if __name__ == '__main__':
     if args.hidden_row:
         hide_row = True
 
-    all_schemas = schema_template.SchemaTemplate(ingest_url).get_schema_urls()
-
     spreadsheet_builder = SpreadsheetBuilder(output_file, hide_row)
-    spreadsheet_builder.generate_workbook(tabs_template=args.yaml, schema_urls=all_schemas)
+    spreadsheet_builder.generate_workbook(tabs_template=args.yaml)
     spreadsheet_builder.save_workbook()

@@ -21,7 +21,7 @@ parser = SchemaParser(template)
 
 INGESTAPI = "http://api.ingest.dev.data.humancellatlas.org"
 
-list_of_schema_urls = template.get_latest_submittable_schemas(INGESTAPI)
+list_of_schema_urls = template.get_latest_submittable_schema_urls(INGESTAPI)
 
 def get_data(uri):
 

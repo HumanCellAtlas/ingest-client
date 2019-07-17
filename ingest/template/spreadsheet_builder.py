@@ -37,9 +37,9 @@ class SpreadsheetBuilder:
         if tabs_template:
             tabs_parser = TabConfig()
             tabs = tabs_parser.load(tabs_template)
-            template = schema_template.SchemaTemplate(list_of_schema_urls=schema_urls, tab_config=tabs)
+            template = schema_template.SchemaTemplate(metadata_schema_urls=schema_urls, tab_config=tabs)
         else:
-            template = schema_template.SchemaTemplate(list_of_schema_urls=schema_urls)
+            template = schema_template.SchemaTemplate(metadata_schema_urls=schema_urls)
 
         self._build(template)
         return self
@@ -91,7 +91,7 @@ class SpreadsheetBuilder:
             if "Biomaterial " in uf:
                 schema_name = col_name.split(".")[0]
 
-                for schema in template.get_tabs_config().lookup('tabs'):
+                for schema in template.tab_config().lookup('tabs'):
                     if schema_name == list(schema.keys())[0]:
                         schema_uf = schema[schema_name]['display_name']
                 uf = uf.replace("Biomaterial", schema_uf)
@@ -102,7 +102,7 @@ class SpreadsheetBuilder:
             if "Protocol " in uf:
                 schema_name = col_name.split(".")[0]
 
-                for schema in template.get_tabs_config().lookup('tabs'):
+                for schema in template.tab_config().lookup('tabs'):
                     if schema_name == list(schema.keys())[0]:
                         schema_uf = schema[schema_name]['display_name']
                 uf = uf.replace("Protocol", schema_uf)
@@ -122,7 +122,7 @@ class SpreadsheetBuilder:
 
     def _build(self, template):
 
-        tabs = template.get_tabs_config()
+        tabs = template.tab_config
 
         for tab in tabs.lookup("tabs"):
 
@@ -255,8 +255,6 @@ if __name__ == '__main__':
     if args.hidden_row:
         hide_row = True
 
-    all_schemas = schema_template.SchemaTemplate(ingest_url, migrations_url).get_schema_urls()
-
     # all_schemas = [
     #     "http://schema.dev.data.humancellatlas.org/type/project/9.0.5/project",
     #     "http://schema.dev.data.humancellatlas.org/type/biomaterial/8.6.2/cell_suspension",
@@ -273,5 +271,5 @@ if __name__ == '__main__':
     # ]
 
     spreadsheet_builder = SpreadsheetBuilder(output_file, hide_row)
-    spreadsheet_builder.generate_workbook(tabs_template=args.yaml, schema_urls=all_schemas)
+    spreadsheet_builder.generate_workbook(tabs_template=args.yaml)
     spreadsheet_builder.save_workbook()

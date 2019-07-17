@@ -25,4 +25,4 @@ def get_template_for_json(mock_urlopen, data="{}"):
     with open(dn + '/property_migrations.json') as json_file:
         migrations = json.load(json_file)
 
-    return SchemaTemplate(list_of_schema_urls=['test_url'], migrations=migrations["migrations"])
+    return SchemaTemplate(metadata_schema_urls=['test_url'], property_migrations=migrations["migrations"])
