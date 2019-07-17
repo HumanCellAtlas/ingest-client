@@ -77,7 +77,7 @@ class SpreadsheetBuilder:
             if template.lookup(wrapper)['schema']['module'] \
                     and (template.lookup(wrapper)['schema']['module'] == 'purchased_reagents' or
                          template.lookup(wrapper)['schema']['module'] == 'barcode') and not \
-                    gtemplate.lookup(wrapper)['multivalue']:
+                    template.lookup(wrapper)['multivalue']:
                 uf = template.lookup(wrapper)['user_friendly'] + " - " + uf
             if '.ontology_label' in col_name:
                 uf = uf + " ontology label"
