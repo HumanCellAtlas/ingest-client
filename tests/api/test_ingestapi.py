@@ -31,9 +31,10 @@ class IngestApiTest(TestCase):
         file = ingest_api.create_file(submission_url, filename, {})
         self.assertEqual(file, {'uuid': 'file-uuid'})
         mock_requests_post.assert_called_with('url/sub/id/files/mock-filename',
-                                headers={'Content-type': 'application/json', 'Authorization': 'Bearer token'},
-                                json={'fileName': 'mock-filename', 'content': {}},
-                                params={})
+                                              headers={'Content-type': 'application/json',
+                                                       'Authorization': 'Bearer token'},
+                                              json={'fileName': 'mock-filename', 'content': {}},
+                                              params={})
 
     @patch('ingest.api.ingestapi.IngestApi.get_file_by_submission_url_and_filename')
     @patch('ingest.api.ingestapi.IngestApi.get_link_in_submission')

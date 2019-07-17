@@ -2,16 +2,15 @@
 import json
 import logging
 import os
-import uuid
 import time
-import polling
-import requests
-
-import ingest.exporter.bundle
-
-from requests.exceptions import HTTPError
+import uuid
 from copy import deepcopy
 
+import polling
+import requests
+from requests.exceptions import HTTPError
+
+import ingest.exporter.bundle
 from ingest.api.dssapi import DssApi, BundleAlreadyExist
 from ingest.api.ingestapi import IngestApi
 from ingest.api.stagingapi import StagingApi
@@ -27,7 +26,7 @@ ERROR_TEMPLATE = {
 
 
 class IngestExporter:
-    def __init__(self, ingest_api:IngestApi, dss_api: DssApi, staging_api: StagingApi, options=None):
+    def __init__(self, ingest_api: IngestApi, dss_api: DssApi, staging_api: StagingApi, options=None):
         format = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
         logging.basicConfig(format=format)
         self.logger = logging.getLogger(__name__)
@@ -624,6 +623,7 @@ class LinkSet:
 
     def get_links(self):
         return [deepcopy(link) for link in self.links]
+
 
 # Module Exceptions
 

@@ -1,5 +1,3 @@
-from copy import deepcopy
-
 from ingest.api.ingestapi import IngestApi
 from ingest.exporter.bundle import BundleService
 from ingest.exporter.metadata import MetadataService

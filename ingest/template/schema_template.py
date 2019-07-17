@@ -8,12 +8,12 @@ __author__ = "jupp"
 __license__ = "Apache 2.0"
 __date__ = "01/05/2018"
 
-from collections import defaultdict
-from itertools import chain
 import json
 import re
 import urllib.request
+from collections import defaultdict
 from datetime import datetime
+from itertools import chain
 
 import jsonref
 from yaml import dump as yaml_dump, load as yaml_load
@@ -28,6 +28,7 @@ class SchemaTemplate:
     A schema template is a simplified view over
     JSON schema for the HCA metadata
     """
+
     def __init__(self, ingest_api_url=None, list_of_schema_urls=None,
                  json_schema_docs=None, tab_config=None, migrations=None, migrations_url=None):
 
@@ -88,7 +89,6 @@ class SchemaTemplate:
                 print("Failed to read schema from " + migrations_url)
         return data
 
-
     def _load(self, list_of_schema_urls, list_of_property_migrations):
         """
         given a list of URLs to JSON schema files
@@ -124,7 +124,7 @@ class SchemaTemplate:
     def lookup(self, key):
         try:
             return self.get(self._template["meta_data_properties"], key)
-        except:
+        except Exception:
             raise UnknownKeyException(
                 "Can't map the key to a known JSON schema property: " + str(key))
 
@@ -158,7 +158,6 @@ class SchemaTemplate:
                 raise UnknownKeyException(
                     "Can't map the key to a known JSON schema property: " + str(key))
             return self.replaced_by_latest(replaced_by)
-
 
     def replaced_by_at(self, key, schema_version):
         """
@@ -195,7 +194,6 @@ class SchemaTemplate:
             raise UnknownKeyException(
                 "Can't map the key to a known JSON schema property: " + str(key))
 
-
     def _lookup_migration(self, key):
 
         migration, backtrack = self._find_migration_object(key)
@@ -208,7 +206,6 @@ class SchemaTemplate:
         else:
             return key
 
-
     def _lookup_migration_version(self, key):
 
         migration, backtrack = self._find_migration_object(key)
@@ -217,7 +214,6 @@ class SchemaTemplate:
         if "version" in migration:
             return migration["version"]
         return None
-
 
     def _find_migration_object(self, fq_key):
         backtrack_fq_key = ""
@@ -229,7 +225,7 @@ class SchemaTemplate:
                 fq_key = fq_key.split(".")
                 backtrack_fq_key = "." + fq_key.pop()
                 fq_key = ".".join(fq_key)
-                if not "." in fq_key:
+                if "." not in fq_key:
                     break
         return {}, backtrack_fq_key
 
@@ -267,8 +263,7 @@ class SchemaTemplate:
                 dict3[k] = v
         return dict3
 
-
-    def put (self, property, value):
+    def put(self, property, value):
         '''
         Add a property to the schema template
         :param property:
@@ -539,7 +534,6 @@ class SchemaParser:
     def get_version_from_url(self, url):
         return url.rsplit('/', 2)[-2]
 
-
     def get_module_from_url(self, url):
         return url.rsplit('/', 1)[-1]
 
@@ -584,9 +578,9 @@ class RootSchemaException(Error):
 class UnknownKeyException(Error):
     """Can't map the key to a known property"""
 
+
 class NoReplacementException(Error):
     """Can't map the key to a known property"""
-
 
 
 if __name__ == '__main__':

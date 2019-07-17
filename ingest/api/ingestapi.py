@@ -107,7 +107,7 @@ class IngestApi:
     def getSubmissions(self):
         params = {'sort': 'submissionDate,desc'}
         r = self.get(self._ingest_links["submissionEnvelopes"]["href"].rsplit("{")[0], params=params,
-                             headers=self.get_headers())
+                     headers=self.get_headers())
         if r.status_code == requests.codes.ok:
             return json.loads(r.text)["_embedded"]["submissionEnvelopes"]
 
@@ -301,7 +301,7 @@ class IngestApi:
         # Do not use session retries here as it will throw requests.exceptions.RetryError for http 409 error
         # We want to retry that error when creating files by doing a subsequent PATCH requests to update the metadata
         r = requests.post(submission_files_url, json=file_to_create_object,
-                              headers=self.get_headers(), params=params)
+                          headers=self.get_headers(), params=params)
 
         # TODO Investigate why core is returning internal server error
         if r.status_code == requests.codes.conflict or r.status_code == requests.codes.internal_server_error:
