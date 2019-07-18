@@ -8,15 +8,7 @@ __date__ = "08/05/2018"
 
 from ingest.template.spreadsheet_builder import SpreadsheetBuilder
 
-
-# build a generic spreadsheet from the latest schemas
-spreadsheet_builder = SpreadsheetBuilder("generic.xlsx")
-spreadsheet_builder.generate_workbook()
-spreadsheet_builder.save_workbook()
-
-
 # build a spreadsheet given new dev schemas
-
 dev_schemas = [
     "http://schema.dev.data.humancellatlas.org/type/project/latest/project",
     "http://schema.dev.data.humancellatlas.org/type/biomaterial/latest/cell_suspension",

@@ -32,15 +32,15 @@ class SchemaParser:
 
         # Use jsonrefs to resolve all $refs in JSON
         metadata_schema_data = jsonref.loads(json.dumps(json_schema))
-        return self.__initialise_template(metadata_schema_data)
+        return self.initialise_template(metadata_schema_data)
 
     def load_migration(self, property_migration):
-        return self.__initialise_property_migration_template(property_migration)
+        return self.initialise_property_migration_template(property_migration)
 
     def key_lookup(self, key):
         return self._key_lookup[key]
 
-    def __initialise_property_migration_template(self, property_migration):
+    def initialise_property_migration_template(self, property_migration):
         migrated_property = property_migration["source_schema"] + "." + property_migration["property"]
 
         migration_info = {}
@@ -62,7 +62,7 @@ class SchemaParser:
         self.schema_template.put_migration(migration_info)
         return self.schema_template
 
-    def __initialise_template(self, data):
+    def initialise_template(self, data):
 
         self.get_required_properties_from_metadata_schema(data)
 
@@ -71,7 +71,6 @@ class SchemaParser:
             raise RootSchemaException(
                 "Schema must start with a root submittable type schema")
         else:
-            # as this is top level add a retrievable property for
             property.uuid = {'external_reference': True, 'identifiable': True}
 
         # todo get tab display name from schema
@@ -146,7 +145,6 @@ class SchemaParser:
         if schema:
             property_metadata["schema"] = schema
 
-        # put the user friendly to key in the lookup table
         if 'key' in kwargs:
 
             self._update_label_to_key_map(kwargs.get("key"), kwargs.get("key"))
