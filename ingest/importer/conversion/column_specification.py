@@ -3,7 +3,8 @@ from enum import Enum
 
 from ingest.importer.conversion import utils, data_converter
 from ingest.importer.conversion.data_converter import DataType, CONVERTER_MAP, ListConverter
-from ingest.template.schema_template import SchemaTemplate, UnknownKeyException
+from ingest.template.exceptions import UnknownKeySchemaException
+from ingest.template.schema_template import SchemaTemplate
 
 UNKNOWN_DOMAIN_TYPE = '_unknown_type'
 
@@ -131,7 +132,7 @@ def look_up(schema_template: SchemaTemplate, header, context_concrete_type, cont
 def _map_key_to_spec(schema_template: SchemaTemplate, key):
     try:
         spec = schema_template.lookup(key)
-    except UnknownKeyException as key_exception:
+    except UnknownKeySchemaException:
         _LOGGER.warning(f'[{key}] not found in the schema.')
         spec = {}
     return spec

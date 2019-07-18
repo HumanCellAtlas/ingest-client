@@ -6,6 +6,9 @@ __author__ = "hewgreen"
 __license__ = "Apache 2.0"
 __date__ = "31/01/2019"
 
+import sys
+
+sys.path.insert(0, '/Users/arathimani/CZI/ingest-client/')  # noqa
 from ingest.template.linked_sheet_builder import LinkedSheetBuilder
 
 '''
@@ -155,12 +158,7 @@ link_config = [backbone, protocol_pairings]
 autofill_scale = 1
 
 # build a generic spreadsheet from the latest schemas
-
-# spreadsheet_builder = LinkedSheetBuilder("generic_with_links.xlsx")
-
 spreadsheet_builder = LinkedSheetBuilder("generic_with_links.xlsx", link_config=link_config,
                                          autofill_scale=autofill_scale)
-
-# spreadsheet_builder = LinkedSheetBuilder("generic_with_links.xlsx")
 spreadsheet_builder.generate_workbook()
 spreadsheet_builder.save_workbook()
