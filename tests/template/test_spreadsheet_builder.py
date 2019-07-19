@@ -9,7 +9,7 @@ __license__ = "Apache 2.0"
 __date__ = "25/05/2018"
 
 from unittest import TestCase
-from ingest.template.spreadsheet_builder import SpreadsheetBuilder
+from ingest.template.vanilla_spreadsheet_builder import VanillaSpreadsheetBuilder
 import unittest
 import tests.template.schema_mock_utils as schema_mock
 from openpyxl import load_workbook as Reader
@@ -35,10 +35,10 @@ class TestSchemaTemplate(TestCase):
             }}'''
 
         file = "foo.xlsx"
-        spreadsheet_builder = SpreadsheetBuilder(file)
+        spreadsheet_builder = VanillaSpreadsheetBuilder(file)
         template = schema_mock.get_template_for_json(data=data)
-        spreadsheet_builder._build(template)
-        spreadsheet_builder.save_workbook()
+        spreadsheet_builder.build(template)
+        spreadsheet_builder.save_spreadsheet()
 
         reader = Reader("foo.xlsx")
         sheet = reader["Donor organism"]

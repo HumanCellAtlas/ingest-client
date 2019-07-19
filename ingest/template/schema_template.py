@@ -3,10 +3,6 @@
 This package will return a SchemaTemplate objects from a set of JSON schema files.
 """
 
-__author__ = "jupp"
-__license__ = "Apache 2.0"
-__date__ = "01/05/2018"
-
 import json
 import urllib.request
 from collections import defaultdict
@@ -111,11 +107,11 @@ class SchemaTemplate:
         :return: An object representing the deserialized JSON-formatted property migrations file.
         """
 
-        with urllib.request.urlopen(migrations_url) as url:
-            try:
+        try:
+            with urllib.request.urlopen(migrations_url) as url:
                 return json.loads(url.read().decode())["migrations"]
-            except Exception:
-                raise RootSchemaException(f"Was unable to read the property migrations file from URL {migrations_url}")
+        except Exception:
+            raise RootSchemaException(f"Was unable to read the property migrations file from URL {migrations_url}")
 
     def get_json_objs_from_metadata_schema_urls(self):
         """
@@ -124,15 +120,14 @@ class SchemaTemplate:
 
         :return: A list of objects representing deserialized JSON-formatted metadata schemas.
         """
-
         metadata_schema_objs = []
         for uri in self.metadata_schema_urls:
-            with urllib.request.urlopen(uri) as url:
-                try:
+            try:
+                with urllib.request.urlopen(uri) as url:
                     metadata_schema_objs.append(json.loads(url.read().decode()))
-                except Exception:
-                    raise RootSchemaException(f"Was unable to read metadata schema JSON at {uri}")
-            return metadata_schema_objs
+            except Exception:
+                raise RootSchemaException(f"Was unable to read metadata schema JSON at {uri}")
+        return metadata_schema_objs
 
     def populate_schema_from_metadata_schema_and_property_migrations(self):
         """ Parse and load the metadata schemas and respective property migrations into the schema via the
