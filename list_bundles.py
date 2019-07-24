@@ -44,7 +44,7 @@ if __name__ == '__main__':
     url = f'https://api.ingest{infix}.data.humancellatlas.org'
     ingest_api = IngestApi(url)
     project = ingest_api.get_project_by_uuid(project_uuid)
-    bundle_manifests = ingest_api.get_related_entities("bundles", project, "bundleManifests")
+    bundle_manifests = ingest_api.get_related_entities("bundleManifests", project, "bundleManifests")
 
     bundle_fqids = [BundleManifest(obj).fqid for obj in bundle_manifests]
 
