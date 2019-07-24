@@ -85,6 +85,10 @@ class SchemaTemplate:
         # If a tab configuration is supplied, use that. Otherwise, use one that based off of the template above.
         self.internal_tab_config = tab_config if tab_config else TabConfig(init=self.template)
 
+    def get_schema_urls(self):
+        """ Returns a list of metadata schema urls that have been used to instantiate the SchemaTemplate. """
+        return self.metadata_schema_urls
+
     def get_latest_submittable_schema_urls(self, ingest_api_url):
         """
         Given the Ingest API URL, send a request to get the latest metadata schemas and return the URLs.
