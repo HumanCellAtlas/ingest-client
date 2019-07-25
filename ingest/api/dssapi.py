@@ -174,6 +174,19 @@ class DssApi:
                 replica="aws"
             )
 
+    def get_file(self, file_uuid, version=None):
+        if version:
+            return self.dss_client.get_file(
+                    uuid=file_uuid,
+                    replica="aws",
+                    version=version
+            )
+        else:
+            return self.dss_client.get_file(
+                    uuid=file_uuid,
+                    replica="aws"
+            )
+
     def head_file(self, file_uuid, version=None):
         # finally create the bundle
         try:
