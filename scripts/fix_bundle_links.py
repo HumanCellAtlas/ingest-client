@@ -21,7 +21,7 @@ class BundleManifestService:
 
     def update_bundle_manifest_links(self, project_uuid):
         bundle_manifests = self.find_bundle_manifests(project_uuid)
-
+        count = 0
         for resource in bundle_manifests:
             bundle_manifest = BundleManifest(self.dss_api, resource)
             bundle_uuid = bundle_manifest.uuid
@@ -29,6 +29,9 @@ class BundleManifestService:
 
             bundle = Bundle(dss_api, bundle_uuid, version)
             self.ingest_api.patch(bundle_manifest.url, {'links': bundle.links})
+            count = count + 1
+
+        return {'bundle_manifests_updated_count': count}
 
     def find_bundles_with_links_correction(self, project_uuid):
         bundles_with_duplicate_links = []
@@ -168,7 +171,8 @@ if __name__ == '__main__':
     dss_api = DssApi(dss_url)
 
     bundle_manifest_service = BundleManifestService(ingest_api, dss_api)
-    # bundle_manifest_service.update_bundle_manifest_links(project_uuid)
+
+    # report = bundle_manifest_service.update_bundle_manifest_links(project_uuid)
     report = bundle_manifest_service.find_bundles_with_links_correction(project_uuid)
     report_filename = f'project_{project_uuid}_bundles_report.json'
     with open(report_filename, 'w') as report_file:
