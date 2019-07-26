@@ -270,6 +270,17 @@ class IngestApi:
             for entity in self.get_all(entity_uri, entity_type):
                 yield entity
 
+    def get_related_entities_count(self, relation, entity, entity_type):
+        if relation in entity["_links"]:
+            entity_uri = entity["_links"][relation]["href"]
+            r = self.get(entity_uri)
+            r.raise_for_status()
+            result = r.json()
+            page = result.get('page')
+            if page:
+                return page.get('totalElements')
+            return len(result["_embedded"][entity_type])
+
     def create_project(self, submission_url, content, uuid=None):
         return self.create_entity(submission_url, content, "projects", uuid)
 

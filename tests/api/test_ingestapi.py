@@ -164,6 +164,90 @@ class IngestApiTest(TestCase):
         entities = ingest_api.get_all('url?page=0&size=3', "bundleManifests")
         self.assertEqual(len(list(entities)), 5)
 
+    @patch('ingest.api.ingestapi.create_session_with_retry')
+    def test_get_related_entities_count(self, mock_create_session):
+        # given
+        ingest_api = IngestApi(token_manager=self.token_manager)
+
+        mocked_responses = {
+            'https://url/project/files': {
+                "page": {
+                    "size": 3,
+                    "totalElements": 5,
+                    "totalPages": 2,
+                    "number": 1
+                },
+                "_embedded": {
+                    "files": [
+                        {"attr": "value"},
+                        {"attr": "value"},
+                        {"attr": "value"},
+                        {"attr": "value"},
+                        {"attr": "value"}
+                    ]
+                },
+                "_links": {
+                }
+            }
+        }
+
+        mock_entity = {
+            "_links": {
+                "self": {
+                    "href": "https://url/project/1"
+                },
+                "files": {
+                    "href": "https://url/project/files",
+                }
+            }
+        }
+
+        mock_create_session.return_value.get = lambda url, headers: self._create_mock_response(
+            url, mocked_responses)
+
+        # when
+        count = ingest_api.get_related_entities_count('files', mock_entity, 'files')
+        self.assertEqual(count, 5)
+
+
+    @patch('ingest.api.ingestapi.create_session_with_retry')
+    def test_get_related_entities_count_no_pagination(self, mock_create_session):
+        # given
+        ingest_api = IngestApi(token_manager=self.token_manager)
+
+        mocked_responses = {
+            'https://url/project/files': {
+                "_embedded": {
+                    "files": [
+                        {"attr": "value"},
+                        {"attr": "value"},
+                        {"attr": "value"},
+                        {"attr": "value"}
+                    ]
+                },
+                "_links": {
+                }
+            }
+        }
+
+        mock_entity = {
+            "_links": {
+                "self": {
+                    "href": "https://url/project/1"
+                },
+                "files": {
+                    "href": "https://url/project/files",
+                }
+            }
+        }
+
+        mock_create_session.return_value.get = lambda url, headers: self._create_mock_response(
+            url, mocked_responses)
+
+        # when
+        count = ingest_api.get_related_entities_count('files', mock_entity, 'files')
+        self.assertEqual(count, 4)
+
     @staticmethod
     def _create_mock_response(url, mocked_responses):
         response = MagicMock()
