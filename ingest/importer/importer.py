@@ -60,21 +60,21 @@ class XlsImporter:
             submission = submitter.submit(entity_map, submission_url)
 
         except ingest.importer.submission.Error as e:
-            error_json = json.dumps({
+            error_json = {
                 'errorCode': 'ingest.importer.submission',
                 'errorType': 'Error',
                 'message': 'An error during submission occurred.',
                 'details': str(e),
 
-            })
+            }
             self.logger.error(str(e), exc_info=True)
         except Exception as e:
-            error_json = json.dumps({
+            error_json = {
                 'errorCode': 'ingest.importer.error',
                 'errorType': 'Error',
                 'message': 'An error during submission occurred.',
                 'details': str(e),
-            })
+            }
             self.logger.error(str(e), exc_info=True)
 
         if error_json:
