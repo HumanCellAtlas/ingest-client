@@ -25,7 +25,7 @@ class VanillaSpreadsheetBuilder(SpreadsheetBuilder):
                 for column_index, column_name in enumerate(detail["columns"]):
 
                     formatted_column_name = self.get_user_friendly_column_name(spreadsheet_tabs_template,
-                                                                               column_name).upper()
+                                                                               column_name, tab_name).upper()
 
                     if column_name.split(".")[-1] == "text":
                         desc = self.get_value_for_column(spreadsheet_tabs_template, column_name.replace('.text', ''),

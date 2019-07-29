@@ -111,7 +111,7 @@ class SpreadsheetBuilder():
             if "Biomaterial " in uf:
                 schema_name = column_name.split(".")[0]
 
-                for schema in template.tab_config().lookup('tabs'):
+                for schema in template.tab_config.lookup('tabs'):
                     if schema_name == list(schema.keys())[0]:
                         schema_uf = schema[schema_name]['display_name']
                 uf = uf.replace("Biomaterial", schema_uf)
@@ -122,7 +122,7 @@ class SpreadsheetBuilder():
             if "Protocol " in uf:
                 schema_name = column_name.split(".")[0]
 
-                for schema in template.tab_config().lookup('tabs'):
+                for schema in template.tab_config.lookup('tabs'):
                     if schema_name == list(schema.keys())[0]:
                         schema_uf = schema[schema_name]['display_name']
                 uf = uf.replace("Protocol", schema_uf)
