@@ -56,7 +56,6 @@ class DssApi:
             self.creator_uid = 8008
 
     def put_file(self, bundle_uuid, file):
-        self.init_dss_client()
         url = file["url"]
         uuid = file["dss_uuid"]
 
@@ -86,6 +85,7 @@ class DssApi:
                 bundle_file = None
 
                 if bundle_uuid:
+                    self.init_dss_client()
                     bundle_file = self.dss_client.put_file(
                         uuid=uuid,
                         version=version,
@@ -94,6 +94,7 @@ class DssApi:
                         source_url=url
                     )
                 else:
+                    self.init_dss_client()
                     bundle_file = self.dss_client.put_file(
                         uuid=uuid,
                         version=version,
@@ -120,7 +121,6 @@ class DssApi:
                     time.sleep(60)
 
     def put_bundle(self, bundle_uuid, version, bundle_files):
-        self.init_dss_client()
         bundle = None
 
         # retrying file creation 20 times
@@ -133,6 +133,7 @@ class DssApi:
             try:
                 tries += 1
                 self.logger.info(f'Creating bundle in DSS {bundle_uuid}:{version}')
+                self.init_dss_client()
                 bundle = self.dss_client.put_bundle(
                     uuid=bundle_uuid,
                     version=version,
