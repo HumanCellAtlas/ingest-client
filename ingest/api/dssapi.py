@@ -12,6 +12,7 @@ import hca
 from hca.util import SwaggerAPIException
 
 from ingest.api import utils
+from ingest.utils.token_manager import Token
 
 __author__ = "jupp"
 __license__ = "Apache 2.0"
@@ -39,15 +40,23 @@ class DssApi:
 
         self.dss_client = None
 
+        self.token = None
         self.init_dss_client()
 
-    def init_dss_client(self):
-        self.dss_client = hca.dss.DSSClient(
-            swagger_url=f'{self.url}/v1/swagger.json')
-        self.dss_client.host = self.url + "/v1"
-        self.creator_uid = 8008
+    # TODO This is workaround to not let the dss client token expired
+    # See ticket https://app.zenhub.com/workspaces/dcp-5ac7bcf9465cb172b77760d9/issues/humancellatlas/data-store/2216
+    # Create a dummy token at the same time DSS client is initialised.
+    # This is just a way to keep track when DSS client token will be expired
+    def init_dss_client(self, duration=3600 * 1000, refresh_period=60 * 10 * 1000):
+        if not self.token or self.token.is_expired():
+            self.token = Token('dummy', duration, refresh_period)
+            self.dss_client = hca.dss.DSSClient(
+                swagger_url=f'{self.url}/v1/swagger.json')
+            self.dss_client.host = self.url + "/v1"
+            self.creator_uid = 8008
 
     def put_file(self, bundle_uuid, file):
+        self.init_dss_client()
         url = file["url"]
         uuid = file["dss_uuid"]
 
@@ -111,6 +120,7 @@ class DssApi:
                     time.sleep(60)
 
     def put_bundle(self, bundle_uuid, version, bundle_files):
+        self.init_dss_client()
         bundle = None
 
         # retrying file creation 20 times
@@ -162,6 +172,7 @@ class DssApi:
                     time.sleep(60)
 
     def get_bundle(self, bundle_uuid, version=None):
+        self.init_dss_client()
         if version:
             return self.dss_client.get_bundle(
                 uuid=bundle_uuid,
@@ -175,6 +186,7 @@ class DssApi:
             )
 
     def get_file(self, file_uuid, version=None):
+        self.init_dss_client()
         if version:
             return self.dss_client.get_file(
                     uuid=file_uuid,
@@ -188,6 +200,7 @@ class DssApi:
             )
 
     def head_file(self, file_uuid, version=None):
+        self.init_dss_client()
         # finally create the bundle
         try:
             return self.dss_client.head_file(
