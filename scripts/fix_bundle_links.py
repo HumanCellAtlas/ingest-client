@@ -5,6 +5,7 @@ import logging
 import multiprocessing
 import sys
 import time
+import uuid
 from copy import deepcopy
 
 import requests
@@ -12,6 +13,7 @@ from hca.util import SwaggerAPIException
 
 from ingest.api.dssapi import DssApi
 from ingest.api.ingestapi import IngestApi
+from ingest.api.stagingapi import StagingApi
 from ingest.exporter.ingestexportservice import LinkSet
 
 logging.getLogger('ingest').setLevel(logging.DEBUG)
@@ -19,25 +21,66 @@ format = ' %(asctime)s  - %(name)s - %(levelname)s in %(filename)s:' \
          '%(lineno)s %(funcName)s(): %(message)s'
 logging.basicConfig(stream=sys.stdout, level=logging.WARNING, format=format)
 
-PROCESS_COUNT = 50
+PROCESS_COUNT = 30
 
+PROJECTS = {
+    # As of 29 July
+    'prod': [
+        # "f8aa201c-4ff1-45a4-890e-840d63459ca2",  # done
+        # "091cf39b-01bc-42e5-9437-f419a66c8a45",  # done
+        # "008e40e8-66ae-43bb-951c-c073a2fa6774",  # done
+        # "f86f1ab4-1fbb-4510-ae35-3ffd752d4dfc",  # done
+        # "cc95ff89-2e68-4a08-a234-480eca21ce79",  # done
+        # "f81efc03-9f56-4354-aabb-6ce819c3d414",  # done
+        # "027c51c6-0719-469f-a7f5-640fe57cbece",  # done
+        # "74b6d569-3b11-42ef-b6b1-a0454522b4a0",  #
+        # "90bd6933-40c0-48d4-8d76-778c103bf545",
+        # "a29952d9-925e-40f4-8a1c-274f118f1f51",  # has no links - done
+        # "005d611a-14d5-4fbf-846e-571a1f874f70",  # has analysis - done
+        # "a9c022b4-c771-4468-b769-cabcf9738de3",  # done
+        # "c4077b3c-5c98-4d26-a614-246d12c2e5d7",  # has analysis - done
+        # "f83165c5-e2ea-4d15-a5cf-33f3550bffde",  # has analysis - done
+        # "2043c65a-1cf8-4828-a656-9e247d4e64f1",  # has analysis - done
+        # "8c3c290d-dfff-4553-8868-54ce45f4ba7f",
+        # "ae71be1d-ddd8-4feb-9bed-24c3ddb6e1ad",
+        # "cddab57b-6868-4be4-806f-395ed9dd635a",  # has analysis done
+        # "f306435b-4e60-4a79-83a1-159bda5a2c79"   # Tabula Muris - no need
+    ],
+    'staging': ['8b01ff5a-2157-4c4a-96bb-2c686a7ef8b0']
+}
 
 class Bundle:
-    def __init__(self, dss_api, uuid, version):
+    def __init__(self, dss_api, bundle_uuid, version):
         self.dss_api = dss_api
-        self._object = self.dss_api.get_bundle(uuid, version).get('bundle')
+        self._object = self.dss_api.get_bundle(bundle_uuid, version).get('bundle')
         self._files_map = {file['name']: file for file in self._object.get('files')}
 
     @property
     def links(self):
         if self._files_map.get('links.json'):
-            links_file = self._files_map['links.json']
-            links_file_uuid = links_file['uuid']
-            links_file_version = links_file['version']
-            links_file_json = self.dss_api.get_file(links_file_uuid, links_file_version)
-            return links_file_json.get('links')
+            links_file = File(self.dss_api, self._files_map['links.json'])
+            links_file_json = links_file.content.get('links')
+            return links_file_json
         else:
             return None
+
+    @property
+    def links_file(self):
+        if self._files_map.get('links.json'):
+            return self._files_map.get('links.json')
+        else:
+            return None
+
+
+class File:
+    def __init__(self, dss_api, object):
+        self.dss_api = dss_api
+        self._object = object
+        self.uuid = self._object['uuid']
+        self.version = self._object['version']
+        self.name = self._object['name']
+        self.indexed = self._object['indexed']
+        self.content = self.dss_api.get_file(self.uuid, self.version)
 
 
 class BundleManifest:
@@ -66,6 +109,10 @@ class BundleManifest:
     @property
     def links(self):
         return self.bundle.links
+
+    @property
+    def links_file(self):
+        return self.bundle.links_file
 
     def _retrieve_bundle(self):
         try:
@@ -97,7 +144,7 @@ class BundleManifestService:
         return self.ingest_api.get_related_entities_count("bundleManifests", project, "bundleManifests")
 
 
-def find_projects():
+def find_tracker_projects():
     tracker_url = 'https://tracker-api.data.humancellatlas.org/v0/projects'
     r = requests.get(tracker_url)
     r.raise_for_status()
@@ -106,50 +153,26 @@ def find_projects():
     return project_uuids
 
 
-def get_summary(map_results):
-    summary = {
-        'last_run': datetime.datetime.utcnow().strftime("%Y-%m-%dT%H%M%S.%fZ")
-    }
-    for result in map_results:
-        project_uuid = result['project_uuid']
-        project_summary = summary.get(project_uuid, {
-            'bundles_to_correct': 0,
-            'not_found': 0,
-            'bundle_count': 0,
-            'no_links': 0
-        })
-        project_summary['bundle_count'] = project_summary['bundle_count'] + 1
-        if result.get('has_links_to_correct'):
-            project_summary['bundles_to_correct'] = project_summary['bundles_to_correct'] + 1
-        if result.get('not_found'):
-            project_summary['not_found'] = project_summary['not_found'] + 1
-        if result.get('no_links'):
-            project_summary['no_links'] = project_summary['no_links'] + 1
-        summary[project_uuid] = project_summary
-
-    return {
-        'map_results': map_results,
-        'summary': summary
-    }
-
-
 def save_json_to_file(data, filename):
     with open(filename, 'w') as file:
         json.dump(data, file, indent=4)
     print(f'Saved {filename}')
 
 
-class BundleManifestResourceProcessor:
-    def __init__(self, env, project_uuid):
+class BundleProcessor:
+    def __init__(self, env, project_uuid, upload_area_uuid):
         self.env = env
         self.project_uuid = project_uuid
+        self.upload_area_uuid = upload_area_uuid
 
         infix = f'.{env}' if env != 'prod' else ''
         dss_url = f'https://dss{infix}.data.humancellatlas.org'
         ingest_url = f'https://api.ingest{infix}.data.humancellatlas.org'
+        upload_url = f'https://upload{infix}.data.humancellatlas.org'
 
         self.ingest_api = IngestApi(ingest_url)
         self.dss_api = DssApi(dss_url)
+        self.upload_api = StagingApi(upload_url)
         self.bundle_manifest_service = BundleManifestService(ingest_api, dss_api)
 
     def _is_supplementary_file(self, file_uuid):
@@ -209,11 +232,68 @@ class BundleManifestResourceProcessor:
 
         return report
 
+    def update_bundle(self, bundle_manifest: BundleManifest, links):
+        links_file = bundle_manifest.links_file
+        remove_files = [{
+            "indexed": links_file.indexed,
+            "name": links_file.name,
+            "uuid": links_file.uuid,
+            "version": links_file.version
+        }]
+
+        uploaded_file = self.upload_api.stageFile(stagingAreaId=upload_area_uuid,
+                                                  filename=f'links_{links_file.uuid }.json',
+                                                  body=links,
+                                                  type='metadata/links')
+        file = {
+            'url': uploaded_file.url,
+            'dss_uuid': links.uuid,
+            'version': datetime.datetime.utcnow().strftime("%Y-%m-%dT%H%M%S.%fZ")
+        }
+        self.dss_api.put_file(bundle_manifest.uuid, file)
+
+        add_files = [{
+            "indexed": links_file.indexed,
+            "name": links_file.name,
+            "uuid": links_file.uuid,
+            "version": file.get('version')
+        }]
+
+        self.dss_api.patch_bundle(bundle_manifest.uuid, bundle_manifest.version, add_files, remove_files)
+
+    @staticmethod
+    def get_summary(map_results):
+        summary = {
+            'last_run': datetime.datetime.utcnow().strftime(
+                "%Y-%m-%dT%H%M%S.%fZ")
+        }
+        for result in map_results:
+            project_uuid = result['project_uuid']
+            project_summary = summary.get(project_uuid, {
+                'bundles_to_correct': 0,
+                'not_found': 0,
+                'bundle_count': 0,
+                'no_links': 0
+            })
+            project_summary['bundle_count'] = project_summary[
+                                                  'bundle_count'] + 1
+            if result.get('has_links_to_correct'):
+                project_summary['bundles_to_correct'] = project_summary[
+                                                            'bundles_to_correct'] + 1
+            if result.get('not_found'):
+                project_summary['not_found'] = project_summary['not_found'] + 1
+            if result.get('no_links'):
+                project_summary['no_links'] = project_summary['no_links'] + 1
+            summary[project_uuid] = project_summary
+
+        return {
+            'map_results': map_results,
+            'summary': summary
+        }
+
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(
-        description='Script to populate the new "links" field in the '
-                    'BundleManifest for bundles in a given project uuid')
+    parser = argparse.ArgumentParser(description='Script to correct links.json in bundles')
     parser.add_argument('env',
                         choices=['dev', 'integration', 'staging', 'prod'],
                         help='environment')
@@ -221,48 +301,35 @@ if __name__ == '__main__':
                         help='Project uuid')
     args = parser.parse_args()
 
-    # project_uuid = args.project_uuid
+    project_uuid = args.project_uuid
 
     env = args.env
 
     infix = f'.{env}' if env != 'prod' else ''
     dss_url = f'https://dss{infix}.data.humancellatlas.org'
     ingest_url = f'https://api.ingest{infix}.data.humancellatlas.org'
+    upload_url = f'https://upload{infix}.data.humancellatlas.org'
 
     ingest_api = IngestApi(ingest_url)
     dss_api = DssApi(dss_url)
+    upload_api = StagingApi(upload_url)
     bundle_manifest_service = BundleManifestService(ingest_api, dss_api)
 
-    # As of 29 July
-    project_uuids = [
-        # "f8aa201c-4ff1-45a4-890e-840d63459ca2",  # done
-        # "091cf39b-01bc-42e5-9437-f419a66c8a45",  # done
-        # "008e40e8-66ae-43bb-951c-c073a2fa6774",  # done
-        # "f86f1ab4-1fbb-4510-ae35-3ffd752d4dfc",  # done
-        # "cc95ff89-2e68-4a08-a234-480eca21ce79",  # done
-        # "f81efc03-9f56-4354-aabb-6ce819c3d414",  # done
-        # "027c51c6-0719-469f-a7f5-640fe57cbece",  # done
-        # "74b6d569-3b11-42ef-b6b1-a0454522b4a0",  #
-        # "90bd6933-40c0-48d4-8d76-778c103bf545",
-        "a29952d9-925e-40f4-8a1c-274f118f1f51",  # has no links - done
-        # "005d611a-14d5-4fbf-846e-571a1f874f70",  # has analysis - done
-        # "a9c022b4-c771-4468-b769-cabcf9738de3",  # done
-        # "c4077b3c-5c98-4d26-a614-246d12c2e5d7",  # has analysis - done
-        # "f83165c5-e2ea-4d15-a5cf-33f3550bffde",  # has analysis - done
-        # "2043c65a-1cf8-4828-a656-9e247d4e64f1",  # has analysis - done
-        # "8c3c290d-dfff-4553-8868-54ce45f4ba7f",
-        # "ae71be1d-ddd8-4feb-9bed-24c3ddb6e1ad",
-        # "cddab57b-6868-4be4-806f-395ed9dd635a",  # has analysis done
-        # "f306435b-4e60-4a79-83a1-159bda5a2c79"   # Tabula Muris - no need
-    ]
+    project_uuids = PROJECTS.get(env)
+    upload_area_uuid = str(uuid.uuid4())
+    # TODO api key
+    # upload_api.createStagingArea(upload_area_uuid)
     start_time = time.time()
     print(f'Found {len(project_uuids)} projects')
     for project_uuid in project_uuids:
-        bundle_manifest_resources = bundle_manifest_service.find_bundle_manifests(project_uuid)
+        bundle_manifests = bundle_manifest_service.find_bundle_manifests(project_uuid)
         count = bundle_manifest_service.find_bundle_manifests_count(project_uuid)
         print(f'Project {project_uuid} has {count} bundles')
+
         thread_pool = multiprocessing.Pool(PROCESS_COUNT)
-        map_results = thread_pool.map(BundleManifestResourceProcessor(env, project_uuid).check_bundle_links, bundle_manifest_resources)
-        summary = get_summary(map_results)
+        map_results = thread_pool.map(BundleProcessor(env, project_uuid, upload_area_uuid).check_bundle_links, bundle_manifests)
+        summary = BundleProcessor.get_summary(map_results)
         save_json_to_file(summary, f'{project_uuid}_summary.log')
     print(f"{PROCESS_COUNT} processes -- Execution Time: {time.time() - start_time} seconds")
+
+    # upload_api.deleteStagingArea(upload_area_uuid)

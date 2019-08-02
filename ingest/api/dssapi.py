@@ -212,9 +212,21 @@ class DssApi:
         except Exception as e:
             raise Error(e)
 
+    def patch_bundle(self, bundle_uuid, version, add_files, remove_files):
+        self.init_dss_client()
+        try:
+            return self.dss_client.patch_bundle(
+                uuid=bundle_uuid,
+                version=version,
+                replica="aws",
+                add_files=add_files,
+                remove_files=remove_files
+            )
+        except Exception as e:
+            raise Error(e)
+
 
 # Module Exceptions
-
 class Error(Exception):
     """Base-class for all exceptions raised by this module."""
 
