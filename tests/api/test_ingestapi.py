@@ -209,7 +209,6 @@ class IngestApiTest(TestCase):
         count = ingest_api.get_related_entities_count('files', mock_entity, 'files')
         self.assertEqual(count, 5)
 
-
     @patch('ingest.api.ingestapi.create_session_with_retry')
     def test_get_related_entities_count_no_pagination(self, mock_create_session):
         # given
