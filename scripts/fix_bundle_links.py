@@ -67,7 +67,7 @@ class Bundle:
     @property
     def links_file(self):
         if self._files_map.get('links.json'):
-            return self._files_map.get('links.json')
+            return File(self.dss_api, self._files_map.get('links.json'))
         else:
             return None
 
@@ -229,6 +229,8 @@ class BundleProcessor:
             report['no_links'] = True
         if links != bundle_manifest.links:
             report['has_links_to_correct'] = True
+            self.update_bundle(bundle_manifest, links)
+
 
         return report
 
@@ -247,7 +249,7 @@ class BundleProcessor:
                                                   type='metadata/links')
         file = {
             'url': uploaded_file.url,
-            'dss_uuid': links.uuid,
+            'dss_uuid': links_file.uuid,
             'version': datetime.datetime.utcnow().strftime("%Y-%m-%dT%H%M%S.%fZ")
         }
         self.dss_api.put_file(bundle_manifest.uuid, file)
@@ -317,19 +319,29 @@ if __name__ == '__main__':
 
     project_uuids = PROJECTS.get(env)
     upload_area_uuid = str(uuid.uuid4())
-    # TODO api key
-    # upload_api.createStagingArea(upload_area_uuid)
-    start_time = time.time()
-    print(f'Found {len(project_uuids)} projects')
-    for project_uuid in project_uuids:
-        bundle_manifests = bundle_manifest_service.find_bundle_manifests(project_uuid)
+
+    print(f'Upload area: {upload_area_uuid}')
+
+    upload_api.createStagingArea(upload_area_uuid)
+    try:
+        start_time = time.time()
+        print(f'Found {len(project_uuids)} projects')
+        for project_uuid in project_uuids:
+            bundle_manifests = bundle_manifest_service.find_bundle_manifests(
+                project_uuid)
         count = bundle_manifest_service.find_bundle_manifests_count(project_uuid)
         print(f'Project {project_uuid} has {count} bundles')
 
         thread_pool = multiprocessing.Pool(PROCESS_COUNT)
-        map_results = thread_pool.map(BundleProcessor(env, project_uuid, upload_area_uuid).check_bundle_links, bundle_manifests)
+        map_results = thread_pool.map(BundleProcessor(env, project_uuid,
+                                                      upload_area_uuid).check_bundle_links,
+                                      bundle_manifests)
         summary = BundleProcessor.get_summary(map_results)
         save_json_to_file(summary, f'{project_uuid}_summary.log')
-    print(f"{PROCESS_COUNT} processes -- Execution Time: {time.time() - start_time} seconds")
-
-    # upload_api.deleteStagingArea(upload_area_uuid)
+        print(
+            f"{PROCESS_COUNT} processes -- Execution Time: {time.time() - start_time} seconds")
+    except Exception as e:
+        logging.exception(e)
+        pass
+    finally:
+        upload_api.deleteStagingArea(upload_area_uuid)
