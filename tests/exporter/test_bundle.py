@@ -197,7 +197,7 @@ class BundleTest(TestCase):
                                              uuid=uuid,
                                              metadata_json={'text': 'description'},
                                              dcp_version='2019-06-12T14:14:14.077Z',
-                                             provenance=MetadataProvenance("", "", ""))
+                                             provenance=MetadataProvenance("", "", "", "", ""))
 
         # when:
         bundle.update_file(metadata_resource)

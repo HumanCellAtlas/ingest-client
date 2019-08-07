@@ -42,7 +42,7 @@ class TemplateManagerTest(TestCase):
 
         schema_template.lookup = lambda key: lookup_map.get(key)
 
-        ingest_api = MagicMock(name='ingest_api')
+        ingest_api = MagicMock(name='mock_ingest_api')
 
         # and:
         template_manager = TemplateManager(schema_template, ingest_api)
@@ -65,7 +65,7 @@ class TemplateManagerTest(TestCase):
     def test_create_row_template(self, determine_strategy, look_up):
         # given:
         template = MagicMock(name='schema_template')
-        ingest_api = MagicMock(name='ingest_api')
+        ingest_api = MagicMock(name='mock_ingest_api')
 
         # and:
         concrete_type = 'user'
@@ -122,7 +122,7 @@ class TemplateManagerTest(TestCase):
     def test_create_row_template_with_default_values(self, determine_strategy, look_up):
         # given:
         schema_template = MagicMock('schema_template')
-        ingest_api = MagicMock(name='ingest_api')
+        ingest_api = MagicMock(name='mock_ingest_api')
 
         # and:
         schema_url = 'http://schema.sample.com/profile'
@@ -155,7 +155,7 @@ class TemplateManagerTest(TestCase):
     def test_create_row_template_for_module_worksheet(self, determine_strategy, look_up):
         # given:
         template = MagicMock(name='schema_template')
-        ingest_api = MagicMock(name='ingest_api')
+        ingest_api = MagicMock(name='mock_ingest_api')
 
         # TODO define method in SchemaTemplate that returns domain and concrete types #module-tabs
         # and:
@@ -210,7 +210,7 @@ class TemplateManagerTest(TestCase):
     def test_create_row_template_with_none_header(self, determine_strategy):
         # given:
         schema_template = MagicMock('schema_template')
-        ingest_api = MagicMock(name='ingest_api')
+        ingest_api = MagicMock(name='mock_ingest_api')
 
         # and:
         do_nothing_strategy = FakeConversion('')
@@ -251,7 +251,7 @@ class TemplateManagerTest(TestCase):
     def test_get_schema_type(self):
         # given
         schema_template = MagicMock(name='schema_template')
-        ingest_api = MagicMock(name='ingest_api')
+        ingest_api = MagicMock(name='mock_ingest_api')
 
         spec = {
             'schema': {
@@ -273,7 +273,7 @@ class TemplateManagerTest(TestCase):
     def test_get_schema_url(self):
         # given
         schema_template = MagicMock(name='schema_template')
-        ingest_api = MagicMock(name='ingest_api')
+        ingest_api = MagicMock(name='mock_ingest_api')
         latest_url = 'https://schema.humancellatlas.org/type/biomaterial/5.0.0/donor_organism'
 
         spec = {
@@ -299,7 +299,7 @@ class TemplateManagerTest(TestCase):
         # given
         schema_template = MagicMock(name='schema_template')
         schema_template.get_tab_key = MagicMock(return_value='user_profile')
-        manager = TemplateManager(schema_template, MagicMock(name='ingest_api'))
+        manager = TemplateManager(schema_template, MagicMock(name='mock_ingest_api'))
 
         # expect:
         self.assertEqual('user_profile', manager.get_concrete_type('User Profile'))
@@ -309,7 +309,7 @@ class TemplateManagerTest(TestCase):
         # given:
         schema_template = MagicMock(name='schema_template')
         schema_template.get_tab_key = MagicMock(return_value='product')
-        manager = TemplateManager(schema_template, MagicMock(name='ingest_api'))
+        manager = TemplateManager(schema_template, MagicMock(name='mock_ingest_api'))
 
         # expect:
         self.assertEqual('product', manager.get_concrete_type('Product - Barcodes'))
@@ -320,7 +320,7 @@ class TemplateManagerTest(TestCase):
     def test_get_concrete_type_of_worksheet_invalid_format(self):
         # given:
         schema_template = MagicMock(name='schema_template')
-        manager = TemplateManager(schema_template, MagicMock(name='ingest_api'))
+        manager = TemplateManager(schema_template, MagicMock(name='mock_ingest_api'))
 
         # when:
         raised_exception = None
@@ -340,7 +340,7 @@ class TemplateManagerTest(TestCase):
         template.lookup = MagicMock(return_value=schema_spec)
 
         # and:
-        template_manager = TemplateManager(template, MagicMock(name='ingest_api'))
+        template_manager = TemplateManager(template, MagicMock(name='mock_ingest_api'))
 
         # expect:
         self.assertEqual('user', template_manager.get_domain_type('profile'))

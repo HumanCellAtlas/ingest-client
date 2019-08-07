@@ -1,0 +1,111 @@
+{
+  "content": {
+    "describedBy": "https://schema.humancellatlas.org/type/project/14.0.2/project",
+    "schema_type": "project",
+    "project_core": {
+      "project_short_name": "prod/Smart-seq2/2019-08-05T18:46:12Z",
+      "project_title": "SS2 1 Cell Integration Test",
+      "project_description": "Contains a small file set (SRR3562314) from the dataset 'Single cell transcriptome analysis of human pancreas' to speed up analysis. This test also contains extensive metadata for browser testing. Metadata is fabricated. Where possible the example value is used."
+    },
+    "supplementary_links": [
+      "https://github.com/czbiohub/tabula-muris; http://celltag.org/"
+    ],
+    "geo_series_accessions": [
+      "GSE00000"
+    ],
+    "array_express_accessions": [
+      "E-AAAA-00"
+    ],
+    "insdc_study_accessions": [
+      "PRJNA000000"
+    ],
+    "contributors": [
+      {
+        "name": "John,D,Doe",
+        "email": "dummy@email.com",
+        "phone": "(+1) 234-555-6789",
+        "institution": "EMBL-EBI",
+        "laboratory": "Division of Vaccine Discovery",
+        "address": "0000 Main Street, Nowheretown, MA, 12091",
+        "country": "USA",
+        "corresponding_contributor": true,
+        "project_role": {
+          "text": "principal investigator"
+        },
+        "orcid_id": "0000-1111-2222-3333"
+      },
+      {
+        "name": "Jane,,Smith",
+        "email": "dummy1@email.com",
+        "phone": "(+1) 234-555-6788",
+        "institution": "University of Washington",
+        "laboratory": "Department of Biology",
+        "address": "0001 Main Street, Nowheretown, MA, 12091",
+        "country": "USA",
+        "corresponding_contributor": false,
+        "project_role": {
+          "text": "computational scientist"
+        },
+        "orcid_id": "0000-1111-2222-3333"
+      }
+    ],
+    "publications": [
+      {
+        "authors": [
+          "Doe JD"
+        ],
+        "title": "Study of single cells in the human body",
+        "doi": "10.1016/j.cell.2016.07.054",
+        "pmid": 27565351,
+        "url": "http://www.27565351example.com"
+      }
+    ],
+    "funders": [
+      {
+        "grant_title": "A title of a grant proposal.",
+        "grant_id": "BB/P0000001/1",
+        "organization": "Biotechnology and Biological Sciences Research Council (BBSRC)"
+      }
+    ]
+  },
+  "submissionDate": "2019-08-05T18:46:16.237Z",
+  "updateDate": "2019-08-05T18:46:22.398Z",
+  "user": null,
+  "lastModifiedUser": "anonymousUser",
+  "type": "Project",
+  "uuid": {
+    "uuid": "f0182598-6c94-478d-a3bc-3ed5f7dfc2cb"
+  },
+  "events": [],
+  "dcpVersion": "2019-08-05T18:46:16.237Z",
+  "accession": null,
+  "validationState": "Valid",
+  "validationErrors": [],
+  "isUpdate": false,
+  "_links": {
+    "self": {
+      "href": "https://api.ingest.data.humancellatlas.org/projects/5d487978fdfb5f00015d9971"
+    },
+    "project": {
+      "href": "https://api.ingest.data.humancellatlas.org/projects/5d487978fdfb5f00015d9971",
+      "title": "A single project"
+    },
+    "processing": {
+      "href": "https://api.ingest.data.humancellatlas.org/projects/5d487978fdfb5f00015d9971/processingEvent"
+    },
+    "draft": {
+      "href": "https://api.ingest.data.humancellatlas.org/projects/5d487978fdfb5f00015d9971/draftEvent"
+    },
+    "bundleManifests": {
+      "href": "https://api.ingest.data.humancellatlas.org/projects/5d487978fdfb5f00015d9971/bundleManifests",
+      "title": "Access or create bundle manifests (describing which submitted contents went into which bundle in the datastore)"
+    },
+    "supplementaryFiles": {
+      "href": "https://api.ingest.data.humancellatlas.org/projects/5d487978fdfb5f00015d9971/supplementaryFiles"
+    },
+    "submissionEnvelopes": {
+      "href": "https://api.ingest.data.humancellatlas.org/projects/5d487978fdfb5f00015d9971/submissionEnvelopes",
+      "title": "Access or create new submission envelopes"
+    }
+  }
+}

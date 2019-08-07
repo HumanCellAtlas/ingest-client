@@ -2,6 +2,7 @@
 import json
 import logging
 import os
+import re
 import time
 import uuid
 from copy import deepcopy
@@ -14,6 +15,8 @@ import ingest.exporter.bundle
 from ingest.api.dssapi import DssApi, BundleAlreadyExist
 from ingest.api.ingestapi import IngestApi
 from ingest.api.stagingapi import StagingApi
+from .exceptions import BundleDSSError, BundleFileUploadError, FileDSSError, MultipleProjectsError, \
+    NoUploadAreaFoundError
 
 DEFAULT_INGEST_URL = os.environ.get('INGEST_API', 'http://api.ingest.dev.data.humancellatlas.org')
 DEFAULT_STAGING_URL = os.environ.get('STAGING_API', 'http://upload.dev.data.humancellatlas.org')
@@ -26,13 +29,14 @@ ERROR_TEMPLATE = {
 
 
 class IngestExporter:
-    def __init__(self, ingest_api: IngestApi, dss_api: DssApi, staging_api: StagingApi, options=None):
+    def __init__(self, ingest_api: IngestApi, dss_api: DssApi, staging_api: StagingApi, dry_run=False,
+                 output_directory=None):
         format = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
         logging.basicConfig(format=format)
         self.logger = logging.getLogger(__name__)
 
-        self.dry_run = options.dry if options and options.dry else False
-        self.output_dir = options.output if options and options.output else None
+        self.dry_run = dry_run
+        self.output_dir = output_directory
 
         self.staging_api = staging_api
         self.dss_api = dss_api
@@ -48,7 +52,7 @@ class IngestExporter:
             error_message = "Can't do export as no upload area has been created."
             raise NoUploadAreaFoundError(error_message)
 
-        self.logger.info('Export bundle for process with UUID ' + process_uuid)
+        self.logger.info("Export bundle for process with UUID %s", process_uuid)
 
         self.logger.info('Retrieving all process information...')
 
@@ -95,13 +99,13 @@ class IngestExporter:
                     output_dir = self.output_dir if self.output_dir else bundle_manifest.bundleUuid
                     self.dump_to_file(json.dumps(content, indent=4), filename, output_dir=output_dir)
 
-            self.logger.info('Dry run for bundle ' + bundle_manifest.bundleUuid)
-            self.logger.info("Execution Time: %s seconds" % (time.time() - start_time))
+            self.logger.info("Dry run for bundle %s", bundle_manifest.bundleUuid)
+            self.logger.info("Execution Time: %d seconds", time.time() - start_time)
         else:
             self.logger.info('Uploading metadata files...')
             try:
                 self.upload_metadata_files(submission_uuid, files_by_type)
-            except Error as bundle_error:
+            except Exception as bundle_error:
                 submission_url = self._extract_submission_url(submission)
                 if submission_url:
                     report = ERROR_TEMPLATE.copy()
@@ -132,11 +136,11 @@ class IngestExporter:
 
                 saved_bundle_uuid = bundle_manifest.bundleUuid
 
-                self.logger.info('Bundle ' + bundle_uuid + ' was successfully created!')
-                self.logger.info("Execution Time: %s seconds" % (time.time() - start_time))
-            except BundleAlreadyExist as bundle_already_exist:
+                self.logger.info("Bundle %s was successfully created!", bundle_uuid)
+                self.logger.info("Execution Time: %d seconds", time.time() - start_time)
+            except BundleAlreadyExist:
                 raise
-            except Error as unresolvable_exception:
+            except Exception as unresolvable_exception:
                 submission_url = self._extract_submission_url(submission)
                 if submission_url:
                     report = ERROR_TEMPLATE.copy()
@@ -176,8 +180,8 @@ class IngestExporter:
         if not process_info.project:  # get from input bundle
             project_uuid_lists = list(process_info.input_bundle['fileProjectMap'].values())
 
-            if len(project_uuid_lists) == 0 and len(project_uuid_lists[0]) == 0:
-                raise Error('Input bundle manifest has no list of project uuid.')  # very unlikely to happen
+            if not project_uuid_lists and not project_uuid_lists[0]:
+                raise Exception('Input bundle manifest has no list of project uuid.')  # very unlikely to happen
 
             project_uuid = project_uuid_lists[0][0]
             process_info.project = self.ingest_api.get_project_by_uuid(project_uuid)
@@ -202,10 +206,7 @@ class IngestExporter:
         # TODO add checking for project only on an assay process
         # TODO an analysis process may have no link to a project
 
-        if len(projects) > 0:
-            return projects[0]
-
-        return None
+        return projects[0] if projects else None
 
     # get all related info of a process
     def recurse_process(self, process, process_info):
@@ -316,10 +317,7 @@ class IngestExporter:
         bundle_manifests = list(
             self.ingest_api.get_related_entities('inputBundleManifests', process, 'bundleManifests'))
 
-        if len(bundle_manifests) > 0:
-            return bundle_manifests[0]
-
-        return None
+        return bundle_manifests[0] if bundle_manifests else None
 
     def prepare_metadata_files(self, metadata_info, process_info, is_indexed=True) -> 'dict':
         metadata_files_by_type = dict()
@@ -372,6 +370,11 @@ class IngestExporter:
         provenance_core['submission_date'] = metadata_doc['submissionDate']
         provenance_core['update_date'] = metadata_doc['updateDate']
 
+        # Populate the major and minor schema versions from the URL in the describedBy field
+        schema_semver = re.findall(r'\d+\.\d+\.\d+', metadata_doc["content"]["describedBy"])[0]
+        provenance_core['schema_major_version'] = int(schema_semver.split(".")[0])
+        provenance_core['schema_minor_version'] = int(schema_semver.split(".")[1])
+
         bundle_doc = metadata_doc['content']
         bundle_doc['provenance'] = provenance_core
 
@@ -408,8 +411,8 @@ class IngestExporter:
                     if not bundle_file.get('is_from_input_bundle'):
                         uploaded_file = self.upload_file(submission_uuid, filename, content, content_type)
                         bundle_file['upload_file_url'] = uploaded_file.url
-        except Exception as e:
-            message = "An error occurred on uploading bundle files: " + str(e)
+        except Exception as exception:
+            message = "An error occurred on uploading bundle files: " + str(exception)
             raise BundleFileUploadError(message)
 
     # TODO handle error #export-errors
@@ -418,8 +421,8 @@ class IngestExporter:
             created_bundle = self.dss_api.put_bundle(bundle_uuid, bundle_version, created_files)
         except BundleAlreadyExist as bundle_exist:
             raise
-        except Exception as e:
-            message = 'An error occurred while putting bundle in DSS: ' + str(e)
+        except Exception as exception:
+            message = 'An error occurred while putting bundle in DSS: ' + str(exception)
             raise BundleDSSError(message)
 
         return created_bundle
@@ -451,8 +454,8 @@ class IngestExporter:
                     created_file = self.dss_api.put_file(bundle_uuid, bundle_file)
 
                 version = created_file['version']
-            except Exception as e:
-                raise FileDSSError('An error occurred while putting file in DSS' + str(e))
+            except Exception as exception:
+                raise FileDSSError('An error occurred while putting file in DSS' + str(exception))
 
             file_param = {
                 "indexed": bundle_file["indexed"],
@@ -474,18 +477,18 @@ class IngestExporter:
                     step=30,
                     timeout=1200  # 20 minutes
                 )
-            except polling.TimeoutException as te:
-                self.logger.error(f'''File {created_file["uuid"]}/{created_file["version"]} with name {created_file[
-                    "name"]} takes too long to be copied.''')
+            except polling.TimeoutException:
+                self.logger.error("File %s/%s with name %s takes too long to be copied.", created_file["uuid"],
+                                  created_file["version"], created_file["name"])
                 raise
-            self.logger.info(f'''File {created_file["uuid"]}/{created_file["version"]} with name {created_file[
-                "name"]} is successfully copied!''')
+            self.logger.info("File %s/%s with name %s is successfully copied!", created_file["uuid"],
+                             created_file["version"], created_file["name"])
 
     def _is_file_copied(self, created_file):
         try:
             r = self.dss_api.head_file(created_file["uuid"], version=created_file["version"])
             return (r.status_code == requests.codes.ok) or (r.status_code == requests.codes.created)
-        except Exception as e:
+        except Exception:
             return False
 
     def get_metadata_files(self, metadata_files_info):
@@ -508,7 +511,7 @@ class IngestExporter:
     def get_data_files(self, uuid_file_dict):
         data_files = []
         #  TODO: need to keep track of UUIDs used so that retries work when the DSS returns a 500
-        for file_uuid, data_file in uuid_file_dict.items():
+        for _, data_file in uuid_file_dict.items():
             filename = data_file['fileName']
             cloud_url = data_file['cloudUrl']
             data_file_uuid = data_file['dataFileUuid']
@@ -554,21 +557,19 @@ class IngestExporter:
         file_description = self.staging_api.getFile(submission_uuid, filename)
 
         if file_description:
-            self.logger.info(f"The file {filename} already exists in the Upload area {submission_uuid}.")
+            self.logger.info("The file %s already exists in the Upload area %s.", filename, submission_uuid)
         else:
-            self.logger.info("Writing to staging area..." + filename)
+            self.logger.info("Writing to staging area... %s", filename)
             try:
                 file_description = self.staging_api.stageFile(submission_uuid, filename, content, content_type)
-            except HTTPError as e:
-                if str(e.response.status_code) == "409":
+            except HTTPError as http_error:
+                if str(http_error.response.status_code) == "409":
                     file_description = self.staging_api.getFile(submission_uuid, filename)
                     if file_description:
                         return file_description
-                    else:
-                        raise e
-                raise e
+                raise http_error
 
-        self.logger.info("File staged at " + file_description.url)
+        self.logger.info("File staged at %s", file_description.url)
         return file_description
 
     def dump_to_file(self, content, filename, output_dir='output'):
@@ -623,34 +624,3 @@ class LinkSet:
 
     def get_links(self):
         return [deepcopy(link) for link in self.links]
-
-
-# Module Exceptions
-
-
-class Error(Exception):
-    """Base-class for all exceptions raised by this module."""
-
-
-class MultipleProjectsError(Error):
-    """A process should only have one project linked."""
-
-
-class InvalidBundleError(Error):
-    """There was a failure in bundle validation."""
-
-
-class BundleFileUploadError(Error):
-    """There was a failure in bundle file upload."""
-
-
-class BundleDSSError(Error):
-    """There was a failure in bundle creation in DSS."""
-
-
-class FileDSSError(Error):
-    """There was a failure in file creation in DSS."""
-
-
-class NoUploadAreaFoundError(Error):
-    """Export couldn't be as no upload area found"""

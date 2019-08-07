@@ -13,7 +13,7 @@ class SubmissionTest(TestCase):
     def test_new_submission(self):
         # given
         ingest.api.ingestapi.requests.get = MagicMock()
-        mock_ingest_api = MagicMock(name='ingest_api')
+        mock_ingest_api = MagicMock(name='mock_ingest_api')
 
         submission = Submission(mock_ingest_api, submission_url='submission_url')
         submission_url = submission.get_submission_url()
@@ -48,7 +48,7 @@ class SubmissionTest(TestCase):
         }
 
         ingest.api.ingestapi.requests.get = MagicMock()
-        mock_ingest_api = MagicMock(name='ingest_api')
+        mock_ingest_api = MagicMock(name='mock_ingest_api')
         mock_ingest_api.load_root = MagicMock()
         mock_ingest_api.create_entity = MagicMock(return_value=new_entity_mock_response)
 
@@ -67,7 +67,7 @@ class SubmissionTest(TestCase):
 
     def _do_test_define_manifest(self, total_count):
         # given:
-        ingest_api = MagicMock('ingest_api')
+        ingest_api = MagicMock('mock_ingest_api')
         ingest_api.create_submission_manifest = MagicMock()
         url = 'http://core.sample.com/submission/8fd733'
         submission = Submission(ingest_api, url)
@@ -169,7 +169,7 @@ class IngestSubmitterTest(TestCase):
     @patch('ingest.importer.submission.Submission')
     def test_submit(self, submission_constructor):
         # given:
-        ingest_api = MagicMock('ingest_api')
+        ingest_api = MagicMock('mock_ingest_api')
         ingest_api.get_submission = MagicMock()
         submission = self._mock_submission(submission_constructor)
 
@@ -191,7 +191,7 @@ class IngestSubmitterTest(TestCase):
     @patch('ingest.importer.submission.Submission')
     def test_submit_update_entities(self, submission_constructor):
         # given:
-        ingest_api = MagicMock('ingest_api')
+        ingest_api = MagicMock('mock_ingest_api')
         ingest_api.get_submission = MagicMock()
         submission = self._mock_submission(submission_constructor)
 
@@ -216,7 +216,7 @@ class IngestSubmitterTest(TestCase):
     @patch('ingest.importer.submission.Submission')
     def test_submit_linked_entity(self, submission_constructor):
         # given:
-        ingest_api = MagicMock('ingest_api')
+        ingest_api = MagicMock('mock_ingest_api')
         ingest_api.get_submission = MagicMock()
         ingest_api.patch = MagicMock()
         ingest_api.get_link_from_resource = MagicMock()
