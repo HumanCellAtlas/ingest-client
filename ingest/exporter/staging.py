@@ -14,6 +14,9 @@ class StagingService:
     def __init__(self, staging_client):
         self.staging_client = staging_client
 
+    def stage_metadata(self, submission_uuid, upload_file_name, content, content_type):
+        self.staging_client.stageFile()
+
     def stage_update(self, staging_area_uuid,
                      metadata_resource: MetadataResource) -> StagingInfo:
         formatted_type = f'metadata/{metadata_resource.metadata_type}'

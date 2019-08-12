@@ -9,17 +9,30 @@ from ingest.exporter.staging import StagingInfo, StagingService
 
 class StagingServiceTest(TestCase):
 
+    def test_stage_metadata(self):
+        # given:
+        staging_client = Mock(name='staging_client')
+        staging_service = StagingService(staging_client)
+
+        # when:
+        submission_uuid = '2ba4f337-59f7-447c-8ef7-87f4d756a8b1'
+        upload_file_name = 'donor_organism_942f1908-8f75-4edd-90be-db1c44c12f62.json'
+        staging_service.stage_metadata(submission_uuid, upload_file_name,
+                                       '{"description": "test"}', 'metadata/biomaterial')
+
+        # then:
+        staging_client.stageFile.assert_called_once()
+
+
     def test_stage_update(self):
         # given:
+        provenance = MetadataProvenance('831d4b6e-e8a2-42ce-b7c0-8d6ffcc15370', 'a submission date',
+                                        'an update date', 1, 1)
         metadata_resource = MetadataResource(metadata_type='biomaterial',
                                              uuid='831d4b6e-e8a2-42ce-b7c0-8d6ffcc15370',
                                              metadata_json={'description': 'test'},
                                              dcp_version='4.2.1',
-                                             provenance=MetadataProvenance('831d4b6e-e8a2-42ce-b7c0-8d6ffcc15370',
-                                                                           'a submission date',
-                                                                           'an update date',
-                                                                           1,
-                                                                           1))
+                                             provenance=provenance)
 
         # and:
         staging_client = Mock(name='staging_client')
