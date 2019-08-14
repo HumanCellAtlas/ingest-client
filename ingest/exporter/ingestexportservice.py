@@ -145,7 +145,7 @@ class IngestExporter:
                 if submission_url:
                     report = ERROR_TEMPLATE.copy()
                     report['details'] = str(unresolvable_exception)
-                    self.ingest_api.create_submission_error(submission_url, json.dumps(report))
+                    self.ingest_api.create_submission_error(submission_url, report)
                 raise
         return saved_bundle_uuid
 
