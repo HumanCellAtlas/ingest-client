@@ -23,8 +23,8 @@ DEFAULT_STAGING_URL = os.environ.get('STAGING_API', 'http://upload.dev.data.huma
 DEFAULT_DSS_URL = os.environ.get('DSS_API', 'http://dss.dev.data.humancellatlas.org')
 
 ERROR_TEMPLATE = {
-    'errorCode': 'ingest.exporter.error',
-    'message': 'Error occurred while attempting to export bundle.'
+    'type': 'http://exporter.ingest.data.humancellatlas.org/Error',
+    'title': 'Error occurred while attempting to export bundle.'
 }
 
 
@@ -109,7 +109,7 @@ class IngestExporter:
                 submission_url = self._extract_submission_url(submission)
                 if submission_url:
                     report = ERROR_TEMPLATE.copy()
-                    report['details'] = str(bundle_error)
+                    report['detail'] = str(bundle_error)
                     self.ingest_api.create_submission_error(submission_url, report)
                 raise
 
@@ -144,7 +144,7 @@ class IngestExporter:
                 submission_url = self._extract_submission_url(submission)
                 if submission_url:
                     report = ERROR_TEMPLATE.copy()
-                    report['details'] = str(unresolvable_exception)
+                    report['detail'] = str(unresolvable_exception)
                     self.ingest_api.create_submission_error(submission_url, report)
                 raise
         return saved_bundle_uuid

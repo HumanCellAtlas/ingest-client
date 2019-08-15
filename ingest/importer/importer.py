@@ -14,6 +14,11 @@ from ingest.importer.submission import IngestSubmitter, EntityMap, EntityLinker
 format = '[%(filename)s:%(lineno)s - %(funcName)20s() ] %(asctime)s - %(name)s - %(levelname)s - %(message)s'
 logging.basicConfig(format=format)
 
+ERROR_TEMPLATE = {
+    'type': 'http://importer.ingest.data.humancellatlas.org/Error',
+    'title': 'An error during submission occurred.'
+}
+
 
 class XlsImporter:
 
@@ -59,21 +64,12 @@ class XlsImporter:
             submission = submitter.submit(entity_map, submission_url)
 
         except ingest.importer.submission.Error as e:
-            error_json = {
-                'errorCode': 'ingest.importer.submission',
-                'errorType': 'Error',
-                'message': 'An error during submission occurred.',
-                'details': str(e),
-
-            }
+            error_json = ERROR_TEMPLATE.copy()
+            error_json['detail'] = str(e)
             self.logger.error(str(e), exc_info=True)
         except Exception as e:
-            error_json = {
-                'errorCode': 'ingest.importer.error',
-                'errorType': 'Error',
-                'message': 'An error during submission occurred.',
-                'details': str(e),
-            }
+            error_json = ERROR_TEMPLATE.copy()
+            error_json['detail'] = str(e)
             self.logger.error(str(e), exc_info=True)
 
         if error_json:
