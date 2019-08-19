@@ -7,11 +7,7 @@ from ingest.api.ingestapi import IngestApi
 from ingest.importer.importer import XlsImporter
 
 import ingest.importer.submission
-
-ERROR_TEMPLATE = {
-    'type': 'http://importer.ingest.data.humancellatlas.org/Error',
-    'title': 'An error during submission occurred.',
-}
+from ingest.utils.SubmissionError import ImporterError
 
 
 class IngestXlsImporterTest(TestCase):
@@ -25,8 +21,7 @@ class IngestXlsImporterTest(TestCase):
         error = ingest.importer.submission.Error(
             'http://unittest.importer.ingest.data.humancellatlas.org/Error',
             'Error thrown for Unit Test')
-        error_json = ERROR_TEMPLATE.copy()
-        error_json['detail'] = str(error)
+        error_json = ImporterError(str(error)).getJSON()
         importer._generate_spreadsheet_json = MagicMock(side_effect=error)
         importer.logger.error = MagicMock()
 
@@ -40,8 +35,7 @@ class IngestXlsImporterTest(TestCase):
         # given:
         importer = XlsImporter(ingest_api=self.mock_ingest_api)
         exception = Exception('Error thrown for Unit Test')
-        exception_json = ERROR_TEMPLATE.copy()
-        exception_json['detail'] = str(exception)
+        exception_json = ImporterError(str(exception)).getJSON()
         importer._generate_spreadsheet_json = MagicMock(side_effect=exception)
         importer.logger.error = MagicMock()
 

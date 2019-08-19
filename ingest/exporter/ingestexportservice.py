@@ -15,17 +15,13 @@ import ingest.exporter.bundle
 from ingest.api.dssapi import DssApi, BundleAlreadyExist
 from ingest.api.ingestapi import IngestApi
 from ingest.api.stagingapi import StagingApi
+from ingest.utils.SubmissionError import ExporterError
 from .exceptions import BundleDSSError, BundleFileUploadError, FileDSSError, MultipleProjectsError, \
     NoUploadAreaFoundError
 
 DEFAULT_INGEST_URL = os.environ.get('INGEST_API', 'http://api.ingest.dev.data.humancellatlas.org')
 DEFAULT_STAGING_URL = os.environ.get('STAGING_API', 'http://upload.dev.data.humancellatlas.org')
 DEFAULT_DSS_URL = os.environ.get('DSS_API', 'http://dss.dev.data.humancellatlas.org')
-
-ERROR_TEMPLATE = {
-    'type': 'http://exporter.ingest.data.humancellatlas.org/Error',
-    'title': 'Error occurred while attempting to export bundle.'
-}
 
 
 class IngestExporter:
@@ -108,9 +104,7 @@ class IngestExporter:
             except Exception as bundle_error:
                 submission_url = self._extract_submission_url(submission)
                 if submission_url:
-                    report = ERROR_TEMPLATE.copy()
-                    report['detail'] = str(bundle_error)
-                    self.ingest_api.create_submission_error(submission_url, report)
+                    self.ingest_api.create_submission_error(submission_url, ExporterError(str(bundle_error)).getJSON())
                 raise
 
             metadata_files = self.get_metadata_files(files_by_type)
@@ -143,9 +137,10 @@ class IngestExporter:
             except Exception as unresolvable_exception:
                 submission_url = self._extract_submission_url(submission)
                 if submission_url:
-                    report = ERROR_TEMPLATE.copy()
-                    report['detail'] = str(unresolvable_exception)
-                    self.ingest_api.create_submission_error(submission_url, report)
+                    self.ingest_api.create_submission_error(
+                        submission_url,
+                        ExporterError(str(unresolvable_exception)).getJSON()
+                    )
                 raise
         return saved_bundle_uuid
 

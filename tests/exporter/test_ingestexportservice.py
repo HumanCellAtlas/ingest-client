@@ -12,6 +12,7 @@ from ingest.api.dssapi import DssApi
 from ingest.api.ingestapi import IngestApi
 from ingest.api.stagingapi import FileDescription, StagingApi
 from ingest.exporter.ingestexportservice import IngestExporter, LinkSet
+from ingest.utils.SubmissionError import ExporterError
 
 BASE_PATH = os.path.dirname(__file__)
 
@@ -468,11 +469,6 @@ class TestExporter(TestCase):
         self.assertTrue(links.get_links()[0] == mock_link)
         self.assertTrue(links.get_links()[1] == another_mock_link)
 
-    ERROR_TEMPLATE = {
-        'type': 'http://exporter.ingest.data.humancellatlas.org/Error',
-        'title': 'Error occurred while attempting to export bundle.',
-    }
-
     SUBMISSION_URL = 'http://api.ingest.data.humancellatlas.org/SubmissionEnvelope/1234'
 
     def test_upload_error_posted_to_ingest_api(self):
@@ -490,8 +486,7 @@ class TestExporter(TestCase):
             exporter._extract_submission_url = MagicMock(return_value=self.SUBMISSION_URL)
 
             error = Exception('Error thrown for Unit Test')
-            error_json = self.ERROR_TEMPLATE.copy()
-            error_json['detail'] = str(error)
+            error_json = ExporterError(str(error)).getJSON()
 
             exporter.upload_metadata_files = MagicMock(side_effect=error)
 
@@ -519,9 +514,7 @@ class TestExporter(TestCase):
             exporter._extract_submission_url = MagicMock(return_value=self.SUBMISSION_URL)
 
             error = Exception('Error thrown for Unit Test')
-            error_json = self.ERROR_TEMPLATE.copy()
-            error_json['detail'] = str(error)
-
+            error_json = ExporterError(str(error)).getJSON()
             exporter.put_bundle_in_dss = MagicMock(side_effect=error)
 
             # when:
