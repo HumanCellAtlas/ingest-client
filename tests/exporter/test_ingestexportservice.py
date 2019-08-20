@@ -469,7 +469,15 @@ class TestExporter(TestCase):
         self.assertTrue(links.get_links()[0] == mock_link)
         self.assertTrue(links.get_links()[1] == another_mock_link)
 
-    SUBMISSION_URL = 'http://api.ingest.data.humancellatlas.org/SubmissionEnvelope/1234'
+    SUBMISSION = {
+        "triggersAnalysis": False,
+        "_links": {
+          "self": {
+              "href": "http://api.ingest.data.humancellatlas.org/SubmissionEnvelope/1234"
+          }
+        }
+    }
+
 
     def test_upload_error_posted_to_ingest_api(self):
         with self.assertRaises(Exception):
@@ -477,13 +485,13 @@ class TestExporter(TestCase):
             exporter = IngestExporter(ingest_api=self.mock_ingest_api, dss_api=self.mock_dss_api,
                                       staging_api=self.mock_staging_api)
             # and:
+            self.mock_ingest_api.get_entity_by_uuid = MagicMock(return_value=self.SUBMISSION)
             exporter.logger.info = MagicMock()
             exporter.get_all_process_info = MagicMock()
             exporter.get_metadata_by_type = MagicMock()
             exporter.prepare_metadata_files = MagicMock()
             exporter.bundle_links = MagicMock()
             exporter.create_bundle_manifest = MagicMock()
-            exporter._extract_submission_url = MagicMock(return_value=self.SUBMISSION_URL)
 
             error = Exception('Error thrown for Unit Test')
             error_json = ExporterError(str(error)).getJSON()
@@ -494,7 +502,10 @@ class TestExporter(TestCase):
             exporter.export_bundle(bundle_uuid=None, bundle_version=None, submission_uuid=None, process_uuid=None)
 
         # then:
-        self.mock_ingest_api.create_submission_error.assert_called_once_with(self.SUBMISSION_URL, error_json)
+        self.mock_ingest_api.create_submission_error.assert_called_once_with(
+            self.SUBMISSION.get("_links").get("self").get("href"),
+            error_json
+        )
 
     def test_dss_upload_error_posted_to_ingest_api(self):
         with self.assertRaises(Exception):
@@ -502,6 +513,7 @@ class TestExporter(TestCase):
             exporter = IngestExporter(ingest_api=self.mock_ingest_api, dss_api=self.mock_dss_api,
                                       staging_api=self.mock_staging_api)
             # and:
+            self.mock_ingest_api.get_entity_by_uuid = MagicMock(return_value=self.SUBMISSION)
             exporter.logger.info = MagicMock()
             exporter.get_all_process_info = MagicMock()
             exporter.get_metadata_by_type = MagicMock()
@@ -511,7 +523,6 @@ class TestExporter(TestCase):
             exporter.upload_metadata_files = MagicMock()
             exporter.get_metadata_files = MagicMock(return_value=list())
             exporter.get_data_files = MagicMock(return_value=list())
-            exporter._extract_submission_url = MagicMock(return_value=self.SUBMISSION_URL)
 
             error = Exception('Error thrown for Unit Test')
             error_json = ExporterError(str(error)).getJSON()
@@ -521,7 +532,10 @@ class TestExporter(TestCase):
             exporter.export_bundle(bundle_uuid=None, bundle_version=None, submission_uuid=None, process_uuid=None)
 
         # then:
-        self.mock_ingest_api.create_submission_error.assert_called_once_with(self.SUBMISSION_URL, error_json)
+        self.mock_ingest_api.create_submission_error.assert_called_once_with(
+            self.SUBMISSION.get("_links").get("self").get("href"),
+            error_json
+        )
 
 
 def json_from_expected_bundle_file(relative_dir):
