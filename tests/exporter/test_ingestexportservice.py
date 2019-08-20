@@ -472,12 +472,11 @@ class TestExporter(TestCase):
     SUBMISSION = {
         "triggersAnalysis": False,
         "_links": {
-          "self": {
-              "href": "http://api.ingest.data.humancellatlas.org/SubmissionEnvelope/1234"
-          }
+            "self": {
+                "href": "http://api.ingest.data.humancellatlas.org/SubmissionEnvelope/1234"
+            }
         }
     }
-
 
     def test_upload_error_posted_to_ingest_api(self):
         with self.assertRaises(Exception):

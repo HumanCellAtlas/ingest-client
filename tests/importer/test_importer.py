@@ -308,7 +308,6 @@ class ImporterErrors(TestCase):
         exception = Exception('Error thrown for Unit Test')
         self.import_file_with_exception(exception)
 
-
     def import_file_with_exception(self, exception):
         importer = XlsImporter(ingest_api=self.mock_ingest_api)
         exception_json = ImporterError(str(exception)).getJSON()
