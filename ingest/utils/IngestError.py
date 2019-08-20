@@ -9,11 +9,7 @@ class IngestError:
         self.detail = ""
 
     def getJSON(self):
-        return {
-            'type': self.type,
-            'title': self.title,
-            'detail': self.detail
-        }
+        return self.__dict__
 
 
 class ImporterError(IngestError):
