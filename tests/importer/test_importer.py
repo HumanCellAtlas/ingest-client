@@ -11,7 +11,7 @@ from ingest.importer.importer import WorksheetImporter, WorkbookImporter, Multip
     NoProjectFound
 from ingest.importer.importer import XlsImporter
 from ingest.importer.spreadsheet.ingest_workbook import IngestWorkbook, IngestWorksheet
-from ingest.utils.IngestError import ImporterError
+from ingest.utils.IngestError import ImporterError, SubmissionError
 from tests.importer.utils.test_utils import create_test_workbook
 
 BASE_PATH = os.path.dirname(__file__)
@@ -298,19 +298,21 @@ class ImporterErrors(TestCase):
 
     def test_import_file_throwing_submission_error(self):
         # given:
-        error = ingest.importer.submission.Error(
+        exception = ingest.importer.submission.Error(
             'http://unittest.importer.ingest.data.humancellatlas.org/Error',
             'Error thrown for Unit Test')
-        self.import_file_with_exception(error)
+        exception_json = SubmissionError(str(exception)).getJSON()
+        self.import_file_with_exception(exception, exception_json)
 
     def test_import_file_throwing_exception(self):
         # given:
         exception = Exception('Error thrown for Unit Test')
-        self.import_file_with_exception(exception)
-
-    def import_file_with_exception(self, exception):
-        importer = XlsImporter(ingest_api=self.mock_ingest_api)
         exception_json = ImporterError(str(exception)).getJSON()
+        self.import_file_with_exception(exception, exception_json)
+
+    def import_file_with_exception(self, exception, exception_json):
+        # given:
+        importer = XlsImporter(ingest_api=self.mock_ingest_api)
         importer._generate_spreadsheet_json = MagicMock(side_effect=exception)
         importer.logger.error = MagicMock()
         # when:
