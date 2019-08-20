@@ -12,7 +12,7 @@ from ingest.api.dssapi import DssApi
 from ingest.api.ingestapi import IngestApi
 from ingest.api.stagingapi import FileDescription, StagingApi
 from ingest.exporter.ingestexportservice import IngestExporter, LinkSet
-from ingest.utils.SubmissionError import ExporterError
+from ingest.utils.IngestError import ExporterError
 
 BASE_PATH = os.path.dirname(__file__)
 

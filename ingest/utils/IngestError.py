@@ -1,6 +1,6 @@
-class SubmissionError:
+class IngestError:
     """
-    A SubmissionError that can be reported to ingest.
+    An error that can be reported to ingest.
     """
 
     def __init__(self):
@@ -16,22 +16,21 @@ class SubmissionError:
         }
 
 
-class ImporterError(SubmissionError):
-    """
-    An error importing the Submission, to be reported to ingest.
-    """
-
+class ImporterError(IngestError):
     def __init__(self, detail=""):
         self.type = "http://importer.ingest.data.humancellatlas.org/Error"
-        self.title = "An error occurred importing the submission."
+        self.title = "An error occurred parsing the file."
         self.detail = detail
 
 
-class ExporterError(SubmissionError):
-    """
-    An error exporting the Submission, to be reported to ingest.
-    """
+class SubmissionError(ImporterError):
+    def __init__(self, detail=""):
+        self.type = "http://submission.importer.ingest.data.humancellatlas.org/Error"
+        self.title = "An error occurred submitting the file."
+        self.detail = detail
 
+
+class ExporterError(IngestError):
     def __init__(self, detail=""):
         self.type = "http://exporter.ingest.data.humancellatlas.org/Error"
         self.title = "Error occurred while attempting to export the submission."

@@ -15,7 +15,7 @@ import ingest.exporter.bundle
 from ingest.api.dssapi import DssApi, BundleAlreadyExist
 from ingest.api.ingestapi import IngestApi
 from ingest.api.stagingapi import StagingApi
-from ingest.utils.SubmissionError import ExporterError
+from ingest.utils.IngestError import ExporterError
 from .exceptions import BundleDSSError, BundleFileUploadError, FileDSSError, MultipleProjectsError, \
     NoUploadAreaFoundError
 

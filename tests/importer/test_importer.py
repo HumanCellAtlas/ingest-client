@@ -11,7 +11,7 @@ from ingest.importer.importer import WorksheetImporter, WorkbookImporter, Multip
     NoProjectFound
 from ingest.importer.importer import XlsImporter
 from ingest.importer.spreadsheet.ingest_workbook import IngestWorkbook, IngestWorksheet
-from ingest.utils.SubmissionError import ImporterError
+from ingest.utils.IngestError import ImporterError
 from tests.importer.utils.test_utils import create_test_workbook
 
 BASE_PATH = os.path.dirname(__file__)
