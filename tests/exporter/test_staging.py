@@ -36,7 +36,10 @@ class StagingServiceTest(TestCase):
         self.assertEqual(1, len(call_list), 'Save should have been called once.')
         call_args, _ = call_list[0]
         persisted_info, *_ = call_args
+
+        # and: verify correct staging info
         self.assertEqual(file_name, persisted_info.file_name)
+        self.assertEqual(staging_area_uuid, persisted_info.staging_area_uuid)
 
     def test_stage_update(self):
         # given:

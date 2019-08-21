@@ -3,9 +3,10 @@ from ingest.exporter.metadata import MetadataResource
 
 class StagingInfo:
 
-    def __init__(self, metadata_uuid='', file_name='', cloud_url=''):
-        self.metadata_uuid = metadata_uuid
+    def __init__(self, staging_area_uuid, file_name, metadata_uuid='', cloud_url=''):
+        self.staging_area_uuid = staging_area_uuid
         self.file_name = file_name
+        self.metadata_uuid = metadata_uuid
         self.cloud_url = cloud_url
 
 
@@ -18,7 +19,7 @@ class StagingService:
     def stage_metadata(self, staging_area_uuid, file_name, content, content_type):
         file_description = self.staging_client.stageFile(staging_area_uuid, file_name, content,
                                                          content_type)
-        staging_info = StagingInfo(file_name=file_description.name)
+        staging_info = StagingInfo(staging_area_uuid, file_name)
         self.staging_info_repository.save(staging_info)
 
     def stage_update(self, staging_area_uuid,
