@@ -497,15 +497,9 @@ class TestExporter(TestCase):
         exporter.upload_metadata_files = MagicMock(side_effect=error)
 
         # when:
-        export_attempt = lambda: exporter.export_bundle(
-            bundle_uuid=None,
-            bundle_version=None,
-            submission_uuid=None,
-            process_uuid=None
-        )
+        self.assertRaises(Exception, lambda: exporter.export_bundle(bundle_uuid=None, bundle_version=None, submission_uuid=None, process_uuid=None))
 
         # then:
-        self.assertRaises(Exception, export_attempt)
         self.mock_ingest_api.create_submission_error.assert_called_once_with(
             self.SUBMISSION.get("_links").get("self").get("href"),
             error_json
@@ -532,15 +526,9 @@ class TestExporter(TestCase):
         exporter.put_bundle_in_dss = MagicMock(side_effect=error)
 
         # when:
-        export_attempt = lambda: exporter.export_bundle(
-            bundle_uuid=None,
-            bundle_version=None,
-            submission_uuid=None,
-            process_uuid=None
-        )
+        self.assertRaises(Exception, lambda: exporter.export_bundle(bundle_uuid=None, bundle_version=None, submission_uuid=None, process_uuid=None))
 
         # then:
-        self.assertRaises(Exception, export_attempt)
         self.mock_ingest_api.create_submission_error.assert_called_once_with(
             self.SUBMISSION.get("_links").get("self").get("href"),
             error_json
