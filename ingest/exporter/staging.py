@@ -11,11 +11,15 @@ class StagingInfo:
 
 class StagingService:
 
-    def __init__(self, staging_client):
+    def __init__(self, staging_client, staging_info_repository):
         self.staging_client = staging_client
+        self.staging_info_repository = staging_info_repository
 
-    def stage_metadata(self, submission_uuid, upload_file_name, content, content_type):
-        self.staging_client.stageFile()
+    def stage_metadata(self, staging_area_uuid, file_name, content, content_type):
+        file_description = self.staging_client.stageFile(staging_area_uuid, file_name, content,
+                                                         content_type)
+        staging_info = StagingInfo(file_name=file_description.name)
+        self.staging_info_repository.save(staging_info)
 
     def stage_update(self, staging_area_uuid,
                      metadata_resource: MetadataResource) -> StagingInfo:
