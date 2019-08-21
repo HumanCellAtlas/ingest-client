@@ -1,4 +1,9 @@
+import logging
+
 from ingest.exporter.metadata import MetadataResource
+from ingest.exporter.exceptions import FileDuplication
+
+logger = logging.getLogger(__name__)
 
 
 class StagingInfo:
@@ -17,10 +22,12 @@ class StagingService:
         self.staging_info_repository = staging_info_repository
 
     def stage_metadata(self, staging_area_uuid, file_name, content, content_type):
-        file_description = self.staging_client.stageFile(staging_area_uuid, file_name, content,
-                                                         content_type)
-        staging_info = StagingInfo(staging_area_uuid, file_name)
-        self.staging_info_repository.save(staging_info)
+        try:
+            staging_info = StagingInfo(staging_area_uuid, file_name)
+            self.staging_info_repository.save(staging_info)
+            self.staging_client.stageFile(staging_area_uuid, file_name, content, content_type)
+        except FileDuplication as file_duplication:
+            logger.warning(file_duplication)
 
     def stage_update(self, staging_area_uuid,
                      metadata_resource: MetadataResource) -> StagingInfo:

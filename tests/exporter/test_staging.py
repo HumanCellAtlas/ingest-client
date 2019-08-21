@@ -3,6 +3,7 @@ from unittest import TestCase
 from mock import Mock
 
 from ingest.api.stagingapi import FileDescription
+from ingest.exporter.exceptions import FileDuplication
 from ingest.exporter.metadata import MetadataResource, MetadataProvenance
 from ingest.exporter.staging import StagingInfo, StagingService
 
@@ -40,6 +41,23 @@ class StagingServiceTest(TestCase):
         # and: verify correct staging info
         self.assertEqual(file_name, persisted_info.file_name)
         self.assertEqual(staging_area_uuid, persisted_info.staging_area_uuid)
+
+    def test_stage_metadata_file_already_exists(self):
+        # given:
+        staging_info_repository = Mock(name='staging_info_repository')
+        staging_info_repository.save = Mock(side_effect=FileDuplication())
+
+        # and:
+        staging_area_uuid = 'aa87cde5-a2de-424f-8f8e-40101af3f726'
+        staging_client = Mock(name='staging_client')
+
+        # when:
+        staging_service = StagingService(staging_client, staging_info_repository)
+        staging_service.stage_metadata(staging_area_uuid, 'duplicate.json',
+                                       '{"text": "test"}', 'file')
+
+        # then:
+        staging_client.stageFile.assert_not_called()
 
     def test_stage_update(self):
         # given:
