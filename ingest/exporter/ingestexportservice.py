@@ -14,8 +14,7 @@ import ingest.exporter.bundle
 from ingest.exporter.metadata import MetadataResource
 from ingest.api.dssapi import DssApi, BundleAlreadyExist
 from ingest.api.ingestapi import IngestApi
-from ingest.api.stagingapi import StagingApi
-from ingest.exporter.staging import StagingService, StagingInfoRepository, StagingInfo
+from ingest.exporter.staging import StagingService, StagingInfo
 from .exceptions import BundleDSSError, BundleFileUploadError, FileDSSError, MultipleProjectsError, \
     NoUploadAreaFoundError
 
@@ -30,7 +29,7 @@ ERROR_TEMPLATE = {
 
 
 class IngestExporter:
-    def __init__(self, ingest_api: IngestApi, dss_api: DssApi, staging_api: StagingApi, dry_run=False,
+    def __init__(self, ingest_api: IngestApi, dss_api: DssApi, staging_service: StagingService, dry_run=False,
                  output_directory=None):
         format = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
         logging.basicConfig(format=format)
@@ -41,7 +40,7 @@ class IngestExporter:
 
         self.dss_api = dss_api
         self.ingest_api = ingest_api
-        self.staging_service = StagingService(staging_api, StagingInfoRepository(self.ingest_api))
+        self.staging_service = staging_service
         self.related_entities_cache = {}
 
     def export_bundle(self, bundle_uuid, bundle_version, submission_uuid, process_uuid):
