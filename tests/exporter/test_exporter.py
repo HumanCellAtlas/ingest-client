@@ -132,7 +132,9 @@ class ExporterTest(TestCase):
     @staticmethod
     def _set_up_staging_service(staging_service):
         cloud_urls = [f'https://upload.tld/metadata{i}.json' for i in range(0, 3)]
-        staging_details = [StagingInfo(cloud_url=url) for url in cloud_urls]
+        staging_area_uuid = '2a74f53d-a081-4523-b62a-22acb9d8647b'
+        staging_details = [StagingInfo(staging_area_uuid, f'file_{index}.json', cloud_url=url)
+                           for index, url in enumerate(cloud_urls)]
         staging_service.stage_update = Mock(side_effect=staging_details)
         return staging_details
 
