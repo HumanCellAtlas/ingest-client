@@ -32,16 +32,18 @@ class StagingService:
         except FileDuplication as file_duplication:
             logger.warning(file_duplication)
 
-    def stage_update(self, staging_area_uuid,
-                     metadata_resource: MetadataResource) -> StagingInfo:
-        formatted_type = f'metadata/{metadata_resource.metadata_type}'
-        file_description = self.staging_client.stageFile(staging_area_uuid,
-                                                         metadata_resource.get_staging_file_name(),
-                                                         metadata_resource.to_bundle_metadata(),
-                                                         formatted_type)
+    def stage_update(self, staging_area_uuid, metadata_resource: MetadataResource) -> StagingInfo:
+        try:
+            staging_info = StagingInfo(staging_area_uuid, metadata_resource.get_staging_file_name())
+            self.staging_info_repository.save(staging_info)
+            formatted_type = f'metadata/{metadata_resource.metadata_type}'
+            file_description = self.staging_client.stageFile(staging_area_uuid,
+                                                             metadata_resource.get_staging_file_name(),
+                                                             metadata_resource.to_bundle_metadata(),
+                                                             formatted_type)
 
-        staging_info = StagingInfo(staging_area_uuid=staging_area_uuid,
-                           metadata_uuid=metadata_resource.uuid, file_name=file_description.name,
-                           cloud_url=file_description.url)
-        self.staging_info_repository.save(staging_info)
-        return staging_info
+            staging_info.metadata_uuid = metadata_resource.uuid
+            staging_info.cloud_url = file_description.url
+            return staging_info
+        except FileDuplication as file_duplication:
+            logger.warning(file_duplication)

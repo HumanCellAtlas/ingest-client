@@ -59,13 +59,7 @@ class StagingServiceTest(TestCase):
 
     def test_stage_update(self):
         # given:
-        provenance = MetadataProvenance('831d4b6e-e8a2-42ce-b7c0-8d6ffcc15370', 'a submission date',
-                                        'an update date', 1, 1)
-        metadata_resource = MetadataResource(metadata_type='biomaterial',
-                                             uuid='831d4b6e-e8a2-42ce-b7c0-8d6ffcc15370',
-                                             metadata_json={'description': 'test'},
-                                             dcp_version='4.2.1',
-                                             provenance=provenance)
+        metadata_resource = self._create_test_metadata_resource()
 
         # and:
         staging_client = Mock(name='staging_client')
@@ -109,3 +103,30 @@ class StagingServiceTest(TestCase):
         # and: verify bare minimum correct staging info
         self.assertEqual(file_name, persisted_info.file_name)
         self.assertEqual(staging_area_uuid, persisted_info.staging_area_uuid)
+
+    def test_stage_update_file_already_exists(self):
+        # given:
+        staging_info_repository = Mock(name='staging_info_repository')
+        staging_info_repository.save = Mock(side_effect=FileDuplication())
+
+        # and:
+        staging_area_uuid = 'aa87cde5-a2de-424f-8f8e-40101af3f726'
+        staging_client = Mock(name='staging_client')
+
+        # when:
+        staging_service = StagingService(staging_client, staging_info_repository)
+        staging_service.stage_update(staging_area_uuid, self._create_test_metadata_resource())
+
+        # then:
+        staging_client.stageFile.assert_not_called()
+
+    @staticmethod
+    def _create_test_metadata_resource():
+        provenance = MetadataProvenance('831d4b6e-e8a2-42ce-b7c0-8d6ffcc15370', 'a submission date',
+                                        'an update date', 1, 1)
+        metadata_resource = MetadataResource(metadata_type='biomaterial',
+                                             uuid='831d4b6e-e8a2-42ce-b7c0-8d6ffcc15370',
+                                             metadata_json={'description': 'test'},
+                                             dcp_version='4.2.1',
+                                             provenance=provenance)
+        return metadata_resource
