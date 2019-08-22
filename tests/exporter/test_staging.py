@@ -92,6 +92,29 @@ class StagingServiceTest(TestCase):
         self.assertEqual(metadata_resource.uuid, staging_info.metadata_uuid)
         self.assertEqual(cloud_url, staging_info.cloud_url)
 
+    def test_get_staging_info(self):
+        # given:
+        staging_info_repository = Mock(name='staging_info_repository')
+        staging_service = StagingService(Mock(name='staging_client'), staging_info_repository)
+
+        # and:
+        staging_area_uuid = 'ac4b29e3-7522-417e-ae0f-d82874fb4b05'
+        metadata_resource = self._create_test_metadata_resource()
+
+        # and:
+        file_name = metadata_resource.get_staging_file_name()
+        cloud_url = 'http://domain.com/path/to/file.json'
+        persisted_info = StagingInfo(staging_area_uuid, file_name, cloud_url=cloud_url)
+        staging_info_repository.find_one = Mock(return_value=persisted_info)
+
+        # when:
+        staging_info = staging_service.get_staging_info(staging_area_uuid, metadata_resource)
+
+        # then:
+        self.assertIsNotNone(staging_info)
+        self.assertEqual(staging_area_uuid, staging_info.staging_area_uuid)
+        self.assertEqual(file_name, staging_info.file_name)
+
     @staticmethod
     def _create_test_metadata_resource():
         provenance = MetadataProvenance('831d4b6e-e8a2-42ce-b7c0-8d6ffcc15370', 'a submission date',
