@@ -26,14 +26,25 @@ class RetryPolicy(retry.Retry):
         self.RETRY_AFTER_STATUS_CODES = frozenset(retry_after_status_codes | retry.Retry.RETRY_AFTER_STATUS_CODES)
 
 
+class UploadResponseParseException(Exception):
+    pass
+
+
 class FileDescription:
 
-    def __init__(self, checksums, contentType, name, size, url):
+    def __init__(self, checksums: dict, content_type: str, name: str, size, url: str):
         self.checksums = checksums
-        self.content_type = contentType
+        self.content_type = content_type
         self.name = name
         self.size = size
         self.url = url
+
+    @staticmethod
+    def parse_upload_response(res: dict):
+        try:
+            return FileDescription(res['checksums'], res['content_type'], res['name'], res['size'], res['url'])
+        except (KeyError, TypeError) as e:
+            raise UploadResponseParseException(e)
 
 
 class MetadataFileStagingRequest:
@@ -129,7 +140,10 @@ class StagingApi:
         r.raise_for_status()
 
         res = r.json()
-        return FileDescription(res['checksums'], type, res['name'], res['size'], res['url'])
+        try:
+            return FileDescription.parse_upload_response(res)
+        except UploadResponseParseException:
+            raise UploadResponseParseException(f'Failed to parse upload response from %s', file_url)
 
     def hasStagingArea(self, submissionId) -> bool:
         base = urljoin(self.url, self.apiversion + '/area/' + submissionId)
