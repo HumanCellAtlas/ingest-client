@@ -11,7 +11,8 @@ logger = logging.getLogger(__name__)
 
 class StagingInfo:
 
-    def __init__(self, staging_area_uuid: str, file_name: str, metadata_uuid: str, cloud_url: str):
+    def __init__(self, staging_area_uuid: str, file_name: str, metadata_uuid: str = '',
+                 cloud_url: str = ''):
         self.staging_area_uuid = staging_area_uuid
         self.file_name = file_name
         self.metadata_uuid = metadata_uuid
