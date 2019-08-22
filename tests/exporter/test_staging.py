@@ -40,17 +40,6 @@ class StagingServiceTest(TestCase):
                                                          content_type)
         self._assert_staging_info_saved(staging_info_repository, file_name, staging_area_uuid)
 
-    def _assert_staging_info_saved(self, staging_info_repository, file_name, staging_area_uuid):
-        # and:
-        call_list = staging_info_repository.save.call_args_list
-        self.assertEqual(1, len(call_list), 'Save should have been called once.')
-        call_args, _ = call_list[0]
-        persisted_info, *_ = call_args
-
-        # and: verify bare minimum correct staging info
-        self.assertEqual(file_name, persisted_info.file_name)
-        self.assertEqual(staging_area_uuid, persisted_info.staging_area_uuid)
-
     def test_stage_metadata_file_already_exists(self):
         # given:
         staging_info_repository = Mock(name='staging_info_repository')
@@ -80,18 +69,29 @@ class StagingServiceTest(TestCase):
 
         # and:
         staging_client = Mock(name='staging_client')
-        file_description = FileDescription(['chks0mz'], 'application/json', 'file.name', 1024,
+        file_name = metadata_resource.get_staging_file_name()
+        file_description = FileDescription(['chks0mz'], 'application/json', file_name, 1024,
                                            'http://domain.com/file.url')
         staging_client.stageFile = Mock(return_value=file_description)
 
         # and:
-        staging_service = StagingService(staging_client, Mock(name='staging_info_repository'))
+        staging_info_repository = Mock(name='staging_info_repository')
+        staging_service = StagingService(staging_client, staging_info_repository)
 
         # when:
         staging_area_uuid = '7455716e-9639-41d9-bff9-d763f9ee028d'
         staging_info = staging_service.stage_update(staging_area_uuid, metadata_resource)
 
         # then:
+        self._assert_correct_staging_info(staging_info, staging_area_uuid, metadata_resource,
+                                          file_description)
+        staging_client.stageFile.assert_called_once_with(staging_area_uuid, file_name,
+                                                         metadata_resource.to_bundle_metadata(),
+                                                         'metadata/biomaterial')
+        self._assert_staging_info_saved(staging_info_repository, file_name, staging_area_uuid)
+
+    def _assert_correct_staging_info(self, staging_info, staging_area_uuid, metadata_resource,
+                                     file_description):
         self.assertTrue(type(staging_info) is StagingInfo,
                         'stage_update should return StagingInfo.')
         self.assertEqual(staging_area_uuid, staging_info.staging_area_uuid)
@@ -99,8 +99,13 @@ class StagingServiceTest(TestCase):
         self.assertEqual(file_description.name, staging_info.file_name)
         self.assertEqual(file_description.url, staging_info.cloud_url)
 
+    def _assert_staging_info_saved(self, staging_info_repository, file_name, staging_area_uuid):
         # and:
-        staging_client.stageFile.assert_called_once_with(staging_area_uuid,
-                                                         metadata_resource.get_staging_file_name(),
-                                                         metadata_resource.to_bundle_metadata(),
-                                                         'metadata/biomaterial')
+        call_list = staging_info_repository.save.call_args_list
+        self.assertEqual(1, len(call_list), 'Save should have been called once.')
+        call_args, _ = call_list[0]
+        persisted_info, *_ = call_args
+
+        # and: verify bare minimum correct staging info
+        self.assertEqual(file_name, persisted_info.file_name)
+        self.assertEqual(staging_area_uuid, persisted_info.staging_area_uuid)

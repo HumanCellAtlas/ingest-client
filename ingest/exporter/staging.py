@@ -40,7 +40,8 @@ class StagingService:
                                                          metadata_resource.to_bundle_metadata(),
                                                          formatted_type)
 
-        return StagingInfo(staging_area_uuid=staging_area_uuid,
-                           metadata_uuid=metadata_resource.uuid,
-                           file_name=file_description.name,
+        staging_info = StagingInfo(staging_area_uuid=staging_area_uuid,
+                           metadata_uuid=metadata_resource.uuid, file_name=file_description.name,
                            cloud_url=file_description.url)
+        self.staging_info_repository.save(staging_info)
+        return staging_info
