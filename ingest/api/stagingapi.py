@@ -26,6 +26,24 @@ class RetryPolicy(retry.Retry):
         self.RETRY_AFTER_STATUS_CODES = frozenset(retry_after_status_codes | retry.Retry.RETRY_AFTER_STATUS_CODES)
 
 
+class FileDescription:
+
+    def __init__(self, checksums, contentType, name, size, url):
+        self.checksums = checksums
+        self.content_type = contentType
+        self.name = name
+        self.size = size
+        self.url = url
+
+
+class MetadataFileStagingRequest:
+    def __init__(self, staging_area_uuid, filename, metadata_json, metadata_type):
+        self.staging_area_uuid = staging_area_uuid
+        self.filename = filename
+        self.metadata_json = metadata_json
+        self.metadata_type = metadata_type
+
+
 class StagingApi:
     def __init__(self, url=None, apikey=None, apiversion=None):
         formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -104,15 +122,11 @@ class StagingApi:
         res = r.json()
         return FileDescription(res['checksums'], type, res['name'], res['size'], res['url'])
 
-    def getFile(self, submissionId, filename):
-        fileUrl = urljoin(self.url, self.apiversion + '/area/' + submissionId + "/" + filename)
-        self.logger.info(f'GET file: {fileUrl}')
-        r = self.session.get(fileUrl, headers=self.header)
-
-        if r.status_code == requests.codes.not_found:
-            return None
-        else:
-            r.raise_for_status()
+    def getFile(self, submissionId, filename) -> FileDescription:
+        file_url = urljoin(self.url, self.apiversion + '/area/' + submissionId + "/" + filename)
+        self.logger.info(f'GET file: {file_url}')
+        r = self.session.get(file_url, headers=self.header)
+        r.raise_for_status()
 
         res = r.json()
         return FileDescription(res['checksums'], type, res['name'], res['size'], res['url'])
@@ -121,20 +135,3 @@ class StagingApi:
         base = urljoin(self.url, self.apiversion + '/area/' + submissionId)
         r = self.session.head(base, headers=self.header)
         return r.status_code == requests.codes.ok
-
-
-class FileDescription:
-    def __init__(self, checksums, contentType, name, size, url):
-        self.checksums = checksums
-        self.content_type = contentType
-        self.name = name
-        self.size = size
-        self.url = url
-
-
-class MetadataFileStagingRequest:
-    def __init__(self, staging_area_uuid, filename, metadata_json, metadata_type):
-        self.staging_area_uuid = staging_area_uuid
-        self.filename = filename
-        self.metadata_json = metadata_json
-        self.metadata_type = metadata_type

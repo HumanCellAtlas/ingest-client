@@ -9,12 +9,13 @@ from copy import deepcopy
 
 import polling
 import requests
-from requests.exceptions import HTTPError
 
 import ingest.exporter.bundle
+from ingest.exporter.metadata import MetadataResource
 from ingest.api.dssapi import DssApi, BundleAlreadyExist
 from ingest.api.ingestapi import IngestApi
 from ingest.api.stagingapi import StagingApi
+from ingest.exporter.staging import StagingService, StagingInfoRepository, StagingInfo
 from .exceptions import BundleDSSError, BundleFileUploadError, FileDSSError, MultipleProjectsError, \
     NoUploadAreaFoundError
 
@@ -41,6 +42,7 @@ class IngestExporter:
         self.staging_api = staging_api
         self.dss_api = dss_api
         self.ingest_api = ingest_api
+        self.staging_service = StagingService(staging_api, StagingInfoRepository(self.ingest_api))
         self.related_entities_cache = {}
 
     def export_bundle(self, bundle_uuid, bundle_version, submission_uuid, process_uuid):
@@ -337,6 +339,7 @@ class IngestExporter:
                 upload_filename = '{0}_{1}.json'.format(concrete_type, metadata_uuid)
 
                 prepared_doc = {
+                    'original_doc': doc,
                     'content': self.bundle_metadata(doc, metadata_uuid),
                     'content_type': 'metadata/{0}'.format(entity_type),
                     'indexed': is_indexed,
@@ -404,13 +407,10 @@ class IngestExporter:
             for metadata_type in ['project', 'biomaterial', 'process', 'protocol', 'file', 'links']:
                 for metadata_doc in metadata_files_info[metadata_type]:
                     bundle_file = metadata_doc
-                    filename = bundle_file['upload_filename']
-                    content = bundle_file['content']
-                    content_type = bundle_file['content_type']
 
                     if not bundle_file.get('is_from_input_bundle'):
-                        uploaded_file = self.upload_file(submission_uuid, filename, content, content_type)
-                        bundle_file['upload_file_url'] = uploaded_file.url
+                        uploaded_file: StagingInfo = self.staging_service.stage_metadata(submission_uuid, MetadataResource.from_dict(bundle_file['original_doc']))
+                        bundle_file['upload_file_url'] = uploaded_file.cloud_url
         except Exception as exception:
             message = "An error occurred on uploading bundle files: " + str(exception)
             raise BundleFileUploadError(message)
@@ -552,25 +552,6 @@ class IngestExporter:
 
     def get_concrete_entity_type(self, schema_uri):
         return schema_uri["content"]["describedBy"].rsplit('/', 1)[-1]
-
-    def upload_file(self, submission_uuid, filename, content, content_type):
-        file_description = self.staging_api.getFile(submission_uuid, filename)
-
-        if file_description:
-            self.logger.info("The file %s already exists in the Upload area %s.", filename, submission_uuid)
-        else:
-            self.logger.info("Writing to staging area... %s", filename)
-            try:
-                file_description = self.staging_api.stageFile(submission_uuid, filename, content, content_type)
-            except HTTPError as http_error:
-                if str(http_error.response.status_code) == "409":
-                    file_description = self.staging_api.getFile(submission_uuid, filename)
-                    if file_description:
-                        return file_description
-                raise http_error
-
-        self.logger.info("File staged at %s", file_description.url)
-        return file_description
 
     def dump_to_file(self, content, filename, output_dir='output'):
         directory = os.path.abspath(output_dir)
