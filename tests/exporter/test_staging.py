@@ -85,7 +85,12 @@ class StagingServiceTest(TestCase):
 
         # then:
         staging_client.stageFile.assert_not_called()
+        staging_client.getFile.assert_called_once_with(staging_area_uuid, file_name)
+
+        # and:
         self.assertIsNotNone(staging_info)
+        self.assertEqual(metadata_resource.uuid, staging_info.metadata_uuid)
+        self.assertEqual(cloud_url, staging_info.cloud_url)
 
     @staticmethod
     def _create_test_metadata_resource():
