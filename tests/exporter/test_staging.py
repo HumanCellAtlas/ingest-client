@@ -102,8 +102,8 @@ class StagingServiceTest(TestCase):
         # and:
         file_name = metadata_resource.get_staging_file_name()
         cloud_url = 'http://domain.com/path/to/file.json'
-        persisted_info = StagingInfo(staging_area_uuid, file_name, cloud_url=cloud_url)
-        self.staging_info_repository.find_one = Mock(return_value=persisted_info)
+        persistent_info = StagingInfo(staging_area_uuid, file_name, cloud_url=cloud_url)
+        self.staging_info_repository.find_one = Mock(return_value=persistent_info)
 
         # when:
         staging_info = self.staging_service.get_staging_info(staging_area_uuid, metadata_resource)
@@ -116,6 +116,31 @@ class StagingServiceTest(TestCase):
 
         # and: just to ensure interface with repository is correct
         self.staging_info_repository.find_one.assert_called_once_with(staging_area_uuid, file_name)
+
+    def test_get_staging_info_no_cloud_url(self):
+        # given:
+        staging_area_uuid = 'd4498a65-5b00-4424-8101-4e4a6a7e5382'
+        metadata_resource = self._create_test_metadata_resource()
+
+        # and:
+        file_name = metadata_resource.get_staging_file_name()
+        persistent_info = StagingInfo(staging_area_uuid, file_name)
+        self.staging_info_repository.find_one = Mock(return_value=persistent_info)
+
+        # and:
+        cloud_url = 'http://this/leads/to/the_file_0.json'
+        file_description = FileDescription(['chexumz'], 'biomaterial', file_name, 512, cloud_url)
+        self.staging_client.getFile = Mock(return_value=file_description)
+
+        # when:
+        staging_info = self.staging_service.get_staging_info(staging_area_uuid, metadata_resource)
+
+        # then:
+        self.assertIsNotNone(staging_info)
+        self.assertEqual(cloud_url, staging_info.cloud_url)
+
+        # and: just to ensure consistent interface
+        self.staging_client.getFile.assert_called_once_with(staging_area_uuid, file_name)
 
     @staticmethod
     def _create_test_metadata_resource():
