@@ -27,6 +27,7 @@ class StagingInfoRepository:
     def save(self, staging_info: StagingInfo):
         pass
 
+
 class StagingService:
 
     def __init__(self, staging_client, staging_info_repository: StagingInfoRepository):
