@@ -114,6 +114,10 @@ class StagingServiceTest(TestCase):
         self.assertIsNotNone(staging_info)
         self.assertEqual(staging_area_uuid, staging_info.staging_area_uuid)
         self.assertEqual(file_name, staging_info.file_name)
+        self.assertEqual(cloud_url, staging_info.cloud_url)
+
+        # and: just to ensure interface with repository is correct
+        staging_info_repository.find_one.assert_called_once_with(staging_area_uuid, file_name)
 
     @staticmethod
     def _create_test_metadata_resource():
