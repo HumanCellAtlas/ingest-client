@@ -19,26 +19,35 @@ class StagingServiceTest(TestCase):
 
         # and:
         staging_client = Mock(name='staging_client')
-        file_description = FileDescription(['chksUm'], 'biomaterial', file_name, 1024,
-                                           'http://path.to/file_123')
+        cloud_url = 'http://path.to/file_123'
+        file_description = FileDescription(['chksUm'], 'biomaterial', file_name, 1024, cloud_url)
         staging_client.stageFile = Mock(return_value=file_description)
         staging_info_repository = Mock(name='staging_info_repository')
 
         # when:
         staging_service = StagingService(staging_client, staging_info_repository)
-        staging_service.stage_metadata(staging_area_uuid, file_name, content, content_type)
+        staging_info = staging_service.stage_metadata(staging_area_uuid, file_name, content,
+                                                       content_type)
 
         # then:
+        self.assertIsNotNone(staging_info)
+        self.assertEqual(staging_area_uuid, staging_info.staging_area_uuid)
+        self.assertEqual(file_name, staging_info.file_name)
+        self.assertEqual(cloud_url, staging_info.cloud_url)
+
+        # and:
         staging_client.stageFile.assert_called_once_with(staging_area_uuid, file_name, content,
                                                          content_type)
+        self._assert_staging_info_saved(staging_info_repository, file_name, staging_area_uuid)
 
+    def _assert_staging_info_saved(self, staging_info_repository, file_name, staging_area_uuid):
         # and:
         call_list = staging_info_repository.save.call_args_list
         self.assertEqual(1, len(call_list), 'Save should have been called once.')
         call_args, _ = call_list[0]
         persisted_info, *_ = call_args
 
-        # and: verify correct staging info
+        # and: verify bare minimum correct staging info
         self.assertEqual(file_name, persisted_info.file_name)
         self.assertEqual(staging_area_uuid, persisted_info.staging_area_uuid)
 

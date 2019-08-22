@@ -25,7 +25,10 @@ class StagingService:
         try:
             staging_info = StagingInfo(staging_area_uuid, file_name)
             self.staging_info_repository.save(staging_info)
-            self.staging_client.stageFile(staging_area_uuid, file_name, content, content_type)
+            file_description = self.staging_client.stageFile(staging_area_uuid, file_name, content,
+                                                             content_type)
+            staging_info.cloud_url = file_description.url
+            return staging_info
         except FileDuplication as file_duplication:
             logger.warning(file_duplication)
 
