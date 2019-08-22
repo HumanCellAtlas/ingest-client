@@ -80,7 +80,7 @@ class ExporterTest(TestCase):
 
     def test_export_update(self):
         # given:
-        ingest_api = Mock(name='ingest_api')
+        ingest_api = Mock(name='mock_ingest_api')
         metadata_service = Mock(name='metadata_service')
         staging_service = Mock(name='staging_service')
         bundle_service = Mock(name='bundle_servie')
@@ -124,7 +124,7 @@ class ExporterTest(TestCase):
     def _set_up_metadata_service(metadata_service, metadata_uuids):
         metadata_version = '2019-06-12T16:12:20.087Z'
         metadata_resources = [
-            MetadataResource("biomaterial", {}, uuid, metadata_version, MetadataProvenance("", "", ""))
+            MetadataResource("biomaterial", {}, uuid, metadata_version, MetadataProvenance("", "", "", "", ""))
             for uuid in metadata_uuids]
         metadata_service.fetch_resource = Mock(side_effect=metadata_resources)
         return metadata_resources

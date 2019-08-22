@@ -1,13 +1,17 @@
 import os
-from unittest import TestCase
+from unittest.case import TestCase
 
 from mock import MagicMock, patch
 from openpyxl import Workbook
 
+import ingest
+from ingest.api.ingestapi import IngestApi
 from ingest.importer.conversion.metadata_entity import MetadataEntity
 from ingest.importer.importer import WorksheetImporter, WorkbookImporter, MultipleProjectsFound, \
     NoProjectFound
+from ingest.importer.importer import XlsImporter
 from ingest.importer.spreadsheet.ingest_workbook import IngestWorkbook, IngestWorksheet
+from ingest.utils.IngestError import ImporterError, SubmissionError
 from tests.importer.utils.test_utils import create_test_workbook
 
 BASE_PATH = os.path.dirname(__file__)
@@ -285,3 +289,33 @@ class WorksheetImporterTest(TestCase):
         pen_id = pen_metadata.object_id
         self.assertIsNotNone(pen_id)
         self.assertNotEqual(paper_id, pen_id)
+
+
+class ImporterErrors(TestCase):
+    def setUp(self):
+        # Setup mocked APIs
+        self.mock_ingest_api = MagicMock(spec=IngestApi)
+
+    def test_import_file_throwing_submission_error(self):
+        # given:
+        exception = ingest.importer.submission.Error(
+            'http://unittest.importer.ingest.data.humancellatlas.org/Error',
+            'Error thrown for Unit Test')
+        exception_json = SubmissionError(str(exception)).getJSON()
+        self.import_file_with_exception(exception, exception_json)
+
+    def test_import_file_throwing_exception(self):
+        # given:
+        exception = Exception('Error thrown for Unit Test')
+        exception_json = ImporterError(str(exception)).getJSON()
+        self.import_file_with_exception(exception, exception_json)
+
+    def import_file_with_exception(self, exception, exception_json):
+        # given:
+        importer = XlsImporter(ingest_api=self.mock_ingest_api)
+        importer._generate_spreadsheet_json = MagicMock(side_effect=exception)
+        importer.logger.error = MagicMock()
+        # when:
+        importer.import_file(file_path=None, submission_url=None)
+        # then:
+        self.mock_ingest_api.create_submission_error.assert_called_once_with(None, exception_json)

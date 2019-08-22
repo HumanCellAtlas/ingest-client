@@ -1,3 +1,4 @@
+import re
 from copy import deepcopy
 
 
@@ -6,10 +7,13 @@ class MetadataParseException(Exception):
 
 
 class MetadataProvenance:
-    def __init__(self, document_id: str, submission_date: str, update_date: str):
+    def __init__(self, document_id: str, submission_date: str, update_date: str, schema_major_version: int,
+                 schema_minor_version: int):
         self.document_id = document_id
         self.submission_date = submission_date
         self.update_date = update_date
+        self.schema_major_version = schema_major_version
+        self.schema_minor_version = schema_minor_version
 
     def to_dict(self):
         return deepcopy(self.__dict__)
@@ -43,7 +47,12 @@ class MetadataResource:
             submission_date = data['submissionDate']
             update_date = data['updateDate']
 
-            return MetadataProvenance(uuid, submission_date, update_date)
+            # Populate the major and minor schema versions from the URL in the describedBy field
+            schema_semver = re.findall(r'\d+\.\d+\.\d+', data["content"]["describedBy"])[0]
+            schema_major_version = int(schema_semver.split(".")[0])
+            schema_minor_version = int(schema_semver.split(".")[1])
+
+            return MetadataProvenance(uuid, submission_date, update_date, schema_major_version, schema_minor_version)
         except (KeyError, TypeError) as e:
             raise MetadataParseException(e)
 

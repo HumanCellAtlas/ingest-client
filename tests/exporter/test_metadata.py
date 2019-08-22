@@ -10,9 +10,14 @@ class MetadataResourceTest(TestCase):
     def test_provenance_from_dict(self):
         # given:
         uuid_value = '3f3212da-d5d0-4e55-b31d-83243fa02e0d'
-        data = {'uuid': {'uuid': uuid_value},
-                'submissionDate': 'a submission date',
-                'updateDate': 'an update date'}
+        data = {
+            'uuid': {'uuid': uuid_value},
+            'submissionDate': 'a submission date',
+            'updateDate': 'an update date',
+            'content': {
+                'describedBy': 'https://some-schema/1.2.3'
+            }
+        }
 
         # when:
         metadata_provenance = MetadataResource.provenance_from_dict(data)
@@ -40,7 +45,8 @@ class MetadataResourceTest(TestCase):
         uuid_value = '3f3212da-d5d0-4e55-b31d-83243fa02e0d'
         data = {'type': 'Biomaterial',
                 'uuid': {'uuid': uuid_value},
-                'content': {'some': {'content': ['we', 'are', 'agnostic', 'of']}},
+                'content': {'describedBy': "http://some-schema/1.2.3",
+                            'some': {'content': ['we', 'are', 'agnostic', 'of']}},
                 'dcpVersion': '6.9.1',
                 'submissionDate': 'a date',
                 'updateDate': 'another date'}
@@ -70,7 +76,8 @@ class MetadataResourceTest(TestCase):
         uuid_value = '3f3212da-d5d0-4e55-b31d-83243fa02e0d'
         data = {'type': 'Biomaterial',
                 'uuid': {'uuid': uuid_value},
-                'content': {'some': {'content': ['we', 'are', 'agnostic', 'of']}},
+                'content': {'describedBy': "http://some-schema/1.2.3",
+                            'some': {'content': ['we', 'are', 'agnostic', 'of']}},
                 'dcpVersion': '6.9.1',
                 'submissionDate': 'a date',
                 'updateDate': 'another date'}
@@ -93,14 +100,18 @@ class MetadataResourceTest(TestCase):
                                                dcp_version='5.1.0',
                                                provenance=MetadataProvenance('9b159cae-a1fe-4cce-94bc-146e4aa20553',
                                                                              'some date',
-                                                                             'some other date'))
+                                                                             'some other date',
+                                                                             1,
+                                                                             1))
         metadata_resource_2 = MetadataResource(metadata_type='donor_organism',
                                                uuid='38e0ee7c-90dc-438a-a0ed-071f9231f590',
                                                metadata_json={'text': 'sample'},
                                                dcp_version='1.0.7',
                                                provenance=MetadataProvenance('38e0ee7c-90dc-438a-a0ed-071f9231f590',
                                                                              'some date',
-                                                                             'some other date'))
+                                                                             'some other date',
+                                                                             '2',
+                                                                             '2'))
 
         # expect:
         self.assertEqual('specimen_9b159cae-a1fe-4cce-94bc-146e4aa20553.json',
@@ -117,7 +128,8 @@ class MetadataServiceTest(TestCase):
         uuid = '301636f7-f97b-4379-bf77-c5dcd9f17bcb'
         raw_metadata = {'type': 'Biomaterial',
                         'uuid': {'uuid': uuid},
-                        'content': {'some': {'content': ['we', 'are', 'agnostic', 'of']}},
+                        'content': {'describedBy': "http://some-schema/1.2.3",
+                                    'some': {'content': ['we', 'are', 'agnostic', 'of']}},
                         'dcpVersion': '8.2.7',
                         'submissionDate': 'a submission date',
                         'updateDate': 'an update date'

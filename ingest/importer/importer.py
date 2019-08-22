@@ -1,4 +1,3 @@
-import json
 import logging
 
 import openpyxl
@@ -11,6 +10,7 @@ from ingest.importer.conversion.template_manager import TemplateManager
 from ingest.importer.spreadsheet.ingest_workbook import IngestWorkbook
 from ingest.importer.spreadsheet.ingest_worksheet import IngestWorksheet
 from ingest.importer.submission import IngestSubmitter, EntityMap, EntityLinker
+from ingest.utils.IngestError import ImporterError, SubmissionError
 
 format = '[%(filename)s:%(lineno)s - %(funcName)20s() ] %(asctime)s - %(name)s - %(levelname)s - %(message)s'
 logging.basicConfig(format=format)
@@ -60,21 +60,10 @@ class XlsImporter:
             submission = submitter.submit(entity_map, submission_url)
 
         except ingest.importer.submission.Error as e:
-            error_json = {
-                'errorCode': 'ingest.importer.submission',
-                'errorType': 'Error',
-                'message': 'An error during submission occurred.',
-                'details': str(e),
-
-            }
+            error_json = SubmissionError(str(e)).getJSON()
             self.logger.error(str(e), exc_info=True)
         except Exception as e:
-            error_json = {
-                'errorCode': 'ingest.importer.error',
-                'errorType': 'Error',
-                'message': 'An error during submission occurred.',
-                'details': str(e),
-            }
+            error_json = ImporterError(str(e)).getJSON()
             self.logger.error(str(e), exc_info=True)
 
         if error_json:

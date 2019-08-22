@@ -17,7 +17,9 @@ class StagingServiceTest(TestCase):
                                              dcp_version='4.2.1',
                                              provenance=MetadataProvenance('831d4b6e-e8a2-42ce-b7c0-8d6ffcc15370',
                                                                            'a submission date',
-                                                                           'an update date'))
+                                                                           'an update date',
+                                                                           1,
+                                                                           1))
 
         # and:
         staging_client = Mock(name='staging_client')

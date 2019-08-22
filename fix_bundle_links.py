@@ -7,7 +7,7 @@ from ingest.exporter.ingestexportservice import LinkSet
 
 
 class BundleManifestService:
-    def __init__(self, ingest_api: IngestApi, dss_api: DssApi ):
+    def __init__(self, ingest_api: IngestApi, dss_api: DssApi):
         self.ingest_api = ingest_api
         self.dss_api = dss_api
 
@@ -34,7 +34,6 @@ class BundleManifestService:
         return {'bundle_manifests_updated_count': count}
 
     def find_bundles_with_links_correction(self, project_uuid):
-        bundles_with_duplicate_links = []
         bundle_manifests = self.find_bundle_manifests(project_uuid)
         reports = {
             'bundles': {},
