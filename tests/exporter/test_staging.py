@@ -85,7 +85,7 @@ class StagingServiceTest(TestCase):
         staging_client.stageFile = Mock(return_value=file_description)
 
         # and:
-        staging_service = StagingService(staging_client)
+        staging_service = StagingService(staging_client, Mock(name='staging_info_repository'))
 
         # when:
         staging_area_uuid = '7455716e-9639-41d9-bff9-d763f9ee028d'
@@ -93,7 +93,8 @@ class StagingServiceTest(TestCase):
 
         # then:
         self.assertTrue(type(staging_info) is StagingInfo,
-                        'stage_update should return StagingRecord.')
+                        'stage_update should return StagingInfo.')
+        self.assertEqual(staging_area_uuid, staging_info.staging_area_uuid)
         self.assertEqual(metadata_resource.uuid, staging_info.metadata_uuid)
         self.assertEqual(file_description.name, staging_info.file_name)
         self.assertEqual(file_description.url, staging_info.cloud_url)
