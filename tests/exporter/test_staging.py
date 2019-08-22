@@ -1,3 +1,4 @@
+import logging
 from unittest import TestCase
 
 from mock import Mock
@@ -6,6 +7,8 @@ from ingest.api.stagingapi import FileDescription
 from ingest.exporter.exceptions import FileDuplication
 from ingest.exporter.metadata import MetadataResource, MetadataProvenance
 from ingest.exporter.staging import StagingInfo, StagingService
+
+logging.disable(logging.CRITICAL)
 
 
 class StagingServiceTest(TestCase):
@@ -59,19 +62,30 @@ class StagingServiceTest(TestCase):
 
     def test_stage_metadata_file_already_exists(self):
         # given:
-        staging_info_repository = Mock(name='staging_info_repository')
-        staging_info_repository.save = Mock(side_effect=FileDuplication())
+        metadata_resource = self._create_test_metadata_resource()
+        file_name = metadata_resource.get_staging_file_name()
 
         # and:
-        staging_area_uuid = 'aa87cde5-a2de-424f-8f8e-40101af3f726'
+        staging_area_uuid = '33302d25-b23c-4aeb-b56e-8b4493b60130'
+        staging_info_repository = Mock(name='staging_info_repository')
+        file_duplication = FileDuplication(staging_area_uuid, file_name)
+        staging_info_repository.save = Mock(side_effect=file_duplication)
+
+        # and:
         staging_client = Mock(name='staging_client')
+        cloud_url = 'http://path/to/file_0.json'
+        file_description = FileDescription(['cHks0mz'], 'metadata/process', file_name, 256,
+                                           cloud_url)
+        staging_client.getFile = Mock(return_value=file_description)
 
         # when:
         staging_service = StagingService(staging_client, staging_info_repository)
-        staging_service.stage_metadata(staging_area_uuid, self._create_test_metadata_resource())
+        staging_area_uuid = 'aa87cde5-a2de-424f-8f8e-40101af3f726'
+        staging_info = staging_service.stage_metadata(staging_area_uuid, metadata_resource)
 
         # then:
         staging_client.stageFile.assert_not_called()
+        self.assertIsNotNone(staging_info)
 
     @staticmethod
     def _create_test_metadata_resource():
