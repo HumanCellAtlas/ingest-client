@@ -11,11 +11,18 @@ logger = logging.getLogger(__name__)
 
 class StagingInfo:
 
-    def __init__(self, staging_area_uuid, file_name, metadata_uuid='', cloud_url=''):
+    def __init__(self, staging_area_uuid: str, file_name: str, metadata_uuid: str, cloud_url: str):
         self.staging_area_uuid = staging_area_uuid
         self.file_name = file_name
         self.metadata_uuid = metadata_uuid
         self.cloud_url = cloud_url
+
+
+class StagePersistInfo:
+
+    def __init__(self, staging_area_uuid: str, file_name: str):
+        self.staging_area_uuid = staging_area_uuid
+        self.file_name = file_name
 
 
 class StagingInfoRepository:
@@ -25,7 +32,7 @@ class StagingInfoRepository:
     def delete_staging_locks(self, staging_area_uuid: str):
         self.ingest_client.delete_staging_jobs(staging_area_uuid)
 
-    def save(self, staging_info: StagingInfo):
+    def save(self, stage_persist_info: StagePersistInfo):
         pass
 
 
@@ -40,10 +47,9 @@ class StagingService:
 
     def stage_metadata(self, staging_area_uuid, metadata_resource: MetadataResource) -> StagingInfo:
         staging_file_name = metadata_resource.get_staging_file_name()
-        staging_info = StagingInfo(staging_area_uuid, staging_file_name,
-                                   metadata_uuid=metadata_resource.uuid)
+
         try:
-            self.staging_info_repository.save(staging_info)
+            self.staging_info_repository.save(StagePersistInfo(staging_area_uuid, staging_file_name))
             formatted_type = f'metadata/{metadata_resource.metadata_type}'
             file_description = self.staging_client.stageFile(staging_area_uuid, staging_file_name,
                                                              metadata_resource.to_bundle_metadata(),
@@ -52,7 +58,7 @@ class StagingService:
             logger.warning(str(file_duplication))
             file_description = self.staging_client.getFile(staging_area_uuid, staging_file_name)
 
-        staging_info.cloud_url = file_description.url
+        staging_info = StagingInfo(staging_area_uuid, staging_file_name, metadata_resource.uuid, file_description.url)
         return staging_info
 
     def cleanup_staging_area(self, staging_area_uuid):

@@ -133,7 +133,9 @@ class ExporterTest(TestCase):
     def _set_up_staging_service(staging_service):
         cloud_urls = [f'https://upload.tld/metadata{i}.json' for i in range(0, 3)]
         staging_area_uuid = '2a74f53d-a081-4523-b62a-22acb9d8647b'
-        staging_details = [StagingInfo(staging_area_uuid, f'file_{index}.json', cloud_url=url)
+        metadata_uuid = 'a854f53d-a081-4523-b62a-22acb9d5d901'
+
+        staging_details = [StagingInfo(staging_area_uuid, f'file_{index}.json', metadata_uuid, url)
                            for index, url in enumerate(cloud_urls)]
         staging_service.stage_metadata = Mock(side_effect=staging_details)
         return staging_details
