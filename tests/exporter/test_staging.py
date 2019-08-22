@@ -116,6 +116,7 @@ class StagingServiceTest(TestCase):
 
         # and: just to ensure interface with repository is correct
         self.staging_info_repository.find_one.assert_called_once_with(staging_area_uuid, file_name)
+        self.staging_info_repository.update.assert_not_called()
 
     def test_get_staging_info_no_cloud_url(self):
         # given:
@@ -141,6 +142,14 @@ class StagingServiceTest(TestCase):
 
         # and: just to ensure consistent interface
         self.staging_client.getFile.assert_called_once_with(staging_area_uuid, file_name)
+        self._assert_staging_info_updated(cloud_url)
+
+    def _assert_staging_info_updated(self, cloud_url):
+        update_call_list = self.staging_info_repository.update.call_args_list
+        self.assertEqual(1, len(update_call_list), 'update should have been called exactly once.')
+        call_args, _ = update_call_list[0]
+        update_info, *_ = call_args
+        self.assertEqual(cloud_url, update_info.cloud_url)
 
     @staticmethod
     def _create_test_metadata_resource():

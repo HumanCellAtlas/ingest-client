@@ -51,6 +51,7 @@ class StagingService:
         if not staging_info.cloud_url:
             file_description = self.staging_client.getFile(staging_area_uuid, file_name)
             staging_info.cloud_url = file_description.url
+            self.staging_info_repository.update(staging_info)
         return staging_info
 
     def stage_metadata(self, staging_area_uuid, metadata_resource: MetadataResource) -> StagingInfo:
