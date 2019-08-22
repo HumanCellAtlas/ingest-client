@@ -13,32 +13,37 @@ logging.disable(logging.CRITICAL)
 
 class StagingServiceTest(TestCase):
 
+    def setUp(self) -> None:
+        self.staging_client = Mock(name='staging_client')
+        self.staging_info_repository = Mock(name='staging_info_repository')
+        self.staging_service = StagingService(self.staging_client, self.staging_info_repository)
+
+    def tearDown(self) -> None:
+        self.staging_client = None
+        self.staging_info_repository = None
+        self.staging_service = None
+
     def test_stage_metadata(self):
         # given:
         metadata_resource = self._create_test_metadata_resource()
 
         # and:
-        staging_client = Mock(name='staging_client')
         file_name = metadata_resource.get_staging_file_name()
         file_description = FileDescription(['chks0mz'], 'application/json', file_name, 1024,
                                            'http://domain.com/file.url')
-        staging_client.stageFile = Mock(return_value=file_description)
-
-        # and:
-        staging_info_repository = Mock(name='staging_info_repository')
-        staging_service = StagingService(staging_client, staging_info_repository)
+        self.staging_client.stageFile = Mock(return_value=file_description)
 
         # when:
         staging_area_uuid = '7455716e-9639-41d9-bff9-d763f9ee028d'
-        staging_info = staging_service.stage_metadata(staging_area_uuid, metadata_resource)
+        staging_info = self.staging_service.stage_metadata(staging_area_uuid, metadata_resource)
 
         # then:
         self._assert_correct_staging_info(staging_info, staging_area_uuid, metadata_resource,
                                           file_description)
-        staging_client.stageFile.assert_called_once_with(staging_area_uuid, file_name,
+        self.staging_client.stageFile.assert_called_once_with(staging_area_uuid, file_name,
                                                          metadata_resource.to_bundle_metadata(),
                                                          'metadata/biomaterial')
-        self._assert_staging_info_saved(staging_info_repository, file_name, staging_area_uuid)
+        self._assert_staging_info_saved(self.staging_info_repository, file_name, staging_area_uuid)
 
     def _assert_correct_staging_info(self, staging_info, staging_area_uuid, metadata_resource,
                                      file_description):
@@ -67,25 +72,22 @@ class StagingServiceTest(TestCase):
 
         # and:
         staging_area_uuid = '33302d25-b23c-4aeb-b56e-8b4493b60130'
-        staging_info_repository = Mock(name='staging_info_repository')
         file_duplication = FileDuplication(staging_area_uuid, file_name)
-        staging_info_repository.save = Mock(side_effect=file_duplication)
+        self.staging_info_repository.save = Mock(side_effect=file_duplication)
 
         # and:
-        staging_client = Mock(name='staging_client')
         cloud_url = 'http://path/to/file_0.json'
         file_description = FileDescription(['cHks0mz'], 'metadata/process', file_name, 256,
                                            cloud_url)
-        staging_client.getFile = Mock(return_value=file_description)
+        self.staging_client.getFile = Mock(return_value=file_description)
 
         # when:
-        staging_service = StagingService(staging_client, staging_info_repository)
         staging_area_uuid = 'aa87cde5-a2de-424f-8f8e-40101af3f726'
-        staging_info = staging_service.stage_metadata(staging_area_uuid, metadata_resource)
+        staging_info = self.staging_service.stage_metadata(staging_area_uuid, metadata_resource)
 
         # then:
-        staging_client.stageFile.assert_not_called()
-        staging_client.getFile.assert_called_once_with(staging_area_uuid, file_name)
+        self.staging_client.stageFile.assert_not_called()
+        self.staging_client.getFile.assert_called_once_with(staging_area_uuid, file_name)
 
         # and:
         self.assertIsNotNone(staging_info)
@@ -94,10 +96,6 @@ class StagingServiceTest(TestCase):
 
     def test_get_staging_info(self):
         # given:
-        staging_info_repository = Mock(name='staging_info_repository')
-        staging_service = StagingService(Mock(name='staging_client'), staging_info_repository)
-
-        # and:
         staging_area_uuid = 'ac4b29e3-7522-417e-ae0f-d82874fb4b05'
         metadata_resource = self._create_test_metadata_resource()
 
@@ -105,10 +103,10 @@ class StagingServiceTest(TestCase):
         file_name = metadata_resource.get_staging_file_name()
         cloud_url = 'http://domain.com/path/to/file.json'
         persisted_info = StagingInfo(staging_area_uuid, file_name, cloud_url=cloud_url)
-        staging_info_repository.find_one = Mock(return_value=persisted_info)
+        self.staging_info_repository.find_one = Mock(return_value=persisted_info)
 
         # when:
-        staging_info = staging_service.get_staging_info(staging_area_uuid, metadata_resource)
+        staging_info = self.staging_service.get_staging_info(staging_area_uuid, metadata_resource)
 
         # then:
         self.assertIsNotNone(staging_info)
@@ -117,7 +115,7 @@ class StagingServiceTest(TestCase):
         self.assertEqual(cloud_url, staging_info.cloud_url)
 
         # and: just to ensure interface with repository is correct
-        staging_info_repository.find_one.assert_called_once_with(staging_area_uuid, file_name)
+        self.staging_info_repository.find_one.assert_called_once_with(staging_area_uuid, file_name)
 
     @staticmethod
     def _create_test_metadata_resource():
