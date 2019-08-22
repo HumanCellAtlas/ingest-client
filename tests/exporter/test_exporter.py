@@ -108,7 +108,7 @@ class ExporterTest(TestCase):
         exporter.export_update(update_submission, bundle_uuid, metadata_urls, update_version)
 
         # then:
-        staging_service.stage_update.assert_has_calls(
+        staging_service.stage_metadata.assert_has_calls(
             [call(staging_area_uuid, metadata) for metadata in metadata_resources], any_order=True)
         bundle.update_file.assert_has_calls([call(metadata) for metadata in metadata_resources],
                                             any_order=True)
@@ -135,7 +135,7 @@ class ExporterTest(TestCase):
         staging_area_uuid = '2a74f53d-a081-4523-b62a-22acb9d8647b'
         staging_details = [StagingInfo(staging_area_uuid, f'file_{index}.json', cloud_url=url)
                            for index, url in enumerate(cloud_urls)]
-        staging_service.stage_update = Mock(side_effect=staging_details)
+        staging_service.stage_metadata = Mock(side_effect=staging_details)
         return staging_details
 
     @staticmethod
