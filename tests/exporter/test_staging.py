@@ -27,7 +27,7 @@ class StagingServiceTest(TestCase):
         # when:
         staging_service = StagingService(staging_client, staging_info_repository)
         staging_info = staging_service.stage_metadata(staging_area_uuid, file_name, content,
-                                                       content_type)
+                                                      content_type)
 
         # then:
         self.assertIsNotNone(staging_info)

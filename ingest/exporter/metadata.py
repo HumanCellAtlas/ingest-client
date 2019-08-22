@@ -7,8 +7,8 @@ class MetadataParseException(Exception):
 
 
 class MetadataProvenance:
-    def __init__(self, document_id: str, submission_date: str, update_date: str, schema_major_version: int,
-                 schema_minor_version: int):
+    def __init__(self, document_id: str, submission_date: str, update_date: str,
+                 schema_major_version: int, schema_minor_version: int):
         self.document_id = document_id
         self.submission_date = submission_date
         self.update_date = update_date
@@ -21,7 +21,8 @@ class MetadataProvenance:
 
 class MetadataResource:
 
-    def __init__(self, metadata_type, metadata_json, uuid, dcp_version, provenance: MetadataProvenance):
+    def __init__(self, metadata_type, metadata_json, uuid, dcp_version,
+                 provenance: MetadataProvenance):
         self.metadata_json = metadata_json
         self.uuid = uuid
         self.dcp_version = dcp_version
@@ -52,7 +53,8 @@ class MetadataResource:
             schema_major_version = int(schema_semver.split(".")[0])
             schema_minor_version = int(schema_semver.split(".")[1])
 
-            return MetadataProvenance(uuid, submission_date, update_date, schema_major_version, schema_minor_version)
+            return MetadataProvenance(uuid, submission_date, update_date, schema_major_version,
+                                      schema_minor_version)
         except (KeyError, TypeError) as e:
             raise MetadataParseException(e)
 
