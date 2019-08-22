@@ -100,9 +100,16 @@ class IngestApi:
         return all_schemas
 
     def get_schemas_url(self):
-        if "schemas" in self._ingest_links:
-            return self._ingest_links["schemas"]["href"].rsplit("{")[0]
+        return self.get_resource_repository_url("schemas")
+
+    def get_staging_jobs_url(self):
+        return self.get_resource_repository_url("stagingJobs")
+
+    def get_resource_repository_url(self, repository_name: str):
+        if repository_name in self._ingest_links:
+            return self._ingest_links[repository_name]["href"].rsplit("{")[0]
         return None
+
 
     def getSubmissions(self):
         params = {'sort': 'submissionDate,desc'}
@@ -420,3 +427,9 @@ class IngestApi:
         }
         r = self.session.patch(submission_url, data=json.dumps(staging_details))
         r.raise_for_status()
+
+    def delete_staging_jobs(self, staging_area_uuid):
+        delete_jobs_url = f'{self.get_staging_jobs_url()}/delete'
+        r = self.session.delete(delete_jobs_url, params={"stagingAreaUuid": staging_area_uuid}, headers=self.get_headers())
+        r.raise_for_status()
+        return r.json()

@@ -3,6 +3,8 @@ import logging
 from ingest.exporter.metadata import MetadataResource
 from ingest.exporter.exceptions import FileDuplication
 
+from ingest.api.ingestapi import IngestApi
+
 logger = logging.getLogger(__name__)
 
 
@@ -15,9 +17,19 @@ class StagingInfo:
         self.cloud_url = cloud_url
 
 
+class StagingInfoRepository:
+    def __init__(self, ingest_client: IngestApi):
+        self.ingest_client = ingest_client
+
+    def delete_staging_locks(self, staging_area_uuid: str):
+        self.ingest_client.delete_staging_jobs(staging_area_uuid)
+
+    def save(self, staging_info: StagingInfo):
+        pass
+
 class StagingService:
 
-    def __init__(self, staging_client, staging_info_repository):
+    def __init__(self, staging_client, staging_info_repository: StagingInfoRepository):
         self.staging_client = staging_client
         self.staging_info_repository = staging_info_repository
 
@@ -36,3 +48,6 @@ class StagingService:
             return staging_info
         except FileDuplication as file_duplication:
             logger.warning(file_duplication)
+
+    def cleanup_staging_locks(self, staging_area_uuid):
+        self.staging_info_repository.delete_staging_locks(staging_area_uuid)
