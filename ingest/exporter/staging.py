@@ -35,6 +35,9 @@ class StagingService:
         self.staging_client = staging_client
         self.staging_info_repository = staging_info_repository
 
+    def staging_area_exists(self, staging_area_uuid: str) -> bool:
+        return self.staging_client.hasStagingArea(staging_area_uuid)
+
     def stage_metadata(self, staging_area_uuid, metadata_resource: MetadataResource) -> StagingInfo:
         staging_file_name = metadata_resource.get_staging_file_name()
         staging_info = StagingInfo(staging_area_uuid, staging_file_name,

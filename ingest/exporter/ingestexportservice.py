@@ -39,7 +39,6 @@ class IngestExporter:
         self.dry_run = dry_run
         self.output_dir = output_directory
 
-        self.staging_api = staging_api
         self.dss_api = dss_api
         self.ingest_api = ingest_api
         self.staging_service = StagingService(staging_api, StagingInfoRepository(self.ingest_api))
@@ -50,7 +49,7 @@ class IngestExporter:
         self.related_entities_cache = {}
         saved_bundle_uuid = None
 
-        if not self.dry_run and not self.staging_api.hasStagingArea(submission_uuid):
+        if not self.dry_run and not self.staging_service.staging_area_exists(submission_uuid):
             error_message = "Can't do export as no upload area has been created."
             raise NoUploadAreaFoundError(error_message)
 

@@ -131,7 +131,7 @@ class StagingApi:
         res = r.json()
         return FileDescription(res['checksums'], type, res['name'], res['size'], res['url'])
 
-    def hasStagingArea(self, submissionId):
+    def hasStagingArea(self, submissionId) -> bool:
         base = urljoin(self.url, self.apiversion + '/area/' + submissionId)
         r = self.session.head(base, headers=self.header)
         return r.status_code == requests.codes.ok
