@@ -110,7 +110,6 @@ class IngestApi:
             return self._ingest_links[repository_name]["href"].rsplit("{")[0]
         return None
 
-
     def getSubmissions(self):
         params = {'sort': 'submissionDate,desc'}
         r = self.get(self._ingest_links["submissionEnvelopes"]["href"].rsplit("{")[0], params=params,

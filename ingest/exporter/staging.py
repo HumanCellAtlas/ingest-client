@@ -4,6 +4,7 @@ from ingest.exporter.metadata import MetadataResource
 from ingest.exporter.exceptions import FileDuplication
 
 from ingest.api.ingestapi import IngestApi
+from ingest.api.stagingapi import StagingApi
 
 logger = logging.getLogger(__name__)
 
@@ -30,7 +31,7 @@ class StagingInfoRepository:
 
 class StagingService:
 
-    def __init__(self, staging_client, staging_info_repository: StagingInfoRepository):
+    def __init__(self, staging_client: StagingApi, staging_info_repository: StagingInfoRepository):
         self.staging_client = staging_client
         self.staging_info_repository = staging_info_repository
 
@@ -50,5 +51,6 @@ class StagingService:
         except FileDuplication as file_duplication:
             logger.warning(file_duplication)
 
-    def cleanup_staging_locks(self, staging_area_uuid):
+    def cleanup_staging_area(self, staging_area_uuid):
+        self.staging_client.deleteStagingArea(staging_area_uuid)
         self.staging_info_repository.delete_staging_locks(staging_area_uuid)
