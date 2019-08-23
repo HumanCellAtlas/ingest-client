@@ -29,8 +29,8 @@ class StagingServiceTest(TestCase):
 
         # and:
         file_name = metadata_resource.get_staging_file_name()
-        file_description = FileDescription(['chks0mz'], 'application/json', file_name, 1024,
-                                           'http://domain.com/file.url')
+        cloud_url = 'http://domain.com/file.url'
+        file_description = FileDescription(['chks0mz'], 'biomaterial', file_name, 1024, cloud_url)
         self.staging_client.stageFile = Mock(return_value=file_description)
 
         # when:
@@ -38,12 +38,13 @@ class StagingServiceTest(TestCase):
         staging_info = self.staging_service.stage_metadata(staging_area_uuid, metadata_resource)
 
         # then:
+        self._assert_staging_info_saved(self.staging_info_repository, file_name, staging_area_uuid)
         self._assert_correct_staging_info(staging_info, staging_area_uuid, metadata_resource,
                                           file_description)
         self.staging_client.stageFile.assert_called_once_with(staging_area_uuid, file_name,
                                                          metadata_resource.to_bundle_metadata(),
                                                          'metadata/biomaterial')
-        self._assert_staging_info_saved(self.staging_info_repository, file_name, staging_area_uuid)
+        self._assert_cloud_url_updated(cloud_url)
 
     def _assert_correct_staging_info(self, staging_info, staging_area_uuid, metadata_resource,
                                      file_description):
@@ -64,6 +65,13 @@ class StagingServiceTest(TestCase):
         # and: verify bare minimum correct staging info
         self.assertEqual(file_name, persisted_info.file_name)
         self.assertEqual(staging_area_uuid, persisted_info.staging_area_uuid)
+
+    def _assert_cloud_url_updated(self, cloud_url):
+        update_call_list = self.staging_info_repository.update.call_args_list
+        self.assertEqual(1, len(update_call_list), 'update should have been called exactly once.')
+        call_args, _ = update_call_list[0]
+        update_info, *_ = call_args
+        self.assertEqual(cloud_url, update_info.cloud_url)
 
     def test_stage_metadata_file_already_exists(self):
         # given:
@@ -96,6 +104,7 @@ class StagingServiceTest(TestCase):
 
         # and: ensure consistent interface
         self.staging_client.getFile.assert_not_called()
+        self.staging_info_repository.update.assert_not_called()
         self.staging_info_repository.find_one.assert_called_once_with(staging_area_uuid, file_name)
 
     def test_get_staging_info(self):
@@ -146,14 +155,7 @@ class StagingServiceTest(TestCase):
 
         # and: just to ensure consistent interface
         self.staging_client.getFile.assert_called_once_with(staging_area_uuid, file_name)
-        self._assert_staging_info_updated(cloud_url)
-
-    def _assert_staging_info_updated(self, cloud_url):
-        update_call_list = self.staging_info_repository.update.call_args_list
-        self.assertEqual(1, len(update_call_list), 'update should have been called exactly once.')
-        call_args, _ = update_call_list[0]
-        update_info, *_ = call_args
-        self.assertEqual(cloud_url, update_info.cloud_url)
+        self._assert_cloud_url_updated(cloud_url)
 
     @staticmethod
     def _create_test_metadata_resource():

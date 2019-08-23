@@ -55,6 +55,7 @@ class StagingService:
                                                              metadata_resource.to_bundle_metadata(),
                                                              formatted_type)
             staging_info.cloud_url = file_description.url
+            self.staging_info_repository.update(staging_info)
         except FileDuplication as file_duplication:
             logger.warning(str(file_duplication))
             staging_info = self.get_staging_info(staging_area_uuid, metadata_resource)
