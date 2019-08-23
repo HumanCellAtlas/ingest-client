@@ -5,6 +5,7 @@ from unittest import TestCase
 from mock import Mock
 
 from ingest.api.stagingapi import FileDescription
+from ingest.exporter import staging
 from ingest.exporter.exceptions import FileDuplication
 from ingest.exporter.metadata import MetadataResource, MetadataProvenance
 from ingest.exporter.staging import StagingInfo, StagingService, PartialStagingInfo
@@ -134,6 +135,10 @@ class StagingServiceTest(TestCase):
 
     def test_get_staging_info_retry_for_missing_cloud_url(self):
         # given:
+        staging.STAGING_WAIT_ATTEMPTS = 5
+        staging.STAGING_WAIT_TIME = 0.01
+
+        # and:
         staging_area_uuid = 'd4498a65-5b00-4424-8101-4e4a6a7e5382'
         metadata_resource = self._create_test_metadata_resource()
 
@@ -158,7 +163,11 @@ class StagingServiceTest(TestCase):
         self.assertEqual(cloud_url, staging_info.cloud_url)
 
     def test_get_staging_info_exhaust_attempts(self):
-        # given:
+        # given: alter wait parameters for testing
+        staging.STAGING_WAIT_ATTEMPTS = 1
+        staging.STAGING_WAIT_TIME = 0.01
+
+        # and:
         staging_area_uuid = 'f98bf97d-0b43-4eb2-a463-0df1c0d48142'
         metadata_resource = self._create_test_metadata_resource()
 

@@ -1,12 +1,24 @@
 import logging
-
-from ingest.exporter.exceptions import FileDuplication
-from ingest.exporter.metadata import MetadataResource
+from os import environ
+from time import sleep
 
 from ingest.api.ingestapi import IngestApi
 from ingest.api.stagingapi import StagingApi
+from ingest.exporter.exceptions import FileDuplication
+from ingest.exporter.metadata import MetadataResource
 
 logger = logging.getLogger(__name__)
+
+
+wait_time_env = environ.get('STAGING_WAIT_TIME_MILLIS', '250')
+STAGING_WAIT_TIME = float(wait_time_env) / 1000
+if STAGING_WAIT_TIME < 0:
+    raise ValueError('Staging wait time cannot be less than 0.')
+
+wait_attempts_env = environ.get('STAGING_WAIT_ATTEMPTS', '5')
+STAGING_WAIT_ATTEMPTS = int(wait_attempts_env)
+if STAGING_WAIT_ATTEMPTS < 0:
+    raise ValueError('Staging wait attempts cannot be less than 0.')
 
 
 class StagingInfo:
@@ -38,8 +50,9 @@ class StagingService:
     def get_staging_info(self, staging_area_uuid, metadata_resource: MetadataResource):
         file_name = metadata_resource.get_staging_file_name()
         staging_info = self.staging_info_repository.find_one(staging_area_uuid, file_name)
-        max_attempts = 5
+        max_attempts = STAGING_WAIT_ATTEMPTS
         while max_attempts and not staging_info.cloud_url:
+            sleep(STAGING_WAIT_TIME)
             staging_info = self.staging_info_repository.find_one(staging_area_uuid, file_name)
             max_attempts -= 1
         if max_attempts < 1:
