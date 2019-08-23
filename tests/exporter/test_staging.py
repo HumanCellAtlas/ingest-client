@@ -1,4 +1,5 @@
 import logging
+from copy import copy, deepcopy
 from unittest import TestCase
 
 from mock import Mock
@@ -131,7 +132,7 @@ class StagingServiceTest(TestCase):
         self.staging_info_repository.find_one.assert_called_once_with(staging_area_uuid, file_name)
         self.staging_info_repository.update.assert_not_called()
 
-    def test_get_staging_info_no_cloud_url(self):
+    def test_get_staging_info_retry_for_missing_cloud_url(self):
         # given:
         staging_area_uuid = 'd4498a65-5b00-4424-8101-4e4a6a7e5382'
         metadata_resource = self._create_test_metadata_resource()
@@ -139,12 +140,15 @@ class StagingServiceTest(TestCase):
         # and:
         file_name = metadata_resource.get_staging_file_name()
         persistent_info = StagingInfo(staging_area_uuid, file_name)
-        self.staging_info_repository.find_one = Mock(return_value=persistent_info)
 
         # and:
         cloud_url = 'http://this/leads/to/the_file_0.json'
-        file_description = FileDescription(['chexumz'], 'biomaterial', file_name, 512, cloud_url)
-        self.staging_client.getFile = Mock(return_value=file_description)
+        updated_info = deepcopy(persistent_info)
+        updated_info.cloud_url = cloud_url
+
+        # and:
+        ordered_responses = [persistent_info, persistent_info, updated_info]
+        self.staging_info_repository.find_one = Mock(side_effect=ordered_responses)
 
         # when:
         staging_info = self.staging_service.get_staging_info(staging_area_uuid, metadata_resource)
@@ -152,10 +156,6 @@ class StagingServiceTest(TestCase):
         # then:
         self.assertIsNotNone(staging_info)
         self.assertEqual(cloud_url, staging_info.cloud_url)
-
-        # and: just to ensure consistent interface
-        self.staging_client.getFile.assert_called_once_with(staging_area_uuid, file_name)
-        self._assert_cloud_url_updated(cloud_url)
 
     @staticmethod
     def _create_test_metadata_resource():
