@@ -1,7 +1,7 @@
 import logging
 
-from ingest.exporter.metadata import MetadataResource
 from ingest.exporter.exceptions import FileDuplication
+from ingest.exporter.metadata import MetadataResource
 
 from ingest.api.ingestapi import IngestApi
 from ingest.api.stagingapi import StagingApi
@@ -38,8 +38,12 @@ class StagingService:
     def get_staging_info(self, staging_area_uuid, metadata_resource: MetadataResource):
         file_name = metadata_resource.get_staging_file_name()
         staging_info = self.staging_info_repository.find_one(staging_area_uuid, file_name)
-        while not staging_info.cloud_url:
+        max_attempts = 5
+        while max_attempts and not staging_info.cloud_url:
             staging_info = self.staging_info_repository.find_one(staging_area_uuid, file_name)
+            max_attempts -= 1
+        if max_attempts < 1:
+            raise PartialStagingInfo(staging_info)
         return staging_info
 
     def stage_metadata(self, staging_area_uuid, metadata_resource: MetadataResource) -> StagingInfo:
@@ -62,3 +66,11 @@ class StagingService:
     def cleanup_staging_area(self, staging_area_uuid):
         self.staging_client.deleteStagingArea(staging_area_uuid)
         self.staging_info_repository.delete_staging_locks(staging_area_uuid)
+
+
+class PartialStagingInfo(Exception):
+
+    def __init__(self, staging_info: StagingInfo):
+        super(PartialStagingInfo, self).__init__('Unable to return StagingInfo with full details.')
+        self.staging_info = staging_info
+

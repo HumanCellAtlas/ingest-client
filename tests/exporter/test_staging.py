@@ -1,5 +1,5 @@
 import logging
-from copy import copy, deepcopy
+from copy import deepcopy
 from unittest import TestCase
 
 from mock import Mock
@@ -7,7 +7,7 @@ from mock import Mock
 from ingest.api.stagingapi import FileDescription
 from ingest.exporter.exceptions import FileDuplication
 from ingest.exporter.metadata import MetadataResource, MetadataProvenance
-from ingest.exporter.staging import StagingInfo, StagingService
+from ingest.exporter.staging import StagingInfo, StagingService, PartialStagingInfo
 
 logging.disable(logging.CRITICAL)
 
@@ -156,6 +156,22 @@ class StagingServiceTest(TestCase):
         # then:
         self.assertIsNotNone(staging_info)
         self.assertEqual(cloud_url, staging_info.cloud_url)
+
+    def test_get_staging_info_exhaust_attempts(self):
+        # given:
+        staging_area_uuid = 'f98bf97d-0b43-4eb2-a463-0df1c0d48142'
+        metadata_resource = self._create_test_metadata_resource()
+
+        # and:
+        staging_info = StagingInfo(staging_area_uuid, metadata_resource.get_staging_file_name())
+        self.staging_info_repository.find_one = Mock(return_value=staging_info)
+
+        # when:
+        with self.assertRaises(PartialStagingInfo) as context:
+            self.staging_service.get_staging_info(staging_area_uuid, metadata_resource)
+
+        # then:
+        self.assertEqual(staging_info, context.exception.staging_info)
 
     @staticmethod
     def _create_test_metadata_resource():
