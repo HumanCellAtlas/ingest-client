@@ -45,20 +45,19 @@ class StagingService:
         return staging_info
 
     def stage_metadata(self, staging_area_uuid, metadata_resource: MetadataResource) -> StagingInfo:
-        staging_file_name = metadata_resource.get_staging_file_name()
-        staging_info = StagingInfo(staging_area_uuid, staging_file_name,
-                                   metadata_uuid=metadata_resource.uuid)
         try:
+            staging_file_name = metadata_resource.get_staging_file_name()
+            staging_info = StagingInfo(staging_area_uuid, staging_file_name,
+                                       metadata_uuid=metadata_resource.uuid)
             self.staging_info_repository.save(staging_info)
             formatted_type = f'metadata/{metadata_resource.metadata_type}'
             file_description = self.staging_client.stageFile(staging_area_uuid, staging_file_name,
                                                              metadata_resource.to_bundle_metadata(),
                                                              formatted_type)
+            staging_info.cloud_url = file_description.url
         except FileDuplication as file_duplication:
             logger.warning(str(file_duplication))
-            file_description = self.staging_client.getFile(staging_area_uuid, staging_file_name)
-
-        staging_info.cloud_url = file_description.url
+            staging_info = self.get_staging_info(staging_area_uuid, metadata_resource)
         return staging_info
 
     def cleanup_staging_area(self, staging_area_uuid):

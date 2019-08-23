@@ -68,6 +68,7 @@ class StagingServiceTest(TestCase):
     def test_stage_metadata_file_already_exists(self):
         # given:
         metadata_resource = self._create_test_metadata_resource()
+        metadata_uuid = metadata_resource.uuid
         file_name = metadata_resource.get_staging_file_name()
 
         # and:
@@ -77,9 +78,9 @@ class StagingServiceTest(TestCase):
 
         # and:
         cloud_url = 'http://path/to/file_0.json'
-        file_description = FileDescription(['cHks0mz'], 'metadata/process', file_name, 256,
-                                           cloud_url)
-        self.staging_client.getFile = Mock(return_value=file_description)
+        persistent_info = StagingInfo(staging_area_uuid, file_name, metadata_uuid=metadata_uuid,
+                                      cloud_url=cloud_url)
+        self.staging_info_repository.find_one = Mock(return_value=persistent_info)
 
         # when:
         staging_area_uuid = 'aa87cde5-a2de-424f-8f8e-40101af3f726'
@@ -87,12 +88,15 @@ class StagingServiceTest(TestCase):
 
         # then:
         self.staging_client.stageFile.assert_not_called()
-        self.staging_client.getFile.assert_called_once_with(staging_area_uuid, file_name)
 
         # and:
         self.assertIsNotNone(staging_info)
-        self.assertEqual(metadata_resource.uuid, staging_info.metadata_uuid)
+        self.assertEqual(metadata_uuid, staging_info.metadata_uuid)
         self.assertEqual(cloud_url, staging_info.cloud_url)
+
+        # and: ensure consistent interface
+        self.staging_client.getFile.assert_not_called()
+        self.staging_info_repository.find_one.assert_called_once_with(staging_area_uuid, file_name)
 
     def test_get_staging_info(self):
         # given:
