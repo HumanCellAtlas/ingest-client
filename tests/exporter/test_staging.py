@@ -156,7 +156,6 @@ class StagingServiceTest(TestCase):
 
     def test_get_staging_info_retry_for_missing_cloud_url(self):
         # given:
-        staging.STAGING_WAIT_ATTEMPTS = 5
         staging.STAGING_WAIT_TIME = 0.01
 
         # and:
@@ -174,6 +173,7 @@ class StagingServiceTest(TestCase):
 
         # and:
         ordered_responses = [persistent_info, persistent_info, updated_info]
+        staging.STAGING_WAIT_ATTEMPTS = len(ordered_responses)
         self.staging_info_repository.find_one = Mock(side_effect=ordered_responses)
 
         # when:
