@@ -60,24 +60,28 @@ class StagingService:
         return staging_info
 
     def stage_metadata(self, staging_area_uuid, metadata_resource: MetadataResource) -> StagingInfo:
+        staging_file_name = metadata_resource.get_staging_file_name()
+        staging_info = StagingInfo(staging_area_uuid, staging_file_name,
+                                   metadata_uuid=metadata_resource.uuid)
         try:
-            staging_file_name = metadata_resource.get_staging_file_name()
-            staging_info = StagingInfo(staging_area_uuid, staging_file_name,
-                                       metadata_uuid=metadata_resource.uuid)
             self.staging_info_repository.save(staging_info)
             formatted_type = f'metadata/{metadata_resource.metadata_type}'
-            try:
-                file_description = self.staging_client.stageFile(staging_area_uuid, staging_file_name,
-                                                                 metadata_resource.to_bundle_metadata(),
-                                                                 formatted_type)
-                staging_info.cloud_url = file_description.url
-                self.staging_info_repository.update(staging_info)
-            except Exception:
-                self.staging_info_repository.delete(staging_info)
+            bundle_metadata = metadata_resource.to_bundle_metadata()
+            self._do_stage_metadata(staging_info, formatted_type, bundle_metadata)
         except FileDuplication as file_duplication:
             logger.warning(str(file_duplication))
             staging_info = self.get_staging_info(staging_area_uuid, metadata_resource)
         return staging_info
+
+    def _do_stage_metadata(self, staging_info, formatted_type, bundle_metadata):
+        try:
+            file_description = self.staging_client.stageFile(staging_info.staging_area_uuid,
+                                                             staging_info.file_name,
+                                                             bundle_metadata, formatted_type)
+            staging_info.cloud_url = file_description.url
+            self.staging_info_repository.update(staging_info)
+        except Exception:
+            self.staging_info_repository.delete(staging_info)
 
     def cleanup_staging_area(self, staging_area_uuid):
         self.staging_client.deleteStagingArea(staging_area_uuid)
