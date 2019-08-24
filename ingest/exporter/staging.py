@@ -55,7 +55,7 @@ class StagingService:
             sleep(STAGING_WAIT_TIME)
             staging_info = self.staging_info_repository.find_one(staging_area_uuid, file_name)
             max_attempts -= 1
-        if max_attempts < 1:
+        if not staging_info.cloud_url:
             raise PartialStagingInfo(staging_info)
         return staging_info
 

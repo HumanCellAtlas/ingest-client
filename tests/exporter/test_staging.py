@@ -173,7 +173,7 @@ class StagingServiceTest(TestCase):
 
         # and:
         ordered_responses = [persistent_info, persistent_info, updated_info]
-        staging.STAGING_WAIT_ATTEMPTS = len(ordered_responses)
+        staging.STAGING_WAIT_ATTEMPTS = len(ordered_responses) - 1
         self.staging_info_repository.find_one = Mock(side_effect=ordered_responses)
 
         # when:
