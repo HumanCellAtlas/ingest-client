@@ -75,12 +75,14 @@ class StagingService:
 
     def _do_stage_metadata(self, staging_info, formatted_type, bundle_metadata):
         try:
+            # stageFile is assumed to do (sensible) internal retries (if necessary)
             file_description = self.staging_client.stageFile(staging_info.staging_area_uuid,
                                                              staging_info.file_name,
                                                              bundle_metadata, formatted_type)
             staging_info.cloud_url = file_description.url
             self.staging_info_repository.update(staging_info)
-        except Exception:
+        except Exception as exception:
+            logging.error(str(exception))
             self.staging_info_repository.delete(staging_info)
 
     def cleanup_staging_area(self, staging_area_uuid):
