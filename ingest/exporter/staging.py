@@ -66,11 +66,14 @@ class StagingService:
                                        metadata_uuid=metadata_resource.uuid)
             self.staging_info_repository.save(staging_info)
             formatted_type = f'metadata/{metadata_resource.metadata_type}'
-            file_description = self.staging_client.stageFile(staging_area_uuid, staging_file_name,
-                                                             metadata_resource.to_bundle_metadata(),
-                                                             formatted_type)
-            staging_info.cloud_url = file_description.url
-            self.staging_info_repository.update(staging_info)
+            try:
+                file_description = self.staging_client.stageFile(staging_area_uuid, staging_file_name,
+                                                                 metadata_resource.to_bundle_metadata(),
+                                                                 formatted_type)
+                staging_info.cloud_url = file_description.url
+                self.staging_info_repository.update(staging_info)
+            except Exception:
+                self.staging_info_repository.delete(staging_info)
         except FileDuplication as file_duplication:
             logger.warning(str(file_duplication))
             staging_info = self.get_staging_info(staging_area_uuid, metadata_resource)

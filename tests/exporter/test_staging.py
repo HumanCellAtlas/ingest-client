@@ -109,6 +109,27 @@ class StagingServiceTest(TestCase):
         self.staging_info_repository.update.assert_not_called()
         self.staging_info_repository.find_one.assert_called_once_with(staging_area_uuid, file_name)
 
+    def test_stage_metadata_delete_info_on_failure(self):
+        # given:
+        staging_area_uuid = '4717a115-6701-4230-96f3-86c98fd2218d'
+        metadata_resource = self._create_test_metadata_resource()
+
+        # and:
+        self.staging_client.stageFile = Mock(side_effect=Exception('unknown test exception'))
+
+        # when:
+        self.staging_service.stage_metadata(staging_area_uuid, metadata_resource)
+
+        # then:
+        self.staging_info_repository.update.assert_not_called()
+
+        # and: partial Staging Info should be deleted
+        self.staging_info_repository.delete.assert_called_once()
+        call_args, _ = self.staging_info_repository.delete.call_args
+        deleted_info, *_ = call_args
+        self.assertEqual(staging_area_uuid, deleted_info.staging_area_uuid)
+        self.assertEqual(metadata_resource.get_staging_file_name(), deleted_info.file_name)
+
     def test_get_staging_info(self):
         # given:
         staging_area_uuid = 'ac4b29e3-7522-417e-ae0f-d82874fb4b05'
