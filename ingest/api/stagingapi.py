@@ -133,18 +133,6 @@ class StagingApi:
         res = r.json()
         return FileDescription(res['checksums'], type, res['name'], res['size'], res['url'])
 
-    def getFile(self, submissionId, filename) -> FileDescription:
-        file_url = urljoin(self.url, self.apiversion + '/area/' + submissionId + "/" + filename)
-        self.logger.info(f'GET file: {file_url}')
-        r = self.session.get(file_url, headers=self.header)
-        r.raise_for_status()
-
-        res = r.json()
-        try:
-            return FileDescription.parse_upload_response(res)
-        except UploadResponseParseException:
-            raise UploadResponseParseException(f'Failed to parse upload response from %s', file_url)
-
     def hasStagingArea(self, submissionId) -> bool:
         base = urljoin(self.url, self.apiversion + '/area/' + submissionId)
         r = self.session.head(base, headers=self.header)

@@ -131,7 +131,6 @@ class StagingServiceTest(TestCase):
         self.assertEqual(cloud_url, staging_info.cloud_url)
 
         # and: ensure consistent interface
-        self.staging_client.getFile.assert_not_called()
         self.staging_info_repository.update.assert_not_called()
         self.staging_info_repository.find_one.assert_called_once_with(staging_area_uuid, file_name)
 
