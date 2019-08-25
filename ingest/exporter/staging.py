@@ -51,11 +51,11 @@ class StagingService:
         file_name = metadata_resource.get_staging_file_name()
         staging_info = self.staging_info_repository.find_one(staging_area_uuid, file_name)
         max_attempts = STAGING_WAIT_ATTEMPTS
-        while max_attempts and not staging_info.cloud_url:
+        while max_attempts and staging_info and not staging_info.cloud_url:
             sleep(STAGING_WAIT_TIME)
             staging_info = self.staging_info_repository.find_one(staging_area_uuid, file_name)
             max_attempts -= 1
-        if not staging_info.cloud_url:
+        if staging_info and not staging_info.cloud_url:
             raise PartialStagingInfo(staging_info)
         return staging_info
 

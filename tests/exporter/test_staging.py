@@ -154,6 +154,18 @@ class StagingServiceTest(TestCase):
         self.staging_info_repository.find_one.assert_called_once_with(staging_area_uuid, file_name)
         self.staging_info_repository.update.assert_not_called()
 
+    def test_get_staging_info_non_existent(self):
+        # given:
+        staging_area_uuid = '34b86b17-e186-45e0-9ad3-d4842b253ab7'
+        metadata_resource = self._create_test_metadata_resource()
+        self.staging_info_repository.find_one = Mock(return_value=None)
+
+        # when:
+        staging_info = self.staging_service.get_staging_info(staging_area_uuid, metadata_resource)
+
+        # then:
+        self.assertIsNone(staging_info)
+
     def test_get_staging_info_retry_for_missing_cloud_url(self):
         # given:
         staging.STAGING_WAIT_TIME = 0.01
