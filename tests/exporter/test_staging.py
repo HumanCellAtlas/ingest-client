@@ -15,12 +15,12 @@ logging.disable(logging.CRITICAL)
 
 class StagingServiceTest(TestCase):
 
-    def setUp(self) -> None:
+    def setUp(self):
         self.staging_client = Mock(name='staging_client')
         self.staging_info_repository = Mock(name='staging_info_repository')
         self.staging_service = StagingService(self.staging_client, self.staging_info_repository)
 
-    def tearDown(self) -> None:
+    def tearDown(self):
         self.staging_client = None
         self.staging_info_repository = None
         self.staging_service = None
@@ -214,6 +214,26 @@ class StagingServiceTest(TestCase):
 
         # then:
         self.assertEqual(staging_info, context.exception.staging_info)
+
+    def test_get_staging_info_eventually_non_existent(self):
+        # given:
+        staging.STAGING_WAIT_TIME = 0.1
+
+        # and:
+        staging_area_uuid = '34b86b17-e186-45e0-9ad3-d4842b253ab7'
+        metadata_resource = self._create_test_metadata_resource()
+
+        # and:
+        persistent_info = StagingInfo(staging_area_uuid, metadata_resource.get_staging_file_name())
+        ordered_responses = [persistent_info, persistent_info, persistent_info, None]
+        staging.STAGING_WAIT_ATTEMPTS = len(ordered_responses) - 1
+        self.staging_info_repository.find_one = Mock(side_effect=ordered_responses)
+
+        # when:
+        staging_info = self.staging_service.get_staging_info(staging_area_uuid, metadata_resource)
+
+        # then:
+        self.assertIsNone(staging_info)
 
     @staticmethod
     def _create_test_metadata_resource():
