@@ -4,7 +4,7 @@ from unittest import TestCase
 
 from mock import Mock, MagicMock
 
-from ingest.api.stagingapi import FileDescription
+from ingest.api.stagingapi import FileDescription, StagingFailed
 from ingest.exporter import staging
 from ingest.exporter.exceptions import FileDuplication
 from ingest.exporter.metadata import MetadataResource, MetadataProvenance
@@ -138,9 +138,11 @@ class StagingServiceTest(TestCase):
         # given:
         staging_area_uuid = '4717a115-6701-4230-96f3-86c98fd2218d'
         metadata_resource = self._create_test_metadata_resource()
+        file_name = metadata_resource.get_staging_file_name()
 
         # and:
-        self.staging_client.stageFile = Mock(side_effect=Exception('unknown test exception'))
+        staging_failure = StagingFailed(staging_area_uuid, file_name)
+        self.staging_client.stageFile = Mock(side_effect=staging_failure)
 
         # when:
         self.staging_service.stage_metadata(staging_area_uuid, metadata_resource)
@@ -153,7 +155,7 @@ class StagingServiceTest(TestCase):
         call_args, _ = self.staging_info_repository.delete.call_args
         deleted_info, *_ = call_args
         self.assertEqual(staging_area_uuid, deleted_info.staging_area_uuid)
-        self.assertEqual(metadata_resource.get_staging_file_name(), deleted_info.file_name)
+        self.assertEqual(file_name, deleted_info.file_name)
 
     def test_get_staging_info(self):
         # given:

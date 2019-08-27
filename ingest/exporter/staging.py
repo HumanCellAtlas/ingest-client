@@ -3,7 +3,7 @@ from os import environ
 from time import sleep
 
 from ingest.api.ingestapi import IngestApi
-from ingest.api.stagingapi import StagingApi
+from ingest.api.stagingapi import StagingApi, StagingFailed
 from ingest.exporter.exceptions import FileDuplication
 from ingest.exporter.metadata import MetadataResource
 
@@ -88,8 +88,8 @@ class StagingService:
                                                              bundle_metadata, formatted_type)
             staging_info.cloud_url = file_description.url
             self.staging_info_repository.update(staging_info)
-        except Exception as exception:
-            logging.error(str(exception))
+        except StagingFailed as staging_failed:
+            logging.error(str(staging_failed))
             self.staging_info_repository.delete(staging_info)
 
     def cleanup_staging_area(self, staging_area_uuid):

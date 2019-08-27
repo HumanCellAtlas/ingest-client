@@ -2,6 +2,8 @@
 """
 Description goes here
 """
+from requests import HTTPError
+
 __author__ = "jupp"
 __license__ = "Apache 2.0"
 __date__ = "12/09/2017"
@@ -53,6 +55,13 @@ class MetadataFileStagingRequest:
         self.filename = filename
         self.metadata_json = metadata_json
         self.metadata_type = metadata_type
+
+
+class StagingFailed(Exception):
+
+    def __init__(self, staging_area_uuid, file_name):
+        message = f'Staging of file "{file_name}" on staging area {staging_area_uuid} failed.'
+        super(StagingFailed, self).__init__(message)
 
 
 class StagingApi:
@@ -119,8 +128,8 @@ class StagingApi:
                               file_stage_request.metadata_json,
                               file_stage_request.metadata_type)
 
-    def stageFile(self, stagingAreaId, filename, body, type):
-        fileUrl = urljoin(self.url, self.apiversion + '/area/' + stagingAreaId + "/" + filename)
+    def stageFile(self, staging_area_uuid, file_name, body, type):
+        fileUrl = urljoin(self.url, self.apiversion + '/area/' + staging_area_uuid + "/" + file_name)
 
         self.logger.info(f'Staging file: {fileUrl}')
 
@@ -129,9 +138,12 @@ class StagingApi:
 
         r = self.session.put(fileUrl, data=json.dumps(body, indent=4), headers=header)
 
-        r.raise_for_status()
-        res = r.json()
-        return FileDescription(res['checksums'], type, res['name'], res['size'], res['url'])
+        try:
+            r.raise_for_status()
+            res = r.json()
+            return FileDescription(res['checksums'], type, res['name'], res['size'], res['url'])
+        except HTTPError as http_error:
+            raise StagingFailed(staging_area_uuid, file_name) from http_error
 
     def hasStagingArea(self, submissionId) -> bool:
         base = urljoin(self.url, self.apiversion + '/area/' + submissionId)
