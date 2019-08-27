@@ -46,7 +46,7 @@ class FileDescription:
         try:
             return FileDescription(res['checksums'], res['content_type'], res['name'], res['size'], res['url'])
         except (KeyError, TypeError) as e:
-            raise UploadResponseParseException(e)
+            raise UploadResponseParseException() from e
 
 
 class MetadataFileStagingRequest:
@@ -59,9 +59,9 @@ class MetadataFileStagingRequest:
 
 class StagingFailed(Exception):
 
-    def __init__(self, staging_area_uuid, file_name):
-        message = f'Staging of file "{file_name}" on staging area {staging_area_uuid} failed.'
-        super(StagingFailed, self).__init__(message)
+    @staticmethod
+    def formatted(staging_area_uuid, file_name):
+        return StagingFailed(f'Staging of file "{file_name}" on staging area {staging_area_uuid} failed.')
 
 
 class StagingApi:
@@ -129,21 +129,23 @@ class StagingApi:
                               file_stage_request.metadata_type)
 
     def stageFile(self, staging_area_uuid, file_name, body, type):
-        fileUrl = urljoin(self.url, self.apiversion + '/area/' + staging_area_uuid + "/" + file_name)
+        file_url = urljoin(self.url, self.apiversion + '/area/' + staging_area_uuid + "/" + file_name)
 
-        self.logger.info(f'Staging file: {fileUrl}')
+        self.logger.info(f'Staging file: {file_url}')
 
         header = dict(self.header)
         header['Content-type'] = f'application/json; dcp-type="{type}"'
 
-        r = self.session.put(fileUrl, data=json.dumps(body, indent=4), headers=header)
+        r = self.session.put(file_url, data=json.dumps(body, indent=4), headers=header)
 
         try:
             r.raise_for_status()
             res = r.json()
-            return FileDescription(res['checksums'], type, res['name'], res['size'], res['url'])
+            return FileDescription.parse_upload_response(res)
         except HTTPError as http_error:
-            raise StagingFailed(staging_area_uuid, file_name) from http_error
+            raise StagingFailed.formatted(staging_area_uuid, file_name) from http_error
+        except UploadResponseParseException as e:
+            raise StagingFailed(f'Failed to parse upload response from %s', file_url) from e
 
     def hasStagingArea(self, submissionId) -> bool:
         base = urljoin(self.url, self.apiversion + '/area/' + submissionId)
