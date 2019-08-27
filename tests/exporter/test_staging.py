@@ -2,15 +2,45 @@ import logging
 from copy import deepcopy
 from unittest import TestCase
 
-from mock import Mock
+from mock import Mock, MagicMock
 
 from ingest.api.stagingapi import FileDescription
 from ingest.exporter import staging
 from ingest.exporter.exceptions import FileDuplication
 from ingest.exporter.metadata import MetadataResource, MetadataProvenance
-from ingest.exporter.staging import StagingInfo, StagingService, PartialStagingInfo
+from ingest.exporter.staging import StagingInfo, StagingService, \
+    StagingInfoRepository, PartialStagingInfo
 
 logging.disable(logging.CRITICAL)
+
+
+class StagingInfoRepositoryTest(TestCase):
+    def setUp(self) -> None:
+        self.ingest_client = MagicMock(name='ingest_client')
+        self.staging_info_repo = StagingInfoRepository(self.ingest_client)
+
+    def tearDown(self) -> None:
+        self.ingest_client = None
+        self.staging_info_repo = None
+
+    def test_save(self):
+        staging_info = StagingInfo('staging-area-uuid', 'file-name', 'metadata-uuid', 'cloud-url')
+        self.ingest_client.create_staging_job = MagicMock()
+        output = self.staging_info_repo.save(staging_info)
+        self.ingest_client.create_staging_job.assert_called_once_with(staging_info.staging_area_uuid, staging_info.file_name)
+        self.assertEqual(staging_info.staging_area_uuid, output.staging_area_uuid)
+        self.assertEqual(staging_info.file_name, output.file_name)
+        self.assertEqual(staging_info.metadata_uuid, output.metadata_uuid)
+
+    def test_update(self):
+        staging_info = StagingInfo('staging-area-uuid', 'file-name', 'metadata-uuid', 'cloud-url')
+        staging_job = {'_links': {'completeStagingJob': {'href': 'complete_url'}}}
+        self.ingest_client.find_staging_job = MagicMock(return_value=staging_job)
+        self.ingest_client.complete_staging_job = MagicMock()
+        output = self.staging_info_repo.update(staging_info)
+        self.ingest_client.find_staging_job.assert_called_once_with(staging_info.staging_area_uuid, staging_info.file_name)
+        self.ingest_client.complete_staging_job.assert_called_once_with('complete_url', staging_info.cloud_url)
+        self.assertEqual(staging_info.cloud_url, output.cloud_url)
 
 
 class StagingServiceTest(TestCase):
@@ -41,15 +71,11 @@ class StagingServiceTest(TestCase):
 
         # then:
         self._assert_staging_info_saved(self.staging_info_repository, file_name, staging_area_uuid)
-        self._assert_correct_staging_info(staging_info, staging_area_uuid, metadata_resource,
-                                          file_description)
-        self.staging_client.stageFile.assert_called_once_with(staging_area_uuid, file_name,
-                                                         metadata_resource.to_bundle_metadata(),
-                                                         'metadata/biomaterial')
+        self._assert_correct_staging_info(staging_info, staging_area_uuid, metadata_resource, file_description)
+        self.staging_client.stageFile.assert_called_once_with(staging_area_uuid, file_name, metadata_resource.to_bundle_metadata(), 'metadata/biomaterial')
         self._assert_cloud_url_updated(cloud_url)
 
-    def _assert_correct_staging_info(self, staging_info, staging_area_uuid, metadata_resource,
-                                     file_description):
+    def _assert_correct_staging_info(self, staging_info, staging_area_uuid, metadata_resource, file_description):
         self.assertTrue(type(staging_info) is StagingInfo,
                         'stage_update should return StagingInfo.')
         self.assertEqual(staging_area_uuid, staging_info.staging_area_uuid)

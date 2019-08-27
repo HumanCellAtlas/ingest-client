@@ -37,8 +37,15 @@ class StagingInfoRepository:
     def delete_staging_locks(self, staging_area_uuid: str):
         self.ingest_client.delete_staging_jobs(staging_area_uuid)
 
-    def save(self, staging_info: StagingInfo):
-        pass
+    def save(self, staging_info: StagingInfo) -> StagingInfo:
+        self.ingest_client.create_staging_job(staging_info.staging_area_uuid, staging_info.file_name)
+        return staging_info
+
+    def update(self, staging_info: StagingInfo) -> StagingInfo:
+        staging_job = self.ingest_client.find_staging_job(staging_info.staging_area_uuid, staging_info.file_name)
+        complete_job_url = staging_job['_links']['completeStagingJob']['href']
+        self.ingest_client.complete_staging_job(complete_job_url, staging_info.cloud_url)
+        return staging_info
 
 
 class StagingService:
@@ -95,4 +102,3 @@ class PartialStagingInfo(Exception):
     def __init__(self, staging_info: StagingInfo):
         super(PartialStagingInfo, self).__init__('Unable to return StagingInfo with full details.')
         self.staging_info = staging_info
-
