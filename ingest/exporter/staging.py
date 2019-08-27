@@ -91,6 +91,7 @@ class StagingService:
         except StagingFailed as staging_failed:
             logging.error(str(staging_failed))
             self.staging_info_repository.delete(staging_info)
+            raise staging_failed
 
     def cleanup_staging_area(self, staging_area_uuid):
         self.staging_client.deleteStagingArea(staging_area_uuid)
