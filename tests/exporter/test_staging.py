@@ -141,13 +141,14 @@ class StagingServiceTest(TestCase):
         file_name = metadata_resource.get_staging_file_name()
 
         # and:
-        staging_failure = StagingFailed(staging_area_uuid, file_name)
+        staging_failure = StagingFailed.formatted(staging_area_uuid, file_name)
         self.staging_client.stageFile = Mock(side_effect=staging_failure)
 
         # when:
-        self.staging_service.stage_metadata(staging_area_uuid, metadata_resource)
+        failed_stage = lambda: self.staging_service.stage_metadata(staging_area_uuid, metadata_resource)
 
         # then:
+        self.assertRaises(StagingFailed, failed_stage)
         self.staging_info_repository.update.assert_not_called()
 
         # and: partial Staging Info should be deleted
