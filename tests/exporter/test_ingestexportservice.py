@@ -482,7 +482,9 @@ class TestExporter(TestCase):
     def test_upload_error_posted_to_ingest_api(self):
         # given:
         exporter = IngestExporter(ingest_api=self.mock_ingest_api, dss_api=self.mock_dss_api,
-                                  staging_api=self.mock_staging_api)
+                                  staging_service=self.mock_staging_service)
+        self.mock_staging_service.staging_area_exists = Mock(return_value=True)
+
         # and:
         self.mock_ingest_api.get_entity_by_uuid = MagicMock(return_value=self.SUBMISSION)
         exporter.logger.info = MagicMock()
@@ -509,7 +511,9 @@ class TestExporter(TestCase):
     def test_dss_upload_error_posted_to_ingest_api(self):
         # given:
         exporter = IngestExporter(ingest_api=self.mock_ingest_api, dss_api=self.mock_dss_api,
-                                  staging_api=self.mock_staging_api)
+                                  staging_service=self.mock_staging_service)
+        self.mock_staging_service.staging_area_exists = Mock(return_value=True)
+
         # and:
         self.mock_ingest_api.get_entity_by_uuid = MagicMock(return_value=self.SUBMISSION)
         exporter.logger.info = MagicMock()
@@ -527,9 +531,11 @@ class TestExporter(TestCase):
         exporter.put_bundle_in_dss = MagicMock(side_effect=error)
 
         # when:
-        self.assertRaises(Exception, lambda: exporter.export_bundle(bundle_uuid=None, bundle_version=None, submission_uuid=None, process_uuid=None))
+        with self.assertRaises(Exception) as context:
+            exporter.export_bundle(bundle_uuid=None, bundle_version=None, submission_uuid=None, process_uuid=None)
 
         # then:
+        self.assertIsNotNone(context.exception)
         self.mock_ingest_api.create_submission_error.assert_called_once_with(
             self.SUBMISSION.get("_links").get("self").get("href"),
             error_json
