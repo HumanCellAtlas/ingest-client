@@ -10,7 +10,8 @@ from mock import MagicMock, Mock, patch
 import ingest.exporter.ingestexportservice as ingestexportservice
 from ingest.api.dssapi import DssApi
 from ingest.api.ingestapi import IngestApi
-from ingest.api.stagingapi import FileDescription, StagingApi
+from ingest.exporter.staging import StagingService
+from ingest.api.stagingapi import FileDescription
 from ingest.exporter.ingestexportservice import IngestExporter, LinkSet
 from ingest.utils.IngestError import ExporterError
 
@@ -24,12 +25,12 @@ class TestExporter(TestCase):
         # Setup mocked APIs
         self.mock_dss_api = MagicMock(spec=DssApi)
         self.mock_ingest_api = MagicMock(spec=IngestApi)
-        self.mock_staging_api = MagicMock(spec=StagingApi)
+        self.mock_staging_service = MagicMock(spec=StagingService)
 
     def test_get_input_bundle(self):
         # given:
         exporter = IngestExporter(ingest_api=self.mock_ingest_api, dss_api=self.mock_dss_api,
-                                  staging_api=self.mock_staging_api)
+                                  staging_service=self.mock_staging_service)
         # and:
         self.mock_ingest_api.get_related_entities.return_value = ['bundle1', 'bundle2']
         process = {}
@@ -56,7 +57,7 @@ class TestExporter(TestCase):
 
         # Execute test
         exporter = IngestExporter(ingest_api=self.mock_ingest_api, dss_api=self.mock_dss_api,
-                                  staging_api=self.mock_staging_api)
+                                  staging_service=self.mock_staging_service)
         provenance_filled_metadata = exporter.bundle_metadata(sample_metadata_json, arbitrary_uuid)
 
         # Verify provenance block's existance and that contents match as expected
@@ -71,7 +72,7 @@ class TestExporter(TestCase):
     def test_upload_metadata_files(self):
         # given:
         exporter = IngestExporter(ingest_api=self.mock_ingest_api, dss_api=self.mock_dss_api,
-                                  staging_api=self.mock_staging_api)
+                                  staging_service=self.mock_staging_service)
 
         # and:
         file_desc = FileDescription('checksums', 'contentType', 'name', 'name', 'file_url')
@@ -128,7 +129,7 @@ class TestExporter(TestCase):
     def test_upload_metadata_files_error(self):
         # given:
         exporter = IngestExporter(ingest_api=self.mock_ingest_api, dss_api=self.mock_dss_api,
-                                  staging_api=self.mock_staging_api)
+                                  staging_service=self.mock_staging_service)
 
         # and:
         exporter.upload_file = Mock(side_effect=Exception('test upload file error'))
@@ -179,7 +180,7 @@ class TestExporter(TestCase):
     def test_put_bundle_in_dss_error(self):
         # given:
         exporter = IngestExporter(ingest_api=self.mock_ingest_api, dss_api=self.mock_dss_api,
-                                  staging_api=self.mock_staging_api)
+                                  staging_service=self.mock_staging_service)
 
         # and:
         self.mock_dss_api.put_bundle.side_effect = Exception('test create bundle error')

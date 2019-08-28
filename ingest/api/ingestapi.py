@@ -100,8 +100,14 @@ class IngestApi:
         return all_schemas
 
     def get_schemas_url(self):
-        if "schemas" in self._ingest_links:
-            return self._ingest_links["schemas"]["href"].rsplit("{")[0]
+        return self.get_resource_repository_url("schemas")
+
+    def get_staging_jobs_url(self):
+        return self.get_resource_repository_url("stagingJobs")
+
+    def get_resource_repository_url(self, repository_name: str):
+        if repository_name in self._ingest_links:
+            return self._ingest_links[repository_name]["href"].rsplit("{")[0]
         return None
 
     def getSubmissions(self):
@@ -420,3 +426,36 @@ class IngestApi:
         }
         r = self.session.patch(submission_url, data=json.dumps(staging_details))
         r.raise_for_status()
+
+    def delete_staging_jobs(self, staging_area_uuid):
+        delete_jobs_url = f'{self.get_staging_jobs_url()}/delete'
+        r = self.session.delete(delete_jobs_url, params={"stagingAreaUuid": staging_area_uuid}, headers=self.get_headers())
+        r.raise_for_status()
+        return r.json()
+
+    def create_staging_job(self, staging_area_uuid, file_name):
+        staging_info = {
+            "stagingAreaUuid": staging_area_uuid,
+            "stagingAreaFileName": file_name
+        }
+        r = self.session.post(self.get_staging_jobs_url(), json=staging_info, headers=self.get_headers())
+        r.raise_for_status()
+        return r.json()
+
+    def complete_staging_job(self, complete_url, upload_file_uri):
+        staging_info = {
+            "stagingAreaFileUri": upload_file_uri
+        }
+        r = self.session.patch(complete_url, json=staging_info, headers=self.get_headers())
+        r.raise_for_status()
+        return r.json()
+
+    def find_staging_job(self, upload_area_uuid, filename):
+        search_params = {
+            "stagingAreaUuid": upload_area_uuid,
+            "stagingAreaFileName": filename
+        }
+        find_staging_job_url = f'{self.get_staging_jobs_url()}/search/findByStagingAreaUuidAndStagingAreaFileName'
+        r = self.session.get(find_staging_job_url, params=search_params)
+        r.raise_for_status()
+        return r.json()

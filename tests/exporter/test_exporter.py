@@ -108,7 +108,7 @@ class ExporterTest(TestCase):
         exporter.export_update(update_submission, bundle_uuid, metadata_urls, update_version)
 
         # then:
-        staging_service.stage_update.assert_has_calls(
+        staging_service.stage_metadata.assert_has_calls(
             [call(staging_area_uuid, metadata) for metadata in metadata_resources], any_order=True)
         bundle.update_file.assert_has_calls([call(metadata) for metadata in metadata_resources],
                                             any_order=True)
@@ -132,8 +132,12 @@ class ExporterTest(TestCase):
     @staticmethod
     def _set_up_staging_service(staging_service):
         cloud_urls = [f'https://upload.tld/metadata{i}.json' for i in range(0, 3)]
-        staging_details = [StagingInfo(cloud_url=url) for url in cloud_urls]
-        staging_service.stage_update = Mock(side_effect=staging_details)
+        staging_area_uuid = '2a74f53d-a081-4523-b62a-22acb9d8647b'
+        metadata_uuid = 'a854f53d-a081-4523-b62a-22acb9d5d901'
+
+        staging_details = [StagingInfo(staging_area_uuid, f'file_{index}.json', metadata_uuid, url)
+                           for index, url in enumerate(cloud_urls)]
+        staging_service.stage_metadata = Mock(side_effect=staging_details)
         return staging_details
 
     @staticmethod

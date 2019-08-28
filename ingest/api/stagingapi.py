@@ -2,6 +2,8 @@
 """
 Description goes here
 """
+from requests import HTTPError
+
 __author__ = "jupp"
 __license__ = "Apache 2.0"
 __date__ = "12/09/2017"
@@ -24,6 +26,42 @@ class RetryPolicy(retry.Retry):
     def __init__(self, retry_after_status_codes={301}, **kwargs):
         super(RetryPolicy, self).__init__(**kwargs)
         self.RETRY_AFTER_STATUS_CODES = frozenset(retry_after_status_codes | retry.Retry.RETRY_AFTER_STATUS_CODES)
+
+
+class UploadResponseParseException(Exception):
+    pass
+
+
+class FileDescription:
+
+    def __init__(self, checksums: dict, content_type: str, name: str, size, url: str):
+        self.checksums = checksums
+        self.content_type = content_type
+        self.name = name
+        self.size = size
+        self.url = url
+
+    @staticmethod
+    def parse_upload_response(res: dict):
+        try:
+            return FileDescription(res['checksums'], res['content_type'], res['name'], res['size'], res['url'])
+        except (KeyError, TypeError) as e:
+            raise UploadResponseParseException() from e
+
+
+class MetadataFileStagingRequest:
+    def __init__(self, staging_area_uuid, filename, metadata_json, metadata_type):
+        self.staging_area_uuid = staging_area_uuid
+        self.filename = filename
+        self.metadata_json = metadata_json
+        self.metadata_type = metadata_type
+
+
+class StagingFailed(Exception):
+
+    @staticmethod
+    def formatted(staging_area_uuid, file_name):
+        return StagingFailed(f'Staging of file "{file_name}" on staging area {staging_area_uuid} failed.')
 
 
 class StagingApi:
@@ -90,51 +128,26 @@ class StagingApi:
                               file_stage_request.metadata_json,
                               file_stage_request.metadata_type)
 
-    def stageFile(self, stagingAreaId, filename, body, type):
-        fileUrl = urljoin(self.url, self.apiversion + '/area/' + stagingAreaId + "/" + filename)
+    def stageFile(self, staging_area_uuid, file_name, body, type):
+        file_url = urljoin(self.url, self.apiversion + '/area/' + staging_area_uuid + "/" + file_name)
 
-        self.logger.info(f'Staging file: {fileUrl}')
+        self.logger.info(f'Staging file: {file_url}')
 
         header = dict(self.header)
         header['Content-type'] = f'application/json; dcp-type="{type}"'
 
-        r = self.session.put(fileUrl, data=json.dumps(body, indent=4), headers=header)
+        r = self.session.put(file_url, data=json.dumps(body, indent=4), headers=header)
 
-        r.raise_for_status()
-        res = r.json()
-        return FileDescription(res['checksums'], type, res['name'], res['size'], res['url'])
-
-    def getFile(self, submissionId, filename):
-        fileUrl = urljoin(self.url, self.apiversion + '/area/' + submissionId + "/" + filename)
-        self.logger.info(f'GET file: {fileUrl}')
-        r = self.session.get(fileUrl, headers=self.header)
-
-        if r.status_code == requests.codes.not_found:
-            return None
-        else:
+        try:
             r.raise_for_status()
+            res = r.json()
+            return FileDescription.parse_upload_response(res)
+        except HTTPError as http_error:
+            raise StagingFailed.formatted(staging_area_uuid, file_name) from http_error
+        except UploadResponseParseException as e:
+            raise StagingFailed(f'Failed to parse upload response from %s', file_url) from e
 
-        res = r.json()
-        return FileDescription(res['checksums'], type, res['name'], res['size'], res['url'])
-
-    def hasStagingArea(self, submissionId):
+    def hasStagingArea(self, submissionId) -> bool:
         base = urljoin(self.url, self.apiversion + '/area/' + submissionId)
         r = self.session.head(base, headers=self.header)
         return r.status_code == requests.codes.ok
-
-
-class FileDescription:
-    def __init__(self, checksums, contentType, name, size, url):
-        self.checksums = checksums
-        self.content_type = contentType
-        self.name = name
-        self.size = size
-        self.url = url
-
-
-class MetadataFileStagingRequest:
-    def __init__(self, staging_area_uuid, filename, metadata_json, metadata_type):
-        self.staging_area_uuid = staging_area_uuid
-        self.filename = filename
-        self.metadata_json = metadata_json
-        self.metadata_type = metadata_type

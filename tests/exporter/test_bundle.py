@@ -341,11 +341,14 @@ class BundleServiceTest(TestCase):
         service = BundleService(dss_client)
 
         # and:
+        staging_area_uuid = 'bd91cb96-f28a-48f8-9dda-8d39168447cd'
         uuid_1 = '51e37d20-6dc4-41e4-9ae5-36e0c6d4c1e6'
-        staging_info_1 = StagingInfo(metadata_uuid=uuid_1, file_name='cell_suspension_0.json',
+        staging_info_1 = StagingInfo(staging_area_uuid=staging_area_uuid, metadata_uuid=uuid_1,
+                                     file_name='cell_suspension_0.json',
                                      cloud_url='http://sample.tld/files/file0.json')
         uuid_2 = 'ab81c860-b114-484a-a134-3923a7e0041b'
-        staging_info_2 = StagingInfo(metadata_uuid=uuid_2, file_name='cell_suspension_1.json',
+        staging_info_2 = StagingInfo(staging_area_uuid=staging_area_uuid, metadata_uuid=uuid_2,
+                                     file_name='cell_suspension_1.json',
                                      cloud_url='http://sample.tld/files/file1.json')
 
         # and:

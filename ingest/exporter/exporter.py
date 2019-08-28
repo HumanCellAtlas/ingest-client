@@ -48,7 +48,7 @@ class Exporter:
         staging_details = []
         for url in metadata_urls:
             metadata_resource = self.metadata_service.fetch_resource(url)
-            staging_info = self.staging_service.stage_update(staging_area_uuid, metadata_resource)
+            staging_info = self.staging_service.stage_metadata(staging_area_uuid, metadata_resource)
             staging_details.append(staging_info)
             bundle.update_file(metadata_resource)
         return staging_details
