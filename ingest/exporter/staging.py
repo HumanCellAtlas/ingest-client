@@ -94,6 +94,9 @@ class StagingService:
             self.staging_info_repository.delete(staging_info)
             raise staging_failed
 
+    def staging_area_exists(self, staging_area_uuid: str) -> bool:
+        return self.staging_client.hasStagingArea(staging_area_uuid)
+
     def cleanup_staging_area(self, staging_area_uuid):
         self.staging_client.deleteStagingArea(staging_area_uuid)
         self.staging_info_repository.delete_staging_locks(staging_area_uuid)
