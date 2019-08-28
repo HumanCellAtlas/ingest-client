@@ -31,6 +31,7 @@ class StagingInfo:
 
 
 class StagingInfoRepository:
+
     def __init__(self, ingest_client: IngestApi):
         self.ingest_client = ingest_client
 
