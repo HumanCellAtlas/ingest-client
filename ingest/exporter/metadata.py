@@ -30,16 +30,27 @@ class MetadataResource:
         self.provenance = provenance
 
     @staticmethod
-    def from_dict(data: dict):
+    def from_dict(data: dict, require_provenance=True):
         try:
             metadata_json = data['content']
             uuid = data['uuid']['uuid']
             dcp_version = data['dcpVersion']
             metadata_type = data['type'].lower()
-            provenance = MetadataResource.provenance_from_dict(data)
+            provenance = MetadataResource._derive_provenance(data, require_provenance)
             return MetadataResource(metadata_type, metadata_json, uuid, dcp_version, provenance)
         except (KeyError, TypeError) as e:
             raise MetadataParseException(e)
+
+    @staticmethod
+    def _derive_provenance(data, require_provenance):
+        try:
+            provenance = MetadataResource.provenance_from_dict(data)
+        except MetadataParseException:
+            if require_provenance:
+                raise
+            else:
+                provenance = None
+        return provenance
 
     @staticmethod
     def provenance_from_dict(data: dict):
