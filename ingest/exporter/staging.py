@@ -3,6 +3,7 @@ from os import environ
 from time import sleep
 
 import requests
+from requests import HTTPError
 
 from ingest.api.ingestapi import IngestApi
 from ingest.api.stagingapi import StagingApi, StagingFailed
@@ -38,22 +39,32 @@ class StagingInfoRepository:
         self.ingest_client = ingest_client
 
     def save(self, staging_info: StagingInfo) -> StagingInfo:
-        r = self.ingest_client.create_staging_job(staging_info.staging_area_uuid, staging_info.file_name)
-        if r.status_code == requests.codes.conflict:
-            raise FileDuplication(staging_info.staging_area_uuid, staging_info.file_name)
-        return staging_info
+        try:
+            self.ingest_client.create_staging_job(staging_info.staging_area_uuid, staging_info.file_name)
+        except HTTPError as http_error:
+            r = http_error.response
+            if r.status_code == requests.codes.conflict:
+                raise FileDuplication(staging_info.staging_area_uuid, staging_info.file_name)
+            else:
+                raise http_error
+        else:
+            return staging_info
 
     def find_one(self, staging_area_uuid, file_name) -> StagingInfo:
-        r = self.ingest_client.find_staging_job(staging_area_uuid, file_name)
-        if r.status_code == requests.codes.not_found:
-            return None
+        try:
+            staging_job = self.ingest_client.find_staging_job(staging_area_uuid, file_name)
+        except HTTPError as http_error:
+            r = http_error.response
+            if r.status_code == requests.codes.not_found:
+                return None
+            else:
+                raise http_error
         else:
-            r.raise_for_status()
-        staging_job = r.json()
-        staging_area_uuid = staging_job.get('stagingAreaUuid')
-        file_name = staging_job.get('stagingAreaFileName')
-        cloud_url = staging_job.get('stagingAreaFileUri')
-        return StagingInfo(staging_area_uuid, file_name, cloud_url=cloud_url)
+            staging_area_uuid = staging_job.get('stagingAreaUuid')
+            file_name = staging_job.get('stagingAreaFileName')
+            cloud_url = staging_job.get('stagingAreaFileUri')
+
+            return StagingInfo(staging_area_uuid, file_name, cloud_url=cloud_url)
 
     def update(self, staging_info: StagingInfo) -> StagingInfo:
         staging_job = self.ingest_client.find_staging_job(staging_info.staging_area_uuid, staging_info.file_name)

@@ -3,6 +3,7 @@ from copy import deepcopy
 from unittest import TestCase
 
 from mock import Mock, MagicMock
+from requests import HTTPError
 
 from ingest.api.stagingapi import FileDescription, StagingFailed
 from ingest.exporter import staging
@@ -38,22 +39,18 @@ class StagingInfoRepositoryTest(TestCase):
         staging_info = StagingInfo('staging-area-uuid', 'file-name', 'metadata-uuid', 'cloud-url')
         mock_save_response = MagicMock()
         mock_save_response.status_code = 409
-        self.ingest_client.create_staging_job = MagicMock(return_value=mock_save_response)
+        self.ingest_client.create_staging_job = MagicMock(side_effect=HTTPError(response=mock_save_response))
 
         with self.assertRaises(FileDuplication):
             self.staging_info_repo.save(staging_info)
 
     def test_find_one(self):
-        mock_response = MagicMock()
-        mock_response.status_code = 200
         mock_response_body = {
             'stagingAreaUuid': 'staging-area-uuid',
             'stagingAreaFileName': 'filename',
             'stagingAreaFileUri': 'cloudurl'
         }
-        mock_response.json = MagicMock(return_value=mock_response_body)
-        self.ingest_client.find_staging_job = MagicMock(
-            return_value=mock_response)
+        self.ingest_client.find_staging_job = MagicMock(return_value=mock_response_body)
         output = self.staging_info_repo.find_one('staging-area-uuid', 'filename')
         self.ingest_client.find_staging_job.assert_called_once_with('staging-area-uuid', 'filename')
         self.assertEqual(output.cloud_url, 'cloudurl')
@@ -64,16 +61,15 @@ class StagingInfoRepositoryTest(TestCase):
         mock_response = MagicMock()
         mock_response.status_code = 404
 
-        self.ingest_client.find_staging_job = MagicMock(return_value=mock_response)
+        self.ingest_client.find_staging_job = MagicMock(side_effect=HTTPError(response=mock_response))
         output = self.staging_info_repo.find_one('staging-area-uuid', 'filename')
         self.assertFalse(output)
 
     def test_find_one_with_status_exception(self):
         mock_response = MagicMock()
         mock_response.status_code = 500
-        mock_response.raise_for_status = MagicMock(side_effect=Exception('test'))
-        self.ingest_client.find_staging_job = MagicMock(return_value=mock_response)
-        with self.assertRaises(Exception):
+        self.ingest_client.find_staging_job = MagicMock(side_effect=HTTPError(response=mock_response))
+        with self.assertRaises(HTTPError):
             self.staging_info_repo.find_one('staging-area-uuid', 'filename')
 
     def test_update(self):
