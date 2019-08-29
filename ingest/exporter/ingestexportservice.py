@@ -65,7 +65,18 @@ class IngestExporter:
         links = self.bundle_links(process_info.links.get_links())
         links_file_uuid = str(uuid.uuid4())
         files_by_type['links'] = list()
+
+        original_links_doc = {
+            'uuid': {
+                'uuid': links_file_uuid
+            },
+            'type': 'links',
+            'content': links,
+            'dcpVersion': None
+        }
+
         files_by_type['links'].append({
+            'original_doc': original_links_doc,
             'content': links,
             'content_type': 'metadata/{0}'.format('links'),
             'indexed': is_indexed,
@@ -402,7 +413,8 @@ class IngestExporter:
                     bundle_file = metadata_doc
 
                     if not bundle_file.get('is_from_input_bundle'):
-                        uploaded_file: StagingInfo = self.staging_service.stage_metadata(submission_uuid, MetadataResource.from_dict(bundle_file['original_doc']))
+                        metadata = MetadataResource.from_dict(bundle_file['original_doc'], require_provenance=False)
+                        uploaded_file: StagingInfo = self.staging_service.stage_metadata(submission_uuid, metadata)
                         bundle_file['upload_file_url'] = uploaded_file.cloud_url
         except Exception as exception:
             message = "An error occurred on uploading bundle files: " + str(exception)
