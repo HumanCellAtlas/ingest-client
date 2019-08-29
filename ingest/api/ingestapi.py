@@ -389,8 +389,7 @@ class IngestApi:
         from_entity_links_relationship_href = from_entity_links_relationship[
             "href"] if "href" in from_entity_links_relationship else None
         if not from_entity_links_relationship_href:
-            raise ValueError(
-                    "Error: from_entity_links_relationship for relationship {0} has no href".format(relationship))
+            raise ValueError("Error: from_entity_links_relationship for relationship {0} has no href".format(relationship))
 
         from_uri = from_entity["_links"][relationship]["href"]
         to_uri = self.get_link_from_resource(to_entity, 'self')
