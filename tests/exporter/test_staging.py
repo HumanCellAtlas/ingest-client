@@ -59,7 +59,7 @@ class StagingInfoRepositoryTest(TestCase):
         staging_job = {'_links': {'self': {'href': 'delete_url'}}}
         self.ingest_client.find_staging_job = MagicMock(return_value=staging_job)
         self.ingest_client.delete_staging_job = MagicMock()
-        output = self.staging_info_repo.delete(staging_info)
+        self.staging_info_repo.delete(staging_info)
         self.ingest_client.find_staging_job.assert_called_once_with(staging_info.staging_area_uuid,
                                                                     staging_info.file_name)
         self.ingest_client.delete_staging_job.assert_called_once_with('delete_url')
