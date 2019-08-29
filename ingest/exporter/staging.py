@@ -43,7 +43,7 @@ class StagingInfoRepository:
             raise FileDuplication(staging_info.staging_area_uuid, staging_info.file_name)
         return staging_info
 
-    def find(self, staging_area_uuid, file_name) -> StagingInfo:
+    def find_one(self, staging_area_uuid, file_name) -> StagingInfo:
         r = self.ingest_client.find_staging_job(staging_area_uuid, file_name)
         if r.status_code == requests.codes.not_found:
             return None
