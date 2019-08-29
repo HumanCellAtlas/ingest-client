@@ -71,7 +71,6 @@ class StagingInfoRepository:
         self.ingest_client.delete_staging_jobs(staging_area_uuid)
 
 
-
 class StagingService:
 
     def __init__(self, staging_client: StagingApi, staging_info_repository: StagingInfoRepository):
