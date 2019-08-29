@@ -54,6 +54,16 @@ class StagingInfoRepositoryTest(TestCase):
         self.ingest_client.complete_staging_job.assert_called_once_with('complete_url', staging_info.cloud_url)
         self.assertEqual(staging_info.cloud_url, output.cloud_url)
 
+    def test_delete(self):
+        staging_info = StagingInfo('staging-area-uuid', 'file-name', 'metadata-uuid', 'cloud-url')
+        staging_job = {'_links': {'self': {'href': 'delete_url'}}}
+        self.ingest_client.find_staging_job = MagicMock(return_value=staging_job)
+        self.ingest_client.delete_staging_job = MagicMock()
+        output = self.staging_info_repo.delete(staging_info)
+        self.ingest_client.find_staging_job.assert_called_once_with(staging_info.staging_area_uuid,
+                                                                    staging_info.file_name)
+        self.ingest_client.delete_staging_job.assert_called_once_with('delete_url')
+
 
 class StagingServiceTest(TestCase):
 

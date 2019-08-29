@@ -52,6 +52,12 @@ class StagingInfoRepository:
         self.ingest_client.complete_staging_job(complete_job_url, staging_info.cloud_url)
         return staging_info
 
+    def delete(self, staging_info: StagingInfo) -> StagingInfo:
+        staging_job = self.ingest_client.find_staging_job(staging_info.staging_area_uuid, staging_info.file_name)
+        url = staging_job['_links']['self']['href']
+        self.ingest_client.delete_staging_job(url)
+        return staging_info
+
 
 class StagingService:
 
