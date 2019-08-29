@@ -463,4 +463,3 @@ class IngestApi:
         r = self.session.get(find_staging_job_url, params=search_params)
         r.raise_for_status()
         return r.json()
-
