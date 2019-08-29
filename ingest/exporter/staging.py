@@ -37,14 +37,23 @@ class StagingInfoRepository:
     def __init__(self, ingest_client: IngestApi):
         self.ingest_client = ingest_client
 
-    def delete_staging_locks(self, staging_area_uuid: str):
-        self.ingest_client.delete_staging_jobs(staging_area_uuid)
-
     def save(self, staging_info: StagingInfo) -> StagingInfo:
         r = self.ingest_client.create_staging_job(staging_info.staging_area_uuid, staging_info.file_name)
         if r.status_code == requests.codes.conflict:
             raise FileDuplication(staging_info.staging_area_uuid, staging_info.file_name)
         return staging_info
+
+    def find_one(self, staging_area_uuid, file_name) -> StagingInfo:
+        r = self.ingest_client.find_staging_job(staging_area_uuid, file_name)
+        if r.status_code == requests.codes.not_found:
+            return None
+        else:
+            r.raise_for_status()
+        staging_job = r.json()
+        staging_area_uuid = staging_job.get('stagingAreaUuid')
+        file_name = staging_job.get('stagingAreaFileName')
+        cloud_url = staging_job.get('stagingAreaFileUri')
+        return StagingInfo(staging_area_uuid, file_name, cloud_url=cloud_url)
 
     def update(self, staging_info: StagingInfo) -> StagingInfo:
         staging_job = self.ingest_client.find_staging_job(staging_info.staging_area_uuid, staging_info.file_name)
@@ -57,6 +66,9 @@ class StagingInfoRepository:
         url = staging_job['_links']['self']['href']
         self.ingest_client.delete_staging_job(url)
         return staging_info
+
+    def delete_staging_locks(self, staging_area_uuid: str):
+        self.ingest_client.delete_staging_jobs(staging_area_uuid)
 
 
 class StagingService:
