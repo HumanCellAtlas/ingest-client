@@ -2,6 +2,8 @@ import logging
 from os import environ
 from time import sleep
 
+import requests
+
 from ingest.api.ingestapi import IngestApi
 from ingest.api.stagingapi import StagingApi, StagingFailed
 from ingest.exporter.exceptions import FileDuplication
@@ -39,7 +41,9 @@ class StagingInfoRepository:
         self.ingest_client.delete_staging_jobs(staging_area_uuid)
 
     def save(self, staging_info: StagingInfo) -> StagingInfo:
-        self.ingest_client.create_staging_job(staging_info.staging_area_uuid, staging_info.file_name)
+        r = self.ingest_client.create_staging_job(staging_info.staging_area_uuid, staging_info.file_name)
+        if r.status_code == requests.codes.conflict:
+            raise FileDuplication(staging_info.staging_area_uuid, staging_info.file_name)
         return staging_info
 
     def update(self, staging_info: StagingInfo) -> StagingInfo:

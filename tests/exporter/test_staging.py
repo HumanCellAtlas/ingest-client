@@ -24,13 +24,24 @@ class StagingInfoRepositoryTest(TestCase):
 
     def test_save(self):
         staging_info = StagingInfo('staging-area-uuid', 'file-name', 'metadata-uuid', 'cloud-url')
-        self.ingest_client.create_staging_job = MagicMock()
+        mock_save_response = MagicMock()
+        mock_save_response.status_code = MagicMock(return_value=200)
+        self.ingest_client.create_staging_job = MagicMock(return_value=mock_save_response)
         output = self.staging_info_repo.save(staging_info)
         self.ingest_client.create_staging_job.assert_called_once_with(staging_info.staging_area_uuid,
                                                                       staging_info.file_name)
         self.assertEqual(staging_info.staging_area_uuid, output.staging_area_uuid)
         self.assertEqual(staging_info.file_name, output.file_name)
         self.assertEqual(staging_info.metadata_uuid, output.metadata_uuid)
+
+    def test_save_has_conflict(self):
+        staging_info = StagingInfo('staging-area-uuid', 'file-name', 'metadata-uuid', 'cloud-url')
+        mock_save_response = MagicMock()
+        mock_save_response.status_code = 409
+        self.ingest_client.create_staging_job = MagicMock(return_value=mock_save_response)
+
+        with self.assertRaises(FileDuplication):
+            self.staging_info_repo.save(staging_info)
 
     def test_update(self):
         staging_info = StagingInfo('staging-area-uuid', 'file-name', 'metadata-uuid', 'cloud-url')
