@@ -43,13 +43,7 @@ class MetadataResourceTest(TestCase):
     def test_from_dict(self):
         # given:
         uuid_value = '3f3212da-d5d0-4e55-b31d-83243fa02e0d'
-        data = {'type': 'Biomaterial',
-                'uuid': {'uuid': uuid_value},
-                'content': {'describedBy': "http://some-schema/1.2.3",
-                            'some': {'content': ['we', 'are', 'agnostic', 'of']}},
-                'dcpVersion': '6.9.1',
-                'submissionDate': 'a date',
-                'updateDate': 'another date'}
+        data = self._create_test_data(uuid_value)
 
         # when:
         metadata = MetadataResource.from_dict(data)
@@ -74,13 +68,7 @@ class MetadataResourceTest(TestCase):
     def test_to_bundle_metadata(self):
         # given:
         uuid_value = '3f3212da-d5d0-4e55-b31d-83243fa02e0d'
-        data = {'type': 'Biomaterial',
-                'uuid': {'uuid': uuid_value},
-                'content': {'describedBy': "http://some-schema/1.2.3",
-                            'some': {'content': ['we', 'are', 'agnostic', 'of']}},
-                'dcpVersion': '6.9.1',
-                'submissionDate': 'a date',
-                'updateDate': 'another date'}
+        data = self._create_test_data(uuid_value)
         metadata = MetadataResource.from_dict(data)
 
         # when
@@ -92,6 +80,16 @@ class MetadataResourceTest(TestCase):
         self.assertTrue(set(data['content'].keys()) <= set(
             bundle_metadata.keys()))  # <= operator checks if a dict is subset of another dict
 
+    @staticmethod
+    def _create_test_data(uuid_value):
+        return {'type': 'Biomaterial',
+                'uuid': {'uuid': uuid_value},
+                'content': {'describedBy': "http://some-schema/1.2.3",
+                            'some': {'content': ['we', 'are', 'agnostic', 'of']}},
+                'dcpVersion': '6.9.1',
+                'submissionDate': 'a date',
+                'updateDate': 'another date'}
+
     def test_get_staging_file_name(self):
         # given:
         metadata_resource_1 = MetadataResource(metadata_type='specimen',
@@ -99,10 +97,8 @@ class MetadataResourceTest(TestCase):
                                                metadata_json={'description': 'test'},
                                                dcp_version='5.1.0',
                                                provenance=MetadataProvenance('9b159cae-a1fe-4cce-94bc-146e4aa20553',
-                                                                             'some date',
-                                                                             'some other date',
-                                                                             1,
-                                                                             1))
+                                                                             'some date', 'some other date',
+                                                                             1, 1))
         metadata_resource_2 = MetadataResource(metadata_type='donor_organism',
                                                uuid='38e0ee7c-90dc-438a-a0ed-071f9231f590',
                                                metadata_json={'text': 'sample'},
