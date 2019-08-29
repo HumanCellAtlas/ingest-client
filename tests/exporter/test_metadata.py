@@ -97,17 +97,13 @@ class MetadataResourceTest(TestCase):
                                                metadata_json={'description': 'test'},
                                                dcp_version='5.1.0',
                                                provenance=MetadataProvenance('9b159cae-a1fe-4cce-94bc-146e4aa20553',
-                                                                             'some date', 'some other date',
-                                                                             1, 1))
+                                                                             'some date', 'some other date', 1, 1))
         metadata_resource_2 = MetadataResource(metadata_type='donor_organism',
                                                uuid='38e0ee7c-90dc-438a-a0ed-071f9231f590',
                                                metadata_json={'text': 'sample'},
                                                dcp_version='1.0.7',
                                                provenance=MetadataProvenance('38e0ee7c-90dc-438a-a0ed-071f9231f590',
-                                                                             'some date',
-                                                                             'some other date',
-                                                                             '2',
-                                                                             '2'))
+                                                                             'some date', 'some other date', '2', '2'))
 
         # expect:
         self.assertEqual('specimen_9b159cae-a1fe-4cce-94bc-146e4aa20553.json',
