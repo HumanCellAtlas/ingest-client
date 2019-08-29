@@ -347,7 +347,7 @@ class IngestApi:
         return self.create_entity(submission_url, data, 'submissionManifest')
 
     def create_submission_error(self, submission_url, data):
-        return self.create_entity(submission_url, data, 'submissionErrors')
+        return self.create_entity(submission_url, data, 'submissionEnvelopeErrors')
 
     def create_entity(self, submission_url, content, entity_type, uuid=None):
         params = {}
