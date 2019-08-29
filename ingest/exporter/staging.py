@@ -38,13 +38,13 @@ class StagingInfoRepository:
         self.ingest_client = ingest_client
 
     def save(self, staging_info: StagingInfo) -> StagingInfo:
-        r = self.ingest_client.create_staging_job(staging_info.staging_area_uuid, staging_info.file_name)
+        r = self.ingest_client.post_staging_job(staging_info.staging_area_uuid, staging_info.file_name)
         if r.status_code == requests.codes.conflict:
             raise FileDuplication(staging_info.staging_area_uuid, staging_info.file_name)
         return staging_info
 
     def find_one(self, staging_area_uuid, file_name) -> StagingInfo:
-        r = self.ingest_client.find_staging_job(staging_area_uuid, file_name)
+        r = self.ingest_client.get_staging_job(staging_area_uuid, file_name)
         if r.status_code == requests.codes.not_found:
             return None
         else:

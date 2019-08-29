@@ -438,7 +438,7 @@ class IngestApi:
         r.raise_for_status()
         return r
 
-    def create_staging_job(self, staging_area_uuid, file_name):
+    def post_staging_job(self, staging_area_uuid, file_name):
         staging_info = {
             "stagingAreaUuid": staging_area_uuid,
             "stagingAreaFileName": file_name
@@ -455,6 +455,11 @@ class IngestApi:
         return r.json()
 
     def find_staging_job(self, upload_area_uuid, filename):
+        r = self.get_staging_job(upload_area_uuid, filename)
+        r.raise_for_status()
+        return r.json()
+
+    def get_staging_job(self, upload_area_uuid, filename):
         search_params = {
             "stagingAreaUuid": upload_area_uuid,
             "stagingAreaFileName": filename

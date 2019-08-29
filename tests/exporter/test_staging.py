@@ -26,10 +26,10 @@ class StagingInfoRepositoryTest(TestCase):
         staging_info = StagingInfo('staging-area-uuid', 'file-name', 'metadata-uuid', 'cloud-url')
         mock_save_response = MagicMock()
         mock_save_response.status_code = MagicMock(return_value=200)
-        self.ingest_client.create_staging_job = MagicMock(return_value=mock_save_response)
+        self.ingest_client.post_staging_job = MagicMock(return_value=mock_save_response)
         output = self.staging_info_repo.save(staging_info)
-        self.ingest_client.create_staging_job.assert_called_once_with(staging_info.staging_area_uuid,
-                                                                      staging_info.file_name)
+        self.ingest_client.post_staging_job.assert_called_once_with(staging_info.staging_area_uuid,
+                                                                    staging_info.file_name)
         self.assertEqual(staging_info.staging_area_uuid, output.staging_area_uuid)
         self.assertEqual(staging_info.file_name, output.file_name)
         self.assertEqual(staging_info.metadata_uuid, output.metadata_uuid)
@@ -38,7 +38,7 @@ class StagingInfoRepositoryTest(TestCase):
         staging_info = StagingInfo('staging-area-uuid', 'file-name', 'metadata-uuid', 'cloud-url')
         mock_save_response = MagicMock()
         mock_save_response.status_code = 409
-        self.ingest_client.create_staging_job = MagicMock(return_value=mock_save_response)
+        self.ingest_client.post_staging_job = MagicMock(return_value=mock_save_response)
 
         with self.assertRaises(FileDuplication):
             self.staging_info_repo.save(staging_info)
@@ -52,10 +52,9 @@ class StagingInfoRepositoryTest(TestCase):
             'stagingAreaFileUri': 'cloudurl'
         }
         mock_response.json = MagicMock(return_value=mock_response_body)
-        self.ingest_client.find_staging_job = MagicMock(
-            return_value=mock_response)
+        self.ingest_client.get_staging_job = MagicMock(return_value=mock_response)
         output = self.staging_info_repo.find_one('staging-area-uuid', 'filename')
-        self.ingest_client.find_staging_job.assert_called_once_with('staging-area-uuid', 'filename')
+        self.ingest_client.get_staging_job.assert_called_once_with('staging-area-uuid', 'filename')
         self.assertEqual(output.cloud_url, 'cloudurl')
         self.assertEqual(output.staging_area_uuid, 'staging-area-uuid')
         self.assertEqual(output.file_name, 'filename')
@@ -64,7 +63,7 @@ class StagingInfoRepositoryTest(TestCase):
         mock_response = MagicMock()
         mock_response.status_code = 404
 
-        self.ingest_client.find_staging_job = MagicMock(return_value=mock_response)
+        self.ingest_client.get_staging_job = MagicMock(return_value=mock_response)
         output = self.staging_info_repo.find_one('staging-area-uuid', 'filename')
         self.assertFalse(output)
 
@@ -72,7 +71,7 @@ class StagingInfoRepositoryTest(TestCase):
         mock_response = MagicMock()
         mock_response.status_code = 500
         mock_response.raise_for_status = MagicMock(side_effect=Exception('test'))
-        self.ingest_client.find_staging_job = MagicMock(return_value=mock_response)
+        self.ingest_client.get_staging_job = MagicMock(return_value=mock_response)
         with self.assertRaises(Exception):
             self.staging_info_repo.find_one('staging-area-uuid', 'filename')
 
