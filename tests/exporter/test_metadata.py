@@ -92,14 +92,26 @@ class MetadataResourceTest(TestCase):
         data = self._create_test_data(uuid_value)
         metadata = MetadataResource.from_dict(data)
 
+        # and:
+        data_no_provenance = self._create_test_data(uuid_value)
+        del data_no_provenance['submissionDate']
+        metadata_no_provenance = MetadataResource.from_dict(data_no_provenance, require_provenance=False)
+        self.assertIsNone(metadata_no_provenance.provenance)
+
         # when
         bundle_metadata = metadata.to_bundle_metadata()
+        bundle_metadata_no_provenance = metadata_no_provenance.to_bundle_metadata()
 
         # then:
         self.assertTrue('provenance' in bundle_metadata)
         self.assertTrue(bundle_metadata['provenance'] == metadata.provenance.to_dict())
         self.assertTrue(set(data['content'].keys()) <= set(
             bundle_metadata.keys()))  # <= operator checks if a dict is subset of another dict
+
+        # and:
+        self.assertIsNotNone(bundle_metadata_no_provenance)
+        self.assertEqual(metadata_no_provenance.metadata_json['describedBy'],
+                         bundle_metadata_no_provenance['describedBy'])
 
     @staticmethod
     def _create_test_data(uuid_value):
