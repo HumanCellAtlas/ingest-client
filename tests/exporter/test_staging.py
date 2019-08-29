@@ -43,6 +43,39 @@ class StagingInfoRepositoryTest(TestCase):
         with self.assertRaises(FileDuplication):
             self.staging_info_repo.save(staging_info)
 
+    def test_find(self):
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response_body = {
+            'stagingAreaUuid': 'staging-area-uuid',
+            'stagingAreaFileName': 'filename',
+            'stagingAreaFileUri': 'cloudurl'
+        }
+        mock_response.json = MagicMock(return_value=mock_response_body)
+        self.ingest_client.find_staging_job = MagicMock(
+            return_value=mock_response)
+        output = self.staging_info_repo.find('staging-area-uuid', 'filename')
+        self.ingest_client.find_staging_job.assert_called_once_with('staging-area-uuid', 'filename')
+        self.assertEqual(output.cloud_url, 'cloudurl')
+        self.assertEqual(output.staging_area_uuid, 'staging-area-uuid')
+        self.assertEqual(output.file_name, 'filename')
+
+    def test_find_not_found(self):
+        mock_response = MagicMock()
+        mock_response.status_code = 404
+
+        self.ingest_client.find_staging_job = MagicMock(return_value=mock_response)
+        output = self.staging_info_repo.find('staging-area-uuid', 'filename')
+        self.assertFalse(output)
+
+    def test_find_with_status_exception(self):
+        mock_response = MagicMock()
+        mock_response.status_code = 500
+        mock_response.raise_for_status = MagicMock(side_effect=Exception('test'))
+        self.ingest_client.find_staging_job = MagicMock(return_value=mock_response)
+        with self.assertRaises(Exception):
+            self.staging_info_repo.find('staging-area-uuid', 'filename')
+
     def test_update(self):
         staging_info = StagingInfo('staging-area-uuid', 'file-name', 'metadata-uuid', 'cloud-url')
         staging_job = {'_links': {'completeStagingJob': {'href': 'complete_url'}}}

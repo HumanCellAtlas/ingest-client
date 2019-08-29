@@ -461,5 +461,4 @@ class IngestApi:
         }
         find_staging_job_url = f'{self.get_staging_jobs_url()}/search/findByStagingAreaUuidAndStagingAreaFileName'
         r = self.session.get(find_staging_job_url, params=search_params)
-        r.raise_for_status()
-        return r.json()
+        return r
