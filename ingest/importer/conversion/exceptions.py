@@ -6,6 +6,9 @@ class InvalidBooleanValue(Exception):
     def get_value(self):
         return self.value
 
+    def __str__(self):
+        return f'Invalid Boolean Value: {self.value}'
+
 
 class UnknownMainCategory(Exception):
 

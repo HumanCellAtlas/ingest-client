@@ -15,8 +15,15 @@ class IngestError:
 class ImporterError(IngestError):
     def __init__(self, detail=""):
         self.type = "http://importer.ingest.data.humancellatlas.org/Error"
-        self.title = "An error occurred parsing the file."
+        self.title = "An error occurred importing the file."
         self.detail = detail
+
+
+class ParserError(ImporterError):
+    def __init__(self, location="", type="", detail=""):
+        self.type = "http://parser.importer.ingest.data.humancellatlas.org/Error"
+        self.title = f'An error occurred parsing the file: {type}.'
+        self.detail = f'{location}, error={detail}'
 
 
 class SubmissionError(ImporterError):
