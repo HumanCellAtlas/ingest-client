@@ -209,7 +209,8 @@ class WorkbookImporter:
         if registry.has_project():
             registry.import_modules()
         else:
-            raise NoProjectFound()
+            e = NoProjectFound()
+            workbook_errors.append({"location": "File", "type": e.__class__.__name__, "detail": str(e)})
         return registry.flatten(), workbook_errors
 
 

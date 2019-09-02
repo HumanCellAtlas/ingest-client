@@ -372,8 +372,9 @@ class RowTemplateTest(TestCase):
         worksheet['D1'] = 'Philippines'
         row = list(worksheet.rows)[0]
         row = IngestRow('worksheet_title', 0, row)
+
         # when:
-        result = row_template.do_import(row)
+        result, errors = row_template.do_import(row)
 
         # then:
         self.assertIsNotNone(result)
@@ -387,6 +388,7 @@ class RowTemplateTest(TestCase):
         self.assertIsNotNone(address)
         self.assertEqual('Manila', address.get('city'))
         self.assertEqual('Philippines', address.get('country'))
+        self.assertEqual(errors, [])
 
     def test_do_import_with_default_values(self):
         # given:
@@ -409,8 +411,9 @@ class RowTemplateTest(TestCase):
         row = IngestRow('worksheet_title', 0, row)
 
         # when:
-        result = row_template.do_import(row)
+        result, errors = row_template.do_import(row)
 
         # then:
         self.assertEqual(schema_url, result.get_content('describedBy'))
         self.assertEqual('extra field', result.get_content('extra_field'))
+        self.assertEqual(errors, [])
