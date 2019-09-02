@@ -63,12 +63,12 @@ class XlsImporter:
         return submission
 
     def report_errors(self, submission_url, errors):
+        self.logger.info(f'Logged {errors.count()} ParsingErrors.', exc_info=False)
         for error in errors:
             self.ingest_api.create_submission_error(
                 submission_url,
                 ParserError(error["location"], error["type"], error["detail"]).getJSON()
             )
-            self.logger.error(error["detail"], exc_info=True)
 
     def insert_uuids(self, submission, file_path):
         if not submission:
