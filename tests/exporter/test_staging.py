@@ -321,11 +321,3 @@ class StagingServiceTest(TestCase):
                                         1, 1)
         return MetadataResource(metadata_type='biomaterial', uuid='831d4b6e-e8a2-42ce-b7c0-8d6ffcc15370',
                                 metadata_json={'description': 'test'}, dcp_version='4.2.1', provenance=provenance)
-
-
-    def test_parallel_staging_lock(self):
-        ingest_url = "https://api.ingest.dev.data.humancellatlas.org"
-        ingest_api = IngestApi(ingest_url)
-        test_create_staging_job = lambda _: ingest_api.create_staging_job("831d4b6e-e8a2-42ce-b7c0-8d6ffcc15370", "test_file.txt")
-        responses = Pool(30).map(test_create_staging_job, range(30))
-        x = 5
