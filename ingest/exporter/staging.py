@@ -113,7 +113,7 @@ class StagingService:
             logger.warning(str(file_duplication))
             staging_info = self.get_staging_info(staging_area_uuid, metadata_resource)
             if not staging_info:
-                raise Exception('Staging info unavailable.')
+                raise StagingFailed(staging_area_uuid, staging_file_name)
         return staging_info
 
     def _do_stage_metadata(self, staging_info, formatted_type, bundle_metadata):
@@ -141,3 +141,10 @@ class PartialStagingInfo(Exception):
     def __init__(self, staging_info: StagingInfo):
         super(PartialStagingInfo, self).__init__('Unable to return StagingInfo with full details.')
         self.staging_info = staging_info
+
+
+class StagingFailed(Exception):
+
+    def __init__(self, staging_area_uuid, file_name):
+        super(StagingFailed, self).__init__(f'Staging of file "{file_name}" on staging area '
+                                            f'{staging_area_uuid} failed.')

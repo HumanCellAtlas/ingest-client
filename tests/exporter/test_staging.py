@@ -9,7 +9,9 @@ from ingest.api.stagingapi import FileDescription, FileUploadFailed
 from ingest.exporter import staging
 from ingest.exporter.exceptions import FileDuplication
 from ingest.exporter.metadata import MetadataResource, MetadataProvenance
-from ingest.exporter.staging import StagingInfo, StagingService, StagingInfoRepository, PartialStagingInfo
+from ingest.exporter.staging import StagingInfo, StagingService, StagingInfoRepository, PartialStagingInfo, \
+    StagingFailed
+
 logging.disable(logging.CRITICAL)
 
 
@@ -221,7 +223,7 @@ class StagingServiceTest(TestCase):
         self.staging_info_repository.find_one = Mock(return_value=None)
 
         # when:
-        with self.assertRaises(Exception) as context:
+        with self.assertRaises(StagingFailed) as context:
             self.staging_service.stage_metadata(staging_area_uuid, metadata)
 
         # then:
