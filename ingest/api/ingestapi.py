@@ -389,8 +389,7 @@ class IngestApi:
         from_entity_links_relationship_href = from_entity_links_relationship[
             "href"] if "href" in from_entity_links_relationship else None
         if not from_entity_links_relationship_href:
-            raise ValueError(
-                "Error: from_entity_links_relationship for relationship {0} has no href".format(relationship))
+            raise ValueError("Error: from_entity_links_relationship for relationship {0} has no href".format(relationship))
 
         from_uri = from_entity["_links"][relationship]["href"]
         to_uri = self.get_link_from_resource(to_entity, 'self')
@@ -429,7 +428,8 @@ class IngestApi:
 
     def delete_staging_jobs(self, staging_area_uuid):
         delete_jobs_url = f'{self.get_staging_jobs_url()}/delete'
-        r = self.session.delete(delete_jobs_url, params={"stagingAreaUuid": staging_area_uuid}, headers=self.get_headers())
+        r = self.session.delete(delete_jobs_url, params={"stagingAreaUuid": staging_area_uuid},
+                                headers=self.get_headers())
         r.raise_for_status()
         return r.json()
 
