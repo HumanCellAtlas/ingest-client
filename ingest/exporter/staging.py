@@ -1,4 +1,5 @@
 import logging
+from typing import Optional
 from os import environ
 from time import sleep
 
@@ -50,7 +51,7 @@ class StagingInfoRepository:
         else:
             return staging_info
 
-    def find_one(self, staging_area_uuid, file_name) -> StagingInfo:
+    def find_one(self, staging_area_uuid, file_name) -> Optional[StagingInfo]:
         try:
             staging_job = self.ingest_client.find_staging_job(staging_area_uuid, file_name)
         except HTTPError as http_error:
