@@ -58,10 +58,7 @@ class MetadataFileStagingRequest:
 
 
 class FileUploadFailed(Exception):
-
-    def __init__(self, staging_area_uuid, file_name):
-        super(FileUploadFailed, self).__init__(f'Staging of file "{file_name}" on staging area '
-                                            f'{staging_area_uuid} failed.')
+    pass
 
 
 class StagingApi:
@@ -143,7 +140,7 @@ class StagingApi:
             res = r.json()
             return FileDescription.parse_upload_response(res)
         except (HTTPError, UploadResponseParseException) as exception:
-            raise FileUploadFailed(staging_area_uuid, file_name) from exception
+            raise FileUploadFailed(f'File upload failed for {file_url}.') from exception
 
     def hasStagingArea(self, submissionId) -> bool:
         base = urljoin(self.url, self.apiversion + '/area/' + submissionId)

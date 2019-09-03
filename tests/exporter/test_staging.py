@@ -190,7 +190,7 @@ class StagingServiceTest(TestCase):
         file_name = metadata_resource.get_staging_file_name()
 
         # and:
-        staging_failure = FileUploadFailed(staging_area_uuid, file_name)
+        staging_failure = FileUploadFailed('File upload failed.')
         self.staging_client.stageFile = Mock(side_effect=staging_failure)
 
         # when:
