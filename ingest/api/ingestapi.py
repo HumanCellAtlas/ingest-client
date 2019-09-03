@@ -347,7 +347,7 @@ class IngestApi:
         return self.create_entity(submission_url, data, 'submissionManifest')
 
     def create_submission_error(self, submission_url, data):
-        return self.create_entity(submission_url, data, 'submissionErrors')
+        return self.create_entity(submission_url, data, 'submissionEnvelopeErrors')
 
     def create_entity(self, submission_url, content, entity_type, uuid=None):
         params = {}
@@ -444,6 +444,7 @@ class IngestApi:
             "stagingAreaFileName": file_name
         }
         r = requests.post(self.get_staging_jobs_url(), json=staging_info, headers=self.get_headers())
+        r.raise_for_status()
         return r.json()
 
     def complete_staging_job(self, complete_url, upload_file_uri):

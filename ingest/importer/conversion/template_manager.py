@@ -165,14 +165,22 @@ class RowTemplate:
         self.default_values = copy.deepcopy(default_values)
 
     def do_import(self, row: IngestRow):
-        metadata = MetadataEntity(domain_type=self.domain_type, concrete_type=self.concrete_type,
-                                  content=self.default_values, row=row)
-        for index, cell in enumerate(row.values):
-            if cell.value is None:
-                continue
-            conversion: CellConversion = self.cell_conversions[index]
-            conversion.apply(metadata, cell.value)
-        return metadata
+        row_errors = []
+        metadata = None
+        try:
+            metadata = MetadataEntity(domain_type=self.domain_type, concrete_type=self.concrete_type,
+                                      content=self.default_values, row=row)
+            for index, cell in enumerate(row.values):
+                if cell.value is None:
+                    continue
+                try:
+                    conversion: CellConversion = self.cell_conversions[index]
+                    conversion.apply(metadata, cell.value)
+                except Exception as e:
+                    row_errors.append({"location": f'cell={index}, value={cell.value}', "type": e.__class__.__name__, "detail": str(e)})
+        except Exception as e:
+            row_errors.append({"location": "", "type": e.__class__.__name__, "detail": str(e)})
+        return metadata, row_errors
 
 
 class ParentFieldNotFound(Exception):

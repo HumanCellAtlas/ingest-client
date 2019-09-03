@@ -10,7 +10,6 @@ from ingest.exporter import staging
 from ingest.exporter.exceptions import FileDuplication
 from ingest.exporter.metadata import MetadataResource, MetadataProvenance
 from ingest.exporter.staging import StagingInfo, StagingService, StagingInfoRepository, PartialStagingInfo
-
 logging.disable(logging.CRITICAL)
 
 

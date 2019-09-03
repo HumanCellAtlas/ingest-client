@@ -1,4 +1,5 @@
 import logging
+from typing import Optional
 from os import environ
 from time import sleep
 
@@ -50,7 +51,7 @@ class StagingInfoRepository:
         else:
             return staging_info
 
-    def find_one(self, staging_area_uuid, file_name) -> StagingInfo:
+    def find_one(self, staging_area_uuid, file_name) -> Optional[StagingInfo]:
         try:
             staging_job = self.ingest_client.find_staging_job(staging_area_uuid, file_name)
         except HTTPError as http_error:
@@ -88,7 +89,7 @@ class StagingService:
         self.staging_client = staging_client
         self.staging_info_repository = staging_info_repository
 
-    def get_staging_info(self, staging_area_uuid, metadata_resource: MetadataResource):
+    def get_staging_info(self, staging_area_uuid, metadata_resource: MetadataResource) -> Optional[StagingInfo]:
         file_name = metadata_resource.get_staging_file_name()
         staging_info = self.staging_info_repository.find_one(staging_area_uuid, file_name)
         remaining_attempts = STAGING_WAIT_ATTEMPTS
@@ -100,7 +101,7 @@ class StagingService:
             raise PartialStagingInfo(staging_info)
         return staging_info
 
-    def stage_metadata(self, staging_area_uuid, metadata_resource: MetadataResource) -> StagingInfo:
+    def stage_metadata(self, staging_area_uuid, metadata_resource: MetadataResource) -> Optional[StagingInfo]:
         staging_file_name = metadata_resource.get_staging_file_name()
         staging_info = StagingInfo(staging_area_uuid, staging_file_name,
                                    metadata_uuid=metadata_resource.uuid)
