@@ -444,6 +444,7 @@ class IngestApi:
             "stagingAreaFileName": file_name
         }
         r = requests.post(self.get_staging_jobs_url(), json=staging_info, headers=self.get_headers())
+        r.raise_for_status()
         return r.json()
 
     def complete_staging_job(self, complete_url, upload_file_uri):
