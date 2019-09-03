@@ -5,7 +5,7 @@ from unittest import TestCase
 from mock import Mock, MagicMock
 from requests import HTTPError
 
-from ingest.api.stagingapi import FileDescription, StagingFailed
+from ingest.api.stagingapi import FileDescription, FileUploadFailed
 from ingest.exporter import staging
 from ingest.exporter.exceptions import FileDuplication
 from ingest.exporter.metadata import MetadataResource, MetadataProvenance
@@ -190,11 +190,11 @@ class StagingServiceTest(TestCase):
         file_name = metadata_resource.get_staging_file_name()
 
         # and:
-        staging_failure = StagingFailed(staging_area_uuid, file_name)
+        staging_failure = FileUploadFailed(staging_area_uuid, file_name)
         self.staging_client.stageFile = Mock(side_effect=staging_failure)
 
         # when:
-        with self.assertRaises(StagingFailed) as context:
+        with self.assertRaises(FileUploadFailed) as context:
             self.staging_service.stage_metadata(staging_area_uuid, metadata_resource)
 
         # then:
