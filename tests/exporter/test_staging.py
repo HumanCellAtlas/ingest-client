@@ -208,6 +208,25 @@ class StagingServiceTest(TestCase):
         self.assertEqual(staging_area_uuid, deleted_info.staging_area_uuid)
         self.assertEqual(file_name, deleted_info.file_name)
 
+    def test_stage_metadata_eventually_none(self):
+        # given:
+        staging_area_uuid = '566be204-a684-4896-bda7-8dbb3e4fc65c'
+        metadata = self._create_test_metadata_resource()
+
+        # and: repository raises FileDuplication
+        file_name = metadata.get_staging_file_name()
+        self.staging_info_repository.save = Mock(side_effect=FileDuplication(staging_area_uuid, file_name))
+
+        # but: ended up not having the record (eventually)
+        self.staging_info_repository.find_one = Mock(return_value=None)
+
+        # when:
+        with self.assertRaises(Exception) as context:
+            self.staging_service.stage_metadata(staging_area_uuid, metadata)
+
+        # then:
+        self.assertIsNotNone(context.exception)
+
     def test_get_staging_info(self):
         # given:
         staging_area_uuid = 'ac4b29e3-7522-417e-ae0f-d82874fb4b05'
