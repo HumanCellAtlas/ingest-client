@@ -424,11 +424,10 @@ class IngestExporter:
     def put_bundle_in_dss(self, bundle_uuid, bundle_version, created_files):
         try:
             created_bundle = self.dss_api.put_bundle(bundle_uuid, bundle_version, created_files)
-        except BundleAlreadyExist as bundle_exist:
-            raise
+        except BundleAlreadyExist as exception:
+            raise BundleAlreadyExist(f"ERROR: Bundle already exists: {str(exception)}")
         except Exception as exception:
-            message = 'An error occurred while putting bundle in DSS: ' + str(exception)
-            raise BundleDSSError(message)
+            raise BundleDSSError(f"ERROR: An error occurred while putting bundle in DSS: {str(exception)}")
 
         return created_bundle
 

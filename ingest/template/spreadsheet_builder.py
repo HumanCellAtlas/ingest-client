@@ -1,6 +1,6 @@
 import xlsxwriter
 
-from ingest.template.tabs import TabConfig
+from ingest.template.tab_config import TabConfig
 from .schema_template import SchemaTemplate
 
 DEFAULT_INGEST_URL = "http://api.ingest.data.humancellatlas.org"
@@ -56,22 +56,25 @@ class SpreadsheetBuilder():
             tabs = tabs_parser.load(tabs_template)
             template = SchemaTemplate(metadata_schema_urls=schema_urls, tab_config=tabs)
         elif schema_urls:
-            template = SchemaTemplate(metadata_schema_urls=schema_urls)
+            template = SchemaTemplate(metadata_schema_urls=schema_urls, migrations_url=DEFAULT_MIGRATIONS_URL)
         else:
             template = SchemaTemplate()
 
         self.build(template)
 
-    def get_value_for_column(self, template, col_name, property):
+    def get_value_for_column(self, template, column_name, property):
         """ Lookup the value of a column name and property in a SchemaTemplate. `lookup` throws an exception if no
         property exists so capture the exception and return an empty string if no property exists for the given column
         and template."""
-        # TODO(maniarathi): What is a template? The metadata schema JSON?
         try:
-            return str(template.lookup(col_name + "." + property)) if template.lookup(col_name + "." + property) else ""
+            value = template.lookup(column_name + "." + property)
+            return str(value) if value else ""
         except Exception:
-            print("No property " + property + " for " + col_name)
-            return ""
+            try:
+                value = template.lookup(column_name.replace('.text', '') + "." + property)
+            except Exception:
+                print("No property " + property + " for " + column_name)
+                return ""
 
     def get_user_friendly_column_name(self, template, column_name, primary_schema=None):
         # TODO(maniarathi): Make this description better.
@@ -95,9 +98,9 @@ class SpreadsheetBuilder():
             # name with the name of the wrapper property
             wrapper = ".".join(column_name.split(".")[:-1])
             if template.lookup(wrapper)['schema']['module'] \
-                    and (template.lookup(wrapper)['schema']['module'] == 'purchased_reagents' or
-                         template.lookup(wrapper)['schema']['module'] == 'barcode') and not \
-                    template.lookup(wrapper)['multivalue']:
+                    and (template.lookup(wrapper)['schema']['module'] == 'purchased_reagents'
+                         or template.lookup(wrapper)['schema']['module'] == 'barcode') \
+                    and not template.lookup(wrapper)['multivalue']:
                 uf = template.lookup(wrapper)['user_friendly'] + " - " + uf
             if '.ontology_label' in column_name:
                 uf = uf + " ontology label"

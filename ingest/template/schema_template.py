@@ -12,9 +12,9 @@ from itertools import chain
 from yaml import dump as yaml_dump, load as yaml_load
 
 from ingest.api.ingestapi import IngestApi
-from ingest.template.tabs import TabConfig
 from .exceptions import RootSchemaException, UnknownKeySchemaException
 from .schema_parser import SchemaParser
+from .tab_config import TabConfig
 
 
 class SchemaTemplate:
@@ -137,6 +137,7 @@ class SchemaTemplate:
         """ Parse and load the metadata schemas and respective property migrations into the schema via the
         SchemaParser.
         """
+
         [self.parser.load_schema(metadata_schema) for metadata_schema in self.json_schemas]
         [self.parser.load_migration(migration) for migration in self.property_migrations]
 
@@ -332,9 +333,9 @@ class SchemaTemplate:
     def _get_level_one(self, key):
         return key.split('.')[0]
 
-    def get(self, d, keys):
-        if "." in keys:
-            key, rest = keys.split(".", 1)
+    def get(self, d, key):
+        if "." in key:
+            key, rest = key.split(".", 1)
             return self.get(d[key], rest)
         else:
-            return d[keys]
+            return d[key]

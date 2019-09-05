@@ -5,10 +5,9 @@ A generic executor class to generate empty spreadsheets based on a set of metada
 
 from argparse import ArgumentParser
 
-from spreadsheet_builder_constants import DEFAULT_AUTOFILL_SCALE, DEFAULT_LINK_CONFIG, DEFAULT_SCHEMA_LIST
-
 from ingest.template.linked_spreadsheet_builder import LinkedSpreadsheetBuilder
 from ingest.template.vanilla_spreadsheet_builder import VanillaSpreadsheetBuilder
+from .spreadsheet_builder_constants import DEFAULT_AUTOFILL_SCALE, DEFAULT_LINK_CONFIG, DEFAULT_SCHEMA_LIST
 
 
 def execute_spreadsheet_building(output_file_name, hide_row=False, linked_spreadsheet=False, schema_urls=None,
@@ -21,7 +20,7 @@ def execute_spreadsheet_building(output_file_name, hide_row=False, linked_spread
                      fully qualified names of each of the fields in the metadata schema.
     :param linked_spreadsheet: A boolean where if true, generates a spreadsheet where columns (a.k.a. metadata
                                fields) from one spreadsheet is copied over to another spreadsheet due to relationships
-                               between the schemas (i.e. a donor_id is copied over to a specimen_from_organism tab from
+                               betweeen the schemas (i.e. a donor_id is copied over to a specimen_from_organism tab from
                                the donor_organism tab).
     :param schema_urls: A list of strings where each string represents a URL containing a JSON-formatted metadata
                         schema.
@@ -52,8 +51,11 @@ if __name__ == '__main__':
                         help="The YAML file from which to generate the spreadsheet")
     parser.add_argument("-u", "--url", dest="url",
                         help="Optional ingest API URL - if not default (prod)")
+    parser.add_argument("-s", "--schema", dest="schema_url", default=None,
+                        help="A single URL from which to generate a spreadsheet")
 
     args = parser.parse_args()
 
     execute_spreadsheet_building(output_file_name=args.output, hide_row=args.hidden_row,
-                                 linked_spreadsheet=args.linked_spreadsheet, tabs_template=args.yaml)
+                                 linked_spreadsheet=args.linked_spreadsheet, tabs_template=args.yaml,
+                                 schema_urls=[args.schema_url] if args.schema_url else None)

@@ -21,14 +21,14 @@ class LinkedSpreadsheetBuilder(SpreadsheetBuilder):
         self.link_config = link_config
         self.autofill_scale = autofill_scale
 
-    def build(self, template):
+    def build(self, spreadsheet_tabs_template):
         # TODO(maniarathi): Fill out docstring here once finished parsing and consolidating code.
-        tabs = template.tab_config
+        tab_config = spreadsheet_tabs_template.tab_config
 
         if (self.link_config is not False) and (self.autofill_scale != 0):  # some precalculation for whole sheet
             self._value_linking()
 
-        for tab in tabs.lookup("tabs"):
+        for tab in tab_config.lookup("tabs"):
 
             for tab_name, detail in tab.items():
 
@@ -52,58 +52,39 @@ class LinkedSpreadsheetBuilder(SpreadsheetBuilder):
 
                 for column_index, column_name in enumerate(detail["columns"]):
 
-                    formatted_column_name = self.get_user_friendly_column_name(template, column_name).upper()
+                    formatted_column_name = self.get_user_friendly_column_name(spreadsheet_tabs_template,
+                                                                               column_name).upper()
 
                     if column_name.split(".")[-1] == "text":
-                        desc = self.get_value_for_column(template, column_name.replace('.text', ''), "description")
-                        if desc == "":
-                            desc = self.get_value_for_column(template, column_name, "description")
+                        desc = self.get_value_for_column(spreadsheet_tabs_template, column_name, "description")
+                        required = bool(self.get_value_for_column(spreadsheet_tabs_template, column_name, "required"))
+                        example_text = self.get_value_for_column(spreadsheet_tabs_template, column_name, "example")
+                        guidelines = self.get_value_for_column(spreadsheet_tabs_template, column_name, "guidelines")
                     else:
                         if column_name + ".text" not in detail["columns"]:
-                            desc = self.get_value_for_column(template, column_name, "description")
-                    if column_name.split(".")[-1] == "text":
-                        required = bool(
-                            self.get_value_for_column(template, column_name.replace('.text', ''), "required"))
-                    else:
-                        if column_name + ".text" not in detail["columns"]:
-                            required = bool(self.get_value_for_column(template, column_name, "required"))
-                    if column_name.split(".")[-1] == "text":
-                        example_text = self.get_value_for_column(template, column_name.replace('.text', ''), "example")
-                        if example_text == "":
-                            example_text = self.get_value_for_column(template, column_name, "example")
-                    else:
-                        if column_name + ".text" not in detail["columns"]:
-                            example_text = self.get_value_for_column(template, column_name, "example")
-                    if column_name.split(".")[-1] == "text":
-                        guidelines = self.get_value_for_column(template, column_name.replace('.text', ''), "guidelines")
-                        if guidelines == "":
-                            guidelines = self.get_value_for_column(template, column_name, "guidelines")
-                    else:
-                        if column_name + ".text" not in detail["columns"]:
-                            guidelines = self.get_value_for_column(template, column_name, "guidelines")
+                            desc = self.get_value_for_column(spreadsheet_tabs_template, column_name, "description")
+                            required = bool(
+                                self.get_value_for_column(spreadsheet_tabs_template, column_name, "required"))
+                            example_text = self.get_value_for_column(spreadsheet_tabs_template, column_name, "example")
+                            guidelines = self.get_value_for_column(spreadsheet_tabs_template, column_name, "guidelines")
 
-                    hf = self.header_format
                     if required:
-                        formatted_column_name = formatted_column_name + " (Required)"
+                        formatted_column_name += " (Required)"
 
                     # set the user friendly name
-                    worksheet.write(0, column_index, formatted_column_name, hf)
+                    worksheet.write(0, column_index, formatted_column_name, self.header_format)
 
-                    if len(formatted_column_name) < 25:
-                        col_w = 25
-                    else:
-                        col_w = len(formatted_column_name)
+                    column_width = len(formatted_column_name) if len(formatted_column_name) > 25 else 25
 
-                    worksheet.set_column(column_index, column_index, col_w)
+                    worksheet.set_column(column_index, column_index, column_width)
 
                     # set the description
                     worksheet.write(1, column_index, desc, self.desc_format)
 
                     # write example
-                    if example_text:
-                        worksheet.write(2, column_index, guidelines + ' For example: ' + example_text, self.desc_format)
-                    else:
-                        worksheet.write(2, column_index, guidelines, self.desc_format)
+                    worksheet.write(2, column_index,
+                                    guidelines + ' For example: ' + example_text if example_text else guidelines,
+                                    self.desc_format)
 
                     # set the key
                     worksheet.write(3, column_index, column_name, self.locked_format)
@@ -118,10 +99,10 @@ class LinkedSpreadsheetBuilder(SpreadsheetBuilder):
                         worksheet.set_row(0, 30)
                         worksheet.set_row(4, 30)
 
-                        worksheet.write(4, column_index, "FILL OUT INFORMATION BELOW THIS ROW", hf)
+                        worksheet.write(4, column_index, "FILL OUT INFORMATION BELOW THIS ROW", self.header_format)
 
                     else:
-                        worksheet.write(4, column_index, '', hf)
+                        worksheet.write(4, column_index, '', self.header_format)
 
                     # ADD EXAMPLES HERE
                     if self.autofill_scale > 0:  # flag for adding example info
@@ -129,13 +110,13 @@ class LinkedSpreadsheetBuilder(SpreadsheetBuilder):
 
                 if self.link_config is not False:  # after normal column_name added to tab add linking column_name
 
-                    self._make_col_name_mapping(template)  # makes lookup dict for uf tab names
-                    self._add_link_cols(tab_name, column_index, worksheet, hf, self.backbone_entities)
+                    self._make_col_name_mapping(spreadsheet_tabs_template)  # makes lookup dict for uf tab names
+                    self._add_link_cols(tab_name, column_index, worksheet, self.header_format, self.backbone_entities)
 
                     # todo add process column if on seq tab
 
         if self.include_schemas_tab:
-            self._write_schemas(template.get_schema_urls())
+            self._write_schemas(spreadsheet_tabs_template.get_schema_urls())
 
     def _fill_examples_from_schema(self, example_text, worksheet, cols, col_number, tab_name):
         double_prefix = 'Should be one of: '

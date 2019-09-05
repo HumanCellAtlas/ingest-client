@@ -28,36 +28,16 @@ class VanillaSpreadsheetBuilder(SpreadsheetBuilder):
                                                                                column_name, tab_name).upper()
 
                     if column_name.split(".")[-1] == "text":
-                        desc = self.get_value_for_column(spreadsheet_tabs_template, column_name.replace('.text', ''),
-                                                         "description")
-                        if desc == "":
-                            desc = self.get_value_for_column(spreadsheet_tabs_template, column_name, "description")
+                        desc = self.get_value_for_column(spreadsheet_tabs_template, column_name, "description")
+                        required = bool(self.get_value_for_column(spreadsheet_tabs_template, column_name, "required"))
+                        example_text = self.get_value_for_column(spreadsheet_tabs_template, column_name, "example")
+                        guidelines = self.get_value_for_column(spreadsheet_tabs_template, column_name, "guidelines")
                     else:
                         if column_name + ".text" not in detail["columns"]:
                             desc = self.get_value_for_column(spreadsheet_tabs_template, column_name, "description")
-                    if column_name.split(".")[-1] == "text":
-                        required = bool(
-                            self.get_value_for_column(spreadsheet_tabs_template, column_name.replace('.text', ''),
-                                                      "required"))
-                    else:
-                        if column_name + ".text" not in detail["columns"]:
                             required = bool(
                                 self.get_value_for_column(spreadsheet_tabs_template, column_name, "required"))
-                    if column_name.split(".")[-1] == "text":
-                        example_text = self.get_value_for_column(spreadsheet_tabs_template,
-                                                                 column_name.replace('.text', ''), "example")
-                        if example_text == "":
                             example_text = self.get_value_for_column(spreadsheet_tabs_template, column_name, "example")
-                    else:
-                        if column_name + ".text" not in detail["columns"]:
-                            example_text = self.get_value_for_column(spreadsheet_tabs_template, column_name, "example")
-                    if column_name.split(".")[-1] == "text":
-                        guidelines = self.get_value_for_column(spreadsheet_tabs_template,
-                                                               column_name.replace('.text', ''), "guidelines")
-                        if guidelines == "":
-                            guidelines = self.get_value_for_column(spreadsheet_tabs_template, column_name, "guidelines")
-                    else:
-                        if column_name + ".text" not in detail["columns"]:
                             guidelines = self.get_value_for_column(spreadsheet_tabs_template, column_name, "guidelines")
 
                     if required:
@@ -66,21 +46,17 @@ class VanillaSpreadsheetBuilder(SpreadsheetBuilder):
                     # set the user friendly name
                     worksheet.write(0, column_index, formatted_column_name, self.header_format)
 
-                    if len(formatted_column_name) < 25:
-                        col_w = 25
-                    else:
-                        col_w = len(formatted_column_name)
+                    column_width = len(formatted_column_name) if len(formatted_column_name) > 25 else 25
 
-                    worksheet.set_column(column_index, column_index, col_w)
+                    worksheet.set_column(column_index, column_index, column_width)
 
                     # set the description
                     worksheet.write(1, column_index, desc, self.desc_format)
 
                     # write example
-                    if example_text:
-                        worksheet.write(2, column_index, guidelines + ' For example: ' + example_text, self.desc_format)
-                    else:
-                        worksheet.write(2, column_index, guidelines, self.desc_format)
+                    worksheet.write(2, column_index,
+                                    guidelines + ' For example: ' + example_text if example_text else guidelines,
+                                    self.desc_format)
 
                     # set the key
                     worksheet.write(3, column_index, column_name, self.locked_format)

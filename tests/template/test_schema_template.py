@@ -12,8 +12,8 @@ import unittest
 from unittest import TestCase
 
 import tests.template.schema_mock_utils as schema_mock
-from ingest.template.schema_template import SchemaParser
 from ingest.template.exceptions import RootSchemaException, UnknownKeySchemaException
+from ingest.template.schema_template import SchemaParser
 
 
 class TestSchemaTemplate(TestCase):

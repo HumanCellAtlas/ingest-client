@@ -61,7 +61,7 @@ class IngestWorksheet(object):
         match = MODULE_TITLE_PATTERN.match(self.title)
         field_name = match.group('field_name')
         if field_name:
-            field_name = re.sub('[\s-]', '_', field_name.lower())
+            field_name = re.sub(r'[\s-]', '_', field_name.lower())
         return field_name
 
     def insert_column_with_header(self, header, col_idx):

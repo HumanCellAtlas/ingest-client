@@ -2,7 +2,7 @@ MODULES=ingest tests
 .PHONY: lint test unit-tests
 
  lint:
-	flake8 $(MODULES) *.py --ignore=E501,E731
+	flake8 $(MODULES) *.py --ignore=E501,E731,W503
 
  test: lint unit-tests
 

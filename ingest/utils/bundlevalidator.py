@@ -52,7 +52,7 @@ class BundleValidator:
     def extract_schema_url_from_document(self, metadata_document):
         try:
             return metadata_document["core"]["schema_url"]
-        except KeyError as e:
+        except KeyError:
             raise ("Could not find schema_url")
 
     def get_schema_from_url(self, schema_url):

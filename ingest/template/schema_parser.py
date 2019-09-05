@@ -3,8 +3,8 @@ import re
 
 import jsonref
 
-from ingest.utils import doctict
 from .exceptions import RootSchemaException
+from ..utils import doctict
 
 
 class SchemaParser:
@@ -219,7 +219,7 @@ class SchemaParser:
         schema.high_level_entity = match.group(1)
 
         # Populate the domain entity
-        pattern = re.compile("http[s]?://[^/]*/[^/]*/(?P<domain_entity>.*)/(((\d+\.)?(\d+\.)?(\*|\d+))|(latest))/.*")
+        pattern = re.compile(r'http[s]?://[^/]*/[^/]*/(?P<domain_entity>.*)/(((\d+\.)?(\d+\.)?(\*|\d+))|(latest))/.*')
         match = pattern.search(url)
         schema.domain_entity = match.group(1) if match else None
 

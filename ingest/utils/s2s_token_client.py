@@ -1,10 +1,11 @@
-from .dcp_auth_client import DCPAuthClient
-import os
 import json
+import os
+
+from .dcp_auth_client import DCPAuthClient
 
 
 class S2STokenClient:
-    def __init__(self, dcp_auth_client: 'DCPAuthClient'=None):
+    def __init__(self, dcp_auth_client: 'DCPAuthClient' = None):
         self.dcp_auth_client = dcp_auth_client
 
     def setup_from_env_var(self, env_var_name):

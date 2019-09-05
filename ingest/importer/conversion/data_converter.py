@@ -5,7 +5,6 @@ from ingest.importer.conversion.exceptions import InvalidBooleanValue
 
 
 class DataType(Enum):
-
     STRING = 'string'
     INTEGER = 'integer'
     BOOLEAN = 'boolean'
@@ -82,7 +81,7 @@ CONVERTER_MAP = {
 
 class ListConverter(Converter):
 
-    def __init__(self, data_type: DataType=DataType.STRING, base_converter: Converter=None):
+    def __init__(self, data_type: DataType = DataType.STRING, base_converter: Converter = None):
         self.base_type = data_type
         if base_converter is not None:
             self.base_type = DataType.UNDEFINED

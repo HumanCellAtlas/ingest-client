@@ -21,7 +21,7 @@ class CellConversion(object):
 
     @staticmethod
     def _process_applied_field(field):
-        pattern = '(\w*\.){0,1}(?P<insert_field>.*)'
+        pattern = r'(\w*\.){0,1}(?P<insert_field>.*)'
         match = re.match(pattern, field)
         return match.group('insert_field')
 
