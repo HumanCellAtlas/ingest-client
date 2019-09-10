@@ -1,12 +1,11 @@
-import json
-import urllib
 from datetime import datetime
 
 import requests
+import yaml
 
 from ingest.api.ingestapi import IngestApi
 from .exceptions import RootSchemaException, UnknownKeySchemaException
-from .migration_dictionary import MigrationDictionary
+from .migration_parser import MigrationParser
 from .new_schema_parser import NewSchemaParser
 
 
@@ -51,15 +50,15 @@ class NewSchemaTemplate():
         :param json_schema_docs: A list of objects where each object represents a deserialized JSON-formatted
                                  metadata schema. If this parameter is provided, the parameter metadata_schema_urls
                                  should not be populated.
-        :param tab_config: A TabConfig object that represents the expected tabs that will be created in a spreadsheet
-                           given the metadata schemas provided.
+        :param spreadsheet_configuration: A TabConfig object that represents the expected tabs that will be created
+                                          in a spreadsheet given the metadata schemas provided.
         :param property_migrations: An object representing a deserialized JSON-string which is a property migrations
                                     file. A property migrations files dictates how the version of the schema has changed
                                     from an older version.
         """
 
-        # Function validation
-        # 1) Only one of json_schema_docs or metadata_schema_urls may be populated or neither (NAND boolean).
+        # Function validation: only one of json_schema_docs or metadata_schema_urls may be populated or neither (NAND
+        # boolean).
         if bool(metadata_schema_urls) and bool(json_schema_docs):
             raise Exception(
                 'Only one of function arguments metadata_schema_urls or json_schema_docs (or neither) may be '
@@ -69,7 +68,7 @@ class NewSchemaTemplate():
         # If neither the metadata_schema_urls are given nor the json_schema_docs, fetch the metadata schema URLs via
         # querying the Ingest API.
         if not metadata_schema_urls and not json_schema_docs:
-            self.metadata_schema_urls = self.get_latest_submittable_schema_urls(ingest_api_url)
+            self.metadata_schema_urls = self._get_latest_submittable_schema_urls(ingest_api_url)
 
         self.property_migrations = property_migrations
         # If the property migrations were not given as input, read the migrations from the migrations URL and store
@@ -97,7 +96,9 @@ class NewSchemaTemplate():
             self.labels.update(schema_parser.get_map_of_paths_by_property_label(
                 {schema_descriptor.get_schema_module_name(): fully_parsed_dictionary}))
 
-        self.migrations = self._get_migrations_dictionary()
+        self.migrations = MigrationParser(self.property_migrations).migrations
+
+        self.spreadsheet_configuration = tab_config  # TODO
 
     def get_dictionary_representation(self):
         return {
@@ -106,20 +107,78 @@ class NewSchemaTemplate():
             "meta_data_properties": self.meta_data_properties,
             "labels": self.labels,
             "tabs": self.tabs,
-            "migrations": self.migrations
+            "migrations": MigrationParser.get_dictionary_representation(self.migrations)
         }
 
     def lookup_property_attributes_in_metadata(self, property_key):
         """
-        Given a property key which details the full path to the property from the top level schema,
-        return a dictionary representing the attributes of said property.
+        Given a property key which details the full path to the property from the top level schema, returns a dictionary
+        representing the attributes of the requested property.
 
         :param property_key: A string representing the fully qualified path to the desired metadata property
-        :return: A dictionary representing the attributes of the property. If none is found, an exception will be
-        thrown.
+        :return: A dictionary representing the attributes of the property. If none is found, an exception will be thrown
         """
 
         return self._lookup_fully_qualified_key_path_in_dictionary(property_key, self.meta_data_properties)
+
+    def lookup_next_latest_key_migration(self, fully_qualified_key):
+        """
+        Given a key, returns the fully qualified key in the next latest schema (potentially not the absolute latest
+        schema though) if it has been replaced.
+
+        :param key: A string representing a fully qualified field name in an older metadata schema version.
+        :return: A string representing a fully qualified field name in the next latest metadata schema version if a
+                 migration to that schema version exists. If a migration does not exist, returns the original fully
+                 qualified key.
+        """
+
+        if not self._validate_fully_qualified_key_exists(fully_qualified_key):
+            raise Exception(f"ERROR: Fully qualified key {fully_qualified_key} does not exist in any of the schemas.")
+
+        if fully_qualified_key in self.migrations:
+            migration_info = self.migrations[fully_qualified_key]
+            return migration_info.replaced_by if migration_info.replaced_by in migration_info else fully_qualified_key
+
+        return fully_qualified_key
+
+    def lookup_absolute_latest_key_migration(self, fully_qualified_key):
+        """
+        Given a key, returns the fully qualified key in the maximal latest schema if it has been replaced.
+
+        :param key: A string representing a fully qualified field name in an older metadata schema version.
+        :return: A string representing a fully qualified field name in the latest metadata schema
+                 version if a migration chain to that schema version exists. If a migration does not exist, returns the
+                 original fully qualified key.
+        """
+
+        if not self._validate_fully_qualified_key_exists(fully_qualified_key):
+            raise Exception(f"ERROR: Fully qualified key {fully_qualified_key} does not exist in any of the schemas.")
+
+        original_key = fully_qualified_key
+        next_latest_migrated_key = self.lookup_next_latest_key_migration(fully_qualified_key)
+
+        while original_key != next_latest_migrated_key:
+            original_key = next_latest_migrated_key
+            next_latest_migrated_key = self.lookup_next_latest_key_migration(original_key)
+
+        return next_latest_migrated_key
+
+    def generate_yaml_representation_of_spreadsheets(self, tabs_only):
+        """
+        Generate a YAML object representing the schema_template object and if `tabs_only` is true, then only generate
+        the YAML based on self.tabs. This YAML object can be used to generate arbitrary spreadsheets based on the
+        metadata schemas.
+
+        :param tabs_only: When true, only uses the tabs to generate the YAML instead of including all the "metadata"
+                          about the metadata schemas encapsulated in this SchemaTemplate object.
+        :return: A YAML object representing the metadata schemas encapsulated in this SchemaTemplate object.
+        """
+
+        yaml.default_flow_style = False
+        return yaml.dump({"tabs": self.tabs} if tabs_only else self.get_dictionary_representation(), indent=4)
+
+    def _validate_fully_qualified_key_exists(self, fully_qualified_key):
+        return fully_qualified_key in self.labels
 
     def _lookup_fully_qualified_key_path_in_dictionary(self, fully_defined_metadata_property, dictionary):
         if fully_defined_metadata_property in dictionary:
@@ -131,12 +190,9 @@ class NewSchemaTemplate():
                 return self._lookup_fully_qualified_key_path_in_dictionary(
                     fully_defined_metadata_property.split('.', 1)[1], dictionary[expected_schema])
 
-        raise UnknownKeySchemaException(f"Cannot find key {fully_defined_metadata_property} in any schema!")
+        raise UnknownKeySchemaException(f"ERROR: Cannot find key {fully_defined_metadata_property} in any schema!")
 
-    def _lookup_value_in_given_dictionary(self, key, dictionary):
-        pass
-
-    def get_latest_submittable_schema_urls(self, ingest_api_url):
+    def _get_latest_submittable_schema_urls(self, ingest_api_url):
         """
         Given the Ingest API URL, send a request to get the latest metadata schemas and return the URLs.
 
@@ -149,26 +205,6 @@ class NewSchemaTemplate():
         raw_schemas_from_ingest_api = ingest_api.get_schemas(high_level_entity="type", latest_only=True)
         return [schema["_links"]["json-schema"]["href"] for schema in raw_schemas_from_ingest_api]
 
-    def _get_migrations_dictionary(self):
-        migration_dictionary = MigrationDictionary()
-        for property_migration in self.property_migrations:
-            source_migrated_property = property_migration["source_schema"] + "." + property_migration[
-                "property"]
-
-            migration_info = {}
-
-            if "target_schema" in property_migration and "replaced_by" in property_migration:
-                migration_info["replaced_by"] = property_migration["target_schema"] + "." + property_migration[
-                    "replaced_by"]
-            if "effective_from" in property_migration:
-                migration_info["version"] = property_migration["effective_from"]
-            elif "effective_from_source" in property_migration:
-                migration_info["version"] = property_migration["effective_from_source"]
-                migration_info["target_version"] = property_migration["effective_from_target"]
-
-            migration_dictionary.put(source_migrated_property, migration_info)
-        return migration_dictionary.to_dict()
-
     def _get_property_migrations_json_obj(self, migrations_url):
         """
         Returns a a JSON-formatted property migrations file read from the given URL.
@@ -179,8 +215,7 @@ class NewSchemaTemplate():
         """
 
         try:
-            with urllib.request.urlopen(migrations_url) as url:
-                return json.loads(url.read().decode())["migrations"]
+            return requests.get(migrations_url).json()["migrations"]
         except Exception:
             raise RootSchemaException(f"Was unable to read the property migrations file from URL {migrations_url}")
 

@@ -297,8 +297,8 @@ class TestNewSchemaParser(unittest.TestCase):
         schema_parser = NewSchemaParser(sample_simple_metadata_schema_json, sample_ignored_properties)
         actual_tab_representation = schema_parser.get_tab_representation_of_schema()
 
-        expected_tab_representation = {"timecourse": {"display_name": "Timecourse"},
-                                       "columns": ["timecourse.value", "timecourse.unit"]}
+        expected_tab_representation = {"timecourse": {"display_name": "Timecourse",
+                                                      "columns": ["timecourse.value", "timecourse.unit"]}}
         self.assertEqual(expected_tab_representation, actual_tab_representation)
 
     def test__get_tab_presentation_of_complex_metadata_schema__success(self):
@@ -360,7 +360,8 @@ class TestNewSchemaParser(unittest.TestCase):
         schema_parser = NewSchemaParser(sample_complex_metadata_schema_json, sample_ignored_properties)
         actual_tab_representation = schema_parser.get_tab_representation_of_schema()
 
-        expected_tab_representation = {"timecourse": {"display_name": "Timecourse"},
-                                       "columns": ["timecourse.value", "timecourse.unit", "timecourse.unit.ontology",
-                                                   "timecourse.unit.ontology_label"]}
+        expected_tab_representation = {"timecourse": {"display_name": "Timecourse",
+                                                      "columns": ["timecourse.value", "timecourse.unit",
+                                                                  "timecourse.unit.ontology",
+                                                                  "timecourse.unit.ontology_label"]}}
         self.assertEqual(expected_tab_representation, actual_tab_representation)

@@ -111,8 +111,8 @@ class NewSchemaParser():
 
         tab_key = self.schema_descriptor.get_schema_module_name()
         tab_display_name = tab_key[0].upper() + tab_key[1:].replace("_", " ")
-        return {tab_key: {"display_name": tab_display_name},
-                "columns": self._get_columns_names_for_metadata_schema(tab_key, self.schema_dictionary)}
+        return {tab_key: {"display_name": tab_display_name,
+                          "columns": self._get_columns_names_for_metadata_schema(tab_key, self.schema_dictionary)}}
 
     def _get_columns_names_for_metadata_schema(self, root_schema_name, root_schema_dictionary):
         list_of_column_names = []

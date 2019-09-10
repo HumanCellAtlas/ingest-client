@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """
-Provides mock schemas for building intsances of schema_template.py
+Provides mock schemas for building instances of schema_template.py
 """
 __author__ = "jupp"
 __license__ = "Apache 2.0"
