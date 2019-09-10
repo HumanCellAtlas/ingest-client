@@ -442,7 +442,7 @@ class IngestApi:
         staging_info = {
             "stagingAreaUuid": staging_area_uuid,
             "stagingAreaFileName": file_name,
-            "": metadata_uuid
+            "metadataUuid": metadata_uuid
         }
         r = requests.post(self.get_staging_jobs_url(), json=staging_info, headers=self.get_headers())
         r.raise_for_status()
