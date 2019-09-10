@@ -106,6 +106,15 @@ class DssApi:
                 file_create_complete = True
                 return bundle_file
             except Exception as e:
+                if isinstance(e, SwaggerAPIException):
+                    error_code = e.details.get('code')
+                    if error_code.lower() == 'file_already_exists':
+                        self.logger.warning(f'PUT /file for {uuid} {version} encountered file_already_exists error')
+                        created_file = {
+                            'version': version
+                        }
+                        return created_file
+
                 self.logger.error(
                     'Attempt {0} out of {1}: Error in hca_client.put_file method call with params:{2} due to {'
                     '3}'.format(

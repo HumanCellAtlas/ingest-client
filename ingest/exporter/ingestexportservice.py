@@ -9,6 +9,7 @@ from copy import deepcopy
 
 import polling
 import requests
+from hca.util import SwaggerAPIException
 
 import ingest.exporter.bundle
 from ingest.api.dssapi import DssApi, BundleAlreadyExist
@@ -119,7 +120,7 @@ class IngestExporter:
                 raise
 
             metadata_files = self.get_metadata_files(files_by_type)
-            data_files = self.get_data_files(metadata_by_type['file'])
+            data_files = self.get_data_files(metadata_by_type['file'], process_info)
             bundle_files = metadata_files + data_files
 
             bundle_manifest.dataFiles = list()
@@ -127,7 +128,7 @@ class IngestExporter:
             self.logger.info('Saving files in DSS...')
 
             try:
-                created_files = self.put_files_in_dss(bundle_uuid, bundle_files, process_info)
+                created_files = self.put_files_in_dss(bundle_uuid, bundle_files)
 
                 # check all created files
                 self.logger.info('Verifying if all files get successfully copied to DSS...')
@@ -350,7 +351,8 @@ class IngestExporter:
                     'dss_filename': file_name,
                     'dss_uuid': metadata_uuid,
                     'upload_filename': upload_filename,
-                    'update_date': doc['updateDate'],
+                    'update_date': doc['dcpVersion'],
+                    'dcp_version': doc['dcpVersion'],
                     'is_from_input_bundle': self._is_from_input_bundle(entity_type, metadata_uuid,
                                                                        process_info.input_bundle)
                 }
@@ -432,25 +434,18 @@ class IngestExporter:
         return created_bundle
 
     # TODO handle error #exporter-errors
-    def put_files_in_dss(self, bundle_uuid, files_to_put, process_info):
+    def put_files_in_dss(self, bundle_uuid, files_to_put):
         created_files = []
 
         for bundle_file in files_to_put:
+            dcp_version = bundle_file.get('dcp_version')
             version = ''
             file_uuid = bundle_file["dss_uuid"]
-            created_file = None
-            input_data_files = [input_file['dataFileUuid'] for input_file in list(process_info.input_files.values())]
 
             try:
-                # TODO if file is an input file, this file may already be in the data store, need to get the stored
-                #  version
-                # This assumes that the latest version is the file version in the input bundle, should be a safe
-                # assumption for now
-                # Ideally, bundle manifest must store the file uuid and version and version must be retrieved from there
 
-                # if metadata file , check is_from_input_bundle flag, if true, do not put file to DSS again
-                if bundle_file.get('is_from_input_bundle') or file_uuid in input_data_files:
-                    file_response = self.dss_api.head_file(bundle_file["dss_uuid"])
+                file_response = self.dss_api.head_file(bundle_file["dss_uuid"], dcp_version)
+                if file_response.status_code == requests.codes.ok:
                     created_file = {
                         'version': file_response.headers['X-DSS-VERSION']
                     }
@@ -458,8 +453,8 @@ class IngestExporter:
                     created_file = self.dss_api.put_file(bundle_uuid, bundle_file)
 
                 version = created_file['version']
-            except Exception as exception:
-                raise FileDSSError('An error occurred while putting file in DSS' + str(exception))
+            except Exception as e:
+                raise FileDSSError(f'An error occurred while putting file {file_uuid}.{dcp_version} in DSS: {str(e)}')
 
             file_param = {
                 "indexed": bundle_file["indexed"],
@@ -512,7 +507,7 @@ class IngestExporter:
                 })
         return metadata_files
 
-    def get_data_files(self, uuid_file_dict):
+    def get_data_files(self, uuid_file_dict, process_info):
         data_files = []
         #  TODO: need to keep track of UUIDs used so that retries work when the DSS returns a 500
         for _, data_file in uuid_file_dict.items():
@@ -526,7 +521,8 @@ class IngestExporter:
                 'url': cloud_url,
                 'dss_uuid': data_file_uuid,
                 'indexed': False,
-                'content-type': 'data'
+                'content-type': 'data',
+                'is_from_input_bundle': self._is_from_input_bundle('file', data_file['uuid']['uuid'], process_info.input_bundle)
             })
 
         return data_files
