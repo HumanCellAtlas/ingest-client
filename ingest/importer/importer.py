@@ -211,7 +211,7 @@ class WorkbookImporter:
                 else:
                     registry.add_submittables(metadata_entities)
             except Exception as e:
-                workbook_errors.append({"location": "File", "type": e.__class__.__name__, "detail": str(e)})
+                workbook_errors.append({"location": f'sheet={worksheet.title}', "type": e.__class__.__name__, "detail": str(e)})
 
         if registry.has_project():
             registry.import_modules()
@@ -282,10 +282,12 @@ class NoProjectFound(Exception):
         message = f'The spreadsheet should be associated to a project.'
         super(NoProjectFound, self).__init__(message)
 
+
 class SheetNotFoundInSchemas(Exception):
     def __init__(self, sheet):
         message = f'The sheet {sheet} was not found in the list of schemas.'
         super(SheetNotFoundInSchemas, self).__init__(message)
+
 
 class SchemaRetrievalError(Exception):
     pass

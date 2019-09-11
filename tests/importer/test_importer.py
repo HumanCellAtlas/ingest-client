@@ -41,7 +41,7 @@ class WorkbookImporterTest(TestCase):
         # given:
         template_mgr = MagicMock(name='template_manager')
         template_mgr.template.json_schemas = self.mock_json_schemas
-        template_mgr.get_concrete_type = MagicMock(side_effect=['project','users'])
+        template_mgr.get_concrete_type = MagicMock(side_effect=['project', 'users'])
 
         worksheet_importer = WorksheetImporter(template_mgr)
         worksheet_importer_constructor.return_value = worksheet_importer
@@ -81,7 +81,7 @@ class WorkbookImporterTest(TestCase):
         # given:
         template_mgr = MagicMock(name='template_manager')
         template_mgr.template.json_schemas = self.mock_json_schemas
-        template_mgr.get_concrete_type = MagicMock(side_effect=['project','users','users'])
+        template_mgr.get_concrete_type = MagicMock(side_effect=['project', 'users', 'users'])
 
         worksheet_importer = WorksheetImporter(template_mgr)
         worksheet_importer_constructor.return_value = worksheet_importer
