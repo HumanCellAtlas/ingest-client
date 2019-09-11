@@ -140,10 +140,19 @@ class _ImportRegistry:
                 raise MultipleProjectsFound()
         type_map[metadata.object_id] = metadata
 
+    def add_submittables(self, metadata_entities):
+        for entity in metadata_entities:
+            self.add_submittable(entity)
+
     def add_module(self, metadata: MetadataEntity):
         if metadata.domain_type.lower() == 'project':
             metadata.object_id = self.project_id
         self._module_list.append(metadata)
+
+    def add_modules(self, metadata_entities, module_field_name):
+        for entity in metadata_entities:
+            entity.retain_content_fields(module_field_name)
+            self.add_module(entity)
 
     def import_modules(self):
         for module_entity in self._module_list:
@@ -197,12 +206,10 @@ class WorkbookImporter:
                         error["location"] = f'sheet={worksheet.title}'
                     workbook_errors.append(error)
 
-                for entity in metadata_entities:
-                    if worksheet.is_module_tab():
-                        entity.retain_content_fields(module_field_name)
-                        registry.add_module(entity)
-                    else:
-                        registry.add_submittable(entity)
+                if worksheet.is_module_tab():
+                    registry.add_modules(metadata_entities, module_field_name)
+                else:
+                    registry.add_submittables(metadata_entities)
             except Exception as e:
                 workbook_errors.append({"location": "File", "type": e.__class__.__name__, "detail": str(e)})
 
