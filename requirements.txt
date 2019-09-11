@@ -7,3 +7,4 @@ PyYAML>=5.1
 requests[security]
 urllib3
 xlsxwriter
+sortedcontainers
