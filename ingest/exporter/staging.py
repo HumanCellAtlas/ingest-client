@@ -41,7 +41,7 @@ class StagingInfoRepository:
 
     def save(self, staging_info: StagingInfo) -> StagingInfo:
         try:
-            self.ingest_client.create_staging_job(staging_info.staging_area_uuid, staging_info.file_name)
+            self.ingest_client.create_staging_job(staging_info.staging_area_uuid, staging_info.file_name, staging_info.metadata_uuid)
         except HTTPError as http_error:
             r = http_error.response
             if r.status_code == requests.codes.conflict:
@@ -64,8 +64,9 @@ class StagingInfoRepository:
             staging_area_uuid = staging_job.get('stagingAreaUuid')
             file_name = staging_job.get('stagingAreaFileName')
             cloud_url = staging_job.get('stagingAreaFileUri')
+            metadata_uuid = staging_job.get('metadataUuid')
 
-            return StagingInfo(staging_area_uuid, file_name, cloud_url=cloud_url)
+            return StagingInfo(staging_area_uuid, file_name, cloud_url=cloud_url, metadata_uuid=metadata_uuid)
 
     def update(self, staging_info: StagingInfo) -> StagingInfo:
         staging_job = self.ingest_client.find_staging_job(staging_info.staging_area_uuid, staging_info.file_name)

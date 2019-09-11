@@ -3,6 +3,7 @@ from unittest.mock import patch
 
 import requests
 from mock import MagicMock, Mock
+from requests import HTTPError
 
 from ingest.api.ingestapi import IngestApi
 
@@ -246,6 +247,36 @@ class IngestApiTest(TestCase):
         # when
         count = ingest_api.get_related_entities_count('files', mock_entity, 'files')
         self.assertEqual(count, 4)
+
+    @patch('ingest.api.ingestapi.create_session_with_retry')
+    @patch('ingest.api.ingestapi.requests.post')
+    def test_create_staging_job_success(self, mock_post, mock_session):
+        # given
+        ingest_api = IngestApi(token_manager=self.token_manager)
+        ingest_api.get_staging_jobs_url = MagicMock(return_value='url')
+
+        mock_post.return_value.json.return_value = {'staging-area-uuid': 'uuid'}
+        mock_post.return_value.status_code = requests.codes.ok
+
+        # when
+        staging_job = ingest_api.create_staging_job('uuid', 'filename', 'metadata-uuid')
+
+        self.assertEqual(staging_job, {'staging-area-uuid': 'uuid'})
+
+    @patch('ingest.api.ingestapi.create_session_with_retry')
+    @patch('ingest.api.ingestapi.requests.post')
+    def test_create_staging_job_failure(self, mock_post, mock_session):
+        # given
+        ingest_api = IngestApi(token_manager=self.token_manager)
+        ingest_api.get_staging_jobs_url = MagicMock(return_value='url')
+
+        mock_post.return_value.json.return_value = {'staging-area-uuid': 'uuid'}
+        mock_post.return_value.status_code = requests.codes.ok
+
+        mock_post.return_value.raise_for_status = MagicMock(side_effect=HTTPError())
+        # when
+        with self.assertRaises(HTTPError):
+            ingest_api.create_staging_job('uuid', 'filename', 'metadata_uuid')
 
     @staticmethod
     def _create_mock_response(url, mocked_responses):

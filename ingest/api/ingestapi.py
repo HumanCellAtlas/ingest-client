@@ -438,10 +438,11 @@ class IngestApi:
         r.raise_for_status()
         return r
 
-    def create_staging_job(self, staging_area_uuid, file_name):
+    def create_staging_job(self, staging_area_uuid, file_name, metadata_uuid):
         staging_info = {
             "stagingAreaUuid": staging_area_uuid,
-            "stagingAreaFileName": file_name
+            "stagingAreaFileName": file_name,
+            "metadataUuid": metadata_uuid
         }
         r = requests.post(self.get_staging_jobs_url(), json=staging_info, headers=self.get_headers())
         r.raise_for_status()
