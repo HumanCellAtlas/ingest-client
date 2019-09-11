@@ -31,11 +31,18 @@ def _create_single_row_worksheet(worksheet_data: dict):
 
 
 class WorkbookImporterTest(TestCase):
+    mock_json_schemas = [
+        {'name': 'project', 'properties': ['contributors']},
+        {'name': 'users', 'properties': ['sn_profiles']}
+    ]
 
     @patch('ingest.importer.importer.WorksheetImporter')
     def test_do_import(self, worksheet_importer_constructor):
         # given:
         template_mgr = MagicMock(name='template_manager')
+        template_mgr.template.json_schemas = self.mock_json_schemas
+        template_mgr.get_concrete_type = MagicMock(side_effect=['project','users'])
+
         worksheet_importer = WorksheetImporter(template_mgr)
         worksheet_importer_constructor.return_value = worksheet_importer
         no_errors = []
@@ -73,6 +80,9 @@ class WorkbookImporterTest(TestCase):
     def test_do_import_with_module_tab(self, worksheet_importer_constructor):
         # given:
         template_mgr = MagicMock(name='template_manager')
+        template_mgr.template.json_schemas = self.mock_json_schemas
+        template_mgr.get_concrete_type = MagicMock(side_effect=['project','users','users'])
+
         worksheet_importer = WorksheetImporter(template_mgr)
         worksheet_importer_constructor.return_value = worksheet_importer
         no_errors = []
@@ -131,6 +141,9 @@ class WorkbookImporterTest(TestCase):
     def test_do_import_project_worksheet(self, worksheet_importer_constructor):
         # given:
         template_mgr = MagicMock(name='template_manager')
+        template_mgr.template.json_schemas = self.mock_json_schemas
+        template_mgr.get_concrete_type = MagicMock(return_value='project')
+
         worksheet_importer = WorkbookImporter(template_mgr)
         worksheet_importer_constructor.return_value = worksheet_importer
         no_errors = []
@@ -171,11 +184,14 @@ class WorkbookImporterTest(TestCase):
     def test_do_import_multiple_projects(self, worksheet_importer_constructor):
         # given:
         template_mgr = MagicMock(name='template_manager')
+        template_mgr.template.json_schemas = self.mock_json_schemas
+        template_mgr.get_concrete_type = MagicMock(return_value='project')
+
         worksheet_importer = WorksheetImporter(template_mgr)
         worksheet_importer_constructor.return_value = worksheet_importer
         no_errors = []
         expected_error = {
-            'location': 'File',
+            'location': 'sheet=Project',
             'type': 'MultipleProjectsFound',
             'detail': 'The spreadsheet should only be associated to a single project.'
         }

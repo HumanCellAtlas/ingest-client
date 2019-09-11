@@ -165,7 +165,6 @@ class _ImportRegistry:
 
 
 class WorkbookImporter:
-
     def __init__(self, template_mgr):
         self.worksheet_importer = WorksheetImporter(template_mgr)
         self.template_mgr = template_mgr
@@ -188,6 +187,7 @@ class WorkbookImporter:
         workbook_errors = []
         for worksheet in importable_worksheets:
             try:
+                self.sheet_in_schemas(worksheet)
                 metadata_entities, worksheet_errors = self.worksheet_importer.do_import(worksheet)
                 module_field_name = worksheet.get_module_field_name()
                 for error in worksheet_errors:
@@ -212,6 +212,17 @@ class WorkbookImporter:
             e = NoProjectFound()
             workbook_errors.append({"location": "File", "type": e.__class__.__name__, "detail": str(e)})
         return registry.flatten(), workbook_errors
+
+    def sheet_in_schemas(self, worksheet):
+        schemas = self.template_mgr.template.json_schemas
+        concrete_type = self.template_mgr.get_concrete_type(worksheet.title)
+        module_field_name = worksheet.get_module_field_name()
+        for schema in schemas:
+            if schema['name'] == concrete_type:
+                if not worksheet.is_module_tab() or module_field_name in schema['properties']:
+                    return True
+                raise SheetNotFoundInSchemas(worksheet.title)
+        raise SheetNotFoundInSchemas(worksheet.title)
 
 
 class WorksheetImporter:
@@ -264,6 +275,10 @@ class NoProjectFound(Exception):
         message = f'The spreadsheet should be associated to a project.'
         super(NoProjectFound, self).__init__(message)
 
+class SheetNotFoundInSchemas(Exception):
+    def __init__(self, sheet):
+        message = f'The sheet {sheet} was not found in the list of schemas.'
+        super(SheetNotFoundInSchemas, self).__init__(message)
 
 class SchemaRetrievalError(Exception):
     pass
