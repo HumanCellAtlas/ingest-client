@@ -25,12 +25,12 @@ class XlsImporter:
         self.logger = logging.getLogger(__name__)
 
     def dry_run_import_file(self, file_path, project_uuid=None):
-        spreadsheet_json, template_mgr, errors = self._generate_spreadsheet_json(file_path, project_uuid)
+        spreadsheet_json, template_mgr, errors = self.generate_spreadsheet_json(file_path, project_uuid)
         entity_map = self._process_links_from_spreadsheet(template_mgr, spreadsheet_json)
 
         return entity_map
 
-    def _generate_spreadsheet_json(self, file_path, project_uuid=None):
+    def generate_spreadsheet_json(self, file_path, project_uuid=None):
         ingest_workbook = self._create_ingest_workbook(file_path)
 
         try:
@@ -47,7 +47,7 @@ class XlsImporter:
     def import_file(self, file_path, submission_url, project_uuid=None):
         submission = None
         try:
-            spreadsheet_json, template_mgr, errors = self._generate_spreadsheet_json(file_path, project_uuid)
+            spreadsheet_json, template_mgr, errors = self.generate_spreadsheet_json(file_path, project_uuid)
             if not errors:
                 entity_map = self._process_links_from_spreadsheet(template_mgr, spreadsheet_json)
 

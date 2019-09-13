@@ -312,7 +312,7 @@ class ImporterErrors(TestCase):
         exception = Exception('Error thrown for Unit Test')
         exception_json = ImporterError(str(exception)).getJSON()
         importer = XlsImporter(ingest_api=self.mock_ingest_api)
-        importer._generate_spreadsheet_json = MagicMock(side_effect=exception)
+        importer.generate_spreadsheet_json = MagicMock(side_effect=exception)
         importer.logger.error = MagicMock()
 
         # when:

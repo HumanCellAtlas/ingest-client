@@ -113,7 +113,7 @@ class LinkedIdentityCellConversion(CellConversion):
     def apply(self, metadata: MetadataEntity, cell_data):
         if self.main_category is None:
             raise UnknownMainCategory()
-        if cell_data is not None:
+        if cell_data is not None and cell_data != '':
             links = self.converter.convert(cell_data)
             metadata.add_links(self.main_category, links)
 
@@ -125,8 +125,9 @@ class LinkedExternalReferenceCellConversion(CellConversion):
         self.main_category = main_category
 
     def apply(self, metadata: MetadataEntity, cell_data):
-        link_ids = self.converter.convert(cell_data)
-        metadata.add_external_links(self.main_category, link_ids)
+        if cell_data is not None and cell_data != '':
+            links = self.converter.convert(cell_data)
+            metadata.add_external_links(self.main_category, links)
 
 
 class LinkingDetailCellConversion(CellConversion):

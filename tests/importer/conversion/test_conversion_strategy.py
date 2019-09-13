@@ -361,6 +361,30 @@ class LinkedIdentityCellConversionTest(TestCase):
         for expected_id in expected_ids:
             self.assertTrue(expected_id in actual_items, f'[{expected_id}] not in list.')
 
+    def test_apply_with_empty_cell_data(self):
+        # given:
+        cell_conversion = LinkedIdentityCellConversion('item.item_number', 'line_order')
+
+        # and:
+        metadata = MetadataEntity()
+        items = ['item_no_56', 'item_no_199']
+        metadata.add_links('line_order', items)
+
+        # when:
+        cell_conversion.apply(metadata, '')
+
+        # then:
+        actual_items = metadata.get_links('line_order')
+        self.assertEqual(2, len(actual_items))
+
+        # and:
+        expected_ids = [id for id in items]
+
+        for expected_id in expected_ids:
+            self.assertTrue(expected_id in actual_items, f'[{expected_id}] not in list.')
+
+        self.assertFalse('' in actual_items, f" '' should not be in the list.")
+
     def test_apply_no_main_category(self):
         # given:
         cell_conversion = LinkedIdentityCellConversion('product.name', None)
@@ -391,6 +415,19 @@ class LinkedExternalReferenceCellConversionTest(TestCase):
         self.assertIsNotNone(account_list, '[account] list in external links expected.')
         self.assertEqual(1, len(account_list))
         self.assertTrue('621bfa0' in account_list, 'Expected content not in list.')
+
+    def test_apply_with_empty_cell_data(self):
+        # given:
+        cell_conversion = LinkedExternalReferenceCellConversion('user.uuid', 'account')
+
+        # and:
+        metadata = MetadataEntity()
+
+        # when:
+        cell_conversion.apply(metadata, '')
+
+        # then:
+        self.assertFalse(metadata.get_external_links('account'), 'When cell is empty, no external link should be added')
 
     def test_apply_multiple_values(self):
         # given:
