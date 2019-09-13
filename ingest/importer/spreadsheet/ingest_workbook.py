@@ -12,10 +12,10 @@ class IngestWorkbook:
         self.workbook = workbook
 
     def get_worksheet(self, worksheet_title):
-        if worksheet_title in self.workbook.get_sheet_names():
+        if worksheet_title in self.workbook.sheetnames:
             return self.workbook[worksheet_title]
 
-        if worksheet_title.lower() in self.workbook.get_sheet_names():
+        if worksheet_title.lower() in self.workbook.sheetnames:
             return self.workbook[worksheet_title.lower()]
 
         return None
@@ -25,11 +25,11 @@ class IngestWorkbook:
 
         worksheet = None
 
-        if SCHEMAS_WORKSHEET in self.workbook.get_sheet_names():
-            worksheet = self.workbook.get_sheet_by_name(SCHEMAS_WORKSHEET)
+        if SCHEMAS_WORKSHEET in self.workbook.sheetnames:
+            worksheet = self.workbook[SCHEMAS_WORKSHEET]
 
-        if SCHEMAS_WORKSHEET.lower() in self.workbook.get_sheet_names():
-            worksheet = self.workbook.get_sheet_by_name(SCHEMAS_WORKSHEET.lower())
+        if SCHEMAS_WORKSHEET.lower() in self.workbook.sheetnames:
+            worksheet = self.workbook[SCHEMAS_WORKSHEET.lower()]
 
         if not worksheet:
             return schemas

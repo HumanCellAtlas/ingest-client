@@ -173,7 +173,7 @@ class TemplateManagerTest(TestCase):
 
         # and:
         workbook = create_test_workbook('Product - Reviews')
-        reviews_worksheet = workbook.get_sheet_by_name('Product - Reviews')
+        reviews_worksheet = workbook['Product - Reviews']
         reviews_worksheet['A4'] = 'product.info.id'
         reviews_worksheet['B4'] = 'product.reviews.rating'
 
