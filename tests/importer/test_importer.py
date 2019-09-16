@@ -1,13 +1,13 @@
 import os
 from unittest.case import TestCase
 
-from mock import MagicMock, patch
+from mock import MagicMock, patch, Mock
 from openpyxl import Workbook
 
 from ingest.api.ingestapi import IngestApi
 from ingest.importer.conversion.metadata_entity import MetadataEntity
 from ingest.importer.importer import WorksheetImporter, WorkbookImporter, MultipleProjectsFound, \
-    NoProjectFound
+    NoProjectFound, SchemaRetrievalError
 from ingest.importer.importer import XlsImporter
 from ingest.importer.spreadsheet.ingest_workbook import IngestWorkbook, IngestWorksheet
 from ingest.utils.IngestError import ImporterError
@@ -28,6 +28,34 @@ def _create_single_row_worksheet(worksheet_data: dict):
         worksheet[f'{column}6'] = value
 
     return worksheet
+
+
+class XlsImporterTest(TestCase):
+    @patch('ingest.importer.importer.openpyxl')
+    @patch('ingest.importer.importer.WorkbookImporter')
+    @patch('ingest.importer.importer.template_manager')
+    def test_generate_json_success(self, mock_template_manager, mock_wb_importer, mock_openpxl):
+        mock_template_manager.build = MagicMock('template_manager', return_value='template_manager')
+        mock_wb_importer.return_value.do_import = Mock(return_value=({'test': 'output'}, ['errors']))
+        mock_openpxl.load_workbook = MagicMock()
+        ingest_api = MagicMock('ingest_api')
+        importer = XlsImporter(ingest_api)
+        spreadsheet_json, template_manager, errors = importer.generate_json('file_path')
+
+        self.assertEqual(spreadsheet_json, {'test': 'output'}, )
+        self.assertEqual(errors, ['errors'])
+        self.assertEqual(template_manager, 'template_manager')
+
+    @patch('ingest.importer.importer.openpyxl')
+    @patch('ingest.importer.importer.WorkbookImporter')
+    @patch('ingest.importer.importer.template_manager')
+    def test_generate_json_error(self, mock_template_manager, mock_wb_importer, mock_openpxl):
+        mock_template_manager.build = MagicMock('template_manager', side_effect=Exception('test error'))
+        mock_openpxl.load_workbook = MagicMock()
+        ingest_api = MagicMock('ingest_api')
+        importer = XlsImporter(ingest_api)
+        with self.assertRaises(SchemaRetrievalError):
+            importer.generate_json('file_path')
 
 
 class WorkbookImporterTest(TestCase):
