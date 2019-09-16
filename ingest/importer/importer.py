@@ -16,10 +16,12 @@ logging.basicConfig(format=format)
 
 
 class XlsImporter:
+    """
+    XlsImporter is used to convert a contributor's spreadsheet into metadata json entities and to submit those to
+    Ingest. Please see https://github.com/HumanCellAtlas/ingest-central/wiki/Data-Contributors-Spreadsheet-Quick-Guide
+    for more information on the spreadsheet format.
+    """
 
-    # TODO why does the importer need to refer to an IngestApi instance?
-    # Seems like it should be the IngestSubmitter that takes care of this detail
-    # alegria: Submitter is part of the Ingest Importer
     def __init__(self, ingest_api):
         self.ingest_api = ingest_api
         self.logger = logging.getLogger(__name__)
