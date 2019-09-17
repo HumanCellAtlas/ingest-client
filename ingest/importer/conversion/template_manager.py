@@ -180,7 +180,7 @@ class RowTemplate:
                 except Exception as e:
                     row_errors.append({"location": f'cell={index}, value={cell.value}', "type": e.__class__.__name__, "detail": str(e)})
         except Exception as e:
-            row_errors.append({"location": "", "type": e.__class__.__name__, "detail": str(e)})
+            row_errors.append({"type": e.__class__.__name__, "detail": str(e)})
         return metadata, row_errors
 
 

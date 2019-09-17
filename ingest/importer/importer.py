@@ -206,12 +206,7 @@ class WorkbookImporter:
                 self.sheet_in_schemas(worksheet)
                 metadata_entities, worksheet_errors = self.worksheet_importer.do_import(worksheet)
                 module_field_name = worksheet.get_module_field_name()
-                for error in worksheet_errors:
-                    if error["location"]:
-                        error["location"] = f'sheet={worksheet.title}, {error["location"]}'
-                    else:
-                        error["location"] = f'sheet={worksheet.title}'
-                    workbook_errors.append(error)
+                workbook_errors.extend(worksheet_errors)
 
                 if worksheet.is_module_tab():
                     removed_data = registry.add_modules(module_field_name, metadata_entities)
@@ -275,16 +270,20 @@ class WorksheetImporter:
             for index, row in enumerate(rows):
                 metadata, row_errors = row_template.do_import(row)
                 for error in row_errors:
-                    if error["location"]:
-                        error["location"] = f'row={index}, {error["location"]}'
+                    if 'location' in error:
+                        error["location"] = f'sheet={ingest_worksheet.title} row={index}, {error["location"]}'
                     else:
-                        error["location"] = f'row={index}'
+                        error["location"] = f'sheet={ingest_worksheet.title} row={index}'
                     worksheet_errors.append(error)
                 if not metadata.object_id:
                     metadata.object_id = self._generate_id()
                 records.append(metadata)
         except Exception as e:
-            worksheet_errors.append({"location": "", "type": e.__class__.__name__, "detail": str(e)})
+            worksheet_errors.append({
+                "location": f'sheet={ingest_worksheet.title}',
+                "type": e.__class__.__name__,
+                "detail": str(e)
+            })
         return records, worksheet_errors
 
     def _generate_id(self):
