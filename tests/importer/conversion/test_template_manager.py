@@ -347,7 +347,6 @@ class TemplateManagerTest(TestCase):
 
 
 class FakeConversion(CellConversion):
-
     def __init__(self, field):
         self.field = field
 
@@ -355,8 +354,15 @@ class FakeConversion(CellConversion):
         metadata.define_content(self.field, cell_data)
 
 
-class RowTemplateTest(TestCase):
+class BrokenConversion(CellConversion):
+    def __init__(self, field):
+        self.field = field
 
+    def apply(self, metadata, cell_data):
+        raise Exception('Unit Test Error converting cell data.')
+
+
+class RowTemplateTest(TestCase):
     def test_do_import(self):
         # given:
         cell_conversions = [FakeConversion('first_name'), FakeConversion('last_name'),
@@ -417,3 +423,40 @@ class RowTemplateTest(TestCase):
         self.assertEqual(schema_url, result.get_content('describedBy'))
         self.assertEqual('extra field', result.get_content('extra_field'))
         self.assertEqual(errors, [])
+
+    def test_do_import_with_conversion_error(self):
+        # given:
+        cell_conversions = [FakeConversion('first_name'), FakeConversion('last_name'),
+                            BrokenConversion('address.city'), FakeConversion('address.country')]
+        row_template = RowTemplate('user', 'user_profile', cell_conversions)
+        expected_error = {
+            'location': 'column=2, value=Manila',
+            'type': 'Exception',
+            'detail': 'Unit Test Error converting cell data.'
+        }
+
+        # and:
+        workbook = Workbook()
+        worksheet = workbook.create_sheet('profile')
+        worksheet['A1'] = 'Juan'
+        worksheet['B1'] = 'dela Cruz'
+        worksheet['C1'] = 'Manila'
+        worksheet['D1'] = 'Philippines'
+        row = list(worksheet.rows)[0]
+        row = IngestRow('worksheet_title', 0, row)
+
+        # when:
+        result, errors = row_template.do_import(row)
+
+        # then:
+        self.assertIn(expected_error, errors)
+        self.assertIsNotNone(result)
+        self.assertEqual('user', result.domain_type)
+        self.assertEqual('user_profile', result.concrete_type)
+        self.assertEqual('Juan', result.get_content('first_name'))
+        self.assertEqual('dela Cruz', result.get_content('last_name'))
+
+        # and:
+        address = result.get_content('address')
+        self.assertIsNotNone(address)
+        self.assertEqual('Philippines', address.get('country'))
