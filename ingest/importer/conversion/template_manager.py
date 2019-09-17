@@ -158,7 +158,6 @@ def build(schemas, ingest_api) -> TemplateManager:
 
 
 class RowTemplate:
-
     def __init__(self, domain_type, object_type, cell_conversions, default_values={}):
         self.domain_type = domain_type
         self.concrete_type = object_type
@@ -167,20 +166,19 @@ class RowTemplate:
 
     def do_import(self, row: IngestRow):
         row_errors = []
-        metadata = None
-        try:
-            metadata = MetadataEntity(domain_type=self.domain_type, concrete_type=self.concrete_type,
-                                      content=self.default_values, row=row)
-            for index, cell in enumerate(row.values):
-                if cell.value is None:
-                    continue
-                try:
-                    conversion: CellConversion = self.cell_conversions[index]
-                    conversion.apply(metadata, cell.value)
-                except Exception as e:
-                    row_errors.append({"location": f'column={index}, value={cell.value}', "type": e.__class__.__name__, "detail": str(e)})
-        except Exception as e:
-            row_errors.append({"type": e.__class__.__name__, "detail": str(e)})
+        metadata = MetadataEntity(domain_type=self.domain_type, concrete_type=self.concrete_type,
+                                  content=self.default_values, row=row)
+        for index, cell in enumerate(row.values):
+            if cell.value is None:
+                continue
+            try:
+                conversion: CellConversion = self.cell_conversions[index]
+                conversion.apply(metadata, cell.value)
+            except Exception as e:
+                row_errors.append({
+                    "location": f'column={index}, value={cell.value}',
+                    "type": e.__class__.__name__, "detail": str(e)
+                })
         return metadata, row_errors
 
 
