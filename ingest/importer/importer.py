@@ -305,7 +305,7 @@ class NoProjectFound(Exception):
 
 class SheetNotFoundInSchemas(Exception):
     def __init__(self, sheet):
-        message = f'The sheet {sheet} was not found in the list of schemas.'
+        message = f'The sheet named {sheet} was not found in the schema list.'
         super(SheetNotFoundInSchemas, self).__init__(message)
         self.sheet = sheet
 
