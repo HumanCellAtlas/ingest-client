@@ -10,6 +10,7 @@ from ingest.importer.spreadsheet.ingest_workbook import IngestWorkbook
 from ingest.importer.spreadsheet.ingest_worksheet import IngestWorksheet
 from ingest.importer.submission import IngestSubmitter, EntityMap, EntityLinker
 from ingest.utils.IngestError import ImporterError, ParserError
+from ingest.template.exceptions import UnknownKeySchemaException
 
 format = '[%(filename)s:%(lineno)s - %(funcName)20s() ] %(asctime)s - %(name)s - %(levelname)s - %(message)s'
 logging.basicConfig(format=format)
@@ -119,7 +120,8 @@ class _ImportRegistry:
     This is a helper class for managing metadata entities during Workbook import.
     """
 
-    def __init__(self):
+    def __init__(self, template_mgr):
+        self.template_mgr = template_mgr
         self._submittable_registry = {}
         self._module_registry = {}
         self._module_list = []
@@ -150,9 +152,14 @@ class _ImportRegistry:
         self._module_list.append(metadata)
 
     def add_modules(self, metadata_entities, module_field_name):
+        allowed_fields = [module_field_name]
+        allowed_fields.extend(self.template_mgr.default_keys)
+        removed_fields = []
         for entity in metadata_entities:
-            entity.retain_content_fields(module_field_name)
+            removed_fields.extend(entity.list_non_intersecting_fields(allowed_fields))
+            entity.retain_intersecting_fields(module_field_name)
             self.add_module(entity)
+        return removed_fields
 
     def import_modules(self):
         for module_entity in self._module_list:
@@ -180,7 +187,7 @@ class WorkbookImporter:
         self.logger = logging.getLogger(__name__)
 
     def do_import(self, workbook: IngestWorkbook, project_uuid=None):
-        registry = _ImportRegistry()
+        registry = _ImportRegistry(self.template_mgr)
         importable_worksheets = workbook.importable_worksheets()
 
         if project_uuid:
@@ -207,7 +214,8 @@ class WorkbookImporter:
                     workbook_errors.append(error)
 
                 if worksheet.is_module_tab():
-                    registry.add_modules(metadata_entities, module_field_name)
+                    removed_data = registry.add_modules(metadata_entities, module_field_name)
+                    workbook_errors.extend(self.list_data_removal_errors(worksheet.title, removed_data))
                 else:
                     registry.add_submittables(metadata_entities)
             except Exception as e:
@@ -222,14 +230,27 @@ class WorkbookImporter:
 
     def sheet_in_schemas(self, worksheet):
         schemas = self.template_mgr.template.json_schemas
-        concrete_type = self.template_mgr.get_concrete_type(worksheet.title)
+        try:
+            concrete_type = self.template_mgr.get_concrete_type(worksheet.title)
+        except UnknownKeySchemaException as e:
+            raise SheetNotFoundInSchemas(worksheet.title)
         module_field_name = worksheet.get_module_field_name()
         for schema in schemas:
-            if schema['name'] == concrete_type:
-                if not worksheet.is_module_tab() or module_field_name in schema['properties']:
-                    return True
-                raise SheetNotFoundInSchemas(worksheet.title)
+            if 'name' in schema or 'title' in schema:
+                schema_name = schema['name'] if 'name' in schema else schema['title']
+                if schema_name == concrete_type:
+                    if not worksheet.is_module_tab() or module_field_name in schema['properties']:
+                        return True
+                    raise SheetNotFoundInSchemas(worksheet.title)
         raise SheetNotFoundInSchemas(worksheet.title)
+
+    @staticmethod
+    def list_data_removal_errors(sheet, removed_data):
+        errors = []
+        for data in removed_data:
+            e = DataRemoval(data['key'], data['value'])
+            errors.append({"location": f'sheet={sheet}', "type": e.__class__.__name__, "detail": str(e)})
+        return errors
 
 
 class WorksheetImporter:
@@ -287,6 +308,15 @@ class SheetNotFoundInSchemas(Exception):
     def __init__(self, sheet):
         message = f'The sheet {sheet} was not found in the list of schemas.'
         super(SheetNotFoundInSchemas, self).__init__(message)
+        self.sheet = sheet
+
+
+class DataRemoval(Exception):
+    def __init__(self, key, value):
+        message = f'The column header [{key}] was not recognised, the following data has been removed: {value}.'
+        super(DataRemoval, self).__init__(message)
+        self.key = key
+        self.value = value
 
 
 class SchemaRetrievalError(Exception):

@@ -15,6 +15,7 @@ from ingest.template.schema_template import SchemaTemplate
 
 
 class TemplateManager:
+    default_keys = ['describedBy', 'schema_type']
 
     def __init__(self, template: SchemaTemplate, ingest_api: IngestApi):
         self.template = template
@@ -25,8 +26,8 @@ class TemplateManager:
         concrete_entity = self.get_concrete_type(worksheet.title)
         schema = self._get_schema(concrete_entity)
         data_node = DataNode()
-        data_node['describedBy'] = schema['url']
-        data_node['schema_type'] = schema['domain_entity']
+        data_node[self.default_keys[0]] = schema['url']
+        data_node[self.default_keys[1]] = schema['domain_entity']
         return data_node
 
     def create_row_template(self, ingest_worksheet: IngestWorksheet):
@@ -63,8 +64,8 @@ class TemplateManager:
 
     def _define_default_values(self, object_type):
         default_values = {
-            'describedBy': self.get_schema_url(object_type),
-            'schema_type': self.get_domain_type(object_type)
+            self.default_keys[0]: self.get_schema_url(object_type),
+            self.default_keys[1]: self.get_domain_type(object_type)
         }
         return default_values
 

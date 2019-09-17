@@ -86,10 +86,17 @@ class MetadataEntity:
             link_map[link_entity_type] = existent_links
         existent_links.extend(new_links)
 
-    def retain_content_fields(self, *fields):
+    def retain_intersecting_fields(self, *fields):
         for key in self._content.keys():
             if key not in fields:
                 self._content.remove_field(key)
+
+    def list_non_intersecting_fields(self, fields):
+        non_intersecting_fields = []
+        for key in self._content.keys():
+            if key not in fields:
+                non_intersecting_fields.append({'key': key, 'value': self._content[key]})
+        return non_intersecting_fields
 
     def add_module_entity(self, module_entity):
         for field, value in module_entity.content.as_dict().items():

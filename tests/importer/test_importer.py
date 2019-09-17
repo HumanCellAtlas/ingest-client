@@ -92,10 +92,15 @@ class WorkbookImporterTest(TestCase):
                               content={'user_name': 'janedoe'})
         fb_profile = MetadataEntity(concrete_type='sn_profile', domain_type='user', object_id=773,
                                     content={'sn_profiles': {'name': 'facebook', 'id': '392'},
-                                             'description': 'extra field'})
+                                             'description': 'extra fb field'})
         ig_profile = MetadataEntity(concrete_type='sn_profile', domain_type='user', object_id=773,
                                     content={'sn_profiles': {'name': 'instagram', 'id': 'a92'},
-                                             'description': 'extra field'})
+                                             'description': 'extra ig field'})
+        expected_errors = [
+            {'key': 'description', 'value': 'extra fb field'},
+            {'key': 'description', 'value': 'extra ig field'}
+        ]
+
         worksheet_importer.do_import = MagicMock(side_effect=[
             ([project], no_errors),
             ([user], no_errors),
@@ -111,7 +116,7 @@ class WorkbookImporterTest(TestCase):
 
         # then:
         self.assertIsNotNone(spreadsheet_json)
-        self.assertEqual(errors, [])
+        self.assertEqual(errors, workbook_importer.list_data_removal_errors('User - SN Profiles', expected_errors))
         self.assertEqual(2, len(spreadsheet_json))
 
         # and:

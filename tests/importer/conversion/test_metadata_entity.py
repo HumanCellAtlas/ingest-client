@@ -101,7 +101,7 @@ class MetadataEntityTest(TestCase):
         metadata_entity = MetadataEntity(domain_type='user', concrete_type='user', object_id=1,
                                          content=content)
         # when:
-        metadata_entity.retain_content_fields('user_name')
+        metadata_entity.retain_intersecting_fields('user_name')
 
         # then:
         self.assertEqual(['user_name'], list(metadata_entity.content.as_dict().keys()))
