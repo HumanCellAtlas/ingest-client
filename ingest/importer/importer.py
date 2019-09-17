@@ -151,7 +151,7 @@ class _ImportRegistry:
             metadata.object_id = self.project_id
         self._module_list.append(metadata)
 
-    def add_modules(self, metadata_entities, module_field_name):
+    def add_modules(self, module_field_name, metadata_entities):
         allowed_fields = [module_field_name]
         allowed_fields.extend(self.template_mgr.default_keys)
         removed_fields = []
@@ -214,7 +214,7 @@ class WorkbookImporter:
                     workbook_errors.append(error)
 
                 if worksheet.is_module_tab():
-                    removed_data = registry.add_modules(metadata_entities, module_field_name)
+                    removed_data = registry.add_modules(module_field_name, metadata_entities)
                     workbook_errors.extend(self.list_data_removal_errors(worksheet.title, removed_data))
                 else:
                     registry.add_submittables(metadata_entities)
