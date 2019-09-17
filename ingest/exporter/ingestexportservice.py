@@ -9,7 +9,6 @@ from copy import deepcopy
 
 import polling
 import requests
-from hca.util import SwaggerAPIException
 
 import ingest.exporter.bundle
 from ingest.api.dssapi import DssApi, BundleAlreadyExist
