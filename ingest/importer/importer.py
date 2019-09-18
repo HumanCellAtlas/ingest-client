@@ -156,8 +156,8 @@ class _ImportRegistry:
         allowed_fields.extend(self.template_mgr.default_keys)
         removed_fields = []
         for entity in metadata_entities:
-            removed_fields.extend(entity.list_non_intersecting_fields(allowed_fields))
-            entity.retain_intersecting_fields(module_field_name)
+            removed_fields.extend(entity.list_fields(excluded_fields=allowed_fields))
+            entity.retain_fields(module_field_name)
             self.add_module(entity)
         return removed_fields
 
