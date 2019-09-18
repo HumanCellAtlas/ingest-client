@@ -328,7 +328,7 @@ class SchemaTemplate:
         try:
             return self.tab_config.get_key_for_label(label)
         except KeyError:
-            raise UnknownKeySchemaException(f'No key found for [{label}].')
+            raise UnknownKeySchemaException(f'Tab [{label}] is not recognised.')
 
     def _get_level_one(self, key):
         return key.split('.')[0]

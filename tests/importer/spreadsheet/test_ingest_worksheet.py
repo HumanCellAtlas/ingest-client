@@ -10,8 +10,8 @@ class IngestWorksheetTest(TestCase):
     def test_get_title(self):
         # given:
         workbook = create_test_workbook('User', 'User - SN Profiles')
-        user_sheet = workbook.get_sheet_by_name('User')
-        sn_profiles_sheet = workbook.get_sheet_by_name('User - SN Profiles')
+        user_sheet = workbook['User']
+        sn_profiles_sheet = workbook['User - SN Profiles']
 
         # and:
         user = IngestWorksheet(user_sheet)
@@ -139,8 +139,8 @@ class IngestWorksheetTest(TestCase):
     def test_is_module_tab(self):
         # given:
         workbook = create_test_workbook('Product', 'Product - History')
-        product_sheet = workbook.get_sheet_by_name('Product')
-        history_sheet = workbook.get_sheet_by_name('Product - History')
+        product_sheet = workbook['Product']
+        history_sheet = workbook['Product - History']
 
         # and:
         product = IngestWorksheet(product_sheet)
@@ -156,19 +156,19 @@ class IngestWorksheetTest(TestCase):
                                         'Log - file-names', 'Account')
 
         # and: simple
-        reviews_sheet = workbook.get_sheet_by_name('Product - Reviews')
+        reviews_sheet = workbook['Product - Reviews']
         reviews = IngestWorksheet(reviews_sheet)
 
         # and: with space in between
-        sn_profiles_sheet = workbook.get_sheet_by_name('User - SN Profiles')
+        sn_profiles_sheet = workbook['User - SN Profiles']
         sn_profiles = IngestWorksheet(sn_profiles_sheet)
 
         # and: with hyphen
-        file_names_sheet = workbook.get_sheet_by_name('Log - file-names')
+        file_names_sheet = workbook['Log - file-names']
         file_names = IngestWorksheet(file_names_sheet)
 
         # and: not module worksheet
-        account_sheet = workbook.get_sheet_by_name('Account')
+        account_sheet = workbook['Account']
         account = IngestWorksheet(account_sheet)
 
         # expect:

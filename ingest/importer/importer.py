@@ -10,6 +10,7 @@ from ingest.importer.spreadsheet.ingest_workbook import IngestWorkbook
 from ingest.importer.spreadsheet.ingest_worksheet import IngestWorksheet
 from ingest.importer.submission import IngestSubmitter, EntityMap, EntityLinker
 from ingest.utils.IngestError import ImporterError, ParserError
+from ingest.template.exceptions import UnknownKeySchemaException
 
 format = '[%(filename)s:%(lineno)s - %(funcName)20s() ] %(asctime)s - %(name)s - %(levelname)s - %(message)s'
 logging.basicConfig(format=format)
@@ -121,7 +122,8 @@ class _ImportRegistry:
     This is a helper class for managing metadata entities during Workbook import.
     """
 
-    def __init__(self):
+    def __init__(self, template_mgr):
+        self.template_mgr = template_mgr
         self._submittable_registry = {}
         self._module_registry = {}
         self._module_list = []
@@ -142,10 +144,24 @@ class _ImportRegistry:
                 raise MultipleProjectsFound()
         type_map[metadata.object_id] = metadata
 
+    def add_submittables(self, metadata_entities):
+        for entity in metadata_entities:
+            self.add_submittable(entity)
+
     def add_module(self, metadata: MetadataEntity):
         if metadata.domain_type.lower() == 'project':
             metadata.object_id = self.project_id
         self._module_list.append(metadata)
+
+    def add_modules(self, module_field_name, metadata_entities):
+        allowed_fields = [module_field_name]
+        allowed_fields.extend(self.template_mgr.default_keys)
+        removed_fields = []
+        for entity in metadata_entities:
+            removed_fields.extend(entity.list_fields(excluded_fields=allowed_fields))
+            entity.retain_fields(module_field_name)
+            self.add_module(entity)
+        return removed_fields
 
     def import_modules(self):
         for module_entity in self._module_list:
@@ -167,14 +183,13 @@ class _ImportRegistry:
 
 
 class WorkbookImporter:
-
     def __init__(self, template_mgr):
         self.worksheet_importer = WorksheetImporter(template_mgr)
         self.template_mgr = template_mgr
         self.logger = logging.getLogger(__name__)
 
     def do_import(self, workbook: IngestWorkbook, project_uuid=None):
-        registry = _ImportRegistry()
+        registry = _ImportRegistry(self.template_mgr)
         importable_worksheets = workbook.importable_worksheets()
 
         if project_uuid:
@@ -190,23 +205,18 @@ class WorkbookImporter:
         workbook_errors = []
         for worksheet in importable_worksheets:
             try:
+                self.sheet_in_schemas(worksheet)
                 metadata_entities, worksheet_errors = self.worksheet_importer.do_import(worksheet)
                 module_field_name = worksheet.get_module_field_name()
-                for error in worksheet_errors:
-                    if error["location"]:
-                        error["location"] = f'sheet={worksheet.title}, {error["location"]}'
-                    else:
-                        error["location"] = f'sheet={worksheet.title}'
-                    workbook_errors.append(error)
+                workbook_errors.extend(worksheet_errors)
 
-                for entity in metadata_entities:
-                    if worksheet.is_module_tab():
-                        entity.retain_content_fields(module_field_name)
-                        registry.add_module(entity)
-                    else:
-                        registry.add_submittable(entity)
+                if worksheet.is_module_tab():
+                    removed_data = registry.add_modules(module_field_name, metadata_entities)
+                    workbook_errors.extend(self.list_data_removal_errors(worksheet.title, removed_data))
+                else:
+                    registry.add_submittables(metadata_entities)
             except Exception as e:
-                workbook_errors.append({"location": "File", "type": e.__class__.__name__, "detail": str(e)})
+                workbook_errors.append({"location": f'sheet={worksheet.title}', "type": e.__class__.__name__, "detail": str(e)})
 
         if registry.has_project():
             registry.import_modules()
@@ -214,6 +224,30 @@ class WorkbookImporter:
             e = NoProjectFound()
             workbook_errors.append({"location": "File", "type": e.__class__.__name__, "detail": str(e)})
         return registry.flatten(), workbook_errors
+
+    def sheet_in_schemas(self, worksheet):
+        schemas = self.template_mgr.template.json_schemas
+        try:
+            concrete_type = self.template_mgr.get_concrete_type(worksheet.title)
+        except UnknownKeySchemaException as e:
+            raise SheetNotFoundInSchemas(worksheet.title)
+        module_field_name = worksheet.get_module_field_name()
+        for schema in schemas:
+            if 'name' in schema or 'title' in schema:
+                schema_name = schema['name'] if 'name' in schema else schema['title']
+                if schema_name == concrete_type:
+                    if not worksheet.is_module_tab() or module_field_name in schema['properties']:
+                        return True
+                    raise SheetNotFoundInSchemas(worksheet.title)
+        raise SheetNotFoundInSchemas(worksheet.title)
+
+    @staticmethod
+    def list_data_removal_errors(sheet, removed_data):
+        errors = []
+        for data in removed_data:
+            e = DataRemoval(data['key'], data['value'])
+            errors.append({"location": f'sheet={sheet}', "type": e.__class__.__name__, "detail": str(e)})
+        return errors
 
 
 class WorksheetImporter:
@@ -238,16 +272,20 @@ class WorksheetImporter:
             for index, row in enumerate(rows):
                 metadata, row_errors = row_template.do_import(row)
                 for error in row_errors:
-                    if error["location"]:
-                        error["location"] = f'row={index}, {error["location"]}'
+                    if 'location' in error:
+                        error["location"] = f'sheet={ingest_worksheet.title} row={index}, {error["location"]}'
                     else:
-                        error["location"] = f'row={index}'
+                        error["location"] = f'sheet={ingest_worksheet.title} row={index}'
                     worksheet_errors.append(error)
                 if not metadata.object_id:
                     metadata.object_id = self._generate_id()
                 records.append(metadata)
         except Exception as e:
-            worksheet_errors.append({"location": "", "type": e.__class__.__name__, "detail": str(e)})
+            worksheet_errors.append({
+                "location": f'sheet={ingest_worksheet.title}',
+                "type": e.__class__.__name__,
+                "detail": str(e)
+            })
         return records, worksheet_errors
 
     def _generate_id(self):
@@ -265,6 +303,21 @@ class NoProjectFound(Exception):
     def __init__(self):
         message = f'The spreadsheet should be associated to a project.'
         super(NoProjectFound, self).__init__(message)
+
+
+class SheetNotFoundInSchemas(Exception):
+    def __init__(self, sheet):
+        message = f'The sheet named {sheet} was not found in the schema list.'
+        super(SheetNotFoundInSchemas, self).__init__(message)
+        self.sheet = sheet
+
+
+class DataRemoval(Exception):
+    def __init__(self, key, value):
+        message = f'The column header [{key}] was not recognised, the following data has been removed: {value}.'
+        super(DataRemoval, self).__init__(message)
+        self.key = key
+        self.value = value
 
 
 class SchemaRetrievalError(Exception):
