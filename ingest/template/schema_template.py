@@ -134,7 +134,7 @@ class SchemaTemplate:
         return metadata_schema_objs
 
     def populate_schema_from_metadata_schema_and_property_migrations(self):
-        """ Parse and load the metadata schemas and respective property migrations into the schema via the
+        """ Parse and from_file the metadata schemas and respective property migrations into the schema via the
         SchemaParser.
         """
 

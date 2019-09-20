@@ -324,7 +324,7 @@ class Submission(object):
                 raise
         return entity
 
-    def _create_entity(self, entity, uuid=None):
+    def _create_entity(self, entity: Entity, uuid=None):
         link_name = self.ENTITY_LINK[entity.type]
 
         # TODO: how to get filename?!!!

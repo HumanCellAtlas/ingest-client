@@ -1,16 +1,13 @@
 import logging
 
-import openpyxl
-from openpyxl import load_workbook
-
 from ingest.importer.conversion import template_manager
 from ingest.importer.conversion.metadata_entity import MetadataEntity
 from ingest.importer.conversion.template_manager import TemplateManager
 from ingest.importer.spreadsheet.ingest_workbook import IngestWorkbook
 from ingest.importer.spreadsheet.ingest_worksheet import IngestWorksheet
-from ingest.importer.submission import IngestSubmitter, EntityMap, EntityLinker
-from ingest.utils.IngestError import ImporterError, ParserError
+from ingest.importer.submission import IngestSubmitter, EntityMap, EntityLinker, Submission
 from ingest.template.exceptions import UnknownKeySchemaException
+from ingest.utils.IngestError import ImporterError, ParserError
 
 format = '[%(filename)s:%(lineno)s - %(funcName)20s() ] %(asctime)s - %(name)s - %(levelname)s - %(message)s'
 logging.basicConfig(format=format)
@@ -27,14 +24,8 @@ class XlsImporter:
         self.ingest_api = ingest_api
         self.logger = logging.getLogger(__name__)
 
-    def dry_run_import_file(self, file_path, project_uuid=None):
-        spreadsheet_json, template_mgr, errors = self.generate_json(file_path, project_uuid)
-        entity_map = self._process_links_from_spreadsheet(template_mgr, spreadsheet_json)
-
-        return entity_map
-
     def generate_json(self, file_path, project_uuid=None):
-        ingest_workbook = self._create_ingest_workbook(file_path)
+        ingest_workbook = IngestWorkbook.from_file(file_path)
 
         try:
             template_mgr = template_manager.build(ingest_workbook.get_schemas(), self.ingest_api)
@@ -63,7 +54,8 @@ class XlsImporter:
         except Exception as e:
             self.ingest_api.create_submission_error(submission_url, ImporterError(str(e)).getJSON())
             self.logger.error(str(e), exc_info=True)
-        return submission
+        else:
+            return submission, template_mgr
 
     def report_errors(self, submission_url, errors):
         self.logger.info(f'Logged {len(errors)} ParsingErrors.', exc_info=False)
@@ -73,44 +65,21 @@ class XlsImporter:
                 ParserError(error["location"], error["type"], error["detail"]).getJSON()
             )
 
-    def insert_uuids(self, submission, file_path):
-        if not submission:
-            return
-
-        wb = load_workbook(filename=file_path)
-
-        worksheets = {}
-        col_idx = 1
-        for entity in submission.get_entities():
-            if entity.spreadsheet_location:
-                worksheet_title = entity.spreadsheet_location.get('worksheet_title')
-                row_index = entity.spreadsheet_location.get('row_index')
-
-                if not worksheets.get(worksheet_title):
-                    worksheet = wb.get_sheet_by_name(worksheet_title)
-                    ingest_worksheet = IngestWorksheet(worksheet=worksheet)
-                    column_header = f'{entity.concrete_type}.uuid'
-                    if column_header in ingest_worksheet.get_column_headers():
-                        continue
-                    ingest_worksheet.insert_column_with_header(column_header, col_idx)
-                    worksheets[worksheet_title] = ingest_worksheet
-
-                ingest_worksheet = worksheets.get(worksheet_title)
-                ingest_worksheet.cell(row=row_index, column=col_idx).value = entity.uuid
-
-        return wb.save(file_path)
-
-    @staticmethod
-    def _create_ingest_workbook(file_path):
-        workbook = openpyxl.load_workbook(filename=file_path, read_only=True)
-        return IngestWorkbook(workbook)
-
     @staticmethod
     def _process_links_from_spreadsheet(template_mgr, spreadsheet_json):
         entity_map = EntityMap.load(spreadsheet_json)
         entity_linker = EntityLinker(template_mgr)
         entity_map = entity_linker.process_links_from_spreadsheet(entity_map)
         return entity_map
+
+    @staticmethod
+    def create_update_spreadsheet(submission: Submission, template_mgr: TemplateManager, file_path):
+        if not submission:
+            return
+        wb = IngestWorkbook.from_file(file_path, read_only=False)
+        wb.add_entity_uuids(submission)
+        wb.add_schemas_worksheet(template_mgr.get_schemas())
+        return wb.save(file_path)
 
 
 _PROJECT_ID = 'project_0'
@@ -216,7 +185,8 @@ class WorkbookImporter:
                 else:
                     registry.add_submittables(metadata_entities)
             except Exception as e:
-                workbook_errors.append({"location": f'sheet={worksheet.title}', "type": e.__class__.__name__, "detail": str(e)})
+                workbook_errors.append(
+                    {"location": f'sheet={worksheet.title}', "type": e.__class__.__name__, "detail": str(e)})
 
         if registry.has_project():
             registry.import_modules()

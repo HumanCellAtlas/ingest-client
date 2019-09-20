@@ -144,6 +144,9 @@ class TemplateManager:
 
         return spec
 
+    def get_schemas(self):
+        return self.template.metadata_schema_urls
+
 
 def build(schemas, ingest_api) -> TemplateManager:
     template = None
