@@ -15,9 +15,9 @@ class VanillaSpreadsheetBuilder(SpreadsheetBuilder):
         super(VanillaSpreadsheetBuilder, self).create_initial_spreadsheet(output_file, hide_row)
 
     def build(self, spreadsheet_tabs_template):
-        tabs = spreadsheet_tabs_template.tab_config
+        tabs = spreadsheet_tabs_template.tabs
 
-        for tab in tabs.lookup("tabs"):
+        for tab in tabs:
             for tab_name, detail in tab.items():
 
                 worksheet = self.spreadsheet.add_worksheet(detail["display_name"])
@@ -70,9 +70,7 @@ class VanillaSpreadsheetBuilder(SpreadsheetBuilder):
                     if column_index == 0:
                         worksheet.set_row(0, 30)
                         worksheet.set_row(4, 30)
-
                         worksheet.write(4, column_index, "FILL OUT INFORMATION BELOW THIS ROW", self.header_format)
-
                     else:
                         worksheet.write(4, column_index, '', self.header_format)
 

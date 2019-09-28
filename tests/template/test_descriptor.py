@@ -230,3 +230,58 @@ class TestDescriptor(unittest.TestCase):
         }
         expected_dictionary_representation.update(expected_top_level_schema_properties)
         self.assertEqual(descriptor.get_dictionary_representation_of_descriptor(), expected_dictionary_representation)
+
+    def test__complex_identifiable_property_descriptor__success(self):
+        top_level_metadata_schema_url = "https://schema.humancellatlas.org/module/biomaterial/2.0.2/timecourse"
+        sample_complex_metadata_schema_json = {
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "$id": top_level_metadata_schema_url,
+            "description": "Information relating to a timecourse.",
+            "required": [
+                "value"
+            ],
+            "type": "object",
+            "properties": {
+                "protocol_id": {
+                    "description": "A random id.",
+                    "type": "string",
+                    "user_friendly": "Protocol Id"
+                },
+                "value": {
+                    "description": "The numerical value in Timecourse unit",
+                    "pattern": "^[0-9]+\\.?[0-9]*-?[0-9]*\\.?[0-9]*$",
+                    "type": "string",
+                    "example": "2; 5.5-10.5",
+                    "user_friendly": "Timecourse value",
+                    "guidelines": "Enter either a single value or a range of values. Indicate a range using a hyphen."
+                }
+            }
+        }
+
+        descriptor = ComplexPropertyDescriptor(sample_complex_metadata_schema_json)
+
+        expected_top_level_schema_descriptor = {
+            "high_level_entity": "module", "domain_entity": "biomaterial", "module": "timecourse", "version": "2.0.2",
+            "url": top_level_metadata_schema_url
+        }
+        expected_top_level_schema_properties = {
+            "description": "Information relating to a timecourse.", "value_type": "object", "multivalue": False,
+            "external_reference": False, "required": False, "identifiable": False
+        }
+        expected_child_property_id_descriptor = {
+            "description": "A random id.", "value_type": "string",
+            "multivalue": False, "external_reference": False, "user_friendly": "Protocol Id", "required": False,
+            "identifiable": True
+        }
+        expected_child_property_value_descriptor = {
+            "description": "The numerical value in Timecourse unit", "value_type": "string", "example": "2; 5.5-10.5",
+            "multivalue": False, "external_reference": False, "user_friendly": "Timecourse value",
+            "guidelines": "Enter either a single value or a range of values. Indicate a range using a hyphen.",
+            "required": True, "identifiable": False
+        }
+        expected_dictionary_representation = {
+            "schema": expected_top_level_schema_descriptor, "protocol_id": expected_child_property_id_descriptor,
+            "value": expected_child_property_value_descriptor, "required_properties": ["value"]
+        }
+        expected_dictionary_representation.update(expected_top_level_schema_properties)
+        self.assertEqual(descriptor.get_dictionary_representation_of_descriptor(), expected_dictionary_representation)

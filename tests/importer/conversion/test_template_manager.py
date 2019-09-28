@@ -1,9 +1,9 @@
 from unittest import TestCase
 
-from mock import MagicMock, patch, call
+from mock import MagicMock, patch
 from openpyxl import Workbook
 
-from ingest.importer.conversion import conversion_strategy, column_specification
+from ingest.importer.conversion import conversion_strategy
 from ingest.importer.conversion.conversion_strategy import CellConversion
 from ingest.importer.conversion.template_manager import TemplateManager, RowTemplate, InvalidTabName
 from ingest.importer.data_node import DataNode
@@ -27,7 +27,8 @@ class TemplateManagerTest(TestCase):
     def test_create_template_node(self):
         # given:
         schema_template = MagicMock(name='schema_template')
-        schema_template.get_tab_key = MagicMock(return_value='concrete_entity')
+        schema_template.lookup_metadata_schema_name_given_title = MagicMock(
+            return_value='concrete_entity')
 
         schema_url = 'https://schema.humancellatlas.org/type/biomaterial/5.1.0/donor_organsim'
 
@@ -40,7 +41,7 @@ class TemplateManagerTest(TestCase):
             }
         }
 
-        schema_template.lookup = lambda key: lookup_map.get(key)
+        schema_template.lookup_property_attributes_in_metadata = lambda key: lookup_map.get(key)
 
         ingest_api = MagicMock(name='mock_ingest_api')
 
@@ -60,27 +61,40 @@ class TemplateManagerTest(TestCase):
         self.assertEqual('biomaterial', data.get('schema_type'))
 
     # TODO move the logic of creating the column spec to SchemaTemplate
-    @patch.object(column_specification, 'look_up')
     @patch.object(conversion_strategy, 'determine_strategy')
-    def test_create_row_template(self, determine_strategy, look_up):
+    def test_create_row_template(self, determine_strategy):
         # given:
         template = MagicMock(name='schema_template')
         ingest_api = MagicMock(name='mock_ingest_api')
 
         # and:
-        concrete_type = 'user'
-        template.get_tab_key = MagicMock(return_value=concrete_type)
-
-        # and:
-        spec_map = {
-            'user': {'schema': {'domain_entity': 'main_category/subdomain'}}
+        concrete_type = "user"
+        domain_entity = "main_category/subdomain"
+        schema_url = "http://schema.sample.com/main_category"
+        template.get_tabs_config = MagicMock()
+        template.lookup_metadata_schema_name_given_title = MagicMock(return_value=concrete_type)
+        template.get_latest_schema = MagicMock(return_value=schema_url)
+        schema = {
+            "schema": {
+                "domain_entity": domain_entity,
+                "url": schema_url
+            }
         }
-        template.lookup = lambda key: spec_map.get(key, None)
+        property_one_schema = {
+            "description": "Property one description",
+            "value_type": "string"
+        }
+        property_two_schema = {
+            "description": "Property two description",
+            "value_type": "string"
+        }
+        spec_map = {
+            concrete_type: schema,
+            "user.profile.first_name": property_one_schema,
+            "user.numbers": property_two_schema
 
-        # and: set up column spec
-        name_column_spec = MagicMock(name='name_column_spec')
-        numbers_column_spec = MagicMock(name='numbers_column_spec')
-        look_up.side_effect = [name_column_spec, numbers_column_spec]
+        }
+        template.lookup_property_attributes_in_metadata = lambda key: spec_map.get(key)
 
         # and:
         name_strategy = MagicMock('name_strategy')
@@ -92,7 +106,7 @@ class TemplateManagerTest(TestCase):
         workbook = Workbook()
         worksheet = workbook.create_sheet('sample')
         worksheet[f'A{header_row_idx}'] = 'user.profile.first_name'
-        worksheet[f'B{header_row_idx}'] = 'numbers'
+        worksheet[f'B{header_row_idx}'] = 'user.numbers'
 
         ingest_worksheet = IngestWorksheet(worksheet, header_row_idx=header_row_idx)
 
@@ -101,13 +115,7 @@ class TemplateManagerTest(TestCase):
         row_template: RowTemplate = template_manager.create_row_template(ingest_worksheet)
 
         # then:
-        expected_calls = [
-            call(template, 'user.profile.first_name', concrete_type, context=concrete_type,
-                 order_of_occurrence=1),
-            call(template, 'numbers', concrete_type, context=concrete_type, order_of_occurrence=1)
-        ]
-        look_up.assert_has_calls(expected_calls)
-        determine_strategy.assert_has_calls([call(name_column_spec), call(numbers_column_spec)])
+        self.assertEqual(determine_strategy.call_count, 2)
 
         # and:
         self.assertIsNotNone(row_template)
@@ -117,20 +125,36 @@ class TemplateManagerTest(TestCase):
         self.assertTrue(name_strategy in row_template.cell_conversions)
         self.assertTrue(numbers_strategy in row_template.cell_conversions)
 
-    @patch.object(column_specification, 'look_up')
     @patch.object(conversion_strategy, 'determine_strategy')
-    def test_create_row_template_with_default_values(self, determine_strategy, look_up):
+    def test_create_row_template_with_default_values(self, determine_strategy):
         # given:
         schema_template = MagicMock('schema_template')
         ingest_api = MagicMock(name='mock_ingest_api')
 
         # and:
-        schema_url = 'http://schema.sample.com/profile'
-        self._mock_schema_lookup(schema_template, schema_url=schema_url, main_category='profile',
-                                 object_type='profile_type')
+        domain_entity = "profile/profile_type"
+        schema_url = "http://schema.sample.com/profile"
+        schema_template.get_tabs_config = MagicMock()
+        schema_template.lookup_metadata_schema_name_given_title = MagicMock(
+            return_value="profile_type")
+        schema_template.get_latest_schema = MagicMock(return_value=schema_url)
+        schema = {
+            "schema": {
+                "domain_entity": domain_entity,
+                "url": schema_url
+            }
+        }
+        property_schema = {
+            "description": "Property description",
+            "value_type": "string"
+        }
+        spec_map = {
+            "profile_type": schema,
+            "profile.name": property_schema
+        }
+        schema_template.lookup_property_attributes_in_metadata = lambda key: spec_map.get(key)
 
         # and:
-        look_up.return_value = MagicMock('column_spec')
         determine_strategy.return_value = FakeConversion('')
 
         # and:
@@ -150,23 +174,44 @@ class TemplateManagerTest(TestCase):
         self.assertEqual(schema_url, content_defaults.get('describedBy'))
         self.assertEqual('profile', content_defaults.get('schema_type'))
 
-    @patch.object(column_specification, 'look_up')
     @patch.object(conversion_strategy, 'determine_strategy')
-    def test_create_row_template_for_module_worksheet(self, determine_strategy, look_up):
+    def test_create_row_template_for_module_worksheet(self, determine_strategy):
         # given:
         template = MagicMock(name='schema_template')
         ingest_api = MagicMock(name='mock_ingest_api')
-
-        # TODO define method in SchemaTemplate that returns domain and concrete types #module-tabs
-        # and:
-        concrete_type = 'product'
-        template.get_tab_key = MagicMock(return_value=concrete_type)
 
         # and:
         spec_map = {
             'product': {'schema': {'domain_entity': 'merchandise/product'}}
         }
-        template.lookup = lambda key: spec_map.get(key, None)
+        template.lookup_property_attributes_in_metadata = lambda key: spec_map.get(key, None)
+
+        domain_entity = "merchandise/product"
+        schema_url = "http://schema.sample.com/product"
+        template.get_tabs_config = MagicMock()
+        template.lookup_metadata_schema_name_given_title = MagicMock(
+            return_value="product_type")
+        template.get_latest_schema = MagicMock(return_value=schema_url)
+        schema = {
+            "schema": {
+                "domain_entity": domain_entity,
+                "url": schema_url
+            }
+        }
+        property_one_schema = {
+            "description": "Property one description",
+            "value_type": "string"
+        }
+        property_two_schema = {
+            "description": "Property two description",
+            "value_type": "string"
+        }
+        spec_map = {
+            "product_type": schema,
+            "product.info.id": property_one_schema,
+            "product.reviews.rating": property_two_schema
+        }
+        template.lookup_property_attributes_in_metadata = lambda key: spec_map.get(key)
 
         # and:
         template_mgr = TemplateManager(template, ingest_api)
@@ -177,29 +222,13 @@ class TemplateManagerTest(TestCase):
         reviews_worksheet['A4'] = 'product.info.id'
         reviews_worksheet['B4'] = 'product.reviews.rating'
 
-        # and: set up dummy look up results
-        id_spec = MagicMock(name='id_spec')
-        rating_spec = MagicMock(name='rating_spec')
-        look_up.side_effect = [id_spec, rating_spec]
-
         # and: set up strategies
         id_strategy = MagicMock(name='id_strategy')
         rating_strategy = MagicMock(name='rating_strategy')
-        determine_strategy.side_effect = {
-            id_spec: id_strategy, rating_spec: rating_strategy
-        }.get
+        determine_strategy.side_effect = [id_strategy, rating_strategy]
 
         # when:
         row_template = template_mgr.create_row_template(IngestWorksheet(reviews_worksheet))
-
-        # then:
-        expected_calls = [
-            call(template, 'product.info.id', concrete_type, order_of_occurrence=1,
-                 context='product.reviews'),
-            call(template, 'product.reviews.rating', concrete_type, order_of_occurrence=1,
-                 context='product.reviews')
-        ]
-        look_up.assert_has_calls(expected_calls)
 
         # and:
         self.assertIsNotNone(row_template)
@@ -235,7 +264,8 @@ class TemplateManagerTest(TestCase):
     @staticmethod
     def _mock_schema_lookup(schema_template, schema_url='', object_type='', main_category=None):
         schema_template.get_tabs_config = MagicMock()
-        schema_template.get_tab_key = MagicMock(return_value=object_type)
+        schema_template.lookup_metadata_schema_name_given_title = MagicMock(
+            return_value=object_type)
         schema_template.get_latest_schema = MagicMock(return_value=schema_url)
 
         domain_entity = f'{main_category}/{object_type}' if main_category else object_type
@@ -246,7 +276,7 @@ class TemplateManagerTest(TestCase):
         spec_map = {
             object_type: schema
         }
-        schema_template.lookup = lambda key: spec_map.get(key)
+        schema_template.lookup_property_attributes_in_metadata = lambda key: spec_map.get(key)
 
     def test_get_schema_type(self):
         # given
@@ -261,7 +291,8 @@ class TemplateManagerTest(TestCase):
                 'url': 'https://schema.humancellatlas.org/type/biomaterial/5.0.0/donor_organism'
             }
         }
-        schema_template.lookup = MagicMock(name='lookup', return_value=spec)
+        schema_template.lookup_property_attributes_in_metadata = MagicMock(
+            name='lookup_property_attributes_in_metadata', return_value=spec)
         template_manager = TemplateManager(schema_template, ingest_api)
 
         # when:
@@ -272,9 +303,9 @@ class TemplateManagerTest(TestCase):
 
     def test_get_schema_url(self):
         # given
+        latest_url = 'https://schema.humancellatlas.org/type/biomaterial/5.0.0/donor_organism'
         schema_template = MagicMock(name='schema_template')
         ingest_api = MagicMock(name='mock_ingest_api')
-        latest_url = 'https://schema.humancellatlas.org/type/biomaterial/5.0.0/donor_organism'
 
         spec = {
             'schema': {
@@ -285,7 +316,8 @@ class TemplateManagerTest(TestCase):
             }
         }
 
-        schema_template.lookup = MagicMock(name='lookup', return_value=spec)
+        schema_template.lookup_property_attributes_in_metadata = MagicMock(
+            name='lookup_property_attributes_in_metadata', return_value=spec)
         template_manager = TemplateManager(schema_template, ingest_api)
         template_manager.get_latest_schema_url = MagicMock(return_value=latest_url)
 
@@ -298,24 +330,25 @@ class TemplateManagerTest(TestCase):
     def test_get_concrete_type_of_regular_worksheet(self):
         # given
         schema_template = MagicMock(name='schema_template')
-        schema_template.get_tab_key = MagicMock(return_value='user_profile')
+        schema_template.lookup_metadata_schema_name_given_title = MagicMock(
+            return_value='user_profile')
         manager = TemplateManager(schema_template, MagicMock(name='mock_ingest_api'))
 
         # expect:
         self.assertEqual('user_profile', manager.get_concrete_type('User Profile'))
-        schema_template.get_tab_key.assert_called_with('User Profile')
+        schema_template.lookup_metadata_schema_name_given_title.assert_called_with('User Profile')
 
     def test_get_concrete_type_of_module_worksheet(self):
         # given:
         schema_template = MagicMock(name='schema_template')
-        schema_template.get_tab_key = MagicMock(return_value='product')
+        schema_template.lookup_metadata_schema_name_given_title = MagicMock(return_value='product')
         manager = TemplateManager(schema_template, MagicMock(name='mock_ingest_api'))
 
         # expect:
         self.assertEqual('product', manager.get_concrete_type('Product - Barcodes'))
 
         # and:
-        schema_template.get_tab_key.assert_called_with('Product')
+        schema_template.lookup_metadata_schema_name_given_title.assert_called_with('Product')
 
     def test_get_concrete_type_of_worksheet_invalid_format(self):
         # given:
@@ -337,7 +370,7 @@ class TemplateManagerTest(TestCase):
         # given:
         template = MagicMock(name='schema_template')
         schema_spec = {'schema': {'domain_entity': 'user/profile'}}
-        template.lookup = MagicMock(return_value=schema_spec)
+        template.lookup_property_attributes_in_metadata = MagicMock(return_value=schema_spec)
 
         # and:
         template_manager = TemplateManager(template, MagicMock(name='mock_ingest_api'))

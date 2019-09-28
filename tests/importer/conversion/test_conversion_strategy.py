@@ -4,15 +4,11 @@ from mock import MagicMock
 
 from ingest.importer.conversion import conversion_strategy
 from ingest.importer.conversion.column_specification import ColumnSpecification, ConversionType
-from ingest.importer.conversion.conversion_strategy import \
-    DirectCellConversion, \
-    ListElementCellConversion, CellConversion, IdentityCellConversion, \
-    LinkedIdentityCellConversion, \
-    DoNothing, LinkedExternalReferenceCellConversion, \
-    LinkingDetailCellConversion, \
-    FieldOfSingleElementListCellConversion, ExternalReferenceCellConversion
-from ingest.importer.conversion.data_converter import StringConverter, \
-    ListConverter
+from ingest.importer.conversion.conversion_strategy import DirectCellConversion, ListElementCellConversion, \
+    CellConversion, IdentityCellConversion, LinkedIdentityCellConversion, DoNothing, \
+    LinkedExternalReferenceCellConversion, LinkingDetailCellConversion, FieldOfSingleElementListCellConversion, \
+    ExternalReferenceCellConversion
+from ingest.importer.conversion.data_converter import StringConverter, ListConverter
 from ingest.importer.conversion.exceptions import UnknownMainCategory
 from ingest.importer.conversion.metadata_entity import MetadataEntity
 

@@ -4,13 +4,10 @@ SPLIT_FIELD_PATTERN = re.compile(r'^(?P<parent>\w*(\.\w*)*)\.(?P<target>\w*)$')
 
 
 def split_field_chain(field):
-    parent_path = ''
-    target_field = field
-
     match = SPLIT_FIELD_PATTERN.search(field)
-    if match:
-        parent_path = match.group('parent')
-        target_field = match.group('target')
+
+    parent_path = match.group('parent') if match else ''
+    target_field = match.group('target') if match else field
 
     return parent_path, target_field
 

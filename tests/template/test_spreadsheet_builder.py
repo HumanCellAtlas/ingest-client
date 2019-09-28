@@ -4,6 +4,8 @@ Description goes here
 """
 import os
 
+from ingest.template.new_schema_template import NewSchemaTemplate
+
 __author__ = "jupp"
 __license__ = "Apache 2.0"
 __date__ = "25/05/2018"
@@ -11,7 +13,6 @@ __date__ = "25/05/2018"
 from unittest import TestCase
 from ingest.template.vanilla_spreadsheet_builder import VanillaSpreadsheetBuilder
 import unittest
-import tests.template.schema_mock_utils as schema_mock
 from openpyxl import load_workbook as Reader
 
 
@@ -23,20 +24,20 @@ class TestSchemaTemplate(TestCase):
         self.donorUri = "https://schema.humancellatlas.org/type/biomaterial/5.1.0/donor_organism"
 
     def test_no_schemas(self):
-        data = \
-            f'''{{
-                "id" : "{self.donorUri}",
-                "properties": {{
-                    "foo_bar": {{
-                        "user_friendly" : "Foo bar",
-                        "description" : "this is a foo bar", "example" : "e.g. foo"
-                    }}
-                }}
-            }}'''
+        data = {
+            "id": self.donorUri,
+            "properties": {
+                "foo_bar": {
+                    "user_friendly": "Foo bar",
+                    "description": "this is a foo bar",
+                    "example": "e.g. foo"
+                }
+            }
+        }
 
         file = "foo.xlsx"
         spreadsheet_builder = VanillaSpreadsheetBuilder(file)
-        template = schema_mock.get_template_for_json(data=data)
+        template = NewSchemaTemplate(json_schema_docs=[data], property_migrations=[])
         spreadsheet_builder.build(template)
         spreadsheet_builder.save_spreadsheet()
 

@@ -7,6 +7,7 @@ from ingest.api.ingestapi import IngestApi
 from .exceptions import RootSchemaException, UnknownKeySchemaException
 from .migration_parser import MigrationParser
 from .new_schema_parser import NewSchemaParser
+from .tab_config import TabConfig
 
 
 class NewSchemaTemplate():
@@ -98,7 +99,7 @@ class NewSchemaTemplate():
 
         self.migrations = MigrationParser(self.property_migrations).migrations
 
-        self.spreadsheet_configuration = tab_config  # TODO
+        self.spreadsheet_configuration = tab_config if tab_config else TabConfig(self.get_dictionary_representation())
 
     def get_dictionary_representation(self):
         return {
@@ -110,6 +111,9 @@ class NewSchemaTemplate():
             "migrations": MigrationParser.get_dictionary_representation(self.migrations)
         }
 
+    def get_list_of_schema_spreadsheet_representations(self):
+        return self.tabs
+
     def lookup_property_attributes_in_metadata(self, property_key):
         """
         Given a property key which details the full path to the property from the top level schema, returns a dictionary
@@ -120,6 +124,22 @@ class NewSchemaTemplate():
         """
 
         return self._lookup_fully_qualified_key_path_in_dictionary(property_key, self.meta_data_properties)
+
+    def lookup_metadata_schema_name_given_title(self, tab_display_name):
+        """
+        Given a tab's display name which is often used to label a column in a spreadsheet that represents a property of
+        a schema, return the fully qualified path that is the equivalent key (the key can then be used to fetch
+        additional attributes about the property).
+
+        :param tab_display_name: A string representing a display name of a schema property.
+        :return: A string representing the display name's fully qualified path from a schema.
+        """
+
+        try:
+            return self.tab_config.get_key_for_label(tab_display_name)
+        except KeyError:
+            raise UnknownKeySchemaException(
+                f"ERROR: Was unable to find a fully qualified path (key) with the display name {tab_display_name}.")
 
     def lookup_next_latest_key_migration(self, fully_qualified_key):
         """

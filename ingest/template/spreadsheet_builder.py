@@ -1,7 +1,7 @@
 import xlsxwriter
 
 from ingest.template.tab_config import TabConfig
-from .schema_template import SchemaTemplate
+from .new_schema_template import NewSchemaTemplate
 
 DEFAULT_INGEST_URL = "http://api.ingest.data.humancellatlas.org"
 DEFAULT_SCHEMAS_ENDPOINT = "/schemas/search/latestSchemas"
@@ -54,11 +54,11 @@ class SpreadsheetBuilder():
         if tabs_template and schema_urls:
             tabs_parser = TabConfig()
             tabs = tabs_parser.load(tabs_template)
-            template = SchemaTemplate(metadata_schema_urls=schema_urls, tab_config=tabs)
+            template = NewSchemaTemplate(metadata_schema_urls=schema_urls, tab_config=tabs)
         elif schema_urls:
-            template = SchemaTemplate(metadata_schema_urls=schema_urls, migrations_url=DEFAULT_MIGRATIONS_URL)
+            template = NewSchemaTemplate(metadata_schema_urls=schema_urls, migrations_url=DEFAULT_MIGRATIONS_URL)
         else:
-            template = SchemaTemplate()
+            template = NewSchemaTemplate()
 
         self.build(template)
 
@@ -67,11 +67,12 @@ class SpreadsheetBuilder():
         property exists so capture the exception and return an empty string if no property exists for the given column
         and template."""
         try:
-            value = template.lookup(column_name + "." + property)
+            value = template.lookup_property_attributes_in_metadata(column_name + "." + property)
             return str(value) if value else ""
         except Exception:
             try:
-                value = template.lookup(column_name.replace('.text', '') + "." + property)
+                value = template.lookup_property_attributes_in_metadata(
+                    column_name.replace('.text', '') + "." + property)
             except Exception:
                 print("No property " + property + " for " + column_name)
                 return ""
@@ -90,18 +91,20 @@ class SpreadsheetBuilder():
             key = column_name + ".user_friendly"
 
         try:
-            uf = str(template.lookup(key)) if template.lookup(key) else column_name
+            uf = str(template.lookup_property_attributes_in_metadata(
+                key)) if template.lookup_property_attributes_in_metadata(key) else column_name
 
             # **TO DO:** If customisable user friendly names are ever implemented in the metadata schemas,
             # remove the customisation code below
             # For any purchased_reagents or barcode module imports that aren't arrays, prepend each user friendly
             # name with the name of the wrapper property
             wrapper = ".".join(column_name.split(".")[:-1])
-            if template.lookup(wrapper)['schema']['module'] \
-                    and (template.lookup(wrapper)['schema']['module'] == 'purchased_reagents'
-                         or template.lookup(wrapper)['schema']['module'] == 'barcode') \
-                    and not template.lookup(wrapper)['multivalue']:
-                uf = template.lookup(wrapper)['user_friendly'] + " - " + uf
+            if template.lookup_property_attributes_in_metadata(wrapper)['schema']['module'] \
+                    and (
+                    template.lookup_property_attributes_in_metadata(wrapper)['schema']['module'] == 'purchased_reagents'
+                    or template.lookup_property_attributes_in_metadata(wrapper)['schema']['module'] == 'barcode') \
+                    and not template.lookup_property_attributes_in_metadata(wrapper)['multivalue']:
+                uf = template.lookup_property_attributes_in_metadata(wrapper)['user_friendly'] + " - " + uf
             if '.ontology_label' in column_name:
                 uf = uf + " ontology label"
             if '.ontology' in column_name:
@@ -114,7 +117,7 @@ class SpreadsheetBuilder():
             if "Biomaterial " in uf:
                 schema_name = column_name.split(".")[0]
 
-                for schema in template.tab_config.lookup('tabs'):
+                for schema in template.tabs:
                     if schema_name == list(schema.keys())[0]:
                         schema_uf = schema[schema_name]['display_name']
                 uf = uf.replace("Biomaterial", schema_uf)
@@ -125,7 +128,7 @@ class SpreadsheetBuilder():
             if "Protocol " in uf:
                 schema_name = column_name.split(".")[0]
 
-                for schema in template.tab_config.lookup('tabs'):
+                for schema in template.tabs:
                     if schema_name == list(schema.keys())[0]:
                         schema_uf = schema[schema_name]['display_name']
                 uf = uf.replace("Protocol", schema_uf)

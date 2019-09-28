@@ -3,21 +3,22 @@ import logging
 
 from openpyxl.worksheet.worksheet import Worksheet
 
-import ingest.template.schema_template as schema_template
 from ingest.api.ingestapi import IngestApi
-from ingest.importer.conversion import conversion_strategy, column_specification
+from ingest.importer.conversion import conversion_strategy
+from ingest.importer.conversion.column_specification import ColumnSpecification
 from ingest.importer.conversion.conversion_strategy import CellConversion
 from ingest.importer.conversion.metadata_entity import MetadataEntity
 from ingest.importer.data_node import DataNode
 from ingest.importer.spreadsheet.ingest_worksheet import IngestWorksheet, \
     MODULE_TITLE_PATTERN, IngestRow
-from ingest.template.schema_template import SchemaTemplate
+from ingest.template.exceptions import UnknownKeySchemaException
+from ingest.template.new_schema_template import NewSchemaTemplate
 
 
 class TemplateManager:
     default_keys = ['describedBy', 'schema_type']
 
-    def __init__(self, template: SchemaTemplate, ingest_api: IngestApi):
+    def __init__(self, template: NewSchemaTemplate, ingest_api: IngestApi):
         self.template = template
         self.ingest_api = ingest_api
         self.logger = logging.getLogger(__name__)
@@ -43,9 +44,8 @@ class TemplateManager:
                 header_counter[header] = 0
             header_counter[header] = header_counter[header] + 1
 
-            column_spec = column_specification.look_up(self.template, header, concrete_type,
-                                                       context=context,
-                                                       order_of_occurrence=header_counter[header])
+            column_spec = ColumnSpecification(self.template, header, concrete_type, context=context,
+                                              order_of_occurrence=header_counter[header])
             strategy = conversion_strategy.determine_strategy(column_spec)
             cell_conversions.append(strategy)
 
@@ -101,7 +101,7 @@ class TemplateManager:
         if not result:
             raise InvalidTabName(title)
         main_label = result.group('main_label')
-        return self.template.get_tab_key(main_label)
+        return self.template.lookup_metadata_schema_name_given_title(main_label)
 
     def get_domain_type(self, concrete_type):
         """
@@ -128,18 +128,11 @@ class TemplateManager:
         concrete_type = self.get_concrete_type(title)
         return self.get_domain_type(concrete_type)
 
-    def get_key_for_label(self, header_name, tab_name):
-        try:
-            key = self.template.get_key_for_label(header_name, tab_name)
-        except Exception:
-            self.logger.warning(f'{header_name} in "{tab_name}" tab is not found in schema template')
-        return key
-
     def lookup(self, header_name):
         try:
-            spec = self.template.lookup(header_name)
-        except schema_template.UnknownKeyException:
-            self.logger.warning(f'schema_template.UnknownKeyException: Could not lookup {header_name} in template.')
+            spec = self.template.lookup_property_attributes_in_metadata(header_name)
+        except UnknownKeySchemaException:
+            self.logger.warning(f'UnknownKeySchemaException: Could not lookup {header_name} in template.')
             return {}
 
         return spec
@@ -149,12 +142,10 @@ class TemplateManager:
 
 
 def build(schemas, ingest_api) -> TemplateManager:
-    template = None
-
     if not schemas:
-        template = SchemaTemplate(ingest_api_url=ingest_api.url)
+        template = NewSchemaTemplate(ingest_api_url=ingest_api.url)
     else:
-        template = SchemaTemplate(ingest_api_url=ingest_api.url, metadata_schema_urls=schemas)
+        template = NewSchemaTemplate(ingest_api_url=ingest_api.url, metadata_schema_urls=schemas)
 
     template_mgr = TemplateManager(template, ingest_api)
     return template_mgr
