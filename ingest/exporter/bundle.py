@@ -115,8 +115,8 @@ class BundleService:
     def __init__(self, dss_client: DssApi):
         self.dss_client = dss_client
 
-    def fetch(self, uuid: str) -> Bundle:
-        bundle_source = self.dss_client.get_bundle(uuid)
+    def fetch(self, uuid: str, version=None) -> Bundle:
+        bundle_source = self.dss_client.get_bundle(uuid, version)
         return Bundle.bundle_from_source(bundle_source)
 
     def update(self, bundle: Bundle, staging_details: list):

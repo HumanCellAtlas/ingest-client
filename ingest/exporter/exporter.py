@@ -1,5 +1,5 @@
 from ingest.api.ingestapi import IngestApi
-from ingest.exporter.bundle import BundleService
+from ingest.exporter.bundle import BundleService, Bundle
 from ingest.exporter.metadata import MetadataService
 from ingest.exporter.staging import StagingService
 
@@ -44,7 +44,7 @@ class Exporter:
         manifest = bundle.generate_manifest(submission.uuid)
         self.ingest_api.create_bundle_manifest(manifest)
 
-    def _apply_metadata_updates(self, bundle, metadata_urls, staging_area_uuid):
+    def _apply_metadata_updates(self, bundle: Bundle, metadata_urls, staging_area_uuid):
         staging_details = []
         for url in metadata_urls:
             metadata_resource = self.metadata_service.fetch_resource(url)

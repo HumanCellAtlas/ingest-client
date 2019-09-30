@@ -175,16 +175,34 @@ class DssApi:
     def get_bundle(self, bundle_uuid, version=None):
         self.init_dss_client()
         if version:
-            return self.dss_client.get_bundle(
+            bundle = self.dss_client.get_bundle(
                 uuid=bundle_uuid,
                 replica="aws",
                 version=version
             )
+            bundle_files = self.get_bundle_files(bundle_uuid, version=version)
         else:
-            return self.dss_client.get_bundle(
+            bundle = self.dss_client.get_bundle(
+                uuid=bundle_uuid,
+                replica="aws",
+                version=version
+            )
+            bundle_files = self.get_bundle_files(bundle_uuid, version=version)
+        bundle["bundle"]["files"] = bundle_files
+        return bundle
+
+    def get_bundle_files(self, bundle_uuid, version=None):
+        if version:
+            return list(self.dss_client.get_bundle.iterate(
+                uuid=bundle_uuid,
+                replica="aws",
+                version=version
+            ))
+        else:
+            return list(self.dss_client.get_bundle.iterate(
                 uuid=bundle_uuid,
                 replica="aws"
-            )
+            ))
 
     def get_file(self, file_uuid, version=None):
         self.init_dss_client()
