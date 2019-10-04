@@ -58,7 +58,7 @@ class IngestWorkbook:
             row_index = entity.spreadsheet_location.get('row_index')
 
             if not worksheets.get(worksheet_title):
-                worksheet = self.workbook.get_sheet_by_name(worksheet_title)
+                worksheet = self.workbook[worksheet_title]
                 ingest_worksheet = IngestWorksheet(worksheet=worksheet)
                 worksheets[worksheet_title] = ingest_worksheet
 
