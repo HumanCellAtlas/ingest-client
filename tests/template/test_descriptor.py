@@ -6,6 +6,61 @@ from ingest.template.descriptor import ComplexPropertyDescriptor, SchemaTypeDesc
 class TestDescriptor(unittest.TestCase):
     """ Testing class for the Descriptor class. """
 
+    def test_custom_location_support(self):
+        sample_metadata_schema_url = "https://humancellatlas.org/schema/type/protocol/sequencing/10.1.0/sequencing_protocol"
+
+        descriptor = SchemaTypeDescriptor(sample_metadata_schema_url)
+
+        expected_dictionary_representation = {"high_level_entity": "type", "domain_entity": "protocol/sequencing",
+                                              "module": "sequencing_protocol", "version": "10.1.0",
+                                              "url": sample_metadata_schema_url}
+        self.assertEqual(descriptor.get_dictionary_representation_of_descriptor(),
+                         expected_dictionary_representation)
+
+    def test_domain_entity_containing_slash_support(self):
+        sample_metadata_schema_url = "https://schema.humancellatlas.org/type/protocol/sequencing/10.1.0/sequencing_protocol"
+
+        descriptor = SchemaTypeDescriptor(sample_metadata_schema_url)
+
+        expected_dictionary_representation = {"high_level_entity": "type", "domain_entity": "protocol/sequencing",
+                                              "module": "sequencing_protocol", "version": "10.1.0",
+                                              "url": sample_metadata_schema_url}
+        self.assertEqual(descriptor.get_dictionary_representation_of_descriptor(),
+                         expected_dictionary_representation)
+
+    def test_version_entity_has_major(self):
+        sample_metadata_schema_url = "https://schema.humancellatlas.org/type/protocol/sequencing/10/sequencing_protocol"
+
+        descriptor = SchemaTypeDescriptor(sample_metadata_schema_url)
+
+        expected_dictionary_representation = {"high_level_entity": "type", "domain_entity": "protocol/sequencing",
+                                              "module": "sequencing_protocol", "version": "10",
+                                              "url": sample_metadata_schema_url}
+        self.assertEqual(descriptor.get_dictionary_representation_of_descriptor(),
+                         expected_dictionary_representation)
+
+    def test_version_entity_has_major_minor(self):
+        sample_metadata_schema_url = "https://schema.humancellatlas.org/type/protocol/sequencing/10.1/sequencing_protocol"
+
+        descriptor = SchemaTypeDescriptor(sample_metadata_schema_url)
+
+        expected_dictionary_representation = {"high_level_entity": "type", "domain_entity": "protocol/sequencing",
+                                              "module": "sequencing_protocol", "version": "10.1",
+                                              "url": sample_metadata_schema_url}
+        self.assertEqual(descriptor.get_dictionary_representation_of_descriptor(),
+                         expected_dictionary_representation)
+
+    def test_version_entity_has_major_minor_revision(self):
+        sample_metadata_schema_url = "https://schema.humancellatlas.org/type/protocol/sequencing/10.1.5/sequencing_protocol"
+
+        descriptor = SchemaTypeDescriptor(sample_metadata_schema_url)
+
+        expected_dictionary_representation = {"high_level_entity": "type", "domain_entity": "protocol/sequencing",
+                                              "module": "sequencing_protocol", "version": "10.1.5",
+                                              "url": sample_metadata_schema_url}
+        self.assertEqual(descriptor.get_dictionary_representation_of_descriptor(),
+                         expected_dictionary_representation)
+
     def test__schema_type_descriptor__success(self):
         sample_metadata_schema_url = "https://schema.humancellatlas.org/type/biomaterial/10.0.2/organoid"
 
@@ -18,7 +73,7 @@ class TestDescriptor(unittest.TestCase):
                          expected_dictionary_representation)
 
     def test__schema_type_descriptor_with_missing_components__throws_exception(self):
-        sample_metadata_schema_url = "https://schema.humancellatlas.org/biomaterial/10.0.2/organoid"
+        sample_metadata_schema_url = "https://schema.humancellatlas.org/type/biomaterial/organoid"
 
         with self.assertRaisesRegex(Exception, "does not conform to expected format"):
             SchemaTypeDescriptor(sample_metadata_schema_url)

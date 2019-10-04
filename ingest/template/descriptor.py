@@ -24,18 +24,22 @@ class SchemaTypeDescriptor(Descriptor):
     """ Descriptor encapsulating "metadata" information about a single metadata schema file. """
 
     def __init__(self, metadata_schema_url):
-        url_validation_regex = re.compile(r'http[s]?://[^/]*/[^/]*/[^/]*/(((\d+\.)?(\d+\.)?(\*|\d+))|(latest))/.*')
+        url_validation_regex = re.compile(
+            r'^http[s]?://(?P<location>.*)/' +
+            r'(?P<high_level_entity>(type)|(module)|(core))/' +
+            r'(?P<domain_entity>.*)/' +
+            r'(?P<version>(?P<version_number>(?P<major>\d+)(\.(?P<minor>\d+))?(\.(?P<rev>\d+))?)|(?P<latest>latest))/' +
+            r'(?P<module>.*)$'
+        )
         if not url_validation_regex.match(metadata_schema_url):
             raise Exception(
                 f"ERROR: The metadata schema URL passed in for parsing {metadata_schema_url} does not conform to "
                 f"expected format.")
 
-        self.high_level_entity = re.match(r'http[s]?://[^/]*/([^/]*)/', metadata_schema_url).group(1)
-        self.domain_entity = re.match(
-            r'http[s]?://[^/]*/[^/]*/(?P<domain_entity>.*)/(((\d+\.)?(\d+\.)?(\*|\d+))|(latest))/.*',
-            metadata_schema_url).group("domain_entity")
-        self.module = metadata_schema_url.rsplit('/', 1)[-1]
-        self.version = metadata_schema_url.rsplit('/', 2)[-2]
+        self.high_level_entity = url_validation_regex.match(metadata_schema_url).group("high_level_entity")
+        self.domain_entity = url_validation_regex.match(metadata_schema_url).group("domain_entity")
+        self.module = url_validation_regex.match(metadata_schema_url).group("module")
+        self.version = url_validation_regex.match(metadata_schema_url).group("version")
         self.url = metadata_schema_url
 
     def get_module(self):
