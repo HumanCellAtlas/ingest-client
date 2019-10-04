@@ -118,29 +118,6 @@ class ColumnSpecificationTest(TestCase):
         self.assertTrue(column_specification.is_field_of_list_element())
         self.assertEqual(ConversionType.FIELD_OF_LIST_ELEMENT, column_specification.get_conversion_type())
 
-    def test_look_up_unknown_header(self):
-        sample_metadata_schema_json = {
-            "$schema": "http://json-schema.org/draft-07/schema#",
-            "$id": "https://schema.humancellatlas.org/module//2.0.2/someschema",
-            "description": "Just a plain old test schema",
-            "required": [],
-            "type": "object",
-            "properties": {
-                "some_property": {
-                    "description": "Some property",
-                    "type": "string"
-                }
-            }
-        }
-        sample_property_migrations = []
-        schema_template = NewSchemaTemplate(json_schema_docs=[sample_metadata_schema_json],
-                                            property_migrations=sample_property_migrations)
-
-        column_specification = ColumnSpecification(schema_template, "someschema.some_unknown_property", "someschema")
-
-        self.assertIsNotNone(column_specification)
-        self.assertEqual(ColumnSpecification.UNKNOWN_DOMAIN_TYPE, column_specification.domain_type)
-
     def test_determine_converter_for_single_value(self):
         data_types_to_test = [DataType.BOOLEAN, DataType.INTEGER, DataType.STRING, DataType.UNDEFINED]
         expected_respective_converter = [BooleanConverter, IntegerConverter, StringConverter, DefaultConverter]
