@@ -25,9 +25,9 @@ class SchemaTypeDescriptor(Descriptor):
 
     def __init__(self, metadata_schema_url):
         url_validation_regex = re.compile(
-            r'^http[s]?://(?P<location>.*)/' +
-            r'(?P<high_level_entity>(type)|(module)|(core))/' +
-            r'(?P<domain_entity>.*)/' +
+            r'^http[s]?://(?P<location>([^/]+/)*[^/]+)/' +
+            r'(?P<high_level_entity>(type)|(module)|(core)|(system))/' +
+            r'((?P<domain_entity>([^/]+/)*[^/]+)/)?' +
             r'(?P<version>(?P<version_number>(?P<major>\d+)(\.(?P<minor>\d+))?(\.(?P<rev>\d+))?)|(?P<latest>latest))/' +
             r'(?P<module>.*)$'
         )
