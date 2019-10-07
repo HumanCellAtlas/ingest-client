@@ -122,7 +122,6 @@ class NewSchemaTemplate():
         :param property_key: A string representing the fully qualified path to the desired metadata property
         :return: A dictionary representing the attributes of the property. If none is found, an exception will be thrown
         """
-
         return self._lookup_fully_qualified_key_path_in_dictionary(property_key, self.meta_data_properties)
 
     def lookup_metadata_schema_name_given_title(self, tab_display_name):

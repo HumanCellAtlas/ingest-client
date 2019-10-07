@@ -111,6 +111,9 @@ class ComplexPropertyDescriptor(SimplePropertyDescriptor, Descriptor):
             for property_name, property_values in json_data["properties"].items():
                 if "$schema" in property_values or "schema" in property_values:
                     child_property_descriptor = ComplexPropertyDescriptor(property_values)
+                elif "items" in property_values and ("$schema" in property_values["items"] or "schema" in property_values["items"]):
+                    child_property_descriptor = ComplexPropertyDescriptor(property_values["items"])
+                    child_property_descriptor.multivalue = True
                 else:
                     child_property_descriptor = SimplePropertyDescriptor(property_values)
 
