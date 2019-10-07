@@ -136,7 +136,7 @@ class NewSchemaTemplate():
         """
 
         try:
-            return self.tab_config.get_key_for_label(tab_display_name)
+            return self.spreadsheet_configuration.get_key_for_label(tab_display_name)
         except KeyError:
             raise UnknownKeySchemaException(
                 f"ERROR: Was unable to find a fully qualified path (key) with the display name {tab_display_name}.")
