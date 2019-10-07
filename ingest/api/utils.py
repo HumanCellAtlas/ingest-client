@@ -19,3 +19,8 @@ def parse_date_string(date_str: str):
         except ValueError:
             pass
     raise ValueError(f'unknown date format for [{date_str}]')
+
+
+class DSSVersion:
+    def __init__(self, date_str):
+        self.version = to_dss_version(date_str)

@@ -12,6 +12,7 @@ import hca
 from hca.util import SwaggerAPIException
 
 from ingest.api import utils
+from ingest.api.utils import DSSVersion
 from ingest.utils.token_manager import Token
 
 __author__ = "jupp"
@@ -119,6 +120,15 @@ class DssApi:
                     raise Error(e)
                 else:
                     time.sleep(60)
+
+    def put_file_v2(self, file_uuid: str, file_version: DSSVersion, cloud_url: str):
+        self.init_dss_client()
+        return self.dss_client.put_file(
+            uuid=file_uuid,
+            version=file_version.version,
+            creator_uid=self.creator_uid,
+            source_url=cloud_url
+        )
 
     def put_bundle(self, bundle_uuid, version, bundle_files):
         bundle = None

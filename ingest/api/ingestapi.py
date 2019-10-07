@@ -465,3 +465,31 @@ class IngestApi:
         r = self.session.get(find_staging_job_url, params=search_params)
         r.raise_for_status()
         return r.json()
+
+    def create_storage_job(self, metadata_uuid: str, dcp_version: str):
+        storage_job = {
+            "metadataUuid": metadata_uuid,
+            "metadataDcpVersion": dcp_version
+        }
+        r = requests.post(self.get_staging_jobs_url(), json=storage_job, headers=self.get_headers())
+        r.raise_for_status()
+        return r.json()
+
+    def complete_storage_job(self, storage_job_url):
+        complete_storage_job_url = f'{storage_job_url}/complete'
+        r = self.session.patch(complete_storage_job_url)
+        r.raise_for_status()
+        return r.json()
+
+    def find_storage_job(self, metadata_uuid: str, dcp_version: str):
+        search_params = {
+            "metadataUuid": metadata_uuid,
+            "metadataDcpVersion": dcp_version
+        }
+        find_staging_job_url = f'{self.get_staging_jobs_url()}/search/findByStagingAreaUuidAndStagingAreaFileName'
+        r = self.session.get(find_staging_job_url, params=search_params)
+        r.raise_for_status()
+        return r.json()
+
+    def get_storage_job(self, storage_job_url):
+        return requests.get(storage_job_url, headers=self.get_headers()).json()

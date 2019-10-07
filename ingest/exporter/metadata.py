@@ -1,5 +1,6 @@
 import re
 from copy import deepcopy
+from typing import Optional
 
 
 class MetadataParseException(Exception):
@@ -22,7 +23,7 @@ class MetadataProvenance:
 class MetadataResource:
 
     def __init__(self, metadata_type, metadata_json, uuid, dcp_version,
-                 provenance: MetadataProvenance):
+                 provenance: Optional[MetadataProvenance]):
         self.metadata_json = metadata_json
         self.uuid = uuid
         self.dcp_version = dcp_version
@@ -42,7 +43,7 @@ class MetadataResource:
             raise MetadataParseException(e)
 
     @staticmethod
-    def _derive_provenance(data, require_provenance):
+    def _derive_provenance(data, require_provenance) -> Optional[MetadataProvenance]:
         try:
             provenance = MetadataResource.provenance_from_dict(data)
         except MetadataParseException:
