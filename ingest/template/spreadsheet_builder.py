@@ -36,7 +36,8 @@ class SpreadsheetBuilder():
     def save_spreadsheet(self):
         self.spreadsheet.close()
 
-    def generate_spreadsheet(self, schema_urls=None, tabs_template=None, include_schemas_tab=False):
+    def generate_spreadsheet(self, schema_urls=None, tabs_template=None, include_schemas_tab=False,
+                             schema_template=None):
         """
         Given a template that represents the tabs configuration in the desired spreadsheet and a metadata schema,
         generates the respective spreadsheet. If include_schema_tab is set to True, the spreadsheet will have an
@@ -48,6 +49,8 @@ class SpreadsheetBuilder():
                               the generated spreadsheet should look and what information/columns it should contain.
         :param include_schemas_tab: A boolean, when true, includes an additional sheet at the end of the spreadsheet
                                     that contains a list of metadata schemas that were used to create the spreadsheet.
+        :param schema_template: A SchemaTemplate object that has already been created that can directly be used to
+                                generate the spreadsheet.
         """
 
         self.include_schemas_tab = include_schemas_tab
@@ -57,6 +60,8 @@ class SpreadsheetBuilder():
             template = NewSchemaTemplate(metadata_schema_urls=schema_urls, tab_config=tabs)
         elif schema_urls:
             template = NewSchemaTemplate(metadata_schema_urls=schema_urls, migrations_url=DEFAULT_MIGRATIONS_URL)
+        elif schema_template:
+            template = schema_template
         else:
             template = NewSchemaTemplate()
 
