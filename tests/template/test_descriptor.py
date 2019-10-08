@@ -6,66 +6,7 @@ from ingest.template.descriptor import ComplexPropertyDescriptor, SchemaTypeDesc
 class TestDescriptor(unittest.TestCase):
     """ Testing class for the Descriptor class. """
 
-    def test_custom_location_support(self):
-        sample_metadata_schema_url = "https://humancellatlas.org/schema/type/protocol/sequencing/10.1.0" \
-                                     "/sequencing_protocol"
-
-        descriptor = SchemaTypeDescriptor(sample_metadata_schema_url)
-
-        expected_dictionary_representation = {"high_level_entity": "type", "domain_entity": "protocol/sequencing",
-                                              "module": "sequencing_protocol", "version": "10.1.0",
-                                              "url": sample_metadata_schema_url}
-        self.assertEqual(descriptor.get_dictionary_representation_of_descriptor(),
-                         expected_dictionary_representation)
-
-    def test_domain_entity_containing_slash_support(self):
-        sample_metadata_schema_url = "https://schema.humancellatlas.org/type/protocol/sequencing/10.1.0" \
-                                     "/sequencing_protocol"
-
-        descriptor = SchemaTypeDescriptor(sample_metadata_schema_url)
-
-        expected_dictionary_representation = {"high_level_entity": "type", "domain_entity": "protocol/sequencing",
-                                              "module": "sequencing_protocol", "version": "10.1.0",
-                                              "url": sample_metadata_schema_url}
-        self.assertEqual(descriptor.get_dictionary_representation_of_descriptor(),
-                         expected_dictionary_representation)
-
-    def test_version_entity_has_major(self):
-        sample_metadata_schema_url = "https://schema.humancellatlas.org/type/protocol/sequencing/10/sequencing_protocol"
-
-        descriptor = SchemaTypeDescriptor(sample_metadata_schema_url)
-
-        expected_dictionary_representation = {"high_level_entity": "type", "domain_entity": "protocol/sequencing",
-                                              "module": "sequencing_protocol", "version": "10",
-                                              "url": sample_metadata_schema_url}
-        self.assertEqual(descriptor.get_dictionary_representation_of_descriptor(),
-                         expected_dictionary_representation)
-
-    def test_version_entity_has_major_minor(self):
-        sample_metadata_schema_url = "https://schema.humancellatlas.org/type/protocol/sequencing/10.1" \
-                                     "/sequencing_protocol"
-
-        descriptor = SchemaTypeDescriptor(sample_metadata_schema_url)
-
-        expected_dictionary_representation = {"high_level_entity": "type", "domain_entity": "protocol/sequencing",
-                                              "module": "sequencing_protocol", "version": "10.1",
-                                              "url": sample_metadata_schema_url}
-        self.assertEqual(descriptor.get_dictionary_representation_of_descriptor(),
-                         expected_dictionary_representation)
-
-    def test_version_entity_has_major_minor_revision(self):
-        sample_metadata_schema_url = "https://schema.humancellatlas.org/type/protocol/sequencing/10.1.5" \
-                                     "/sequencing_protocol"
-
-        descriptor = SchemaTypeDescriptor(sample_metadata_schema_url)
-
-        expected_dictionary_representation = {"high_level_entity": "type", "domain_entity": "protocol/sequencing",
-                                              "module": "sequencing_protocol", "version": "10.1.5",
-                                              "url": sample_metadata_schema_url}
-        self.assertEqual(descriptor.get_dictionary_representation_of_descriptor(),
-                         expected_dictionary_representation)
-
-    def test__schema_type_descriptor__success(self):
+    def test__schema_type_descriptor__succeeds(self):
         sample_metadata_schema_url = "https://schema.humancellatlas.org/type/biomaterial/10.0.2/organoid"
 
         descriptor = SchemaTypeDescriptor(sample_metadata_schema_url)
@@ -82,7 +23,46 @@ class TestDescriptor(unittest.TestCase):
         with self.assertRaisesRegex(Exception, "does not conform to expected format"):
             SchemaTypeDescriptor(sample_metadata_schema_url)
 
-    def test__simple_property_descriptor__success(self):
+    def test__schema_type_descriptor_additional_slashes__succeeds(self):
+        sample_metadata_schema_url = "https://humancellatlas.org/schema/type/protocol/sequencing/10.1.0" \
+                                     "/sequencing_protocol"
+
+        descriptor = SchemaTypeDescriptor(sample_metadata_schema_url)
+
+        expected_dictionary_representation = {"high_level_entity": "type", "domain_entity": "protocol/sequencing",
+                                              "module": "sequencing_protocol", "version": "10.1.0",
+                                              "url": sample_metadata_schema_url}
+        self.assertEqual(descriptor.get_dictionary_representation_of_descriptor(),
+                         expected_dictionary_representation)
+
+    def test__schema_type_descriptor_with_domain_entity_containing_slash__succeeds(self):
+        sample_metadata_schema_url = "https://schema.humancellatlas.org/type/protocol/sequencing/10.1.0" \
+                                     "/sequencing_protocol"
+
+        descriptor = SchemaTypeDescriptor(sample_metadata_schema_url)
+
+        expected_dictionary_representation = {"high_level_entity": "type", "domain_entity": "protocol/sequencing",
+                                              "module": "sequencing_protocol", "version": "10.1.0",
+                                              "url": sample_metadata_schema_url}
+        self.assertEqual(descriptor.get_dictionary_representation_of_descriptor(),
+                         expected_dictionary_representation)
+
+    def test__schema_type_descriptor_permutations_of_versioning__succeeds(self):
+        version_formats_to_test = ["10", "10.1", "10.1.5"]
+
+        for version_format in version_formats_to_test:
+            sample_metadata_schema_url = "https://schema.humancellatlas.org/type/protocol/sequencing/" + \
+                                         version_format + "/sequencing_protocol"
+
+            descriptor = SchemaTypeDescriptor(sample_metadata_schema_url)
+
+            expected_dictionary_representation = {"high_level_entity": "type", "domain_entity": "protocol/sequencing",
+                                                  "module": "sequencing_protocol", "version": version_format,
+                                                  "url": sample_metadata_schema_url}
+            self.assertEqual(descriptor.get_dictionary_representation_of_descriptor(),
+                             expected_dictionary_representation)
+
+    def test__simple_property_descriptor__succeeds(self):
         sample_simple_property_description = "The version number of the schema in major.minor.patch format."
         sample_simple_property_type = "string"
         sample_simple_property_pattern = "^[0-9]{1,}.[0-9]{1,}.[0-9]{1,}$"
@@ -104,7 +84,7 @@ class TestDescriptor(unittest.TestCase):
         }
         self.assertEqual(descriptor.get_dictionary_representation_of_descriptor(), expected_dictionary_representation)
 
-    def test__simple_array_property_descriptor__success(self):
+    def test__simple_array_property_descriptor__succeeds(self):
         sample_simple_property_description = "The version number of the schema in major.minor.patch format."
         sample_simple_property_type = "array"
         sample_simple_property_pattern = "^[0-9]{1,}.[0-9]{1,}.[0-9]{1,}$"
@@ -129,7 +109,7 @@ class TestDescriptor(unittest.TestCase):
         }
         self.assertEqual(descriptor.get_dictionary_representation_of_descriptor(), expected_dictionary_representation)
 
-    def test__complex_property_description__success(self):
+    def test__complex_property_description__succeeds(self):
         top_level_metadata_schema_url = "https://schema.humancellatlas.org/module/biomaterial/2.0.2/timecourse"
         sample_complex_metadata_schema_json = {
             "$schema": "http://json-schema.org/draft-07/schema#",
@@ -185,7 +165,7 @@ class TestDescriptor(unittest.TestCase):
         expected_dictionary_representation.update(expected_top_level_schema_properties)
         self.assertEqual(descriptor.get_dictionary_representation_of_descriptor(), expected_dictionary_representation)
 
-    def test__complex_property_description_with_embedded_schema__success(self):
+    def test__complex_property_description_with_embedded_schema__succeeds(self):
         top_level_metadata_schema_url = "https://schema.humancellatlas.org/module/biomaterial/2.0.2/timecourse"
         embedded_metadata_schema_url = "https://schema.humancellatlas.org/module/ontology/5.3.5/time_unit_ontology"
         sample_complex_metadata_schema_json = {
@@ -290,77 +270,7 @@ class TestDescriptor(unittest.TestCase):
         expected_dictionary_representation.update(expected_top_level_schema_properties)
         self.assertEqual(descriptor.get_dictionary_representation_of_descriptor(), expected_dictionary_representation)
 
-    def test__complex_property_description_with_multivalue_embedded_schema__success(self):
-        top_level_metadata_schema_url = "https://schema.humancellatlas.org/module/biomaterial/2.0.2/some_schema"
-        embedded_metadata_schema_url = "https://schema.humancellatlas.org/module/biomaterial/5.3.5/some_embedded_schema"
-        sample_complex_metadata_schema_json = {
-            "$schema": "http://json-schema.org/draft-07/schema#",
-            "$id": top_level_metadata_schema_url,
-            "description": "Information relating to a schema.",
-            "required": [
-                "some_multivalue_property"
-            ],
-            "type": "object",
-            "properties": {
-                "some_multivalue_property": {
-                    "description": "A multivalue property",
-                    "type": "array",
-                    "items": {
-                        "$schema": "http://json-schema.org/draft-07/schema#",
-                        "$id": embedded_metadata_schema_url,
-                        "description": "A multivalue property",
-                        "type": "object",
-                        "properties": {
-                            "some_embedded_schema_property": {
-                                "description": "Some embedded schema property",
-                                "type": "string",
-                            }
-                        }
-                    }
-                },
-            }
-        }
-
-        descriptor = ComplexPropertyDescriptor(sample_complex_metadata_schema_json)
-
-        # Create the expected dictionary representation of the embedded schema property.
-        expected_embedded_schema_descriptor = {
-            "high_level_entity": "module", "domain_entity": "biomaterial", "module": "some_embedded_schema",
-            "version": "5.3.5", "url": embedded_metadata_schema_url
-        }
-        expected_embedded_schema_properties = {
-            "description": "A multivalue property", "value_type": "object", "multivalue": True,
-            "external_reference": False, "required": True, "identifiable": False
-        }
-        expected_embedded_child_property_descriptor = {
-            "description": "Some embedded schema property", "value_type": "string", "multivalue": False,
-            "external_reference": False, "required": False, "identifiable": False
-        }
-        expected_child_property_descriptor = {
-            "schema": expected_embedded_schema_descriptor,
-            "some_embedded_schema_property": expected_embedded_child_property_descriptor
-        }
-        expected_child_property_descriptor.update(expected_embedded_schema_properties)
-
-        # Create the top level expected dictionary representation
-        expected_top_level_schema_descriptor = {
-            "high_level_entity": "module", "domain_entity": "biomaterial", "module": "some_schema", "version": "2.0.2",
-            "url": top_level_metadata_schema_url
-        }
-        expected_top_level_schema_properties = {
-            "description": "Information relating to a schema.", "value_type": "object", "multivalue": False,
-            "external_reference": False, "required": False, "identifiable": False
-        }
-        expected_dictionary_representation = {
-            "schema": expected_top_level_schema_descriptor,
-            "some_multivalue_property": expected_child_property_descriptor,
-            "required_properties": ["some_multivalue_property"]
-        }
-        expected_dictionary_representation.update(expected_top_level_schema_properties)
-
-        self.assertEqual(descriptor.get_dictionary_representation_of_descriptor(), expected_dictionary_representation)
-
-    def test__complex_identifiable_property_descriptor__success(self):
+    def test__complex_identifiable_property_descriptor__succeeds(self):
         top_level_metadata_schema_url = "https://schema.humancellatlas.org/module/biomaterial/2.0.2/timecourse"
         sample_complex_metadata_schema_json = {
             "$schema": "http://json-schema.org/draft-07/schema#",
