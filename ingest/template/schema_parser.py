@@ -1,264 +1,142 @@
 import json
-import re
 
 import jsonref
 
-from .exceptions import RootSchemaException
-from ..utils import doctict
+from .descriptor import ComplexPropertyDescriptor
 
 
-class SchemaParser:
-    """ A SchemaParser provides functions for accessing objects in a JSON schema. """
+class SchemaParser():
+    def __init__(self, json_schema,
+                 ignored_properties=["required_properties", "describedBy", "schema_version", "schema_type",
+                                     "provenance"]):
+        self.ignored_properties = ignored_properties
+        self.schema_descriptor = json_schema
+        self.schema_dictionary = self.schema_descriptor
 
-    def __init__(self, template):
-        self.ignored_properties = ["describedBy", "schema_version", "schema_type", "provenance"]
-        self.required_properties = []
+    @property
+    def schema_descriptor(self):
+        return self._schema_descriptor
 
-        self.schema_template = template
-
-        # TODO: identifiable should be in the schema - hardcoded here for now.
-        self._identifiable = ["biomaterial_id", "process_id", "protocol_id", "file_name"]
-
-        self._key_lookup = {}
-
-    def load_schema(self, json_schema):
+    @schema_descriptor.setter
+    def schema_descriptor(self, json_schema):
         """
-        Resolve references in a given JSON-formatted metadata schema and populate a SchemaTemplate object with the
-        data in the metadata schema.
+        Given a json-formatted metadata schema, loads it into a Descriptor class which captures the structure as a
+        dictionary and stores it as a private variable.
 
-        :param json_schema: An object representing a deserialized JSON-formatted metadata schema with references.
-        :return: An object representing a deserialized JSON-formatted metadata schema with all its references resolved.
+        :param json_schema: A raw metadata schema JSON object.
         """
 
-        # Use jsonrefs to resolve all $refs in JSON
+        # Use jsonref to resolve all $refs in JSON
         metadata_schema_data = jsonref.loads(json.dumps(json_schema))
-        return self.initialise_template(metadata_schema_data)
 
-    def load_migration(self, property_migration):
-        return self.initialise_property_migration_template(property_migration)
+        self._schema_descriptor = ComplexPropertyDescriptor(metadata_schema_data)
 
-    def key_lookup(self, key):
-        return self._key_lookup[key]
+    @property
+    def schema_dictionary(self):
+        return self._schema_dictionary
 
-    def initialise_property_migration_template(self, property_migration):
-        migrated_property = property_migration["source_schema"] + "." + property_migration["property"]
+    @schema_dictionary.setter
+    def schema_dictionary(self, descriptor):
+        """
+        Given a Descriptor object, computes a dictionary representation describing the metadata schema with
+        post-processing to removed
+        ignored properties.
 
-        migration_info = {}
+        :param descriptor: A Descriptor Object derived from a metadata schema JSON object.
+        """
+        self._schema_dictionary = self._get_schema_dictionary_with_ignored_fields_removed(
+            descriptor.get_dictionary_representation_of_descriptor())
 
-        if "target_schema" in property_migration and "replaced_by" in property_migration:
-            migration_info["replaced_by"] = \
-                property_migration["target_schema"] + "." + property_migration["replaced_by"]
+    def _get_schema_dictionary_with_ignored_fields_removed(self, dictionary_descriptor):
+        """ Recursively removes all ignored properties in the given dictionary representation of a Descriptor which
+        describes a metadata schema or a field within the metadata schema.
 
-        if "effective_from" in property_migration:
-            migration_info["version"] = property_migration["effective_from"]
-        elif "effective_from_source" in property_migration:
-            migration_info["version"] = property_migration["effective_from_source"]
-            migration_info["target_version"] = property_migration["effective_from_target"]
+        :param dictionary_descriptor: A Descriptor in dictionary format from which to remove ignored properties.
+        :return: The same dictionary representation of a Descriptor with all the properties listed in
+                 self.ignored_properties removed.
+        """
 
-        migration_info = {migrated_property.split(".")[-1]: migration_info}
-        for part in reversed(migrated_property.split(".")[:-1]):
-            migration_info = {part: migration_info}
+        in_post_processing_dictionary_descriptor = dictionary_descriptor
 
-        self.schema_template.put_migration(migration_info)
-        return self.schema_template
+        for ignored_property in self.ignored_properties:
+            if ignored_property in in_post_processing_dictionary_descriptor.keys():
+                del in_post_processing_dictionary_descriptor[ignored_property]
 
-    def initialise_template(self, data):
+        for key, value in in_post_processing_dictionary_descriptor.items():
+            if isinstance(value, dict):
+                post_processed_sub_dictionary_descriptor = \
+                    self._get_schema_dictionary_with_ignored_fields_removed(
+                        value)
+                in_post_processing_dictionary_descriptor[key] = post_processed_sub_dictionary_descriptor
 
-        self.get_required_properties_from_metadata_schema(data)
+        return in_post_processing_dictionary_descriptor
 
-        property = self._extract_property(data)
-        if not property.schema or "type" not in property.schema.high_level_entity:
-            raise RootSchemaException(
-                "Schema must start with a root submittable type schema")
+    def get_map_of_paths_by_property_label(self, dictionary_descriptor):
+        """
+        Given a dictionary of Descriptor dictionaries by the module name for which they represent, returns a
+        dictionary that maps the path via schema modules to each property that exists in the schemas. Each property
+        is represented up to two times: once where the key is the user friendly name of the property and once as the
+        path itself.
+
+        :param dictionary_descriptor: A dictionary where each key is a module name and the value is a dictionary
+        representation of its respective Descriptor onject.
+        """
+
+        label_map = {}
+
+        for metadata_schema, metadata_schema_properties in dictionary_descriptor.items():
+            self._add_paths_to_map(metadata_schema_properties, label_map, metadata_schema)
+        return label_map
+
+    def _add_paths_to_map(self, metadata_property_dictionary, current_label_map, path_so_far):
+        for property_key, property_value in metadata_property_dictionary.items():
+            # Only put values into the map that are not metadata about the schema itself and not about the uuid.
+            if isinstance(property_value, dict) and property_key != "schema" and property_key != "uuid":
+                fully_qualified_property_label = path_so_far + "." + property_key
+                current_label_map = self._put_into_map(fully_qualified_property_label, fully_qualified_property_label,
+                                                       current_label_map)
+                if "user_friendly" in property_value.keys():
+                    user_friendly_property_label = property_value["user_friendly"]
+                    current_label_map = self._put_into_map(user_friendly_property_label, fully_qualified_property_label,
+                                                           current_label_map)
+
+                self._add_paths_to_map(property_value, current_label_map, fully_qualified_property_label)
+        return current_label_map
+
+    def get_tab_representation_of_schema(self):
+        """
+        Returns a dictionary representing the way the schema would look as part of a tab in a spreadsheet where each
+        of its properties (including embedded properties) are all flattened to be column names.
+        """
+
+        tab_key = self.schema_descriptor.get_schema_module_name()
+        tab_display_name = tab_key[0].upper() + tab_key[1:].replace("_", " ")
+        return {tab_key: {"display_name": tab_display_name,
+                          "columns": self._get_columns_names_for_metadata_schema(tab_key, self.schema_dictionary)}}
+
+    def _get_columns_names_for_metadata_schema(self, root_schema_name, root_schema_dictionary):
+        list_of_column_names = []
+
+        for key, value in root_schema_dictionary.items():
+            if isinstance(value, dict) and key != "schema":
+                next_root_schema_name = root_schema_name + "." + key
+                list_of_column_names.append(next_root_schema_name)
+                children_column_names = self._get_columns_names_for_metadata_schema(next_root_schema_name, value)
+                if children_column_names:
+                    list_of_column_names += children_column_names
+
+        return list_of_column_names
+
+    @staticmethod
+    def _put_into_map(key, value, current_label_map):
+        key = key.lower()
+        value = value.lower()
+
+        if key in current_label_map.keys():
+            current_values = current_label_map[key]
+            current_values.append(value)
+            current_label_map[key] = current_values
         else:
-            property.uuid = {'external_reference': True, 'identifiable': True}
+            current_label_map[key] = [value]
 
-        # todo get tab display name from schema
-        tab_display = property.schema.module[0].upper() + property.schema.module[1:].replace("_", " ")
-        tab_info = {property.schema.module: {"display_name": tab_display, "columns": []}}
-
-        self.schema_template.append_tab(tab_info)
-        self.schema_template.put(property.schema.module, property)
-
-        self._recursive_fill_properties(property.schema.module, data)
-
-        self.schema_template.set_label_mappings(self._key_lookup)
-        return self.schema_template
-
-    def _get_path(self, str1, str2):
-        return ".".join([str1, str2.split('/')[0]])
-
-    def _recursive_fill_properties(self, path, data):
-
-        for property_name, property_block in self._get_schema_properties_from_object(data).items():
-            new_path = self._get_path(path, property_name)
-            property = self._extract_property(property_block, property_name=property_name, key=new_path)
-            doctict.put(self.schema_template.get_template(), new_path, property)
-
-            self._recursive_fill_properties(new_path, property_block)
-
-    def get_required_properties_from_metadata_schema(self, data):
-
-        if "required" in data:
-            self.required_properties = list(set().union(self.required_properties, data["required"]))
-
-    def create_new_template_for_property(self):
-        """ Returns a dictionary populated with keys and respective default values that represent metadata about a
-        property that exists in a metadata schema.
-        """
-
-        return {
-            "multivalue": False,
-            "format": None,
-            "required": False,
-            "identifiable": False,
-            "external_reference": False,
-            "user_friendly": None,
-            "description": None,
-            "example": None,
-            "guidelines": None,
-            "value_type": "string"}
-
-    def _extract_property(self, data, *args, **kwargs):
-
-        property_metadata = self.create_new_template_for_property()
-
-        if "type" in data:
-            property_metadata["value_type"] = data["type"]
-            if data["type"] == "array":
-                items = data.get("items", {})
-                property_metadata["value_type"] = items.get('type', 'string')
-                property_metadata["multivalue"] = True
-
-        schema = self._get_schema_from_object(data)
-
-        if 'property_name' in kwargs:
-            if kwargs.get('property_name') in self.required_properties:
-                property_metadata["required"] = True
-
-            if kwargs.get('property_name') in self._identifiable:
-                property_metadata["identifiable"] = True
-
-        if 'key' in kwargs and "object" != property_metadata["value_type"]:
-            self.schema_template.append_column_to_tab(kwargs.get('key'))
-
-        if schema:
-            property_metadata["schema"] = schema
-
-        if 'key' in kwargs:
-
-            self._update_label_to_key_map(kwargs.get("key"), kwargs.get("key"))
-
-            if "user_friendly" in data:
-                property_metadata["user_friendly"] = data["user_friendly"]
-                self._update_label_to_key_map(data["user_friendly"], kwargs.get("key"))
-
-            elif isinstance(data, jsonref.JsonRef) and "user_friendly" in data.__reference__:
-                property_metadata["user_friendly"] = data.__reference__["user_friendly"]
-                self._update_label_to_key_map(data.__reference__["user_friendly"], kwargs.get("key"))
-
-        if "description" in data:
-            property_metadata["description"] = data["description"]
-        elif isinstance(data, jsonref.JsonRef) and "description" in data.__reference__:
-            property_metadata["description"] = data.__reference__["description"]
-
-        if "format" in data:
-            property_metadata["format"] = data["format"]
-
-        if "example" in data:
-            property_metadata["example"] = data["example"]
-
-        if "guidelines" in data:
-            property_metadata["guidelines"] = data["guidelines"]
-
-        return doctict.DotDict(property_metadata)
-
-    def _update_label_to_key_map(self, label, key):
-        values = []
-        if label.lower() not in self._key_lookup:
-            values = [key]
-        else:
-            values = self._key_lookup[label.lower()]
-            values.append(key)
-
-        if key not in self._key_lookup:
-            self._key_lookup[key] = [key]
-
-        self._key_lookup[label.lower()] = list(set(values))
-
-    def _get_schema_from_object(self, data):
-        """ Given a JSON object get the id and work out the high-level metadata about the metadata schema. """
-        if "items" in data:
-            return self._get_schema_from_object(data["items"])
-
-        url_key = None
-        if '$id' in data:
-            url_key = '$id'
-        if 'id' in data:
-            url_key = 'id'
-
-        if url_key:
-            url = data[url_key]
-            return self.create_and_populate_schema_given_information_in_url(url)
-        return None
-
-    def create_and_populate_schema_given_information_in_url(self, url):
-        """
-        Given a URL, create and populate a Schema with high level information about the schema gleaned directly from
-        the URL.
-
-        :param url: A string representing the URL of a metadata schema.
-        :return: A Schema object that contains a dictionary with metadata about the metadata schema.
-        """
-
-        schema = Schema().build()
-
-        # Populate the high level entity
-        pattern = re.compile("http[s]?://[^/]*/([^/]*)/")
-        match = pattern.search(url)
-        schema.high_level_entity = match.group(1)
-
-        # Populate the domain entity
-        pattern = re.compile(r'http[s]?://[^/]*/[^/]*/(?P<domain_entity>.*)/(((\d+\.)?(\d+\.)?(\*|\d+))|(latest))/.*')
-        match = pattern.search(url)
-        schema.domain_entity = match.group(1) if match else None
-
-        # Populate the module
-        schema.module = url.rsplit('/', 1)[-1]
-
-        # Populate the version
-        schema.version = url.rsplit('/', 2)[-2]
-
-        # Populate the url
-        schema.url = url
-
-        return schema
-
-    def _get_schema_properties_from_object(self, object):
-        self.get_required_properties_from_metadata_schema(object)
-
-        if "items" in object and isinstance(object["items"], dict):
-            return self._get_schema_properties_from_object(object["items"])
-
-        if "properties" in object and isinstance(object["properties"], dict):
-            keys_to_remove = set(self.ignored_properties).intersection(set(object["properties"].keys()))
-
-            for unwanted_key in keys_to_remove:
-                del object["properties"][unwanted_key]
-            return object["properties"]
-        return {}
-
-
-class Schema:
-    def __init__(self):
-        self.dict = {}
-
-    def build(self):
-        self.dict = {
-            "high_level_entity": None,
-            "domain_entity": None,
-            "module": None,
-            "version": None,
-            "url": None,
-        }
-        return doctict.DotDict(self.dict)
+        return current_label_map

@@ -1,11 +1,11 @@
 import unittest
 
 from ingest.template.descriptor import ComplexPropertyDescriptor
-from ingest.template.new_schema_parser import NewSchemaParser
+from ingest.template.schema_parser import SchemaParser
 
 
-class TestNewSchemaParser(unittest.TestCase):
-    """ Testing class for the NewSchemaParser class. """
+class TestSchemaParser(unittest.TestCase):
+    """ Testing class for the SchemaParser class. """
 
     def test__removed_ignored_properties_from_descriptor__success(self):
         sample_complex_metadata_schema_json = {
@@ -34,7 +34,7 @@ class TestNewSchemaParser(unittest.TestCase):
         }
         sample_ignored_properties = ["description"]
 
-        schema_parser = NewSchemaParser(sample_complex_metadata_schema_json, sample_ignored_properties)
+        schema_parser = SchemaParser(sample_complex_metadata_schema_json, sample_ignored_properties)
 
         expected_descriptor = ComplexPropertyDescriptor(sample_complex_metadata_schema_json)
         self.assertEqual(expected_descriptor.get_dictionary_representation_of_descriptor(),
@@ -76,7 +76,7 @@ class TestNewSchemaParser(unittest.TestCase):
         }
         sample_ignored_properties = []
 
-        schema_parser = NewSchemaParser(sample_complex_metadata_schema_json, sample_ignored_properties)
+        schema_parser = SchemaParser(sample_complex_metadata_schema_json, sample_ignored_properties)
 
         expected_descriptor = ComplexPropertyDescriptor(sample_complex_metadata_schema_json)
         self.assertEqual(expected_descriptor.get_dictionary_representation_of_descriptor(),
@@ -114,7 +114,7 @@ class TestNewSchemaParser(unittest.TestCase):
         }
         sample_ignored_properties = []
 
-        schema_parser = NewSchemaParser(sample_simple_metadata_schema_json, sample_ignored_properties)
+        schema_parser = SchemaParser(sample_simple_metadata_schema_json, sample_ignored_properties)
         actual_label_map = schema_parser.get_map_of_paths_by_property_label(
             {"timecourse": schema_parser.schema_dictionary})
 
@@ -182,7 +182,7 @@ class TestNewSchemaParser(unittest.TestCase):
         }
         sample_ignored_properties = []
 
-        schema_parser = NewSchemaParser(sample_complex_metadata_schema_json, sample_ignored_properties)
+        schema_parser = SchemaParser(sample_complex_metadata_schema_json, sample_ignored_properties)
         actual_label_map = schema_parser.get_map_of_paths_by_property_label(
             {"timecourse": schema_parser.schema_dictionary})
 
@@ -253,7 +253,7 @@ class TestNewSchemaParser(unittest.TestCase):
         }
         sample_ignored_properties = []
 
-        schema_parser = NewSchemaParser(sample_complex_metadata_schema_json, sample_ignored_properties)
+        schema_parser = SchemaParser(sample_complex_metadata_schema_json, sample_ignored_properties)
         actual_label_map = schema_parser.get_map_of_paths_by_property_label(
             {"timecourse": schema_parser.schema_dictionary})
 
@@ -294,7 +294,7 @@ class TestNewSchemaParser(unittest.TestCase):
         }
         sample_ignored_properties = []
 
-        schema_parser = NewSchemaParser(sample_simple_metadata_schema_json, sample_ignored_properties)
+        schema_parser = SchemaParser(sample_simple_metadata_schema_json, sample_ignored_properties)
         actual_tab_representation = schema_parser.get_tab_representation_of_schema()
 
         expected_tab_representation = {"timecourse": {"display_name": "Timecourse",
@@ -357,7 +357,7 @@ class TestNewSchemaParser(unittest.TestCase):
         }
         sample_ignored_properties = []
 
-        schema_parser = NewSchemaParser(sample_complex_metadata_schema_json, sample_ignored_properties)
+        schema_parser = SchemaParser(sample_complex_metadata_schema_json, sample_ignored_properties)
         actual_tab_representation = schema_parser.get_tab_representation_of_schema()
 
         expected_tab_representation = {"timecourse": {"display_name": "Timecourse",

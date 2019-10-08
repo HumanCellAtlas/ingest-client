@@ -12,13 +12,13 @@ from ingest.importer.data_node import DataNode
 from ingest.importer.spreadsheet.ingest_worksheet import IngestWorksheet, \
     MODULE_TITLE_PATTERN, IngestRow
 from ingest.template.exceptions import UnknownKeySchemaException
-from ingest.template.new_schema_template import NewSchemaTemplate
+from ingest.template.schema_template import SchemaTemplate
 
 
 class TemplateManager:
     default_keys = ['describedBy', 'schema_type']
 
-    def __init__(self, template: NewSchemaTemplate, ingest_api: IngestApi):
+    def __init__(self, template: SchemaTemplate, ingest_api: IngestApi):
         self.template = template
         self.ingest_api = ingest_api
         self.logger = logging.getLogger(__name__)
@@ -143,9 +143,9 @@ class TemplateManager:
 
 def build(schemas, ingest_api) -> TemplateManager:
     if not schemas:
-        template = NewSchemaTemplate(ingest_api_url=ingest_api.url)
+        template = SchemaTemplate(ingest_api_url=ingest_api.url)
     else:
-        template = NewSchemaTemplate(ingest_api_url=ingest_api.url, metadata_schema_urls=schemas)
+        template = SchemaTemplate(ingest_api_url=ingest_api.url, metadata_schema_urls=schemas)
 
     template_mgr = TemplateManager(template, ingest_api)
     return template_mgr

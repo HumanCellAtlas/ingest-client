@@ -1,10 +1,6 @@
-#!/usr/bin/env python
-"""
-Description goes here
-"""
 import os
 
-from ingest.template.new_schema_template import NewSchemaTemplate
+from ingest.template.schema_template import SchemaTemplate
 
 __author__ = "jupp"
 __license__ = "Apache 2.0"
@@ -37,7 +33,7 @@ class TestSchemaTemplate(TestCase):
 
         file = "foo.xlsx"
         spreadsheet_builder = VanillaSpreadsheetBuilder(file)
-        template = NewSchemaTemplate(json_schema_docs=[data], property_migrations=[])
+        template = SchemaTemplate(json_schema_docs=[data], property_migrations=[])
         spreadsheet_builder.build(template)
         spreadsheet_builder.save_spreadsheet()
 
@@ -48,7 +44,6 @@ class TestSchemaTemplate(TestCase):
         self.assertEqual("FOO BAR", sheet.cell(row=1, column=1).value)
         self.assertEqual("For example: e.g. foo", sheet.cell(row=3, column=1).value.strip())
         self.assertEqual("donor_organism.foo_bar", sheet.cell(row=4, column=1).value)
-
         # clean up
         os.remove(file)
 

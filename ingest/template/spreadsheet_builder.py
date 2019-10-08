@@ -1,7 +1,7 @@
 import xlsxwriter
 
 from ingest.template.tab_config import TabConfig
-from .new_schema_template import NewSchemaTemplate
+from .schema_template import SchemaTemplate
 
 DEFAULT_INGEST_URL = "http://api.ingest.data.humancellatlas.org"
 DEFAULT_SCHEMAS_ENDPOINT = "/schemas/search/latestSchemas"
@@ -57,13 +57,13 @@ class SpreadsheetBuilder():
         if tabs_template and schema_urls:
             tabs_parser = TabConfig()
             tabs = tabs_parser.load(tabs_template)
-            template = NewSchemaTemplate(metadata_schema_urls=schema_urls, tab_config=tabs)
+            template = SchemaTemplate(metadata_schema_urls=schema_urls, tab_config=tabs)
         elif schema_urls:
-            template = NewSchemaTemplate(metadata_schema_urls=schema_urls, migrations_url=DEFAULT_MIGRATIONS_URL)
+            template = SchemaTemplate(metadata_schema_urls=schema_urls, migrations_url=DEFAULT_MIGRATIONS_URL)
         elif schema_template:
             template = schema_template
         else:
-            template = NewSchemaTemplate()
+            template = SchemaTemplate()
 
         self.build(template)
 

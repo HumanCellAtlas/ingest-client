@@ -1,31 +1,45 @@
-#!/usr/bin/env python
-"""
-This package will return a SchemaTemplate objects from a set of JSON schema files.
-"""
-
-import json
-import urllib.request
-from collections import defaultdict
 from datetime import datetime
-from itertools import chain
 
-from yaml import dump as yaml_dump, load as yaml_load
+import requests
+import yaml
 
 from ingest.api.ingestapi import IngestApi
 from .exceptions import RootSchemaException, UnknownKeySchemaException
+from .migration_parser import MigrationParser
 from .schema_parser import SchemaParser
 from .tab_config import TabConfig
 
 
-class SchemaTemplate:
-    """ A SchemaTemplate is data structure representing a simple view of a JSON HCA metadata schema. """
+class SchemaTemplate():
+    """ A SchemaTemplate is used to encapsulate information about all the metadata schema files and
+    property migration files that are directly passed in in order to generate a spreadsheet. """
 
     def __init__(self, ingest_api_url="http://api.ingest.dev.data.humancellatlas.org",
                  migrations_url="https://schema.dev.data.humancellatlas.org/property_migrations",
-                 metadata_schema_urls=[], json_schema_docs=[], tab_config=None, property_migrations=None):
-        """
-        Initialize a set of SchemaTemplate objects where one SchemaTemplate is a representation of a single metadata
-        schema file and its associated property migrations.
+                 metadata_schema_urls=None, json_schema_docs=None, tab_config=None, property_migrations=None):
+        """ Creates and empty/default dictionary containing the following information:
+        1) template_version:  A string keeping track of the version of the TopLevelSchemaDescriptor that is being used
+        in case the components of this dictionary changes over time.
+
+        2) created_date: A string representing the date and time at which point this internal representation of the
+        metadata schemas and property migration file was created.
+
+        3) meta_data_properties: A dictionary structure where each key represents a metadata schema that was directly
+        passed in to parse and where each value is a dictionary representing any properties that are associated with
+        the given schema. The dictionary itself may be recursive and contain embedded schemas that describe entire
+        properties.
+
+        4) labels: A dictionary structure mapping the "path" to every property that is accessible by traversing the
+        metadata schema graph structure, initiating from this top-level schema. For example, the "donor_organism" Type
+        metadata schema contains the property "biomaterial_core" which is described by its own Core schema and contains
+        a property "biomaterial_name". The key that would be added here would be "biomaterial_name" and its value would
+        be "donor_organism.biomaterial_core.biomaterial_name".
+
+        5) tabs: A list of dictionaries where each dictionary represents a tab that would be generated in the overall
+        spreadsheet if this entire schema was turned into a spreadsheet.
+
+        6) migrations: A nested dictionary describing the migrations that have occurred for each property in any
+        metadata schema.
 
         :param ingest_api_url: A string representing the root Ingest API URL from which the latest metadata schema
                                URLs will be queried.
@@ -37,18 +51,17 @@ class SchemaTemplate:
         :param json_schema_docs: A list of objects where each object represents a deserialized JSON-formatted
                                  metadata schema. If this parameter is provided, the parameter metadata_schema_urls
                                  should not be populated.
-        :param tab_config: A TabConfig object that represents the expected tabs that will be created in a spreadsheet
-                           given the metadata schemas provided.
+        :param spreadsheet_configuration: A TabConfig object that represents the expected tabs that will be created
+                                          in a spreadsheet given the metadata schemas provided.
         :param property_migrations: An object representing a deserialized JSON-string which is a property migrations
                                     file. A property migrations files dictates how the version of the schema has changed
                                     from an older version.
-
         """
 
-        # Function validation
-        # 1) Only one of json_schema_docs or metadata_schema_urls may be populated or neither (NAND boolean).
+        # Function validation: only one of json_schema_docs or metadata_schema_urls may be populated or neither (NAND
+        # boolean).
         if bool(metadata_schema_urls) and bool(json_schema_docs):
-            raise TypeError(
+            raise Exception(
                 'Only one of function arguments metadata_schema_urls or json_schema_docs (or neither) may be '
                 'populated when initializing SchemaTemplate.')
 
@@ -56,40 +69,150 @@ class SchemaTemplate:
         # If neither the metadata_schema_urls are given nor the json_schema_docs, fetch the metadata schema URLs via
         # querying the Ingest API.
         if not metadata_schema_urls and not json_schema_docs:
-            self.metadata_schema_urls = self.get_latest_submittable_schema_urls(ingest_api_url)
+            self.metadata_schema_urls = self._get_latest_submittable_schema_urls(ingest_api_url)
 
         self.property_migrations = property_migrations
         # If the property migrations were not given as input, read the migrations from the migrations URL and store
         # into the deserialized JSON into a Python object.
         if not self.property_migrations:
-            self.property_migrations = self.get_migrations(migrations_url)
+            self.property_migrations = self._get_property_migrations_json_obj(migrations_url)
 
         self.json_schemas = json_schema_docs
         if not self.json_schemas:
-            self.json_schemas = self.get_json_objs_from_metadata_schema_urls()
+            self.json_schemas = self._get_json_objs_from_metadata_schema_urls()
 
-        # Create the base template
-        self.template = {
-            "template_version": "1.0.0",
-            "created_date": str(datetime.now()),
-            "meta_data_properties": {},
-            "labels": {},
-            "tabs": [],
-            "migrations": {}
+        self.template_version = "1.0.0"
+        self.created_date = str(datetime.now())
+        self.meta_data_properties = {}
+        self.labels = {}
+        self.tabs = []
+        self.migrations = {}
+
+        for json_schema in self.json_schemas:
+            schema_parser = SchemaParser(json_schema)
+            schema_descriptor = schema_parser.schema_descriptor
+            fully_parsed_dictionary = schema_parser.schema_dictionary
+            self.meta_data_properties[schema_descriptor.get_schema_module_name()] = fully_parsed_dictionary
+            self.tabs.append(schema_parser.get_tab_representation_of_schema())
+            self.labels.update(schema_parser.get_map_of_paths_by_property_label(
+                {schema_descriptor.get_schema_module_name(): fully_parsed_dictionary}))
+
+        self.migrations = MigrationParser(self.property_migrations).migrations
+
+        self.spreadsheet_configuration = tab_config if tab_config else TabConfig(self.get_dictionary_representation())
+
+    def get_dictionary_representation(self):
+        return {
+            "template_versions": self.template_version,
+            "created_date": self.created_date,
+            "meta_data_properties": self.meta_data_properties,
+            "labels": self.labels,
+            "tabs": self.tabs,
+            "migrations": MigrationParser.get_dictionary_representation(self.migrations)
         }
 
-        # Add the metadata schemas and the supplementary property migrations to the base template via the SchemaParser.
-        self.parser = SchemaParser(self)
-        self.populate_schema_from_metadata_schema_and_property_migrations()
+    def get_list_of_schema_spreadsheet_representations(self):
+        return self.tabs
 
-        # If a tab configuration is supplied, use that. Otherwise, use one that based off of the template above.
-        self.internal_tab_config = tab_config if tab_config else TabConfig(init=self.template)
+    def lookup_property_attributes_in_metadata(self, property_key):
+        """
+        Given a property key which details the full path to the property from the top level schema, returns a dictionary
+        representing the attributes of the requested property.
 
-    def get_schema_urls(self):
-        """ Returns a list of metadata schema urls that have been used to instantiate the SchemaTemplate. """
-        return self.metadata_schema_urls
+        :param property_key: A string representing the fully qualified path to the desired metadata property
+        :return: A dictionary representing the attributes of the property. If none is found, an exception will be thrown
+        """
 
-    def get_latest_submittable_schema_urls(self, ingest_api_url):
+        return self._lookup_fully_qualified_key_path_in_dictionary(property_key, self.meta_data_properties)
+
+    def lookup_metadata_schema_name_given_title(self, tab_display_name):
+        """
+        Given a tab's display name which is often used to label a column in a spreadsheet that represents a property of
+        a schema, return the fully qualified path that is the equivalent key (the key can then be used to fetch
+        additional attributes about the property).
+
+        :param tab_display_name: A string representing a display name of a schema property.
+        :return: A string representing the display name's fully qualified path from a schema.
+        """
+
+        try:
+            return self.spreadsheet_configuration.get_key_for_label(tab_display_name)
+        except KeyError:
+            raise UnknownKeySchemaException(
+                f"ERROR: Was unable to find a fully qualified path (key) with the display name {tab_display_name}.")
+
+    def lookup_next_latest_key_migration(self, fully_qualified_key):
+        """
+        Given a key, returns the fully qualified key in the next latest schema (potentially not the absolute latest
+        schema though) if it has been replaced.
+
+        :param key: A string representing a fully qualified field name in an older metadata schema version.
+        :return: A string representing a fully qualified field name in the next latest metadata schema version if a
+                 migration to that schema version exists. If a migration does not exist, returns the original fully
+                 qualified key.
+        """
+
+        if not self._validate_fully_qualified_key_exists(fully_qualified_key):
+            raise Exception(f"ERROR: Fully qualified key {fully_qualified_key} does not exist in any of the schemas.")
+
+        if fully_qualified_key in self.migrations:
+            migration_info = self.migrations[fully_qualified_key]
+            return migration_info.replaced_by if migration_info.replaced_by in migration_info else fully_qualified_key
+
+        return fully_qualified_key
+
+    def lookup_absolute_latest_key_migration(self, fully_qualified_key):
+        """
+        Given a key, returns the fully qualified key in the maximal latest schema if it has been replaced.
+
+        :param key: A string representing a fully qualified field name in an older metadata schema version.
+        :return: A string representing a fully qualified field name in the latest metadata schema
+                 version if a migration chain to that schema version exists. If a migration does not exist, returns the
+                 original fully qualified key.
+        """
+
+        if not self._validate_fully_qualified_key_exists(fully_qualified_key):
+            raise Exception(f"ERROR: Fully qualified key {fully_qualified_key} does not exist in any of the schemas.")
+
+        original_key = fully_qualified_key
+        next_latest_migrated_key = self.lookup_next_latest_key_migration(fully_qualified_key)
+
+        while original_key != next_latest_migrated_key:
+            original_key = next_latest_migrated_key
+            next_latest_migrated_key = self.lookup_next_latest_key_migration(original_key)
+
+        return next_latest_migrated_key
+
+    def generate_yaml_representation_of_spreadsheets(self, tabs_only):
+        """
+        Generate a YAML object representing the schema_template object and if `tabs_only` is true, then only generate
+        the YAML based on self.tabs. This YAML object can be used to generate arbitrary spreadsheets based on the
+        metadata schemas.
+
+        :param tabs_only: When true, only uses the tabs to generate the YAML instead of including all the "metadata"
+                          about the metadata schemas encapsulated in this SchemaTemplate object.
+        :return: A YAML object representing the metadata schemas encapsulated in this SchemaTemplate object.
+        """
+
+        yaml.default_flow_style = False
+        return yaml.dump({"tabs": self.tabs} if tabs_only else self.get_dictionary_representation(), indent=4)
+
+    def _validate_fully_qualified_key_exists(self, fully_qualified_key):
+        return fully_qualified_key in self.labels
+
+    def _lookup_fully_qualified_key_path_in_dictionary(self, fully_defined_metadata_property, dictionary):
+        if fully_defined_metadata_property in dictionary:
+            return dictionary[fully_defined_metadata_property]
+
+        if '.' in fully_defined_metadata_property:
+            expected_schema = fully_defined_metadata_property.split('.')[0]
+            if expected_schema in dictionary:
+                return self._lookup_fully_qualified_key_path_in_dictionary(
+                    fully_defined_metadata_property.split('.', 1)[1], dictionary[expected_schema])
+
+        raise UnknownKeySchemaException(f"ERROR: Cannot find key {fully_defined_metadata_property} in any schema!")
+
+    def _get_latest_submittable_schema_urls(self, ingest_api_url):
         """
         Given the Ingest API URL, send a request to get the latest metadata schemas and return the URLs.
 
@@ -102,7 +225,7 @@ class SchemaTemplate:
         raw_schemas_from_ingest_api = ingest_api.get_schemas(high_level_entity="type", latest_only=True)
         return [schema["_links"]["json-schema"]["href"] for schema in raw_schemas_from_ingest_api]
 
-    def get_migrations(self, migrations_url):
+    def _get_property_migrations_json_obj(self, migrations_url):
         """
         Returns a a JSON-formatted property migrations file read from the given URL.
 
@@ -112,12 +235,11 @@ class SchemaTemplate:
         """
 
         try:
-            with urllib.request.urlopen(migrations_url) as url:
-                return json.loads(url.read().decode())["migrations"]
+            return requests.get(migrations_url).json()["migrations"]
         except Exception:
             raise RootSchemaException(f"Was unable to read the property migrations file from URL {migrations_url}")
 
-    def get_json_objs_from_metadata_schema_urls(self):
+    def _get_json_objs_from_metadata_schema_urls(self):
         """
         Return a list of objects that represent deserialized JSON-formatted metadata schemas from the URLs stored in
         self.metadata_schema_urls.
@@ -127,215 +249,7 @@ class SchemaTemplate:
         metadata_schema_objs = []
         for uri in self.metadata_schema_urls:
             try:
-                with urllib.request.urlopen(uri) as url:
-                    metadata_schema_objs.append(json.loads(url.read().decode()))
+                metadata_schema_objs.append(requests.get(url=uri).json())
             except Exception:
                 raise RootSchemaException(f"Was unable to read metadata schema JSON at {uri}")
         return metadata_schema_objs
-
-    def populate_schema_from_metadata_schema_and_property_migrations(self):
-        """ Parse and load the metadata schemas and respective property migrations into the schema via the
-        SchemaParser.
-        """
-
-        [self.parser.load_schema(metadata_schema) for metadata_schema in self.json_schemas]
-        [self.parser.load_migration(migration) for migration in self.property_migrations]
-
-    @property
-    def tab_config(self):
-        return self.internal_tab_config
-
-    @tab_config.setter
-    def tab_config(self, value):
-        self.internal_tab_config = value
-
-    def lookup(self, key):
-        try:
-            return self.get(self.template["meta_data_properties"], key)
-        except Exception:
-            raise UnknownKeySchemaException(
-                "Can't map the key to a known JSON schema property: " + str(key))
-
-    def replaced_by(self, key):
-        """
-        Given a key, returns the fully qualified key in the next latest schema (potentially not the absolute latest
-        schema though) if it has been replaced.
-
-        :param key: A string representing a fully qualified field name in an older metadata schema version.
-        :return: A string representing a fully qualified field name in the next latest metadata schema version if a
-                 migration to that schema version exists.
-        """
-        try:
-            field_name = ""
-            if key.split(".")[-1] in self.parser.create_new_template_for_property().keys():
-                field_name = "." + key.split(".")[-1]
-                key = ".".join(key.split(".")[:-1])
-
-            return (self._lookup_migration(key)) + field_name
-        except Exception:
-            raise UnknownKeySchemaException(
-                "Can't map the key to a known JSON schema property: " + str(key))
-
-    def replaced_by_latest(self, key):
-        """
-        Tells you the latest fully qualified key if it has been replaced. This function will check that it is also
-        valid in the latest loaded schema.
-
-        :param key: A string representing a fully qualified field name in an older metadata schema version.
-        :return: A string representing a fully qualified field name in the latest metadata schema version if it exists.
-        """
-        replaced_by = self._lookup_migration(key)
-
-        try:
-            self.lookup(replaced_by)
-            return replaced_by
-        except UnknownKeySchemaException:
-            if key == replaced_by:
-                raise UnknownKeySchemaException(
-                    "Can't map the key to a known JSON schema property: " + str(key))
-            return self.replaced_by_latest(replaced_by)
-
-    def replaced_by_at(self, key, schema_version):
-        """
-        Tells you if the fully qualified key has been replaced at this version. This method will not check if it is a
-        valid key in the schema, it only tells you if it has been replaced. If it hasn't been replaced it will return
-        the key.
-
-        :param key: A string representing a fully qualified field name in an older metadata schema version.
-        :param schema_version: A string representing the schema version at which to check whether the key has been
-                               replaced with an equivalent and different fully qualified name.
-        :return: A string representing a fully qualified field name at the specified schema version if it exists.
-        """
-        try:
-            replaced_by = self._lookup_migration(key)
-            if key == replaced_by:
-                return key
-
-            version = self._lookup_migration_version(key)
-
-            if int(schema_version.split(".")[0]) < int(version.split(".")[0]):
-                # the requested schema version is before the migration so
-                # just return the original key
-                return key
-
-            next_replaced_by_version = self._lookup_migration_version(replaced_by) or schema_version
-            if version == next_replaced_by_version:
-                next_replaced_by_version = schema_version
-
-            if int(version.split(".")[0]) \
-                    <= int(schema_version.split(".")[0]) \
-                    <= int(next_replaced_by_version.split(".")[0]):
-                return replaced_by
-            else:
-                return self.replaced_by_at(replaced_by, schema_version)
-        except Exception:
-            raise UnknownKeySchemaException(
-                "Can't map the key to a known JSON schema property: " + str(key))
-
-    def _lookup_migration(self, key):
-        migration, backtrack = self._find_migration_object(key)
-
-        if "replaced_by" in migration:
-            if (backtrack):
-                return migration["replaced_by"] + backtrack
-            return migration["replaced_by"]
-        else:
-            return key
-
-    def _lookup_migration_version(self, key):
-        migration, backtrack = self._find_migration_object(key)
-
-        if "version" in migration:
-            return migration["version"]
-        return None
-
-    def _find_migration_object(self, fq_key):
-        backtrack_fq_key = ""
-        while True:
-            try:
-                migration_object = self.get(self.template["migrations"], fq_key)
-                return migration_object, backtrack_fq_key
-            except Exception:
-                fq_key = fq_key.split(".")
-                backtrack_fq_key = "." + fq_key.pop()
-                fq_key = ".".join(fq_key)
-                if "." not in fq_key:
-                    break
-        return {}, backtrack_fq_key
-
-    def get_template(self):
-        return self.template["meta_data_properties"]
-
-    def append_tab(self, tab_info):
-        self.template["tabs"].append(tab_info)
-
-    def append_column_to_tab(self, property_key):
-        level_one = self._get_level_one(property_key)
-        for i, tab in enumerate(self.template["tabs"]):
-            if level_one in tab:
-                self.template["tabs"][i][level_one]["columns"].append(property_key)
-
-    def put_migration(self, property_migration):
-        for k, v in property_migration.items():
-            if k in self.template["migrations"]:
-                self.template["migrations"][k] = self._mergeDict(self.template["migrations"][k], v)
-            else:
-                self.template["migrations"][k] = v
-
-    def _mergeDict(self, dict1, dict2):
-        dict3 = defaultdict(list)
-        for k, v in chain(dict1.items(), dict2.items()):
-            if k in dict3:
-                if isinstance(v, dict):
-                    dict3[k].update(self._mergeDict(dict3[k], v))
-                elif isinstance(v, list) and isinstance(dict3[k], list) and len(v) == len(dict3[k]):
-                    for index, e in enumerate(v):
-                        dict3[k][index].update(self._mergeDict(dict3[k][index], e))
-                else:
-                    dict3[k].update(v)
-            else:
-                dict3[k] = v
-        return dict3
-
-    def put(self, property, value):
-        """ Add a property to the schema template """
-        self.template["meta_data_properties"][property] = value
-
-    def set_label_mappings(self, dict):
-        """ A dictionary of label to keys mapping """
-        self.template["labels"] = dict
-
-    def yaml_dump(self, tabs_only=False):
-        return yaml_dump(yaml_load(self.json_dump(tabs_only)), default_flow_style=False)
-
-    def json_dump(self, tabs_only=False):
-        if tabs_only:
-            tabs = {"tabs": self.template["tabs"]}
-            return json.dumps(tabs, indent=4)
-        return json.dumps(self.template, indent=4)
-
-    def get_key_for_label(self, column, tab):
-        try:
-            tab_key = self.tab_config.get_key_for_label(tab)
-            for column_key in self.parser.key_lookup(column.lower()):
-                if tab_key == self._get_level_one(column_key):
-                    return column_key
-        except Exception:
-            raise UnknownKeySchemaException(
-                "Can't map the key to a known JSON schema property: " + str(column))
-
-    def get_tab_key(self, label):
-        try:
-            return self.tab_config.get_key_for_label(label)
-        except KeyError:
-            raise UnknownKeySchemaException(f'Tab [{label}] is not recognised.')
-
-    def _get_level_one(self, key):
-        return key.split('.')[0]
-
-    def get(self, d, key):
-        if "." in key:
-            key, rest = key.split(".", 1)
-            return self.get(d[key], rest)
-        else:
-            return d[key]

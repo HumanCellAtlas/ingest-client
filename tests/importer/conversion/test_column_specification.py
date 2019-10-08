@@ -1,9 +1,10 @@
 from unittest import TestCase
+from unittest.mock import Mock, patch
 
 from ingest.importer.conversion.column_specification import ColumnSpecification, ConversionType
 from ingest.importer.conversion.data_converter import BooleanConverter, DataType, DefaultConverter, IntegerConverter, \
     ListConverter, StringConverter
-from ingest.template.new_schema_template import NewSchemaTemplate
+from ingest.template.schema_template import SchemaTemplate
 
 
 class ColumnSpecificationTest(TestCase):
@@ -50,10 +51,9 @@ class ColumnSpecificationTest(TestCase):
                 }
             }
         }
-        sample_property_migrations = []
+        self._mock_fetching_of_property_migrations()
 
-        self.schema_template = NewSchemaTemplate(json_schema_docs=[sample_metadata_schema_json],
-                                                 property_migrations=sample_property_migrations)
+        self.schema_template = SchemaTemplate(json_schema_docs=[sample_metadata_schema_json])
 
     def test__column_specification_creation_identifiable__succeeds(self):
         column_specification = ColumnSpecification(self.schema_template, "someschema.protocol_id", "someschema")
@@ -107,9 +107,7 @@ class ColumnSpecificationTest(TestCase):
                 }
             }
         }
-        sample_property_migrations = []
-        schema_template = NewSchemaTemplate(json_schema_docs=[nested_sample_metadata_schema_json],
-                                            property_migrations=sample_property_migrations)
+        schema_template = SchemaTemplate(json_schema_docs=[nested_sample_metadata_schema_json])
 
         column_specification = ColumnSpecification(schema_template,
                                                    "someschema.some_parent_property.some_child_property", "someschema")
@@ -136,9 +134,7 @@ class ColumnSpecificationTest(TestCase):
                     }
                 }
             }
-            sample_property_migrations = []
-            schema_template = NewSchemaTemplate(json_schema_docs=[sample_metadata_schema_json],
-                                                property_migrations=sample_property_migrations)
+            schema_template = SchemaTemplate(json_schema_docs=[sample_metadata_schema_json])
 
             column_specification = ColumnSpecification(schema_template, "someschema.some_property", "someschema")
 
@@ -165,9 +161,7 @@ class ColumnSpecificationTest(TestCase):
                     }
                 }
             }
-            sample_property_migrations = []
-            schema_template = NewSchemaTemplate(json_schema_docs=[sample_metadata_schema_json],
-                                                property_migrations=sample_property_migrations)
+            schema_template = SchemaTemplate(json_schema_docs=[sample_metadata_schema_json])
 
             column_specification = ColumnSpecification(schema_template, "someschema.multivalue_property", "someschema")
 
@@ -187,3 +181,8 @@ class ColumnSpecificationTest(TestCase):
                                                    "someotherschema")
 
         self.assertEqual(ConversionType.LINKING_DETAIL, column_specification.get_conversion_type())
+
+    @patch("requests.get")
+    def _mock_fetching_of_property_migrations(self, property_migrations_request_mock):
+        property_migrations_request_mock.return_value = Mock(ok=True)
+        property_migrations_request_mock.return_value.json.return_value = {'migrations': []}

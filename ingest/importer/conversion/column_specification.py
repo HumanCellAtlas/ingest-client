@@ -4,7 +4,7 @@ from enum import Enum
 from ingest.importer.conversion import utils, data_converter
 from ingest.importer.conversion.data_converter import DataType, CONVERTER_MAP, ListConverter
 from ingest.template.exceptions import UnknownKeySchemaException
-from ingest.template.new_schema_template import NewSchemaTemplate
+from ingest.template.schema_template import SchemaTemplate
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -25,7 +25,7 @@ class ColumnSpecification:
 
     # context_concrete_type is the concrete type of the Metadata Entity for which the column
     # represented by this object is specified for.
-    def __init__(self, schema_template: NewSchemaTemplate, header, context_concrete_type, context=None,
+    def __init__(self, schema_template: SchemaTemplate, header, context_concrete_type, context=None,
                  order_of_occurrence=1):
         # Context refers to the context in which the header is being specified for.
         # For example, the property `project.contributors.email` will have a slightly different
@@ -117,7 +117,7 @@ class ColumnSpecification:
         return converter
 
     @staticmethod
-    def _map_key_to_spec(schema_template: NewSchemaTemplate, key):
+    def _map_key_to_spec(schema_template: SchemaTemplate, key):
         try:
             spec = schema_template.lookup_property_attributes_in_metadata(key)
         except UnknownKeySchemaException:
