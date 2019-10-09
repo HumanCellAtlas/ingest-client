@@ -20,7 +20,7 @@ class StorageJobManagerTest(TestCase):
             "metadataUuid": mock_metadata_uuid,
             "metadataDcpVersion": mock_dcp_version,
             "entityType": "bionicmaterial",
-            "status": "valid",
+            "isCompleted": True,
             "_links": {"self": {"href": "mock-storage-job-url"}}
         }
 
@@ -55,7 +55,7 @@ class StorageServiceTest(TestCase):
         mock_metadata_type = "bionicmaterial"
         mock_metadata_resource = MetadataResource(mock_metadata_type, {}, mock_metadata_uuid, mock_dcp_version, None)
 
-        mock_storage_job = StorageJob("mock-storage_job_url", mock_metadata_uuid, mock_dcp_version, mock_metadata_type, "valid")
+        mock_storage_job = StorageJob("mock-storage_job_url", mock_metadata_uuid, mock_dcp_version, mock_metadata_type, True)
         mock_storage_job_manager = Mock(name="storage_job_manager", spec_set=StorageJobManager)
         mock_storage_job_manager.create_storage_job = MagicMock(return_value=mock_storage_job)
         mock_storage_job_manager.complete_storage_job = MagicMock(name="complete storage job spy")
@@ -91,7 +91,7 @@ class StorageServiceTest(TestCase):
         mock_staging_service = Mock(name="staging_service", spec_set=StagingService)
         mock_staging_area_uuid = "31de7758-4de3-4bcc-9848-c3f06ead684b"
 
-        mock_storage_job = StorageJob("mock-storage_job_url", mock_metadata_uuid, mock_dcp_version, mock_metadata_type, "submitted")
+        mock_storage_job = StorageJob("mock-storage_job_url", mock_metadata_uuid, mock_dcp_version, mock_metadata_type, True)
         mock_storage_job_manager.find_storage_job = MagicMock(return_value=mock_storage_job)
         mock_storage_job_manager.get_storage_job = MagicMock(return_value=mock_storage_job)
 
@@ -117,7 +117,7 @@ class StorageServiceTest(TestCase):
         mock_staging_service = Mock(name="staging_service", spec_set=StagingService)
         mock_staging_area_uuid = "31de7758-4de3-4bcc-9848-c3f06ead684b"
 
-        mock_storage_job = StorageJob("mock-storage_job_url", mock_metadata_uuid, mock_dcp_version, mock_metadata_type, "not_submitted")
+        mock_storage_job = StorageJob("mock-storage_job_url", mock_metadata_uuid, mock_dcp_version, mock_metadata_type, False)
         mock_storage_job_manager.find_storage_job = MagicMock(return_value=mock_storage_job)
         mock_storage_job_manager.get_storage_job = MagicMock(return_value=mock_storage_job)
         mock_storage_job_manager.delete_storage_job = MagicMock(name="delete storage job spy")

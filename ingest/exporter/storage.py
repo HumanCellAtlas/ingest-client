@@ -30,7 +30,7 @@ class StorageJob:
     metadata_uuid: str
     dcp_version: str
     entity_type: str
-    status: str
+    is_completed: bool
 
     @staticmethod
     def from_json(storage_job_json) -> 'StorageJob':
@@ -38,9 +38,9 @@ class StorageJob:
         metadata_uuid = storage_job_json["metadataUuid"]
         dcp_version = storage_job_json["metadataDcpVersion"]
         entity_type = storage_job_json["entityType"]
-        status = storage_job_json["status"]
+        is_completed = storage_job_json["isCompleted"]
 
-        return StorageJob(url, metadata_uuid, dcp_version, entity_type, status)
+        return StorageJob(url, metadata_uuid, dcp_version, entity_type, is_completed)
 
 
 class StorageJobManager:
@@ -110,7 +110,7 @@ class StorageService:
                 raise StorageFailed() from e
 
     def _wait_for_completed_storage_job(self, storage_job: StorageJob, attempts: int, poll_period_seconds: float) -> str:
-        if storage_job.status == "submitted":
+        if storage_job.is_completed:
             return self._get_file_dss_url(storage_job.metadata_uuid, storage_job.dcp_version)
         else:
             if attempts == 0:
