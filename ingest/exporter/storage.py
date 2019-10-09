@@ -61,7 +61,13 @@ class StorageJobManager:
         return StorageJob.from_json(self.ingest_client.get_storage_job(storage_job_url))
 
     def find_storage_job(self, metadata_uuid: str, dcp_version: str) -> Optional[StorageJob]:
-        return StorageJob.from_json(self.ingest_client.find_storage_job(metadata_uuid, dcp_version))
+        try:
+            return StorageJob.from_json(self.ingest_client.find_storage_job(metadata_uuid, dcp_version))
+        except HTTPError as e:
+            if e.response.status_code == codes.not_found:
+                return None
+            else:
+                raise e
 
     def complete_storage_job(self, storage_job: StorageJob) -> StorageJob:
         storage_job_url = storage_job.url
