@@ -9,6 +9,8 @@ from dataclasses import dataclass
 from requests import HTTPError, codes
 from time import sleep
 
+from typing import Optional
+
 
 class StorageJobExists(Exception):
     pass
@@ -55,15 +57,15 @@ class StorageJobManager:
             else:
                 raise e
 
-    def get_storage_job(self, storage_job_url):
+    def get_storage_job(self, storage_job_url) -> StorageJob:
         return StorageJob.from_json(self.ingest_client.get_storage_job(storage_job_url))
 
-    def find_storage_job(self, metadata_uuid: str, dcp_version: str):
+    def find_storage_job(self, metadata_uuid: str, dcp_version: str) -> Optional[StorageJob]:
         return StorageJob.from_json(self.ingest_client.find_storage_job(metadata_uuid, dcp_version))
 
-    def complete_storage_job(self, storage_job: StorageJob):
+    def complete_storage_job(self, storage_job: StorageJob) -> StorageJob:
         storage_job_url = storage_job.url
-        self.ingest_client.complete_storage_job(storage_job_url)
+        return self.ingest_client.complete_storage_job(storage_job_url)
 
     def delete_storage_job(self, storage_job_url):
         return self.ingest_client.delete_staging_job(storage_job_url)
@@ -77,13 +79,6 @@ class StorageService:
         self.dss_client = dss_client
 
     def store(self, metadata: MetadataResource, staging_area_uuid: str) -> str:
-        """
-        Exports a metadata resource to the Date Storage Service.
-
-        :param staging_area_uuid: uuid of the staging area
-        :param metadata: the metadata resource to store
-        :return: the URL of the exported metadata resource file
-        """
         return self._store(metadata, staging_area_uuid, 3)
 
     def _store(self, metadata: MetadataResource, staging_area_uuid: str, attempts: int) -> str:
@@ -103,10 +98,13 @@ class StorageService:
                 return dss_url
             except StorageJobExists:
                 storage_job = self.storage_job_manager.find_storage_job(metadata_uuid, dcp_version)
-                try:
-                    return self._wait_for_completed_storage_job(storage_job, 5, 1.5)
-                except StorageJobTimeOut:
-                    self.storage_job_manager.delete_storage_job(storage_job.url)
+                if storage_job:
+                    try:
+                        return self._wait_for_completed_storage_job(storage_job, 5, 1.5)
+                    except StorageJobTimeOut:
+                        self.storage_job_manager.delete_storage_job(storage_job.url)
+                        return self._store(metadata, staging_area_uuid, attempts - 1)
+                else:
                     return self._store(metadata, staging_area_uuid, attempts - 1)
             except Exception as e:
                 raise StorageFailed() from e
