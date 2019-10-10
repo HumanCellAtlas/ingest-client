@@ -82,6 +82,9 @@ class MetadataNodeSet:
         self.obj_uuids = set()  # the uuid of a link is just the uuid of the process denoting the link
         self.objs = []
 
+    def __contains__(self, item: MetadataResource):
+        return item.uuid in self.obj_uuids
+
     def add_node(self, node: MetadataResource):
         if node.uuid in self.obj_uuids:
             pass
@@ -112,6 +115,8 @@ class ExperimentGraph:
         for node in graph.nodes.get_nodes():
             self.nodes.add_node(node)
 
+        return self
+
 
 class GraphCrawler:
     def __init__(self, ingest_client: IngestApi):
@@ -127,18 +132,21 @@ class GraphCrawler:
                       ExperimentGraph())
 
     def _crawl(self, derived_node: MetadataResource, partial_graph: ExperimentGraph) -> ExperimentGraph:
-        derived_by_processes = self.get_derived_by_processes(derived_node)
-        processes_protocols_and_inputs = [self.inputs_and_protocols_for_process(process) for process in derived_by_processes]
-        processes_links = GraphCrawler.links_for_processes(processes_protocols_and_inputs, derived_node)
+        if derived_node in partial_graph.nodes:
+            return partial_graph
+        else:
+            derived_by_processes = self.get_derived_by_processes(derived_node)
+            processes_protocols_and_inputs = [self.inputs_and_protocols_for_process(process) for process in derived_by_processes]
+            processes_links = GraphCrawler.links_for_processes(processes_protocols_and_inputs, derived_node)
 
-        partial_graph.links.add_links(processes_links)
-        partial_graph.nodes.add_nodes([derived_node] +
-                                      GraphCrawler.flatten([p.inputs + p.protocols + [p.process] for p in processes_protocols_and_inputs]))
+            partial_graph.links.add_links(processes_links)
+            partial_graph.nodes.add_nodes([derived_node] +
+                                          GraphCrawler.flatten([p.protocols + [p.process] for p in processes_protocols_and_inputs]))
 
-        all_process_inputs = GraphCrawler.flatten([p.inputs for p in processes_protocols_and_inputs])
-        return reduce(lambda pg1,pg2: pg1.extend(pg2),
-                      map(lambda input: self._crawl(input, ExperimentGraph()), all_process_inputs),
-                      ExperimentGraph())
+            all_process_inputs = GraphCrawler.flatten([p.inputs for p in processes_protocols_and_inputs])
+            return reduce(lambda pg1,pg2: pg1.extend(pg2),
+                          map(lambda input: self._crawl(input, partial_graph), all_process_inputs),
+                          partial_graph)
 
     @staticmethod
     def link_for(process_uuid: str, input_uuids: List[str], input_type: str,
@@ -169,30 +177,33 @@ class GraphCrawler:
         file_input_uuids = [input.uuid for input in inputs_for_process if input.metadata_type == "file"]
         biomaterial_input_uuids = [input.uuid for input in inputs_for_process if input.metadata_type == "biomaterial"]
 
-        file_inputs_link = GraphCrawler.link_for(process_uuid, file_input_uuids, "file",
-                                                 [output_uuid], output_type, protocols_for_process)
-        biomaterial_inputs_link = GraphCrawler.link_for(process_uuid, biomaterial_input_uuids, "biomaterial",
-                                                        [output_uuid], output_type, protocols_for_process)
+        links = []
+        if len(file_input_uuids) > 0:
+            links.append(GraphCrawler.link_for(process_uuid, file_input_uuids, "file",
+                                               [output_uuid], output_type, protocols_for_process))
 
-        return [file_inputs_link, biomaterial_inputs_link]
+        if len(biomaterial_input_uuids) > 0:
+            links.append(GraphCrawler.link_for(process_uuid, file_input_uuids, "biomaterial",
+                                               [output_uuid], output_type, protocols_for_process))
+        return links
 
     def get_derived_by_processes(self, experiment_material: MetadataResource) -> List[MetadataResource]:
-        return GraphCrawler.parse_metadata_resources(self.ingest_client.get_related_entities('derivedByProcesses', experiment_material, 'processes'))
+        return GraphCrawler.parse_metadata_resources(self.ingest_client.get_related_entities('derivedByProcesses', experiment_material.full_resource, 'processes'))
 
     def get_derived_biomaterials(self, process: MetadataResource) -> List[MetadataResource]:
-        return GraphCrawler.parse_metadata_resources(self.ingest_client.get_related_entities('derivedBiomaterials', process, 'biomaterials'))
+        return GraphCrawler.parse_metadata_resources(self.ingest_client.get_related_entities('derivedBiomaterials', process.full_resource, 'biomaterials'))
 
     def get_derived_files(self, process: MetadataResource) -> List[MetadataResource]:
-        return GraphCrawler.parse_metadata_resources(self.ingest_client.get_related_entities('derivedFiles', process, 'files'))
+        return GraphCrawler.parse_metadata_resources(self.ingest_client.get_related_entities('derivedFiles', process.full_resource, 'files'))
 
     def get_input_biomaterials(self, process: MetadataResource):
-        return GraphCrawler.parse_metadata_resources(self.ingest_client.get_related_entities('inputBiomaterials', process, 'biomaterials'))
+        return GraphCrawler.parse_metadata_resources(self.ingest_client.get_related_entities('inputBiomaterials', process.full_resource, 'biomaterials'))
 
     def get_input_files(self, process: MetadataResource):
-        return GraphCrawler.parse_metadata_resources(self.ingest_client.get_related_entities('inputFiles', process, 'files'))
+        return GraphCrawler.parse_metadata_resources(self.ingest_client.get_related_entities('inputFiles', process.full_resource, 'files'))
 
     def get_protocols(self, process: MetadataResource) -> List[MetadataResource]:
-        return GraphCrawler.parse_metadata_resources(self.ingest_client.get_related_entities('protocols', process, 'protocols'))
+        return GraphCrawler.parse_metadata_resources(self.ingest_client.get_related_entities('protocols', process.full_resource, 'protocols'))
 
     def inputs_and_protocols_for_process(self, process: MetadataResource) -> ProcessInputsAndProtocols:
         return ProcessInputsAndProtocols(process,
