@@ -177,24 +177,28 @@ class GraphCrawler:
         return [file_inputs_link, biomaterial_inputs_link]
 
     def get_derived_by_processes(self, experiment_material: MetadataResource) -> List[MetadataResource]:
-        return self.ingest_client.get_related_entities('derivedByProcesses', experiment_material, 'processes')
+        return GraphCrawler.parse_metadata_resources(self.ingest_client.get_related_entities('derivedByProcesses', experiment_material, 'processes'))
 
     def get_derived_biomaterials(self, process: MetadataResource) -> List[MetadataResource]:
-        return self.ingest_client.get_related_entities('derivedBiomaterials', process, 'biomaterials')
+        return GraphCrawler.parse_metadata_resources(self.ingest_client.get_related_entities('derivedBiomaterials', process, 'biomaterials'))
 
     def get_derived_files(self, process: MetadataResource) -> List[MetadataResource]:
-        return self.ingest_client.get_related_entities('derivedFiles', process, 'files')
+        return GraphCrawler.parse_metadata_resources(self.ingest_client.get_related_entities('derivedFiles', process, 'files'))
 
     def get_input_biomaterials(self, process: MetadataResource):
-        return self.ingest_client.get_related_entities('inputBiomaterials', process, 'biomaterials')
+        return GraphCrawler.parse_metadata_resources(self.ingest_client.get_related_entities('inputBiomaterials', process, 'biomaterials'))
 
     def get_input_files(self, process: MetadataResource):
-        return self.ingest_client.get_related_entities('inputFiles', process, 'files')
+        return GraphCrawler.parse_metadata_resources(self.ingest_client.get_related_entities('inputFiles', process, 'files'))
 
     def get_protocols(self, process: MetadataResource) -> List[MetadataResource]:
-        return self.ingest_client.get_related_entities('protocols', process, 'protocols')
+        return GraphCrawler.parse_metadata_resources(self.ingest_client.get_related_entities('protocols', process, 'protocols'))
 
     def inputs_and_protocols_for_process(self, process: MetadataResource) -> ProcessInputsAndProtocols:
         return ProcessInputsAndProtocols(process,
                                          self.get_input_biomaterials(process) + self.get_input_files(process),
                                          self.get_protocols(process))
+
+    @staticmethod
+    def parse_metadata_resources(metadata_resources: List[Dict]) -> List[MetadataResource]:
+        return [MetadataResource.from_dict(m, True) for m in metadata_resources]
