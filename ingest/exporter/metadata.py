@@ -83,6 +83,9 @@ class MetadataResource:
             bundle_metadata.update(provenance)
         return bundle_metadata
 
+    def concrete_type(self) -> str:
+        return self.metadata_json["content"]["describedBy"].rsplit('/', 1)[-1]
+
 
 class MetadataService:
 
