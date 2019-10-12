@@ -116,14 +116,14 @@ class SchemaParser():
 
     def _get_columns_names_for_metadata_schema(self, root_schema_name, root_schema_dictionary):
         list_of_column_names = []
-
         for key, value in root_schema_dictionary.items():
             if isinstance(value, dict) and key != "schema":
                 next_root_schema_name = root_schema_name + "." + key
-                list_of_column_names.append(next_root_schema_name)
                 children_column_names = self._get_columns_names_for_metadata_schema(next_root_schema_name, value)
                 if children_column_names:
                     list_of_column_names += children_column_names
+                else:
+                    list_of_column_names.append(next_root_schema_name)
 
         return list_of_column_names
 
