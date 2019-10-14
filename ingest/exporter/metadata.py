@@ -1,6 +1,7 @@
 import re
 from copy import deepcopy
 from typing import Optional
+from dataclasses import dataclass
 
 
 class MetadataParseException(Exception):
@@ -18,7 +19,6 @@ class MetadataProvenance:
 
     def to_dict(self):
         return deepcopy(self.__dict__)
-
 
 class MetadataResource:
 
@@ -96,3 +96,18 @@ class MetadataService:
     def fetch_resource(self, resource_link: str) -> MetadataResource:
         raw_metadata = self.ingest_client.get_entity_by_callback_link(resource_link)
         return MetadataResource.from_dict(raw_metadata)
+
+
+@dataclass
+class DataFile:
+    uuid: str
+    dcp_version: str
+    file_name: str
+    cloud_url: str
+
+    @staticmethod
+    def from_file_metadata(file_metadata: MetadataResource) -> 'DataFile':
+        return DataFile(file_metadata.full_resource["dataFileUuid"],
+                        file_metadata.dcp_version,
+                        file_metadata.full_resource["fileName"],
+                        file_metadata.full_resource["cloudUrl"])

@@ -2,7 +2,7 @@ from ingest.api.ingestapi import IngestApi
 from ingest.exporter.metadata import MetadataResource
 
 from copy import deepcopy
-from typing import Any, List, Set, Iterable, Mapping, Dict
+from typing import List, Set, Iterable, Dict
 from functools import reduce
 from _operator import iconcat
 from dataclasses import dataclass
@@ -127,8 +127,10 @@ class GraphCrawler:
         derived_files = self.get_derived_files(process)
         derived_entites = derived_biomaterials + derived_files
 
-        return reduce(lambda pg1,pg2: pg1.extend(pg2),
-                      map(lambda entity: self._crawl(entity, ExperimentGraph()), derived_entites),
+        empty_graph = ExperimentGraph()
+
+        return reduce(lambda pg1, pg2: pg1.extend(pg2),
+                      map(lambda entity: self._crawl(entity, empty_graph), derived_entites),
                       ExperimentGraph())
 
     def _crawl(self, derived_node: MetadataResource, partial_graph: ExperimentGraph) -> ExperimentGraph:
@@ -146,7 +148,7 @@ class GraphCrawler:
             all_process_inputs = GraphCrawler.flatten([p.inputs for p in processes_protocols_and_inputs])
             return reduce(lambda pg1,pg2: pg1.extend(pg2),
                           map(lambda input: self._crawl(input, partial_graph), all_process_inputs),
-                          partial_graph)
+                          ExperimentGraph())
 
     @staticmethod
     def link_for(process_uuid: str, input_uuids: List[str], input_type: str,
@@ -183,7 +185,7 @@ class GraphCrawler:
                                                [output_uuid], output_type, protocols_for_process))
 
         if len(biomaterial_input_uuids) > 0:
-            links.append(GraphCrawler.link_for(process_uuid, file_input_uuids, "biomaterial",
+            links.append(GraphCrawler.link_for(process_uuid, biomaterial_input_uuids, "biomaterial",
                                                [output_uuid], output_type, protocols_for_process))
         return links
 

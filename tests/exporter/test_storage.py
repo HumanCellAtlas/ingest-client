@@ -70,7 +70,7 @@ class StorageServiceTest(TestCase):
         mock_staging_area_uuid = "31de7758-4de3-4bcc-9848-c3f06ead684b"
 
         storage_service = StorageService(mock_storage_job_manager, mock_dss_client, mock_staging_service)
-        stored_url = storage_service.store(mock_metadata_resource, mock_staging_area_uuid)
+        stored_url = storage_service.store_metadata(mock_metadata_resource, mock_staging_area_uuid)
 
         mock_storage_job_manager.complete_storage_job.assert_called_with(mock_storage_job)
         self.assertEqual(mock_dss_file["url"], stored_url)
@@ -97,7 +97,7 @@ class StorageServiceTest(TestCase):
 
         storage_service = StorageService(mock_storage_job_manager, mock_dss_client, mock_staging_service)
 
-        stored_url = storage_service.store(mock_metadata_resource, mock_staging_area_uuid)
+        stored_url = storage_service.store_metadata(mock_metadata_resource, mock_staging_area_uuid)
         expected_url = f'{mock_dss_url}/files/{mock_metadata_uuid}?version={mock_dcp_version}'
         self.assertEqual(expected_url, stored_url)
 
@@ -124,5 +124,5 @@ class StorageServiceTest(TestCase):
 
         storage_service = StorageService(mock_storage_job_manager, mock_dss_client, mock_staging_service)
 
-        self.assertRaises(StorageFailed, lambda: storage_service.store(mock_metadata_resource, mock_staging_area_uuid))
+        self.assertRaises(StorageFailed, lambda: storage_service.store_metadata(mock_metadata_resource, mock_staging_area_uuid))
         mock_storage_job_manager.delete_storage_job.assert_called_with("mock-storage_job_url")
