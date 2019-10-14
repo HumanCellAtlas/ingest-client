@@ -56,14 +56,15 @@ class StorageServiceTest(TestCase):
         mock_metadata_resource = MetadataResource(mock_metadata_type, {}, mock_metadata_uuid, mock_dcp_version, None)
 
         mock_storage_job = StorageJob("mock-storage_job_url", mock_metadata_uuid, mock_dcp_version, mock_metadata_type, True)
-        mock_storage_job_manager = Mock(name="storage_job_manager", spec_set=StorageJobManager)
+        mock_ingest_client = Mock(name="ingest_client")
+        mock_storage_job_manager = StorageJobManager(mock_ingest_client)
         mock_storage_job_manager.create_storage_job = MagicMock(return_value=mock_storage_job)
         mock_storage_job_manager.complete_storage_job = MagicMock(name="complete storage job spy")
 
-        mock_dss_client = Mock(name="dss_client", spec_set=DssApi)
+        mock_dss_client = Mock(name="dss_client", spec=DssApi)
         mock_dss_url = "mock-dss-url"
-        mock_dss_client.return_value.url = mock_dss_url
-        mock_dss_file = {"url": "mock-file-url"}
+        mock_dss_client.url = mock_dss_url
+        mock_dss_file = {"url": f'{mock_dss_url}/files/{mock_metadata_uuid}?version={mock_dcp_version}'}
         mock_dss_client.put_file_v2 = MagicMock(return_value=mock_dss_file)
 
         mock_staging_service = Mock(name="staging_service", spec_set=StagingService)
@@ -81,7 +82,8 @@ class StorageServiceTest(TestCase):
         mock_metadata_type = "bionicmaterial"
         mock_metadata_resource = MetadataResource(mock_metadata_type, {}, mock_metadata_uuid, mock_dcp_version, None)
 
-        mock_storage_job_manager = Mock(name="storage_job_manager", spec_set=StorageJobManager)
+        mock_ingest_client = Mock(name="ingest_client")
+        mock_storage_job_manager = StorageJobManager(mock_ingest_client)
         mock_storage_job_manager.create_storage_job = MagicMock(side_effect=StorageJobExists())
 
         mock_dss_client = Mock(name="dss_client", spec=DssApi)
@@ -107,7 +109,8 @@ class StorageServiceTest(TestCase):
         mock_metadata_type = "bionicmaterial"
         mock_metadata_resource = MetadataResource(mock_metadata_type, {}, mock_metadata_uuid, mock_dcp_version, None)
 
-        mock_storage_job_manager = Mock(name="storage_job_manager", spec_set=StorageJobManager)
+        mock_ingest_client = Mock(name="ingest_client")
+        mock_storage_job_manager = StorageJobManager(mock_ingest_client)
         mock_storage_job_manager.create_storage_job = MagicMock(side_effect=StorageJobExists())
 
         mock_dss_client = Mock(name="dss_client", spec=DssApi)

@@ -11,8 +11,6 @@ from time import sleep
 
 from typing import Optional, ContextManager
 
-from contextlib import contextmanager
-
 
 class StorageJobExists(Exception):
     pass
@@ -51,8 +49,8 @@ class StoredFile:
     version: str
     content_type: str
 
-class StorageJobManager:
 
+class StorageJobManager:
     def __init__(self, ingest_client: IngestApi):
         self.ingest_client = ingest_client
 
@@ -95,31 +93,45 @@ class StorageJobManager:
                 storage_job = self.get_storage_job(storage_job.url)
                 return self._wait_for_completed_storage_job(storage_job, attempts - 1, poll_period_seconds)
 
-    @contextmanager
     def job_for(self, metadata_uuid, dcp_version) -> ContextManager[StorageJob]:
-        yield from self._job_for(metadata_uuid, dcp_version, 3)
+        return self.StorageJobContext(metadata_uuid, dcp_version, self)
 
-    @contextmanager
-    def _job_for(self, metadata_uuid: str, dcp_version: str, attempts: int) -> ContextManager[StorageJob]:
-        if attempts == 0:
-            raise StorageFailed(f'Exhausted failed storage re-attempts (uuid: {metadata_uuid}, version: {dcp_version})')
-        else:
-            try:
-                storage_job = self.create_storage_job(metadata_uuid, dcp_version)
-                yield storage_job
-                self.complete_storage_job(storage_job)
-            except StorageJobExists:
-                storage_job = self.find_storage_job(metadata_uuid, dcp_version)
-                if storage_job:
-                    try:
-                        yield self._wait_for_completed_storage_job(storage_job, 5, 1.5)
-                    except StorageJobTimeOut:
-                        self.delete_storage_job(storage_job.url)
-                        yield from self._job_for(metadata_uuid, dcp_version, attempts - 1)
+    class StorageJobContext(object):
+        def __init__(self, uuid: str, version: str, storage_job_manager: 'StorageJobManager'):
+            self.uuid = uuid
+            self.version = version
+            self.storage_job_manager = storage_job_manager
+
+        def __enter__(self):
+            return self._enter(self.uuid, self.version, 3)
+
+        def _enter(self, metadata_uuid: str, dcp_version: str, attempts: int):
+            if attempts == 0:
+                raise StorageFailed(
+                    f'Exhausted failed storage re-attempts (uuid: {metadata_uuid}, version: {dcp_version})')
+            else:
+                try:
+                    self.storage_job = self.storage_job_manager.create_storage_job(metadata_uuid, dcp_version)
+                    return self.storage_job
+                except StorageJobExists:
+                    storage_job = self.storage_job_manager.find_storage_job(metadata_uuid, dcp_version)
+                    if storage_job:
+                        try:
+                            self.storage_job = self.storage_job_manager._wait_for_completed_storage_job(storage_job, 5, 1.5)
+                            return storage_job
+                        except StorageJobTimeOut:
+                            self.storage_job_manager.delete_storage_job(storage_job.url)
+                            self.storage_job = self._enter(metadata_uuid, dcp_version, attempts - 1)
+                            return self.storage_job
+
+        def __exit__(self, exc_type, exc_val, exc_tb):
+            if not exc_val:
+                self.storage_job_manager.complete_storage_job(self.storage_job)
+            else:
+                raise exc_val
 
 
 class StorageService:
-
     def __init__(self, storage_job_manager: StorageJobManager, dss_client: DssApi, staging_service: StagingService):
         self.storage_job_manager = storage_job_manager
         self.staging_service = staging_service
@@ -132,8 +144,7 @@ class StorageService:
         with self.storage_job_manager.job_for(uuid, version) as storage_job:
             cloud_url = data_file.cloud_url
             dss_file = self.dss_client.put_file_v2(data_file.uuid, DSSVersion(data_file.dcp_version), cloud_url)
-            dss_url = dss_file["url"]
-            return dss_url
+            return self._get_file_dss_url(storage_job.metadata_uuid, storage_job.dcp_version)
 
     def store_metadata(self, metadata: MetadataResource, staging_area_uuid: str) -> str:
         return self._store_metadata(metadata, staging_area_uuid, 3)
@@ -146,25 +157,11 @@ class StorageService:
             dcp_version = metadata.dcp_version
             dss_version = DSSVersion(dcp_version)
 
-            try:
-                storage_job = self.storage_job_manager.create_storage_job(metadata_uuid, dcp_version)
+            with self.storage_job_manager.job_for(metadata_uuid, dcp_version) as storage_job:
                 cloud_url = self.staging_service.stage_metadata(staging_area_uuid, metadata).cloud_url
                 dss_file = self.dss_client.put_file_v2(metadata_uuid, dss_version, cloud_url)
                 self.storage_job_manager.complete_storage_job(storage_job)
-                dss_url = dss_file["url"]
-                return dss_url
-            except StorageJobExists:
-                storage_job = self.storage_job_manager.find_storage_job(metadata_uuid, dcp_version)
-                if storage_job:
-                    try:
-                        return self._wait_for_completed_storage_job(storage_job, 5, 1.5)
-                    except StorageJobTimeOut:
-                        self.storage_job_manager.delete_storage_job(storage_job.url)
-                        return self._store_metadata(metadata, staging_area_uuid, attempts - 1)
-                else:
-                    return self._store_metadata(metadata, staging_area_uuid, attempts - 1)
-            except Exception as e:
-                raise StorageFailed() from e
+                return self._get_file_dss_url(storage_job.metadata_uuid, storage_job.dcp_version)
 
     def _wait_for_completed_storage_job(self, storage_job: StorageJob, attempts: int, poll_period_seconds: float) -> str:
         if storage_job.is_completed:
