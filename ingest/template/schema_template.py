@@ -4,10 +4,13 @@ import requests
 import yaml
 
 from ingest.api.ingestapi import IngestApi
+from ingest.template.descriptor import SimplePropertyDescriptor
 from .exceptions import RootSchemaException, UnknownKeySchemaException
 from .migration_parser import MigrationParser
 from .schema_parser import SchemaParser
 from .tab_config import TabConfig
+
+EXTERNAL_REFERENCE_FIELD = 'uuid'
 
 
 class SchemaTemplate():
@@ -16,7 +19,8 @@ class SchemaTemplate():
 
     def __init__(self, ingest_api_url="http://api.ingest.dev.data.humancellatlas.org",
                  migrations_url="https://schema.dev.data.humancellatlas.org/property_migrations",
-                 metadata_schema_urls=None, json_schema_docs=None, tab_config=None, property_migrations=None):
+                 metadata_schema_urls=None, json_schema_docs=None, tab_config=None, property_migrations=None,
+                 custom_properties=None):
         """ Creates and empty/default dictionary containing the following information:
         1) template_version:  A string keeping track of the version of the TopLevelSchemaDescriptor that is being used
         in case the components of this dictionary changes over time.
@@ -56,6 +60,8 @@ class SchemaTemplate():
         :param property_migrations: An object representing a deserialized JSON-string which is a property migrations
                                     file. A property migrations files dictates how the version of the schema has changed
                                     from an older version.
+        :param custom_properties: An object representing a deserialized JSON-string which contains custom fields added
+                                  on top of metadata schema
         """
 
         # Function validation: only one of json_schema_docs or metadata_schema_urls may be populated or neither (NAND
@@ -84,6 +90,7 @@ class SchemaTemplate():
         self.template_version = "1.0.0"
         self.created_date = str(datetime.now())
         self.meta_data_properties = {}
+        self.custom_properties = {} if not custom_properties else custom_properties
         self.labels = {}
         self.tabs = []
         self.migrations = {}
@@ -96,10 +103,19 @@ class SchemaTemplate():
             self.tabs.append(schema_parser.get_tab_representation_of_schema())
             self.labels.update(schema_parser.get_map_of_paths_by_property_label(
                 {schema_descriptor.get_schema_module_name(): fully_parsed_dictionary}))
+            self.init_custom_properties(schema_descriptor)
 
         self.migrations = MigrationParser(self.property_migrations).migrations
 
         self.spreadsheet_configuration = tab_config if tab_config else TabConfig(self.get_dictionary_representation())
+
+    def init_custom_properties(self, schema_descriptor):
+        external_field_descriptor = SimplePropertyDescriptor({})
+        external_field_descriptor.identifiable = True
+        external_field_descriptor.external_reference = True
+        self.custom_properties[schema_descriptor.get_schema_module_name()] = {}
+        self.custom_properties[schema_descriptor.get_schema_module_name()][
+            EXTERNAL_REFERENCE_FIELD] = external_field_descriptor.get_dictionary_representation_of_descriptor()
 
     def get_dictionary_representation(self):
         return {
@@ -123,7 +139,30 @@ class SchemaTemplate():
         :return: A dictionary representing the attributes of the property. If none is found, an exception will be thrown
         """
 
-        return self._lookup_fully_qualified_key_path_in_dictionary(property_key, self.meta_data_properties)
+        result = self._lookup_fully_qualified_key_path_in_dictionary(property_key, self.meta_data_properties)
+
+        if not result:
+            raise UnknownKeySchemaException(f"ERROR: Cannot find key {property_key} in any schema!")
+
+        return result
+
+    def lookup_property_from_template(self, property_key):
+        """
+        Given a property key which details the full path to the property from the top level schema, returns a dictionary
+        representing the attributes of the requested property.
+
+        :param property_key: A string representing the fully qualified path to the desired metadata or custom property
+        :return: A dictionary representing the attributes of the property. If none is found, an exception will be thrown
+        """
+        result = self._lookup_fully_qualified_key_path_in_dictionary(property_key, self.meta_data_properties)
+
+        if not result:
+            result = self._lookup_fully_qualified_key_path_in_dictionary(property_key, self.custom_properties)
+
+        if not result:
+            raise UnknownKeySchemaException(f"ERROR: Cannot find key {property_key} in any schema!")
+
+        return result
 
     def lookup_metadata_schema_name_given_title(self, tab_display_name):
         """
@@ -209,8 +248,6 @@ class SchemaTemplate():
             if expected_schema in dictionary:
                 return self._lookup_fully_qualified_key_path_in_dictionary(
                     fully_defined_metadata_property.split('.', 1)[1], dictionary[expected_schema])
-
-        raise UnknownKeySchemaException(f"ERROR: Cannot find key {fully_defined_metadata_property} in any schema!")
 
     def _get_latest_submittable_schema_urls(self, ingest_api_url):
         """

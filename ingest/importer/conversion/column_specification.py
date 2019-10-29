@@ -25,7 +25,7 @@ class ColumnSpecification:
 
     # context_concrete_type is the concrete type of the Metadata Entity for which the column
     # represented by this object is specified for.
-    def __init__(self, schema_template: SchemaTemplate, header, context_concrete_type, context=None,
+    def __init__(self, schema_template: SchemaTemplate, header: str, context_concrete_type, context=None,
                  order_of_occurrence=1):
         # Context refers to the context in which the header is being specified for.
         # For example, the property `project.contributors.email` will have a slightly different
@@ -61,10 +61,11 @@ class ColumnSpecification:
         self.data_type = data_type
         self.multivalue = field_spec.get('multivalue')
         self.multivalue_parent = (parent_spec and parent_spec.get('multivalue'))
-        self.identity = field_spec.get('identifiable')
-        self.external_reference = field_spec.get('external_reference')
         self.order_of_occurrence = order_of_occurrence
         self.entity_type = utils.extract_root_field(header)
+
+        self.identity = field_spec.get('identifiable')
+        self.external_reference = field_spec.get('external_reference')
 
     def is_multivalue(self):
         return self.multivalue
@@ -119,7 +120,7 @@ class ColumnSpecification:
     @staticmethod
     def _map_key_to_spec(schema_template: SchemaTemplate, key):
         try:
-            spec = schema_template.lookup_property_attributes_in_metadata(key)
+            spec = schema_template.lookup_property_from_template(key)
         except UnknownKeySchemaException:
             _LOGGER.warning(f'[{key}] not found in the schema.')
             spec = {}
