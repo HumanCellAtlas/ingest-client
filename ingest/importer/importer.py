@@ -42,11 +42,11 @@ class XlsImporter:
         spreadsheet_json, template_mgr, errors = self.generate_json(file_path, project_uuid)
 
         if errors:
-            raise WorkbookImportingException(errors)
+            return None, errors
 
         entity_map = self._process_links_from_spreadsheet(template_mgr, spreadsheet_json)
 
-        return entity_map
+        return entity_map, []
 
     def import_file(self, file_path, submission_url, project_uuid=None):
         submission = None
@@ -302,10 +302,3 @@ class DataRemoval(Exception):
 
 class SchemaRetrievalError(Exception):
     pass
-
-
-class WorkbookImportingException(Exception):
-    def __init__(self, errors):
-        message = f'Errors were encountered when importing the workbook.'
-        super(WorkbookImportingException, self).__init__(message)
-        self.errors = errors

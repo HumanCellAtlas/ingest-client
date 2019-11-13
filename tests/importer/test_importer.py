@@ -7,7 +7,7 @@ from openpyxl import Workbook
 from ingest.api.ingestapi import IngestApi
 from ingest.importer.conversion.metadata_entity import MetadataEntity
 from ingest.importer.importer import WorksheetImporter, WorkbookImporter, MultipleProjectsFound, \
-    NoProjectFound, SchemaRetrievalError, WorkbookImportingException
+    NoProjectFound, SchemaRetrievalError
 from ingest.importer.importer import XlsImporter
 from ingest.importer.spreadsheet.ingest_workbook import IngestWorkbook, IngestWorksheet
 from ingest.utils.IngestError import ImporterError
@@ -66,8 +66,9 @@ class XlsImporterTest(TestCase):
         ingest_api = MagicMock('ingest_api')
         importer = XlsImporter(ingest_api)
 
-        entity_map = importer.dry_run_import_file('file_path')
+        entity_map, errors = importer.dry_run_import_file('file_path')
         self.assertEqual(entity_map, 'entity_map_w_links')
+        self.assertFalse(errors)
 
     @patch('ingest.importer.submission.EntityMap.load')
     @patch('ingest.importer.submission.EntityLinker.process_links_from_spreadsheet')
@@ -78,9 +79,9 @@ class XlsImporterTest(TestCase):
         mock_generate_json.return_value = ({'test': 'output'}, 'template_manager', ['error'])
         ingest_api = MagicMock('ingest_api')
         importer = XlsImporter(ingest_api)
-        with self.assertRaises(WorkbookImportingException) as e:
-            importer.dry_run_import_file('file_path')
-            self.assertEqual(e.errors, ['error'])
+        entity_map, errors = importer.dry_run_import_file('file_path')
+        self.assertEqual(errors, ['error'])
+        self.assertFalse(entity_map)
 
 
 class WorkbookImporterTest(TestCase):
