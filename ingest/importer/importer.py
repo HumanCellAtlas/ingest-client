@@ -38,6 +38,16 @@ class XlsImporter:
 
         return spreadsheet_json, template_mgr, errors
 
+    def dry_run_import_file(self, file_path, project_uuid=None):
+        spreadsheet_json, template_mgr, errors = self.generate_json(file_path, project_uuid)
+
+        if errors:
+            return None, errors
+
+        entity_map = self._process_links_from_spreadsheet(template_mgr, spreadsheet_json)
+
+        return entity_map, []
+
     def import_file(self, file_path, submission_url, project_uuid=None):
         submission = None
         try:
