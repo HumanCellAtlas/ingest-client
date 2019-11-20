@@ -130,7 +130,7 @@ class TemplateManager:
 
     def lookup(self, header_name):
         try:
-            spec = self.template.lookup_property_attributes_in_metadata(header_name)
+            spec = self.template.lookup_property_from_template(header_name)
         except UnknownKeySchemaException:
             self.logger.warning(f'UnknownKeySchemaException: Could not lookup {header_name} in template.')
             return {}

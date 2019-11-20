@@ -41,7 +41,7 @@ class TemplateManagerTest(TestCase):
             }
         }
 
-        schema_template.lookup_property_attributes_in_metadata = lambda key: lookup_map.get(key)
+        schema_template.lookup_property_from_template = lambda key: lookup_map.get(key)
 
         ingest_api = MagicMock(name='mock_ingest_api')
 
@@ -94,7 +94,7 @@ class TemplateManagerTest(TestCase):
             "user.numbers": property_two_schema
 
         }
-        template.lookup_property_attributes_in_metadata = lambda key: spec_map.get(key)
+        template.lookup_property_from_template = lambda key: spec_map.get(key)
 
         # and:
         name_strategy = MagicMock('name_strategy')
@@ -152,7 +152,7 @@ class TemplateManagerTest(TestCase):
             "profile_type": schema,
             "profile.name": property_schema
         }
-        schema_template.lookup_property_attributes_in_metadata = lambda key: spec_map.get(key)
+        schema_template.lookup_property_from_template = lambda key: spec_map.get(key)
 
         # and:
         determine_strategy.return_value = FakeConversion('')
@@ -184,7 +184,7 @@ class TemplateManagerTest(TestCase):
         spec_map = {
             'product': {'schema': {'domain_entity': 'merchandise/product'}}
         }
-        template.lookup_property_attributes_in_metadata = lambda key: spec_map.get(key, None)
+        template.lookup_property_from_template = lambda key: spec_map.get(key, None)
 
         domain_entity = "merchandise/product"
         schema_url = "http://schema.sample.com/product"
@@ -276,7 +276,7 @@ class TemplateManagerTest(TestCase):
         spec_map = {
             object_type: schema
         }
-        schema_template.lookup_property_attributes_in_metadata = lambda key: spec_map.get(key)
+        schema_template.lookup_property_from_template = lambda key: spec_map.get(key)
 
     def test_get_schema_type(self):
         # given
@@ -291,8 +291,8 @@ class TemplateManagerTest(TestCase):
                 'url': 'https://schema.humancellatlas.org/type/biomaterial/5.0.0/donor_organism'
             }
         }
-        schema_template.lookup_property_attributes_in_metadata = MagicMock(
-            name='lookup_property_attributes_in_metadata', return_value=spec)
+        schema_template.lookup_property_from_template = MagicMock(
+            name='lookup_property_from_template', return_value=spec)
         template_manager = TemplateManager(schema_template, ingest_api)
 
         # when:
@@ -316,8 +316,8 @@ class TemplateManagerTest(TestCase):
             }
         }
 
-        schema_template.lookup_property_attributes_in_metadata = MagicMock(
-            name='lookup_property_attributes_in_metadata', return_value=spec)
+        schema_template.lookup_property_from_template = MagicMock(
+            name='lookup_property_from_template', return_value=spec)
         template_manager = TemplateManager(schema_template, ingest_api)
         template_manager.get_latest_schema_url = MagicMock(return_value=latest_url)
 
@@ -370,7 +370,7 @@ class TemplateManagerTest(TestCase):
         # given:
         template = MagicMock(name='schema_template')
         schema_spec = {'schema': {'domain_entity': 'user/profile'}}
-        template.lookup_property_attributes_in_metadata = MagicMock(return_value=schema_spec)
+        template.lookup_property_from_template = MagicMock(return_value=schema_spec)
 
         # and:
         template_manager = TemplateManager(template, MagicMock(name='mock_ingest_api'))

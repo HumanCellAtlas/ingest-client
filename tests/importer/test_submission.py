@@ -39,9 +39,9 @@ class SubmissionTest(TestCase):
                     'href': 'http://api.ingest.dev.data.humancellatlas.org/protocols/5af1794d6a65a50007755b6a',
                     'title': 'A single protocol'
                 },
-                'submissionEnvelopes': {
+                'submissionEnvelope': {
                     'href': 'http://api.ingest.dev.data.humancellatlas.org/protocols/5af1794d6a65a50007755b6a'
-                            '/submissionEnvelopes',
+                            '/submissionEnvelope',
                     'title': 'Access or create new submission envelopes'
                 }
             }

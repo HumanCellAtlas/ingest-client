@@ -7,7 +7,6 @@ schema.
 import re
 
 IDENTIFIABLE_PROPERTIES = ["biomaterial_id", "process_id", "protocol_id", "file_name"]
-EXTERNAL_REFERENCE_PROPERTIES = ["uuid"]
 
 
 class Descriptor():
@@ -125,8 +124,6 @@ class ComplexPropertyDescriptor(SimplePropertyDescriptor, Descriptor):
                 # identifiable properties
                 if property_name in IDENTIFIABLE_PROPERTIES:
                     child_property_descriptor.identifiable = True
-                if property_name in EXTERNAL_REFERENCE_PROPERTIES:
-                    child_property_descriptor.external_reference = True
 
                 self.children_properties[property_name] = child_property_descriptor
 

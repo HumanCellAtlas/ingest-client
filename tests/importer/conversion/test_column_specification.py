@@ -43,11 +43,6 @@ class ColumnSpecificationTest(TestCase):
                     "items": {
                         "type": "integer"
                     }
-                },
-                "uuid": {
-                    "description": "Some generic external reference property",
-                    "type": "integer",
-                    "external_reference": True,
                 }
             }
         }

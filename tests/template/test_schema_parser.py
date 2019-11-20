@@ -361,7 +361,7 @@ class TestSchemaParser(unittest.TestCase):
         actual_tab_representation = schema_parser.get_tab_representation_of_schema()
 
         expected_tab_representation = {"timecourse": {"display_name": "Timecourse",
-                                                      "columns": ["timecourse.value", "timecourse.unit",
+                                                      "columns": ["timecourse.value",
                                                                   "timecourse.unit.ontology",
                                                                   "timecourse.unit.ontology_label"]}}
         self.assertEqual(expected_tab_representation, actual_tab_representation)
