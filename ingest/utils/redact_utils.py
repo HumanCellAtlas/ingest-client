@@ -135,10 +135,9 @@ class RedactUtils:
 
         assert len(projects.uuids()) == 1
 
-        return EntityRedaction(sequence_files, supplementary_files, biomaterials, processes, protocols,
-                                           projects, primary_bundle_manifests, submissions_for_project,
-                                           analysis_processes, analysis_protocols, analysis_files,
-                                           analysis_bundle_manifests, analysis_submissions)
+        return EntityRedaction(sequence_files, supplementary_files, biomaterials, processes, protocols, projects,
+                               primary_bundle_manifests, submissions_for_project, analysis_processes,
+                               analysis_protocols, analysis_files, analysis_bundle_manifests, analysis_submissions)
 
     @staticmethod
     def envs():
@@ -169,11 +168,14 @@ if __name__ == "__main__":
 
     try:
         uuid.UUID(project_uuid)
-    except:
+    except Exception:
         parser.error(f'{project_uuid} is not a valid UUID')
 
-    if not env and not ingest_url: parser.error("Either --env or --ingest-url must be provided")
-    if env not in RedactUtils.envs(): parser.error(f'provided env "{env}" not in {list(RedactUtils.envs().keys())}')
+    if not env and not ingest_url:
+        parser.error("Either --env or --ingest-url must be provided")
+
+    if env not in RedactUtils.envs():
+        parser.error(f'provided env "{env}" not in {list(RedactUtils.envs().keys())}')
 
     if not ingest_url:
         ingest_url = RedactUtils.ingest_api_url(env)
