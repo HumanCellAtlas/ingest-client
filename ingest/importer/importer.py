@@ -27,6 +27,9 @@ class XlsImporter:
     def generate_json(self, file_path, project_uuid=None):
         ingest_workbook = IngestWorkbook.from_file(file_path)
 
+        if ingest_workbook.is_large():
+            raise MaxRowExceededError(f'Maximum allowable row exceeded')
+
         try:
             template_mgr = template_manager.build(ingest_workbook.get_schemas(), self.ingest_api)
         except Exception as e:
@@ -301,4 +304,8 @@ class DataRemoval(Exception):
 
 
 class SchemaRetrievalError(Exception):
+    pass
+
+
+class MaxRowExceededError(Exception):
     pass
