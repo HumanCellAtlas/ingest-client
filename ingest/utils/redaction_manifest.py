@@ -83,11 +83,11 @@ class EntityRedaction:
         }
 
 
-class RedactUtils:
+class RedactionManifestUtils:
 
     @staticmethod
     def create_redaction_manifest(project_uuid: str, ingest_url: str, with_uris=False):
-        entity_redaction = RedactUtils.generate_entity_redaction(project_uuid, ingest_url)
+        entity_redaction = RedactionManifestUtils.generate_entity_redaction(project_uuid, ingest_url)
         redaction_manifest = entity_redaction.to_redaction_manifest(with_uris)
 
         redaction_manifest_filename = f'redact_{project_uuid}_{datetime.datetime.utcnow().isoformat()}.json'
@@ -150,11 +150,13 @@ class RedactUtils:
 
     @staticmethod
     def ingest_api_url(env: str):
-        return RedactUtils.envs()[env]
+        return RedactionManifestUtils.envs()[env]
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description='Redaction utils')
+    parser = argparse.ArgumentParser(description="Generate a redaction manifest for the HCA DCP ingestion service.\n "
+                                                 "Given a project UUID, thje redaction manifest will specify the "
+                                                 "entities in the project to be redacted")
 
     parser.add_argument('project-uuid', type=str, help='UUID of project to redact')
     parser.add_argument('--env', type=str, help='Environment to target')
@@ -174,11 +176,11 @@ if __name__ == "__main__":
     if not env and not ingest_url:
         parser.error("Either --env or --ingest-url must be provided")
 
-    if env not in RedactUtils.envs():
-        parser.error(f'provided env "{env}" not in {list(RedactUtils.envs().keys())}')
+    if env not in RedactionManifestUtils.envs():
+        parser.error(f'provided env "{env}" not in {list(RedactionManifestUtils.envs().keys())}')
 
     if not ingest_url:
-        ingest_url = RedactUtils.ingest_api_url(env)
+        ingest_url = RedactionManifestUtils.ingest_api_url(env)
 
-    RedactUtils.create_redaction_manifest(project_uuid, ingest_url, with_uris=True)
+    RedactionManifestUtils.create_redaction_manifest(project_uuid, ingest_url, with_uris=True)
     print("Done\n")
