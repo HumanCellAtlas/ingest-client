@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 from ingest.api.ingestapi import IngestApi
 from dataclasses import dataclass
 import json
