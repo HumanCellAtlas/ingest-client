@@ -5,7 +5,6 @@ from ingest.importer.submission import Submission
 
 SCHEMAS_WORKSHEET = 'Schemas'
 SPECIAL_TABS = [SCHEMAS_WORKSHEET]
-MAX_ROW_PER_SHEET = 10000
 
 
 class IngestWorkbook:
@@ -18,13 +17,12 @@ class IngestWorkbook:
         workbook = load_workbook(filename=file_path, read_only=read_only)
         return cls(workbook)
 
-    def is_large(self):
-        large = False
+    def get_sheets_exceeding_row_limit(self, max_row):
+        sheet_names = []
         for sheet in self.workbook.worksheets:
-            if sheet.max_row > MAX_ROW_PER_SHEET:
-                large = True
-                break
-        return large
+            if sheet.max_row > max_row:
+                sheet_names.append(sheet.title)
+        return sheet_names
 
     def get_worksheet(self, worksheet_title):
         if worksheet_title in self.workbook.sheetnames:
