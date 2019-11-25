@@ -155,8 +155,8 @@ class RedactionManifestUtils:
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Generate a redaction manifest for the HCA DCP ingestion service.\n "
-                                                 "Given a project UUID, thje redaction manifest will specify the "
-                                                 "entities in the project to be redacted")
+                                                 "Given a project UUID, the redaction manifest will specify the "
+                                                 "entities in the project to be redacted.")
 
     parser.add_argument('project-uuid', type=str, help='UUID of project to redact')
     parser.add_argument('--env', type=str, help='Environment to target')
