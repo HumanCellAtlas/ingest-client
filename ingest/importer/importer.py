@@ -12,7 +12,7 @@ from ingest.utils.IngestError import ImporterError, ParserError
 format = '[%(filename)s:%(lineno)s - %(funcName)20s() ] %(asctime)s - %(name)s - %(levelname)s - %(message)s'
 logging.basicConfig(format=format)
 
-MAX_ROW_LIMIT = 10
+MAX_ROW_LIMIT = 10000
 
 
 class XlsImporter:
