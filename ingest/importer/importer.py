@@ -12,6 +12,8 @@ from ingest.utils.IngestError import ImporterError, ParserError
 format = '[%(filename)s:%(lineno)s - %(funcName)20s() ] %(asctime)s - %(name)s - %(levelname)s - %(message)s'
 logging.basicConfig(format=format)
 
+MAX_ROW_LIMIT = 10000
+
 
 class XlsImporter:
     """
@@ -26,6 +28,10 @@ class XlsImporter:
 
     def generate_json(self, file_path, project_uuid=None):
         ingest_workbook = IngestWorkbook.from_file(file_path)
+
+        sheet_names = ingest_workbook.get_sheets_exceeding_row_limit(MAX_ROW_LIMIT)
+        if len(sheet_names):
+            raise MaxRowExceededError(f'Maximum row limit ({MAX_ROW_LIMIT}) exceeded in sheet(s): {sheet_names}')
 
         try:
             template_mgr = template_manager.build(ingest_workbook.get_schemas(), self.ingest_api)
@@ -301,4 +307,8 @@ class DataRemoval(Exception):
 
 
 class SchemaRetrievalError(Exception):
+    pass
+
+
+class MaxRowExceededError(Exception):
     pass

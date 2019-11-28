@@ -17,6 +17,13 @@ class IngestWorkbook:
         workbook = load_workbook(filename=file_path, read_only=read_only)
         return cls(workbook)
 
+    def get_sheets_exceeding_row_limit(self, max_row):
+        sheet_names = []
+        for sheet in self.workbook.worksheets:
+            if sheet.max_row > max_row:
+                sheet_names.append(sheet.title)
+        return sheet_names
+
     def get_worksheet(self, worksheet_title):
         if worksheet_title in self.workbook.sheetnames:
             return self.workbook[worksheet_title]
