@@ -436,9 +436,8 @@ class IngestExporter:
         created_files = []
 
         for bundle_file in files_to_put:
-            version = ''
-            file_uuid = bundle_file["dss_uuid"]
-            created_file = None
+            file_uuid = bundle_file.get('dss_uuid')
+            file_version = bundle_file.get('update_date')
             input_data_files = [input_file['dataFileUuid'] for input_file in list(process_info.input_files.values())]
 
             try:
@@ -449,45 +448,36 @@ class IngestExporter:
 
                 # if metadata file , check is_from_input_bundle flag, if true, do not put file to DSS again
                 if bundle_file.get('is_from_input_bundle') or file_uuid in input_data_files:
-                    file_response = self.dss_api.head_file(bundle_file["dss_uuid"])
-                    created_file = {
-                        'version': file_response.headers['X-DSS-VERSION']
-                    }
+                    file_response = self.dss_api.head_file(uuid)
+                    file_version = file_response.headers['X-DSS-VERSION']
+                elif self.file_already_exists(file_uuid, file_version):
+                    file_version = bundle_file.get('update_date')
+                else:
+                    file = self.dss_api.put_file(bundle_uuid, bundle_file)
+                    file_version = file['version']
 
-                # if file is already in DSS, do not try to create the file again
-                created_file = self.file_already_exists(bundle_file)
-
-                if not created_file:
-                    created_file = self.dss_api.put_file(bundle_uuid, bundle_file)
-
-                version = created_file['version']
             except Exception as exception:
-                raise FileDSSError('An error occurred while putting file in DSS' + str(exception))
+                raise FileDSSError(f'An error occurred while putting file in DSS {str(exception)}')
 
             file_param = {
                 "indexed": bundle_file["indexed"],
                 "name": bundle_file["submittedName"],
                 "uuid": file_uuid,
                 "content-type": bundle_file["content-type"],
-                "version": version
+                "version": file_version
             }
 
             created_files.append(file_param)
 
         return created_files
 
-    def file_already_exists(self, bundle_file):
-        version = bundle_file.get('update_date')
-        uuid = bundle_file.get("dss_uuid")
+    def file_already_exists(self, file_uuid, file_version) -> bool:
         try:
-            self.dss_api.head_file(uuid, version)
-            created_file = {
-                'version': version
-            }
-            return created_file
+            self.dss_api.head_file(file_uuid, file_version)
+            return True
         except Exception as e:
-            self.logger.error(f'File could not be found, {str(e)}')
-            return None
+            self.logger.info(f'File could not be found, {str(e)}')
+            return False
 
     def verify_files(self, created_files):
         for created_file in created_files:
