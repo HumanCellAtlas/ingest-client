@@ -350,7 +350,7 @@ class IngestExporter:
                     'dss_filename': file_name,
                     'dss_uuid': metadata_uuid,
                     'upload_filename': upload_filename,
-                    'update_date': doc['updateDate'],
+                    'update_date': doc['dcpVersion'],
                     'is_from_input_bundle': self._is_from_input_bundle(entity_type, metadata_uuid,
                                                                        process_info.input_bundle)
                 }
@@ -375,7 +375,7 @@ class IngestExporter:
         provenance_core = dict()
         provenance_core['document_id'] = uuid
         provenance_core['submission_date'] = metadata_doc['submissionDate']
-        provenance_core['update_date'] = metadata_doc['updateDate']
+        provenance_core['update_date'] = metadata_doc['dcpVersion']
 
         # Populate the major and minor schema versions from the URL in the describedBy field
         schema_semver = re.findall(r'\d+\.\d+\.\d+', metadata_doc["content"]["describedBy"])[0]

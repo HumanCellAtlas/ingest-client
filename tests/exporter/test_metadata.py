@@ -14,6 +14,7 @@ class MetadataResourceTest(TestCase):
             'uuid': {'uuid': uuid_value},
             'submissionDate': 'a submission date',
             'updateDate': 'an update date',
+            'dcpVersion': '2019-12-02T13:40:50.520Z',
             'content': {
                 'describedBy': 'https://some-schema/1.2.3'
             }
@@ -26,7 +27,7 @@ class MetadataResourceTest(TestCase):
         self.assertIsNotNone(metadata_provenance)
         self.assertEqual(uuid_value, metadata_provenance.document_id)
         self.assertEqual('a submission date', metadata_provenance.submission_date)
-        self.assertEqual('an update date', metadata_provenance.update_date)
+        self.assertEqual('2019-12-02T13:40:50.520Z', metadata_provenance.update_date)
 
     def test_provenance_from_dict_fail_fast(self):
         # given:
@@ -155,7 +156,7 @@ class MetadataServiceTest(TestCase):
                         'uuid': {'uuid': uuid},
                         'content': {'describedBy': "http://some-schema/1.2.3",
                                     'some': {'content': ['we', 'are', 'agnostic', 'of']}},
-                        'dcpVersion': '8.2.7',
+                        'dcpVersion': '2019-12-02T13:40:50.520Z',
                         'submissionDate': 'a submission date',
                         'updateDate': 'an update date'
                         }
@@ -174,4 +175,4 @@ class MetadataServiceTest(TestCase):
         self.assertEqual(raw_metadata['content'], metadata_resource.metadata_json)
         self.assertEqual(raw_metadata['dcpVersion'], metadata_resource.dcp_version)
         self.assertEqual(raw_metadata['submissionDate'], metadata_resource.provenance.submission_date)
-        self.assertEqual(raw_metadata['updateDate'], metadata_resource.provenance.update_date)
+        self.assertEqual(raw_metadata['dcpVersion'], metadata_resource.provenance.update_date)

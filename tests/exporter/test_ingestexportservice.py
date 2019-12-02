@@ -52,7 +52,7 @@ class TestExporter(TestCase):
         with open(file_path) as f:
             sample_metadata_json = json.load(f)
         sample_metadata_json["submissionDate"] = arbitrary_submission_date
-        sample_metadata_json["updateDate"] = arbitrary_update_date
+        sample_metadata_json["dcpVersion"] = arbitrary_update_date
         sample_metadata_json["content"]["describedBy"] = arbitrary_schema_url
 
         # Execute test

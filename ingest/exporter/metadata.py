@@ -57,7 +57,7 @@ class MetadataResource:
         try:
             uuid = data['uuid']['uuid']
             submission_date = data['submissionDate']
-            update_date = data['updateDate']
+            update_date = data['dcpVersion']
 
             # Populate the major and minor schema versions from the URL in the describedBy field
             schema_semver = re.findall(r'\d+\.\d+\.\d+', data["content"]["describedBy"])[0]
