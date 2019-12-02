@@ -303,8 +303,8 @@ class IngestExporter:
     def get_related_entities(self, relationship, entity, entity_type):
         entity_uuid = entity['uuid']['uuid']
 
-        if self.related_entities_cache.get(entity_uuid) and self.related_entities_cache.get(entity_uuid).get(
-                relationship):
+        cache = self.related_entities_cache.get(entity_uuid)
+        if cache and cache.get(relationship):
             return self.related_entities_cache.get(entity_uuid).get(relationship)
 
         related_entities = list(self.ingest_api.get_related_entities(relationship, entity, entity_type))
@@ -443,10 +443,9 @@ class IngestExporter:
 
             try:
                 # TODO if file is an input file, this file may already be in the data store, need to get the stored
-                #  version
-                # This assumes that the latest version is the file version in the input bundle, should be a safe
-                # assumption for now
-                # Ideally, bundle manifest must store the file uuid and version and version must be retrieved from there
+                #  version. This assumes that the latest version is the file version in the input bundle, should be a
+                #  safe assumption for now. Ideally, bundle manifest must store the file uuid and version and version
+                #  must be retrieved from there
 
                 # if metadata file , check is_from_input_bundle flag, if true, do not put file to DSS again
                 if bundle_file.get('is_from_input_bundle') or file_uuid in input_data_files:
@@ -454,7 +453,11 @@ class IngestExporter:
                     created_file = {
                         'version': file_response.headers['X-DSS-VERSION']
                     }
-                else:
+
+                # if file is already in DSS, do not try to create the file again
+                created_file = self.file_already_exists(bundle_file)
+
+                if not created_file:
                     created_file = self.dss_api.put_file(bundle_uuid, bundle_file)
 
                 version = created_file['version']
@@ -472,6 +475,19 @@ class IngestExporter:
             created_files.append(file_param)
 
         return created_files
+
+    def file_already_exists(self, bundle_file):
+        version = bundle_file.get('update_date')
+        uuid = bundle_file.get("dss_uuid")
+        try:
+            self.dss_api.head_file(uuid, version)
+            created_file = {
+                'version': version
+            }
+            return created_file
+        except Exception as e:
+            self.logger.error(f'File could not be found, {str(e)}')
+            return None
 
     def verify_files(self, created_files):
         for created_file in created_files:

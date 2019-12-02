@@ -64,66 +64,63 @@ class DssApi:
             else datetime.datetime.utcnow().strftime("%Y-%m-%dT%H%M%S.%fZ")
 
         self.init_dss_client()
-        file = self.get_file(uuid, version)
-        if file:
-            return file
-        else:
-            # retrying file creation 20 times
-            max_retries = 20
-            tries = 0
-            file_create_complete = False
 
-            params = {
-                'uuid': uuid,
-                'version': version,
-                'creator_uid': self.creator_uid,
-                'source_url': url
-            }
+        # retrying file creation 20 times
+        max_retries = 20
+        tries = 0
+        file_create_complete = False
 
-            if bundle_uuid:
-                params["bundle_uuid"] = bundle_uuid
+        params = {
+            'uuid': uuid,
+            'version': version,
+            'creator_uid': self.creator_uid,
+            'source_url': url
+        }
 
-            while not file_create_complete and tries < max_retries:
-                try:
-                    tries += 1
-                    self.logger.info(f'Creating file in DSS {uuid}:{version} with params: {json.dumps(params)}')
-                    bundle_file = None
+        if bundle_uuid:
+            params["bundle_uuid"] = bundle_uuid
 
-                    if bundle_uuid:
-                        self.init_dss_client()
-                        bundle_file = self.dss_client.put_file(
-                            uuid=uuid,
-                            version=version,
-                            bundle_uuid=bundle_uuid,
-                            creator_uid=self.creator_uid,
-                            source_url=url
-                        )
-                    else:
-                        self.init_dss_client()
-                        bundle_file = self.dss_client.put_file(
-                            uuid=uuid,
-                            version=version,
-                            creator_uid=self.creator_uid,
-                            source_url=url
-                        )
+        while not file_create_complete and tries < max_retries:
+            try:
+                tries += 1
+                self.logger.info(f'Creating file in DSS {uuid}:{version} with params: {json.dumps(params)}')
+                bundle_file = None
 
-                    self.logger.info('Created!')
-                    file_create_complete = True
-                    return bundle_file
-                except Exception as e:
-                    self.logger.error(
-                        'Attempt {0} out of {1}: Error in hca_client.put_file method call with params:{2} due to {'
-                        '3}'.format(
-                            str(tries),
-                            str(max_retries),
-                            json.dumps(params),
-                            str(e))
+                if bundle_uuid:
+                    self.init_dss_client()
+                    bundle_file = self.dss_client.put_file(
+                        uuid=uuid,
+                        version=version,
+                        bundle_uuid=bundle_uuid,
+                        creator_uid=self.creator_uid,
+                        source_url=url
+                    )
+                else:
+                    self.init_dss_client()
+                    bundle_file = self.dss_client.put_file(
+                        uuid=uuid,
+                        version=version,
+                        creator_uid=self.creator_uid,
+                        source_url=url
                     )
 
-                    if not tries < max_retries:
-                        raise Error(e)
-                    else:
-                        time.sleep(60)
+                self.logger.info('Created!')
+                file_create_complete = True
+                return bundle_file
+            except Exception as e:
+                self.logger.error(
+                    'Attempt {0} out of {1}: Error in hca_client.put_file method call with params:{2} due to {'
+                    '3}'.format(
+                        str(tries),
+                        str(max_retries),
+                        json.dumps(params),
+                        str(e))
+                )
+
+                if not tries < max_retries:
+                    raise Error(e)
+                else:
+                    time.sleep(60)
 
     def put_bundle(self, bundle_uuid, version, bundle_files):
         bundle = None
@@ -211,6 +208,7 @@ class DssApi:
 
     def get_file(self, file_uuid, version=None):
         self.init_dss_client()
+
         if version:
             return self.dss_client.get_file(
                 uuid=file_uuid,
