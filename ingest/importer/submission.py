@@ -50,8 +50,8 @@ class IngestSubmitter(object):
                 try:
                     submission.link_entity(entity, to_entity, relationship=link['relationship'])
                     progress = progress + 1
-                    if progress % self.PROGRESS_CTR == 0 or (
-                        progress == int(submission.manifest.get('expectedLinks', 0))):
+                    expected_links = int(submission.manifest.get('expectedLinks', 0))
+                    if progress % self.PROGRESS_CTR == 0 or (progress == expected_links):
                         manifest_url = self.ingest_api.get_link_from_resource(submission.manifest, 'self')
                         self.ingest_api.patch(manifest_url, {'actualLinks': progress})
                         self.logger.info(f"links progress: {progress}/ {submission.manifest.get('expectedLinks')}")
