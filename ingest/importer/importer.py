@@ -1,5 +1,7 @@
 import logging
 
+from requests import HTTPError
+
 from ingest.importer.conversion import template_manager
 from ingest.importer.conversion.metadata_entity import MetadataEntity
 from ingest.importer.conversion.template_manager import TemplateManager
@@ -67,6 +69,12 @@ class XlsImporter:
                 self.logger.info(f'Submission in {submission_url} is done!')
             else:
                 self.report_errors(submission_url, errors)
+        except HTTPError as httpError:
+            error = httpError.response.json()
+            status = httpError.response.status_code
+            text = httpError.response.text
+            importer_error = ImporterError(f'Received an HTTP {status} from  {httpError.request.url}: {text}')
+            self.ingest_api.create_submission_error(submission_url, importer_error.getJSON())
         except Exception as e:
             self.ingest_api.create_submission_error(submission_url, ImporterError(str(e)).getJSON())
             self.logger.error(str(e), exc_info=True)

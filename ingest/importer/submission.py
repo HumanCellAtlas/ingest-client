@@ -2,13 +2,15 @@ import logging
 
 import requests
 
+from ingest.api.ingestapi import IngestApi
+
 format = '[%(filename)s:%(lineno)s - %(funcName)20s() ] %(asctime)s - %(name)s - %(levelname)s - %(message)s'
 logging.basicConfig(format=format)
 
 
 class IngestSubmitter(object):
 
-    def __init__(self, ingest_api):
+    def __init__(self, ingest_api: IngestApi):
         # TODO the IngestSubmitter should probably build its own instance of IngestApi
         self.ingest_api = ingest_api
         self.logger = logging.getLogger(__name__)
@@ -49,7 +51,7 @@ class IngestSubmitter(object):
                     submission.link_entity(entity, to_entity, relationship=link['relationship'])
                     progress = progress + 1
                     if progress % self.PROGRESS_CTR == 0 or (
-                            progress == int(submission.manifest.get('expectedLinks', 0))):
+                        progress == int(submission.manifest.get('expectedLinks', 0))):
                         manifest_url = self.ingest_api.get_link_from_resource(submission.manifest, 'self')
                         self.ingest_api.patch(manifest_url, {'actualLinks': progress})
                         self.logger.info(f"links progress: {progress}/ {submission.manifest.get('expectedLinks')}")
@@ -539,7 +541,3 @@ class MultipleProcessesFound(Error):
 
         self.process_ids = process_ids
         self.from_entity = from_entity
-
-
-class SubmissionError(Error):
-    pass
