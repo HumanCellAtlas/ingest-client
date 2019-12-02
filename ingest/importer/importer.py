@@ -70,7 +70,6 @@ class XlsImporter:
             else:
                 self.report_errors(submission_url, errors)
         except HTTPError as httpError:
-            error = httpError.response.json()
             status = httpError.response.status_code
             text = httpError.response.text
             importer_error = ImporterError(f'Received an HTTP {status} from  {httpError.request.url}: {text}')
