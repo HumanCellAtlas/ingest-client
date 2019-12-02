@@ -6,6 +6,7 @@ import re
 import time
 import uuid
 from copy import deepcopy
+from typing import Optional
 
 import polling
 import requests
@@ -450,12 +451,13 @@ class IngestExporter:
                 if bundle_file.get('is_from_input_bundle') or file_uuid in input_data_files:
                     file_response = self.dss_api.head_file(uuid)
                     file_version = file_response.headers['X-DSS-VERSION']
-                elif self.file_already_exists(file_uuid, file_version):
-                    file_version = bundle_file.get('update_date')
                 else:
-                    file = self.dss_api.put_file(bundle_uuid, bundle_file)
-                    file_version = file['version']
+                    file = self.check_file_in_dss(file_uuid, file_version)
 
+                    if not file:
+                        file = self.dss_api.put_file(bundle_uuid, bundle_file)
+
+                    file_version = file.get('version')
             except Exception as exception:
                 raise FileDSSError(f'An error occurred while putting file in DSS {str(exception)}')
 
@@ -471,13 +473,17 @@ class IngestExporter:
 
         return created_files
 
-    def file_already_exists(self, file_uuid, file_version) -> bool:
+    def check_file_in_dss(self, file_uuid, file_version) -> Optional[dict]:
         try:
-            self.dss_api.head_file(file_uuid, file_version)
-            return True
+            head_file_response = self.dss_api.head_file(file_uuid, file_version)
+            file_version = head_file_response.headers['X-DSS-VERSION']
+            return {
+                'version': file_version
+            }
+
         except Exception as e:
             self.logger.info(f'File could not be found, {str(e)}')
-            return False
+            return None
 
     def verify_files(self, created_files):
         for created_file in created_files:
