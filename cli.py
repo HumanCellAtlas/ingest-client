@@ -48,11 +48,6 @@ if __name__ == '__main__':
         print("You must supply a process UUID.")
         exit(2)
 
-    # TODO must only ask which environment to use
-    if not options.ingest:
-        print("You must the url of Ingest API.")
-        exit(2)
-
     bundle_uuid = str(uuid.uuid4())
     bundle_version = datetime.datetime.utcnow().strftime("%Y-%m-%dT%H%M%S.%fZ")
 

@@ -449,7 +449,7 @@ class IngestExporter:
 
                 # if metadata file , check is_from_input_bundle flag, if true, do not put file to DSS again
                 if bundle_file.get('is_from_input_bundle') or file_uuid in input_data_files:
-                    file_response = self.dss_api.head_file(uuid)
+                    file_response = self.dss_api.head_file(file_uuid)
                     file_version = file_response.headers['X-DSS-VERSION']
                 else:
                     file = self.check_file_in_dss(file_uuid, file_version)
