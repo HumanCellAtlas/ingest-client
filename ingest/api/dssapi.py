@@ -221,7 +221,7 @@ class DssApi:
                 replica="aws"
             )
 
-    def head_file(self, file_uuid, version=None):
+    def head_file(self, file_uuid: str, version: str = None):
         self.init_dss_client()
         # finally create the bundle
         try:

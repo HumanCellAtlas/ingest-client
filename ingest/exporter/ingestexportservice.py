@@ -473,7 +473,7 @@ class IngestExporter:
 
         return created_files
 
-    def check_file_in_dss(self, file_uuid, file_version) -> Optional[dict]:
+    def check_file_in_dss(self, file_uuid: str, file_version: str) -> Optional[dict]:
         try:
             head_file_response = self.dss_api.head_file(file_uuid, file_version)
             file_version = head_file_response.headers['X-DSS-VERSION']
