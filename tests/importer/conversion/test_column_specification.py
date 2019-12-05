@@ -43,6 +43,59 @@ class ColumnSpecificationTest(TestCase):
                     "items": {
                         "type": "integer"
                     }
+                },
+                "module_property": {
+                    'description': 'The scientific binomial name for the species of the organism.',
+                    'type': 'array',
+                    'items': {
+                        '$schema': 'http://json-schema.org/draft-07/schema#',
+                        '$id': 'https://schema.humancellatlas.org/module/ontology/5.3.5/species_ontology',
+                        'description': 'A term that may be associated with a species-related ontology term.',
+                        'additionalProperties': False,
+                        'required': ['text'],
+                        'title': 'Species ontology',
+                        'name': 'species_ontology',
+                        'type': 'object',
+                        'properties': {
+                            'describedBy': {
+                                'description': 'The URL reference to the schema.',
+                                'type': 'string',
+                                'pattern': '^(http|https)://schema.(.*?)humancellatlas.org/module/ontology/(([0-9]{1,'
+                                           '}.[0-9]{1,}.[0-9]{1,})|([a-zA-Z]*?))/species_ontology'
+                            },
+                            'schema_version': {
+                                'description': 'The version number of the schema in major.minor.patch format.',
+                                'type': 'string',
+                                'pattern': '^[0-9]{1,}.[0-9]{1,}.[0-9]{1,}$',
+                                'example': '4.6.1'
+                            },
+                            'text': {
+                                'description': 'The name of the species to which the organism belongs.',
+                                'type': 'string',
+                                'example': 'Hom...'
+                            },
+                            'ontology': {
+                                'description': 'An ontology term identifier in the form prefix:accession.',
+                                'type': 'string',
+                                'graph_restriction': {
+                                    'ontologies': ['obo:efo', 'obo:NCBITaxon'],
+                                    'classes': ['OBI:0100026', 'NCBITaxon:2759'],
+                                    'relations': ['rdfs:subClassOf'],
+                                    'direct': False,
+                                    'include_self': False
+                                },
+                                'example': 'NCBITaxon:9606; NCBITaxon:10090',
+                                'user_friendly': 'Species ontology ID'
+                            },
+                            'ontology_label': {
+                                'description': 'The preferred label for the ontology term referred to in the ontology '
+                                               'field. This may differ from the user-supplied value in the text field.',
+                                'type': 'string',
+                                'example': 'Homo sapiens; Mus musculus',
+                                'user_friendly': 'Species ontology label'
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -165,17 +218,42 @@ class ColumnSpecificationTest(TestCase):
             self.assertIsInstance(column_specification.determine_converter(), ListConverter)
             self.assertEqual(column_specification.determine_converter().base_type, data_type)
 
+    def test_get_conversion_type_member_field(self):
+        column_specification = ColumnSpecification(self.schema_template, "someschema.value", "someschema")
+
+        self.assertEqual(ConversionType.MEMBER_FIELD,
+                         column_specification.get_conversion_type())
+
+    def test_get_conversion_type_field_of_list(self):
+        column_specification = ColumnSpecification(self.schema_template, "someschema.module_property.ontology",
+                                                   "someschema")
+
+        self.assertEqual(ConversionType.FIELD_OF_LIST_ELEMENT,
+                         column_specification.get_conversion_type())
+
     def test_get_conversion_type_linked_identity(self):
+        column_specification = ColumnSpecification(self.schema_template, "someschema.protocol_id", "someotherschema")
+
+        self.assertEqual(ConversionType.LINKED_IDENTITY,
+                         column_specification.get_conversion_type())
+
+    def test_get_conversion_type_linked_external_reference(self):
         column_specification = ColumnSpecification(self.schema_template, "someschema.uuid", "someotherschema")
 
         self.assertEqual(ConversionType.LINKED_EXTERNAL_REFERENCE,
                          column_specification.get_conversion_type())
 
-    def test_get_conversion_type_linked_external_reference_identity(self):
-        column_specification = ColumnSpecification(self.schema_template, "someschema.external_reference_property",
+    def test_get_conversion_type_linking_detail(self):
+        column_specification = ColumnSpecification(self.schema_template, "someschema.linking_detail",
                                                    "someotherschema")
 
         self.assertEqual(ConversionType.LINKING_DETAIL, column_specification.get_conversion_type())
+
+    def test_get_conversion_type_external_reference(self):
+        column_specification = ColumnSpecification(self.schema_template, "someschema.uuid",
+                                                   "someschema")
+
+        self.assertEqual(ConversionType.EXTERNAL_REFERENCE, column_specification.get_conversion_type())
 
     @patch("requests.get")
     def _mock_fetching_of_property_migrations(self, property_migrations_request_mock):
